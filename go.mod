@@ -4,6 +4,8 @@ go 1.24
 
 toolchain go1.24.2
 
+replace github.com/CoreumFoundation/coreum/v6 => ./
+
 replace (
 	// cosmos keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
