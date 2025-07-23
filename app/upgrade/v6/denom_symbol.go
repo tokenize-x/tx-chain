@@ -3,7 +3,6 @@ package v6
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -27,10 +26,6 @@ func migrateDenomSymbol(ctx context.Context, bankKeeper wbankkeeper.BaseKeeperWr
 	if !found {
 		return fmt.Errorf("denom metadata not found for %s", denom)
 	}
-
-	meta.Description = strings.ReplaceAll(meta.Description, "core", "tx")
-	meta.Display = strings.ReplaceAll(meta.Display, "core", "tx")
-	meta.Symbol = strings.ReplaceAll(meta.Symbol, "core", "tx")
 
 	meta.Description = prefix + "tx coin"      // "devcore coin" -> "devtx coin"
 	meta.Display = prefix + "tx"               // "devcore" -> "devtx"
