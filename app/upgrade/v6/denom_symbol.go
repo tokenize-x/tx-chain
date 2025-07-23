@@ -15,15 +15,12 @@ func migrateDenomSymbol(ctx context.Context, bankKeeper wbankkeeper.BaseKeeperWr
 	var denom string
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	switch sdkCtx.ChainID() {
-	case string(constant.ChainIDMain):
-		denom = constant.DenomMain
-	case string(constant.ChainIDTest):
-		denom = constant.DenomTest
-	case string(constant.ChainIDDev):
-		denom = constant.DenomDev
-	default:
-		return fmt.Errorf("unknown chain id: %s", sdkCtx.ChainID())
+
+	prefix := ""
+	if sdkCtx.ChainID() == string(constant.ChainIDTest) {
+		prefix = "test"
+	} else if sdkCtx.ChainID() == string(constant.ChainIDDev) {
+		prefix = "dev"
 	}
 
 	meta, found := bankKeeper.GetDenomMetaData(ctx, denom)
@@ -34,6 +31,10 @@ func migrateDenomSymbol(ctx context.Context, bankKeeper wbankkeeper.BaseKeeperWr
 	meta.Description = strings.ReplaceAll(meta.Description, "core", "tx")
 	meta.Display = strings.ReplaceAll(meta.Display, "core", "tx")
 	meta.Symbol = strings.ReplaceAll(meta.Symbol, "core", "tx")
+
+	meta.Description = prefix + "tx coin"      // "devcore coin" -> "devtx coin"
+	meta.Display = prefix + "tx"               // "devcore" -> "devtx"
+	meta.Symbol = fmt.Sprintf("u%stx", prefix) // "udevcore" -> "udevtx"
 
 	bankKeeper.SetDenomMetaData(ctx, meta)
 
