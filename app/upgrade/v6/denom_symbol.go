@@ -12,10 +12,10 @@ import (
 
 func migrateDenomSymbol(ctx context.Context, bankKeeper wbankkeeper.BaseKeeperWrapper) error {
 	var denom string
+	var prefix string
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	prefix := ""
 	switch sdkCtx.ChainID() {
 	case string(constant.ChainIDMain):
 		denom = constant.DenomMain
