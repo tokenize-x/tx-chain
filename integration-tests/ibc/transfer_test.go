@@ -12,8 +12,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -228,7 +229,7 @@ func TestTimedOutTransfer(t *testing.T) {
 		)
 		switch {
 		case err == nil:
-		case strings.Contains(err.Error(), ibcchanneltypes.ErrPacketTimeout.Error()):
+		case strings.Contains(err.Error(), ibcchanneltypes.ErrTimeoutElapsed.Error()):
 			return retry.Retryable(err)
 		default:
 			requireT.NoError(err)
@@ -308,7 +309,7 @@ func TestRejectedTransfer(t *testing.T) {
 
 	// Bank module rejects transfers targeting some module accounts. We use this feature to test that
 	// this type of IBC transfer is rejected by the receiving chain.
-	moduleAddress := authtypes.NewModuleAddress(ibctransfertypes.ModuleName)
+	moduleAddress := authtypes.NewModuleAddress(icatypes.ModuleName)
 	coreumSender := coreumChain.GenAccount()
 	gaiaRecipient := gaiaChain.GenAccount()
 

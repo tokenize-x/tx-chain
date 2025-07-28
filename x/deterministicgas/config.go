@@ -22,13 +22,15 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
-	icacontrollertypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
-	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
-	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibclightclienttypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
+	icacontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcv2clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/v2/types"
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
+	ibcv2channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/v2/types"
 	"github.com/hashicorp/go-metrics"
 	"github.com/samber/lo"
 
@@ -305,11 +307,17 @@ func DefaultConfig() Config {
 			&wasmtypes.MsgRemoveCodeUploadParamsAddresses{},
 			&wasmtypes.MsgAddCodeUploadParamsAddresses{},
 
+			// ibc/lightclients
+			&ibclightclienttypes.MsgStoreCode{},
+			&ibclightclienttypes.MsgRemoveChecksum{},
+			&ibclightclienttypes.MsgMigrateContract{},
+
 			// ibc/core/client
 			&ibcclienttypes.MsgCreateClient{},
 			&ibcclienttypes.MsgCreateClient{},
 			&ibcclienttypes.MsgUpdateClient{},
 			&ibcclienttypes.MsgUpgradeClient{},
+			&ibcclienttypes.MsgDeleteClientCreator{},
 			&ibcclienttypes.MsgSubmitMisbehaviour{}, //nolint // TODO remove legacy message
 			&ibcclienttypes.MsgUpdateParams{},
 			&ibcclienttypes.MsgIBCSoftwareUpgrade{},
@@ -329,22 +337,14 @@ func DefaultConfig() Config {
 			&ibcchanneltypes.MsgChannelOpenConfirm{},
 			&ibcchanneltypes.MsgChannelCloseInit{},
 			&ibcchanneltypes.MsgChannelCloseConfirm{},
-			&ibcchanneltypes.MsgChannelUpgradeAck{},
-			&ibcchanneltypes.MsgChannelUpgradeCancel{},
-			&ibcchanneltypes.MsgChannelUpgradeConfirm{},
-			&ibcchanneltypes.MsgChannelUpgradeInit{},
-			&ibcchanneltypes.MsgChannelUpgradeOpen{},
-			&ibcchanneltypes.MsgChannelUpgradeTimeout{},
-			&ibcchanneltypes.MsgChannelUpgradeTry{},
-			&ibcchanneltypes.MsgPruneAcknowledgements{},
 			&ibcchanneltypes.MsgRecvPacket{},
 			&ibcchanneltypes.MsgTimeout{},
 			&ibcchanneltypes.MsgTimeoutOnClose{},
 			&ibcchanneltypes.MsgAcknowledgement{},
-			&ibcchanneltypes.MsgUpdateParams{},
-
-			// ibc/fee
-			&ibcfeetypes.PacketFee{},
+			&ibcv2channeltypes.MsgSendPacket{},
+			&ibcv2channeltypes.MsgRecvPacket{},
+			&ibcv2channeltypes.MsgTimeout{},
+			&ibcv2channeltypes.MsgAcknowledgement{},
 
 			// ibc/ica
 			&icacontrollertypes.MsgSendTx{},
@@ -352,6 +352,9 @@ func DefaultConfig() Config {
 			&icahosttypes.MsgModuleQuerySafe{},
 			&icacontrollertypes.MsgUpdateParams{},
 			&ibctransfertypes.MsgUpdateParams{},
+
+			&ibcv2clienttypes.MsgRegisterCounterparty{},
+			&ibcv2clienttypes.MsgUpdateClientConfig{},
 		},
 	)
 

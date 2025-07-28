@@ -13,8 +13,9 @@ import (
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -1105,7 +1106,7 @@ func TestIBCAssetFTTimedOutTransfer(t *testing.T) {
 		)
 		switch {
 		case err == nil:
-		case strings.Contains(err.Error(), ibcchanneltypes.ErrPacketTimeout.Error()):
+		case strings.Contains(err.Error(), ibcchanneltypes.ErrTimeoutElapsed.Error()):
 			return retry.Retryable(err)
 		default:
 			requireT.NoError(err)
@@ -1185,7 +1186,7 @@ func TestIBCAssetFTRejectedTransfer(t *testing.T) {
 
 	// Bank module rejects transfers targeting some module accounts. We use this feature to test that
 	// this type of IBC transfer is rejected by the receiving chain.
-	moduleAddress := authtypes.NewModuleAddress(ibctransfertypes.ModuleName)
+	moduleAddress := authtypes.NewModuleAddress(icatypes.ModuleName)
 	coreumSender := coreumChain.GenAccount()
 	gaiaRecipient := gaiaChain.GenAccount()
 
@@ -1301,7 +1302,7 @@ func TestIBCRejectedTransferWithWhitelistingAndFreezing(t *testing.T) {
 	coreumSender := coreumChain.GenAccount()
 	// Bank module rejects transfers targeting some module accounts. We use this feature to test that
 	// this type of IBC transfer is rejected by the receiving chain.
-	moduleAddress := authtypes.NewModuleAddress(ibctransfertypes.ModuleName)
+	moduleAddress := authtypes.NewModuleAddress(icatypes.ModuleName)
 
 	issueFee := coreumChain.QueryAssetFTParams(ctx, t).IssueFee.Amount
 
@@ -1574,7 +1575,7 @@ func TestIBCTimedOutTransferWithWhitelistingAndFreezing(t *testing.T) {
 		)
 		switch {
 		case err == nil:
-		case strings.Contains(err.Error(), ibcchanneltypes.ErrPacketTimeout.Error()):
+		case strings.Contains(err.Error(), ibcchanneltypes.ErrTimeoutElapsed.Error()):
 			return retry.Retryable(err)
 		default:
 			requireT.NoError(err)
@@ -1643,7 +1644,7 @@ func TestIBCRejectedTransferWithBurnRateAndSendCommission(t *testing.T) {
 	coreumSender := coreumChain.GenAccount()
 	// Bank module rejects transfers targeting some module accounts. We use this feature to test that
 	// this type of IBC transfer is rejected by the receiving chain.
-	moduleAddress := authtypes.NewModuleAddress(ibctransfertypes.ModuleName)
+	moduleAddress := authtypes.NewModuleAddress(icatypes.ModuleName)
 
 	issueFee := coreumChain.QueryAssetFTParams(ctx, t).IssueFee.Amount
 
@@ -1844,7 +1845,7 @@ func TestIBCTimedOutTransferWithBurnRateAndSendCommission(t *testing.T) {
 		)
 		switch {
 		case err == nil:
-		case strings.Contains(err.Error(), ibcchanneltypes.ErrPacketTimeout.Error()):
+		case strings.Contains(err.Error(), ibcchanneltypes.ErrTimeoutElapsed.Error()):
 			return retry.Retryable(err)
 		default:
 			requireT.NoError(err)

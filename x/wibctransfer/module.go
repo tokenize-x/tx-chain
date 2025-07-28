@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/ibc-go/v8/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	"github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 
 	"github.com/CoreumFoundation/coreum/v6/x/wibctransfer/keeper"
 )
@@ -37,12 +37,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	ibctransfertypes.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 
 	m := ibctransferkeeper.NewMigrator(am.keeper.Keeper)
-	if err := cfg.RegisterMigration(ibctransfertypes.ModuleName, 1, m.MigrateTraces); err != nil {
-		panic(fmt.Sprintf("failed to migrate transfer app from version 1 to 2: %v", err))
-	}
 
 	if err := cfg.RegisterMigration(ibctransfertypes.ModuleName, 2, m.MigrateTotalEscrowForDenom); err != nil {
-		panic(fmt.Sprintf("failed to migrate transfer app from version 2 to 3: %v", err))
+		panic(fmt.Sprintf("failed to migrate transfer app from version 2 to 3 (total escrow entry migration): %v", err))
 	}
 
 	if err := cfg.RegisterMigration(ibctransfertypes.ModuleName, 3, m.MigrateParams); err != nil {
@@ -51,5 +48,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 	if err := cfg.RegisterMigration(ibctransfertypes.ModuleName, 4, m.MigrateDenomMetadata); err != nil {
 		panic(fmt.Errorf("failed to migrate transfer app from version 4 to 5 (set denom metadata migration): %w", err))
+	}
+
+	if err := cfg.RegisterMigration(ibctransfertypes.ModuleName, 5, m.MigrateDenomTraceToDenom); err != nil {
+		panic(fmt.Errorf("failed to migrate transfer app from version 5 to 6 (migrate DenomTrace to Denom): %w", err))
 	}
 }

@@ -22,6 +22,9 @@ func New(
 		Name: Name,
 		StoreUpgrades: store.StoreUpgrades{
 			Added: []string{},
+			Deleted: []string{
+				"feeibc",
+			},
 		},
 		Upgrade: func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			vmap, err := mm.RunMigrations(ctx, configurator, vm)
