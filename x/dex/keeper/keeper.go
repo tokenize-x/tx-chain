@@ -457,7 +457,7 @@ func (k Keeper) ExportReserveOrderIDs(
 	defer iterator.Close()
 	keys := make([][]byte, 0)
 	for ; iterator.Valid(); iterator.Next() {
-		keys = append(keys, iterator.Value())
+		keys = append(keys, iterator.Key())
 	}
 	return keys, nil
 }
