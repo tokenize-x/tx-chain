@@ -741,13 +741,13 @@ not. Three possible outcomes exist:
 To upgrade the token and **enable IBC**, use this command:
 
 ```console
-cored tx assetft upgrade-v1 [denom] --ibc-enabled=true --from [sender]
+txd tx assetft upgrade-v1 [denom] --ibc-enabled=true --from [sender]
 ```
 
 To upgrade the token and **disable IBC**, use this command:
 
 ```console
-cored tx assetft upgrade-v1 [denom] --ibc-enabled=false --from [sender]
+txd tx assetft upgrade-v1 [denom] --ibc-enabled=false --from [sender]
 ```
 
 ## Querying the upgrade status
@@ -755,5 +755,5 @@ cored tx assetft upgrade-v1 [denom] --ibc-enabled=false --from [sender]
 Everyone is able to check what decision has been made by the admin, by running the query command:
 
 ```console
-cored q assetft token-upgrade-statuses [denom]
+txd q assetft token-upgrade-statuses [denom]
 ```

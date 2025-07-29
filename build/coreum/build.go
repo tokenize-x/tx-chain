@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	blockchainName    = "coreum"
-	binaryName        = "cored"
+	blockchainName    = "tx-core"
+	binaryName        = "txd"
 	gaiaBinaryName    = "gaiad"
 	hermesBinaryName  = "hermes"
 	osmosisBinaryName = "osmosisd"
@@ -41,22 +41,22 @@ const (
 
 var defaultBuildTags = []string{"netgo", "ledger"}
 
-// BuildCored builds all the versions of cored binary.
-func BuildCored(ctx context.Context, deps types.DepsFunc) error {
-	deps(BuildCoredLocally, BuildCoredInDocker)
+// BuildTXd builds all the versions of txd binary.
+func BuildTXd(ctx context.Context, deps types.DepsFunc) error {
+	deps(BuildTXdLocally, BuildTXdInDocker)
 	return nil
 }
 
-// BuildCoredLocally builds cored locally.
-func BuildCoredLocally(ctx context.Context, deps types.DepsFunc) error {
-	ldFlags, err := coredVersionLDFlags(ctx, defaultBuildTags)
+// BuildTXdLocally builds txd locally.
+func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
+	ldFlags, err := txdVersionLDFlags(ctx, defaultBuildTags)
 	if err != nil {
 		return err
 	}
 
 	return golang.Build(ctx, deps, golang.BinaryBuildConfig{
 		TargetPlatform: crusttools.TargetPlatformLocal,
-		PackagePath:    "cmd/cored",
+		PackagePath:    "cmd/txd",
 		BinOutputPath:  binaryPath,
 		CGOEnabled:     true,
 		Tags:           defaultBuildTags,
@@ -64,9 +64,9 @@ func BuildCoredLocally(ctx context.Context, deps types.DepsFunc) error {
 	})
 }
 
-// BuildCoredInDocker builds cored in docker.
-func BuildCoredInDocker(ctx context.Context, deps types.DepsFunc) error {
-	return buildCoredInDocker(ctx, deps, crusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag})
+// BuildTXdInDocker builds txd in docker.
+func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
+	return buildTXdInDocker(ctx, deps, crusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag})
 }
 
 // BuildGaiaDockerImage builds docker image of the gaia.
@@ -174,7 +174,7 @@ func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	})
 }
 
-func buildCoredInDocker(
+func buildTXdInDocker(
 	ctx context.Context,
 	deps types.DepsFunc,
 	targetPlatform crusttools.TargetPlatform,
@@ -250,7 +250,7 @@ func buildCoredInDocker(
 	}
 	envs = append(envs, "CC="+cc)
 
-	versionLDFlags, err := coredVersionLDFlags(ctx, buildTags)
+	versionLDFlags, err := txdVersionLDFlags(ctx, buildTags)
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func buildCoredInDocker(
 	binOutputPath := filepath.Join("bin", ".cache", binaryName, targetPlatform.String(), "bin", binaryName)
 	return golang.Build(ctx, deps, golang.BinaryBuildConfig{
 		TargetPlatform: targetPlatform,
-		PackagePath:    "cmd/cored",
+		PackagePath:    "cmd/txd",
 		BinOutputPath:  binOutputPath,
 		CGOEnabled:     true,
 		Tags:           buildTags,
@@ -282,7 +282,7 @@ func Lint(ctx context.Context, deps types.DepsFunc) error {
 	return lint.Lint(ctx, deps)
 }
 
-func coredVersionLDFlags(ctx context.Context, buildTags []string) ([]string, error) {
+func txdVersionLDFlags(ctx context.Context, buildTags []string) ([]string, error) {
 	hash, err := git.DirtyHeadHash(ctx)
 	if err != nil {
 		return nil, err

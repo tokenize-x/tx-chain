@@ -48,10 +48,10 @@ func RunAllIntegrationTests(runUnsafe bool) types.CommandFunc {
 func RunIntegrationTestsModules(runUnsafe bool) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		deps(CompileModulesSmartContracts, CompileLegacyModulesSmartContracts, CompileAssetExtensionSmartContracts,
-			CompileDEXSmartContracts, BuildCoredLocally, BuildCoredDockerImage)
+			CompileDEXSmartContracts, BuildTXdLocally, BuildTXdDockerImage)
 
 		znetConfig := defaultZNetConfig()
-		znetConfig.Profiles = []string{apps.Profile3Cored}
+		znetConfig.Profiles = []string{apps.Profile3TXd}
 		znetConfig.CoverageOutputFile = "coverage/coreum-integration-tests-modules"
 
 		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestModules)
@@ -61,10 +61,10 @@ func RunIntegrationTestsModules(runUnsafe bool) types.CommandFunc {
 // RunIntegrationTestsStress returns function running stress integration tests.
 func RunIntegrationTestsStress(runUnsafe bool) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
-		deps(BuildCoredLocally, BuildCoredDockerImage)
+		deps(BuildTXdLocally, BuildTXdDockerImage)
 
 		znetConfig := defaultZNetConfig()
-		znetConfig.Profiles = []string{apps.Profile3Cored, apps.ProfileDEX}
+		znetConfig.Profiles = []string{apps.Profile3TXd, apps.ProfileDEX}
 		znetConfig.CoverageOutputFile = "coverage/coreum-integration-tests-stress"
 
 		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestStress)
@@ -75,11 +75,11 @@ func RunIntegrationTestsStress(runUnsafe bool) types.CommandFunc {
 func RunIntegrationTestsIBC(runUnsafe bool) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		deps(CompileIBCSmartContracts, CompileAssetExtensionSmartContracts, CompileDEXSmartContracts,
-			BuildCoredLocally, BuildCoredDockerImage, BuildGaiaDockerImage, BuildOsmosisDockerImage,
+			BuildTXdLocally, BuildTXdDockerImage, BuildGaiaDockerImage, BuildOsmosisDockerImage,
 			BuildHermesDockerImage)
 
 		znetConfig := defaultZNetConfig()
-		znetConfig.Profiles = []string{apps.Profile3Cored, apps.ProfileIBC}
+		znetConfig.Profiles = []string{apps.Profile3TXd, apps.ProfileIBC}
 
 		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestIBC)
 	}
@@ -89,12 +89,12 @@ func RunIntegrationTestsIBC(runUnsafe bool) types.CommandFunc {
 func RunIntegrationTestsUpgrade(runUnsafe bool) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		deps(CompileIBCSmartContracts, CompileAssetExtensionSmartContracts, CompileDEXSmartContracts,
-			CompileModulesSmartContracts, CompileLegacyModulesSmartContracts, BuildCoredLocally, BuildCoredDockerImage,
+			CompileModulesSmartContracts, CompileLegacyModulesSmartContracts, BuildTXdLocally, BuildTXdDockerImage,
 			BuildGaiaDockerImage, BuildOsmosisDockerImage, BuildHermesDockerImage)
 
 		znetConfig := defaultZNetConfig()
-		znetConfig.Profiles = []string{apps.Profile3Cored, apps.ProfileIBC}
-		znetConfig.CoredVersion = "v5.0.0"
+		znetConfig.Profiles = []string{apps.Profile3TXd, apps.ProfileIBC}
+		znetConfig.TXdVersion = "v5.0.0"
 
 		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestUpgrade, TestIBC, TestModules)
 	}
@@ -157,6 +157,6 @@ func defaultZNetConfig() *infra.ConfigFactory {
 		TimeoutCommit: 500 * time.Millisecond,
 		HomeDir:       filepath.Join(lo.Must(os.UserHomeDir()), ".crust", "znet"),
 		RootDir:       ".",
-		CoredUpgrades: CoredUpgrades(),
+		TXdUpgrades:   TXdUpgrades(),
 	}
 }

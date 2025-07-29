@@ -12,8 +12,8 @@ import (
 	"github.com/CoreumFoundation/crust/build/types"
 )
 
-// ReleaseCored releases cored binary for amd64 and arm64 to be published inside the release.
-func ReleaseCored(ctx context.Context, deps types.DepsFunc) error {
+// ReleaseTXd releases txd binary for amd64 and arm64 to be published inside the release.
+func ReleaseTXd(ctx context.Context, deps types.DepsFunc) error {
 	clean, _, err := git.StatusClean(ctx)
 	if err != nil {
 		return err
@@ -30,32 +30,32 @@ func ReleaseCored(ctx context.Context, deps types.DepsFunc) error {
 		return errors.New("no version present on released commit")
 	}
 
-	if err := buildCoredInDocker(
+	if err := buildTXdInDocker(
 		ctx, deps, tools.TargetPlatformLinuxAMD64InDocker, []string{},
 	); err != nil {
 		return err
 	}
 
-	if err := buildCoredInDocker(
+	if err := buildTXdInDocker(
 		ctx, deps, tools.TargetPlatformLinuxARM64InDocker, []string{},
 	); err != nil {
 		return err
 	}
 
-	if err := buildCoredInDocker(
+	if err := buildTXdInDocker(
 		ctx, deps, tools.TargetPlatformDarwinAMD64InDocker, []string{},
 	); err != nil {
 		return err
 	}
 
-	return buildCoredInDocker(ctx, deps, tools.TargetPlatformDarwinARM64InDocker, []string{})
+	return buildTXdInDocker(ctx, deps, tools.TargetPlatformDarwinARM64InDocker, []string{})
 }
 
-// ReleaseCoredImage releases cored docker images for amd64 and arm64.
-func ReleaseCoredImage(ctx context.Context, deps types.DepsFunc) error {
-	deps(ReleaseCored)
+// ReleaseTXdImage releases txd docker images for amd64 and arm64.
+func ReleaseTXdImage(ctx context.Context, deps types.DepsFunc) error {
+	deps(ReleaseTXd)
 
-	return buildCoredDockerImage(ctx, imageConfig{
+	return buildTXdDockerImage(ctx, imageConfig{
 		BinaryPath: binaryPath,
 		TargetPlatforms: []tools.TargetPlatform{
 			tools.TargetPlatformLinuxAMD64InDocker,

@@ -167,7 +167,7 @@ func DefaultConfig() Config {
 		// manually by following this procedure:
 		// 1. move MsgUnjail to non-deterministic messages,
 		// 2. reduce `signed_blocks_window` slashing parameter to 50 for devnet,
-		// 3. start znet with 5 cored nodes,
+		// 3. start znet with 5 txd nodes,
 		// 4. stop one validator,
 		// 5. wait until it is jailed,
 		// 6. unjail it and check the amount of gas used.

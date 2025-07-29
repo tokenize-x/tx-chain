@@ -29,6 +29,11 @@ require (
 	github.com/samber/lo v1.49.1
 )
 
+replace (
+	github.com/CoreumFoundation/crust => github.com/CoreumFoundation/crust-private v0.0.0-20250728225433-fa03a68707b8
+	github.com/CoreumFoundation/crust/znet => github.com/CoreumFoundation/crust-private/znet v0.0.0-20250728225433-fa03a68707b8
+)
+
 require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/mod v0.24.0 // indirect

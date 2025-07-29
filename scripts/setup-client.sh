@@ -3,12 +3,12 @@
 set -e
 
 VERSION="v5.0.0"
-BIN_PATH="./cored"
+BIN_PATH="./txd"
 
-URL_LINUX_AMD64="https://github.com/CoreumFoundation/coreum/releases/download/${VERSION}/cored-linux-amd64"
-URL_LINUX_ARM64="https://github.com/CoreumFoundation/coreum/releases/download/${VERSION}/cored-linux-arm64"
-URL_DARWIN_AMD64="https://github.com/CoreumFoundation/coreum/releases/download/${VERSION}/cored-darwin-amd64"
-URL_DARWIN_ARM64="https://github.com/CoreumFoundation/coreum/releases/download/${VERSION}/cored-darwin-arm64"
+URL_LINUX_AMD64="https://github.com/CoreumFoundation/tx-core/releases/download/${VERSION}/txd-linux-amd64"
+URL_LINUX_ARM64="https://github.com/CoreumFoundation/tx-core/releases/download/${VERSION}/txd-linux-arm64"
+URL_DARWIN_AMD64="https://github.com/CoreumFoundation/tx-core/releases/download/${VERSION}/txd-darwin-amd64"
+URL_DARWIN_ARM64="https://github.com/CoreumFoundation/tx-core/releases/download/${VERSION}/txd-darwin-arm64"
 
 PLATFORM="$(uname)/$(uname -m)"
 URL=""

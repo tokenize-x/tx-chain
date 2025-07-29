@@ -22,6 +22,7 @@ const (
 	// Hermes is an Inter-Blockchain Communication (IBC) relayer.
 	Hermes tools.Name = "hermes"
 	// CoredV500 is an older version of cored used for testing chain upgrades.
+	// TODO (v7): Should be renamed to TXdV600.
 	CoredV500 tools.Name = "cored-v5.0.0"
 	// Buf is a tool for working with Protocol Buffers.
 	Buf tools.Name = "buf"

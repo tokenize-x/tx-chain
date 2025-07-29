@@ -16,23 +16,23 @@ var Commands = map[string]types.Command{
 	"build/znet": {Fn: crust.BuildZNet, Description: "Builds znet binary"},
 	"build": {Fn: func(ctx context.Context, deps types.DepsFunc) error {
 		deps(
-			coreum.BuildCored,
+			coreum.BuildTXd,
 		)
 		return nil
-	}, Description: "Builds cored binaries"},
-	"build/cored": {Fn: coreum.BuildCored, Description: "Builds cored binary"},
-	"generate":    {Fn: coreum.Generate, Description: "Generates artifacts"},
-	"setup":       {Fn: tools.InstallAll, Description: "Installs all the required tools"},
+	}, Description: "Builds txd binaries"},
+	"build/txd": {Fn: coreum.BuildTXd, Description: "Builds txd binary"},
+	"generate":  {Fn: coreum.Generate, Description: "Generates artifacts"},
+	"setup":     {Fn: tools.InstallAll, Description: "Installs all the required tools"},
 	"images": {Fn: func(ctx context.Context, deps types.DepsFunc) error {
 		deps(
-			coreum.BuildCoredDockerImage,
+			coreum.BuildTXdDockerImage,
 			coreum.BuildGaiaDockerImage,
 			coreum.BuildHermesDockerImage,
 			coreum.BuildOsmosisDockerImage,
 		)
 		return nil
-	}, Description: "Builds cored docker images"},
-	"images/cored":   {Fn: coreum.BuildCoredDockerImage, Description: "Builds cored docker image"},
+	}, Description: "Builds txd docker images"},
+	"images/txd":     {Fn: coreum.BuildTXdDockerImage, Description: "Builds txd docker image"},
 	"images/gaiad":   {Fn: coreum.BuildGaiaDockerImage, Description: "Builds gaia docker image"},
 	"images/hermes":  {Fn: coreum.BuildHermesDockerImage, Description: "Builds hermes docker image"},
 	"images/osmosis": {Fn: coreum.BuildOsmosisDockerImage, Description: "Builds osmosis docker image"},
@@ -73,8 +73,8 @@ var Commands = map[string]types.Command{
 		Description: "Runs all upgrade integration tests including unsafe",
 	},
 	"lint":           {Fn: coreum.Lint, Description: "Lints code"},
-	"release":        {Fn: coreum.ReleaseCored, Description: "Releases cored binary"},
-	"release/images": {Fn: coreum.ReleaseCoredImage, Description: "Releases cored docker images"},
+	"release":        {Fn: coreum.ReleaseTXd, Description: "Releases txd binary"},
+	"release/images": {Fn: coreum.ReleaseTXdImage, Description: "Releases txd docker images"},
 	"test":           {Fn: coreum.Test, Description: "Runs unit tests"},
 	"test-fuzz":      {Fn: coreum.TestFuzz, Description: "Runs fuzz tests"},
 	"tidy":           {Fn: golang.Tidy, Description: "Runs go mod tidy"},

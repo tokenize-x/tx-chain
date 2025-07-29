@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug encountered while using coreum ecosystem (cored, crust etc)
+description: Report a bug encountered while using coreum ecosystem (txd, crust etc)
 labels: []
 body:
   - type: textarea

@@ -20,10 +20,10 @@ jobs:
           "lint",
           "test",
           "test-fuzz",
-          "integration tests coreum-modules",
-          "integration tests coreum-stress",
-          "integration tests coreum-ibc",
-          "integration tests coreum-upgrade-v5.0.0",
+          "integration tests tx-core-modules",
+          "integration tests tx-core-stress",
+          "integration tests tx-core-ibc",
+          "integration tests tx-core-upgrade-v5.0.0",
         ]
         include:
           - ci_step: "lint"
@@ -35,30 +35,30 @@ jobs:
             command: make test
             linter-cache: false
             wasm-cache: true
-            codecov: false # TODO: enable after configuring codecov for chain-tx
+            codecov: false # TODO: enable after configuring codecov for tx-core
             codecov-name: coreum
           - ci_step: "test-fuzz"
             command: make test-fuzz
             linter-cache: false
             wasm-cache: true
             codecov: false
-          - ci_step: "integration tests coreum-modules"
+          - ci_step: "integration tests tx-core-modules"
             command: make integration-tests-modules
             linter-cache: false
             wasm-cache: true
-            codecov: false # TODO: enable after configuring codecov for chain-tx
+            codecov: false # TODO: enable after configuring codecov for tx-core
             codecov-name: coreum-integration-tests-modules
-          - ci_step: "integration tests coreum-stress"
+          - ci_step: "integration tests tx-core-stress"
             command: make integration-tests-stress
             linter-cache: false
             wasm-cache: true
             codecov: false
-          - ci_step: "integration tests coreum-ibc"
+          - ci_step: "integration tests tx-core-ibc"
             command: make integration-tests-ibc
             linter-cache: false
             wasm-cache: true
             codecov: false
-          - ci_step: "integration tests coreum-upgrade-v5.0.0"
+          - ci_step: "integration tests tx-core-upgrade-v5.0.0"
             command: make integration-tests-upgrade
             linter-cache: false
             wasm-cache: true
@@ -68,7 +68,7 @@ jobs:
     steps:
       - name: Go version used to build builder
         run: go version
-      - name: Checkout coreum
+      - name: Checkout tx-core
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -86,7 +86,12 @@ jobs:
             ~/.cache/crust
           key: ${{ runner.os }}-crust-${{ hashFiles('build/go.sum') }}
       - name: Make builder
-        run: ${{ github.workspace }}/bin/coreum-builder build/me
+        run: |
+          export GOPRIVATE=github.com/CoreumFoundation/crust-private
+          export GONOSUMDB=github.com/CoreumFoundation
+          echo -e "machine github.com\nlogin ${{ secrets.CRUST_PRIVATE_PAT_USR }}\npassword ${{ secrets.CRUST_PRIVATE_PAT }}" > ~/.netrc
+          echo -e "[url \"https://${{ secrets.CRUST_PRIVATE_PAT_USR }}:${{ secrets.CRUST_PRIVATE_PAT }}@github.com/CoreumFoundation/crust-private\"]\n        insteadOf = \"https://github.com/CoreumFoundation/crust-private\"" > ~/.gitconfig
+          ${{ github.workspace }}/bin/tx-core-builder build/me
       - name: Retrieve go version
         id: goversion
         run: echo "GO_VERSION=$(${{ github.workspace }}/bin/go version)" >> $GITHUB_OUTPUT

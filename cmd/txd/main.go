@@ -8,10 +8,10 @@ import (
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
 	"github.com/CoreumFoundation/coreum/v6/app"
-	"github.com/CoreumFoundation/coreum/v6/cmd/cored/cosmoscmd"
+	"github.com/CoreumFoundation/coreum/v6/cmd/txd/cosmoscmd"
 )
 
-const coreumEnvPrefix = "CORED"
+const coreumEnvPrefix = "TXD"
 
 func main() {
 	network, err := cosmoscmd.PreProcessFlags()

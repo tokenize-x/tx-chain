@@ -22,11 +22,11 @@ type imageConfig struct {
 	Versions        []string
 }
 
-// BuildCoredDockerImage builds cored docker image.
-func BuildCoredDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	deps(BuildCoredInDocker, ensureReleasedBinaries)
+// BuildTXdDockerImage builds txd docker image.
+func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
+	deps(BuildTXdInDocker, ensureReleasedBinaries)
 
-	return buildCoredDockerImage(ctx, imageConfig{
+	return buildTXdDockerImage(ctx, imageConfig{
 		BinaryPath:      binaryPath,
 		TargetPlatforms: []crusttools.TargetPlatform{crusttools.TargetPlatformLinuxLocalArchInDocker},
 		Action:          docker.ActionLoad,
@@ -34,7 +34,7 @@ func BuildCoredDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	})
 }
 
-func buildCoredDockerImage(ctx context.Context, cfg imageConfig) error {
+func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 	binaryName := filepath.Base(cfg.BinaryPath)
 	for _, platform := range cfg.TargetPlatforms {
 		if err := ensureCosmovisorWithInstalledBinary(ctx, platform, binaryName); err != nil {
@@ -43,7 +43,7 @@ func buildCoredDockerImage(ctx context.Context, cfg imageConfig) error {
 	}
 	dockerfile, err := image.Execute(image.Data{
 		From:             docker.AlpineImage,
-		CoredBinary:      cfg.BinaryPath,
+		TXdBinary:        cfg.BinaryPath,
 		CosmovisorBinary: cosmovisorBinaryPath,
 		Networks: []string{
 			string(constant.ChainIDDev),
@@ -66,6 +66,7 @@ func buildCoredDockerImage(ctx context.Context, cfg imageConfig) error {
 }
 
 // ensureReleasedBinaries ensures that all previous cored versions are installed.
+// TODO (v7): Rename all cored to txd.
 func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
 	const binaryTool = coreumtools.CoredV500
 	if err := crusttools.Ensure(ctx, binaryTool, crusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {

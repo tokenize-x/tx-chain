@@ -34,7 +34,7 @@ type upgradeTest interface {
 	After(t *testing.T)
 }
 
-// TestUpgrade that after accepting upgrade proposal cosmovisor starts a new version of cored.
+// TestUpgrade that after accepting upgrade proposal cosmovisor starts a new version of txd.
 func TestUpgrade(t *testing.T) {
 	ctx, chain := integrationtests.NewCoreumTestingContext(t)
 	requireT := require.New(t)
@@ -47,7 +47,7 @@ func TestUpgrade(t *testing.T) {
 		upgradeV5ToV6(t)
 		return
 	}
-	requireT.Failf("not supported cored version", "version: %s", infoRes.ApplicationVersion.Version)
+	requireT.Failf("not supported txd version", "version: %s", infoRes.ApplicationVersion.Version)
 }
 
 func upgradeV5ToV6(t *testing.T) {

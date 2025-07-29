@@ -16,47 +16,47 @@ func TestModifyArgs(t *testing.T) {
 		hasErr   bool
 	}{
 		{
-			input:    []string{"cored", "--someFlag=1/2"},
+			input:    []string{"txd", "--someFlag=1/2"},
 			flag:     flags.FlagHome,
 			newVal:   "3",
-			expected: []string{"cored", "--someFlag=1/2"},
+			expected: []string{"txd", "--someFlag=1/2"},
 			hasErr:   true,
 		},
 		{
-			input:    []string{"cored", "--someFlag=1/2"},
+			input:    []string{"txd", "--someFlag=1/2"},
 			flag:     "someFlag",
 			newVal:   "3",
-			expected: []string{"cored", "--someFlag=1/2/3"},
+			expected: []string{"txd", "--someFlag=1/2/3"},
 		},
 		{
-			input:    []string{"cored", "--home=1/2", "--chain-id=ch1"},
+			input:    []string{"txd", "--home=1/2", "--chain-id=ch1"},
 			flag:     flags.FlagHome,
 			newVal:   "3",
-			expected: []string{"cored", "--home=1/2/3", "--chain-id=ch1"},
+			expected: []string{"txd", "--home=1/2/3", "--chain-id=ch1"},
 		},
 		{
-			input:    []string{"cored", "--home=1/2"},
+			input:    []string{"txd", "--home=1/2"},
 			flag:     flags.FlagHome,
 			newVal:   "3",
-			expected: []string{"cored", "--home=1/2/3"},
+			expected: []string{"txd", "--home=1/2/3"},
 		},
 		{
-			input:    []string{"cored", "--home", "1/2"},
+			input:    []string{"txd", "--home", "1/2"},
 			flag:     flags.FlagHome,
 			newVal:   "3",
-			expected: []string{"cored", "--home", "1/2/3"},
+			expected: []string{"txd", "--home", "1/2/3"},
 		},
 		{
-			input:    []string{"cored", "--home=1/2/"},
+			input:    []string{"txd", "--home=1/2/"},
 			flag:     flags.FlagHome,
 			newVal:   "3",
-			expected: []string{"cored", "--home=1/2/3"},
+			expected: []string{"txd", "--home=1/2/3"},
 		},
 		{
-			input:    []string{"cored", "--home", "1/2/"},
+			input:    []string{"txd", "--home", "1/2/"},
 			flag:     flags.FlagHome,
 			newVal:   "3",
-			expected: []string{"cored", "--home", "1/2/3"},
+			expected: []string{"txd", "--home", "1/2/3"},
 		},
 	}
 

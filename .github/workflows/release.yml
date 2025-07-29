@@ -9,7 +9,7 @@ jobs:
   release:
     runs-on: self-hosted
     steps:
-      - name: Checkout coreum
+      - name: Checkout tx-core
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -33,11 +33,11 @@ jobs:
           fi
       - name: Link released binaries under right names
         run: |
-          ln bin/.cache/cored/docker.linux.amd64/bin/cored cored-linux-amd64
-          ln bin/.cache/cored/docker.linux.arm64/bin/cored cored-linux-arm64
-          ln bin/.cache/cored/docker.darwin.amd64/bin/cored cored-darwin-amd64
-          ln bin/.cache/cored/docker.darwin.arm64/bin/cored cored-darwin-arm64
-          sha256sum cored-* > checksums.txt
+          ln bin/.cache/txd/docker.linux.amd64/bin/txd txd-linux-amd64
+          ln bin/.cache/txd/docker.linux.arm64/bin/txd txd-linux-arm64
+          ln bin/.cache/txd/docker.darwin.amd64/bin/txd txd-darwin-amd64
+          ln bin/.cache/txd/docker.darwin.arm64/bin/txd txd-darwin-arm64
+          sha256sum txd-* > checksums.txt
       - name: Create release
         if: steps.check-tag.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
@@ -45,10 +45,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           generate_release_notes: true
           files: |
-            cored-linux-amd64
-            cored-linux-arm64
-            cored-darwin-amd64
-            cored-darwin-arm64
+            txd-linux-amd64
+            txd-linux-arm64
+            txd-darwin-amd64
+            txd-darwin-arm64
             checksums.txt
       - name: Create release candidate
         if: steps.check-tag.outputs.release_candidate == 'true'
@@ -58,8 +58,8 @@ jobs:
           prerelease: true
           generate_release_notes: true
           files: |
-            cored-linux-amd64
-            cored-linux-arm64
-            cored-darwin-amd64
-            cored-darwin-arm64
+            txd-linux-amd64
+            txd-linux-arm64
+            txd-darwin-amd64
+            txd-darwin-arm64
             checksums.txt

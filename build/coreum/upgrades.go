@@ -2,10 +2,10 @@ package coreum
 
 import "github.com/CoreumFoundation/coreum/build/tools"
 
-// CoredUpgrades returns the mapping from upgrade name to the upgraded version.
-func CoredUpgrades() map[string]string {
+// TXdUpgrades returns the mapping from upgrade name to the upgraded version.
+func TXdUpgrades() map[string]string {
 	return map[string]string{
-		"v6": "cored",
+		"v6": "txd",
 		"v5": string(tools.CoredV500),
 	}
 }

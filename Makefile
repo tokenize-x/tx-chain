@@ -1,4 +1,4 @@
-BUILDER = ./bin/coreum-builder
+BUILDER = ./bin/tx-core-builder
 
 .PHONY: znet
 znet:
@@ -6,15 +6,15 @@ znet:
 
 .PHONY: znet-start
 znet-start:
-	$(BUILDER) znet start --profiles=3cored
+	$(BUILDER) znet start --profiles=3txd
 
 .PHONY: znet-start-ibc
 znet-start-ibc:
-	$(BUILDER) znet start --profiles=3cored,ibc
+	$(BUILDER) znet start --profiles=3txd,ibc
 
 .PHONY: znet-start-stress
 znet-start-stress:
-	$(BUILDER) znet start --profiles=3cored,dex
+	$(BUILDER) znet start --profiles=3txd,dex
 
 .PHONY: znet-remove
 znet-remove:

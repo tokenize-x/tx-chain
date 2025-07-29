@@ -280,7 +280,7 @@ func (s *App) MintAndSendCoin(
 }
 
 func tempDir() string {
-	dir, err := os.MkdirTemp("", "cored")
+	dir, err := os.MkdirTemp("", "txd")
 	if err != nil {
 		panic("failed to create temp dir: " + err.Error())
 	}

@@ -17,8 +17,8 @@ type Data struct {
 	// From is the tag of the base image
 	From string
 
-	// CoredBinary is the name of cored binary file to copy from build context
-	CoredBinary string
+	// TXdBinary is the name of txd binary file to copy from build context
+	TXdBinary string
 
 	// CosmovisorBinary is the name of cosmovisor binary file to copy from build context
 	CosmovisorBinary string

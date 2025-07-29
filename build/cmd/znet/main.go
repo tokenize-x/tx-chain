@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	znet.Main(infra.ConfigFactoryWithCoredUpgrades(coreumbuild.CoredUpgrades()))
+	znet.Main(infra.ConfigFactoryWithTXdUpgrades(coreumbuild.TXdUpgrades()))
 }
