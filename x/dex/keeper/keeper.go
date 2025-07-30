@@ -707,6 +707,22 @@ func (k Keeper) createOrder(
 		return err
 	}
 
+	creator, err := sdk.AccAddressFromBech32(order.Creator)
+	if err != nil {
+		return sdkerrors.Wrapf(types.ErrInvalidInput, "invalid address: %s", order.Creator)
+	}
+
+	if order.GoodTil != nil {
+		if err := k.delayGoodTilCancellation(
+			ctx,
+			*order.GoodTil,
+			record.OrderSequence,
+			creator,
+		); err != nil {
+			return err
+		}
+	}
+
 	if err := ctx.EventManager().EmitTypedEvent(&types.EventOrderCreated{
 		Creator:                   order.Creator,
 		ID:                        order.ID,
@@ -743,22 +759,6 @@ func (k Keeper) saveOrderWithOrderBookRecord(
 
 	if err := k.saveOrderBookRecord(ctx, record); err != nil {
 		return err
-	}
-
-	creator, err := sdk.AccAddressFromBech32(order.Creator)
-	if err != nil {
-		return sdkerrors.Wrapf(types.ErrInvalidInput, "invalid address: %s", order.Creator)
-	}
-
-	if order.GoodTil != nil {
-		if err := k.delayGoodTilCancellation(
-			ctx,
-			*order.GoodTil,
-			record.OrderSequence,
-			creator,
-		); err != nil {
-			return err
-		}
 	}
 
 	if err := k.saveOrderData(ctx, record.OrderSequence, types.OrderData{
