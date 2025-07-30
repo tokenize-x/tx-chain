@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	ibclightclienttypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10/types"
 	ibcinterchainaccountscontrollertypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/types"
 	ibcinterchainaccountshosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
@@ -105,6 +106,16 @@ func TestLegacyAmino_ExpectedMessages(t *testing.T) {
 
 		// feegrant
 		sdk.MsgTypeURL(&feegrant.MsgPruneAllowances{}): {},
+
+		// protocolpool
+		// added because of upgrading to cosmos-sdk v0.53.x
+		// the module is not enabled yet.
+		// TODO: remove comment after enabling the module
+		sdk.MsgTypeURL(&protocolpooltypes.MsgCreateContinuousFund{}): {},
+		sdk.MsgTypeURL(&protocolpooltypes.MsgCancelContinuousFund{}): {},
+		sdk.MsgTypeURL(&protocolpooltypes.MsgFundCommunityPool{}):    {},
+		sdk.MsgTypeURL(&protocolpooltypes.MsgUpdateParams{}):         {},
+		sdk.MsgTypeURL(&protocolpooltypes.MsgCommunityPoolSpend{}):   {},
 	}
 
 	for protoType := range revProtoTypes {

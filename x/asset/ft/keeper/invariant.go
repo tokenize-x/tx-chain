@@ -18,6 +18,8 @@ const (
 )
 
 // RegisterInvariants registers the bank module invariants.
+//
+//nolint:staticcheck
 func RegisterInvariants(ir sdk.InvariantRegistry, k Keeper) {
 	ir.RegisterRoute(types.ModuleName, FreezingInvariantName, FreezingInvariant(k))
 	ir.RegisterRoute(types.ModuleName, WhitelistingInvariantName, WhitelistingInvariant(k))
@@ -25,6 +27,8 @@ func RegisterInvariants(ir sdk.InvariantRegistry, k Keeper) {
 }
 
 // FreezingInvariant checks that all accounts in the application have non-negative frozen balances.
+//
+//nolint:staticcheck
 func FreezingInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var (
@@ -42,6 +46,7 @@ func FreezingInvariant(k Keeper) sdk.Invariant {
 			msg += fmt.Sprintf("can't iterate over frozen balances %s\n", err)
 		}
 
+		//nolint:staticcheck
 		return sdk.FormatInvariant(
 			types.ModuleName, FreezingInvariantName,
 			fmt.Sprintf("amount of invalid frozen balances found: %d\n%s", count, msg),
@@ -50,6 +55,8 @@ func FreezingInvariant(k Keeper) sdk.Invariant {
 }
 
 // WhitelistingInvariant checks that all accounts in the application have non-negative whitelisted balances.
+//
+//nolint:staticcheck
 func WhitelistingInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var (
@@ -67,6 +74,7 @@ func WhitelistingInvariant(k Keeper) sdk.Invariant {
 			msg += fmt.Sprintf("can't iterate over whitelisted balances %s\n", err)
 		}
 
+		//nolint:staticcheck
 		return sdk.FormatInvariant(
 			types.ModuleName, WhitelistingInvariantName,
 			fmt.Sprintf("amount of invalid whitelisted balances found: %d\n%s", count, msg),
@@ -75,6 +83,8 @@ func WhitelistingInvariant(k Keeper) sdk.Invariant {
 }
 
 // BankMetadataExistInvariant checks that all fungible tokens demons are in the bank as well.
+//
+//nolint:staticcheck
 func BankMetadataExistInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var (
@@ -96,6 +106,7 @@ func BankMetadataExistInvariant(k Keeper) sdk.Invariant {
 			panic(err)
 		}
 
+		//nolint:staticcheck
 		return sdk.FormatInvariant(
 			types.ModuleName, BankMetadataExistsInvariantName,
 			fmt.Sprintf("number of missing metadata entries %d\n%s", count, msg),

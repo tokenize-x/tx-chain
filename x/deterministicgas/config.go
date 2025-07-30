@@ -19,6 +19,7 @@ import (
 	govtypesv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/group"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -133,6 +134,13 @@ func DefaultConfig() Config {
 		MsgToMsgURL(&distributiontypes.MsgWithdrawValidatorCommission{}): constantGasFunc(22_000),
 		MsgToMsgURL(&distributiontypes.MsgDepositValidatorRewardsPool{}): constantGasFunc(39_000),
 
+		// protocolpool
+		// TODO: fill with proper values after enabling the module
+		MsgToMsgURL(&protocolpooltypes.MsgCancelContinuousFund{}): constantGasFunc(1),
+		MsgToMsgURL(&protocolpooltypes.MsgCreateContinuousFund{}): constantGasFunc(1),
+		MsgToMsgURL(&protocolpooltypes.MsgFundCommunityPool{}):    constantGasFunc(1),
+		MsgToMsgURL(&protocolpooltypes.MsgCommunityPoolSpend{}):   constantGasFunc(1),
+
 		// feegrant
 		MsgToMsgURL(&feegranttypes.MsgRevokeAllowance{}): constantGasFunc(2_500),
 
@@ -237,6 +245,9 @@ func DefaultConfig() Config {
 			// distribution
 			&distributiontypes.MsgUpdateParams{},       // This is non-deterministic because all the gov proposals are non-deterministic anyway
 			&distributiontypes.MsgCommunityPoolSpend{}, // This is non-deterministic because all the gov proposals are non-deterministic anyway
+
+			// protocolpool
+			&protocolpooltypes.MsgUpdateParams{}, // This is non-deterministic because all the gov proposals are non-deterministic anyway
 
 			// gov
 			// MsgSubmitProposal is defined as nondeterministic because it runs a proposal handler function

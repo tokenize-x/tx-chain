@@ -100,6 +100,8 @@ func (am AppModule) IsOnePerModuleType() {}
 func (am AppModule) RegisterServices(cfg module.Configurator) {}
 
 // RegisterInvariants registers the delay module invariants.
+//
+//nolint:staticcheck
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
 
 // QuerierRoute returns the delay module's querier route name.

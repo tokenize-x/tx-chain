@@ -6,8 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
@@ -22,6 +25,7 @@ import (
 	authsign "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
@@ -245,6 +249,111 @@ func TestAuthUnexpectedSequenceNumber(t *testing.T) {
 			WithGas(chain.GasLimitByMsgs(msg)),
 		msg)
 	require.True(t, cosmoserrors.ErrWrongSequence.Is(err))
+}
+
+// TestUnorderedTransactions tests that unordered transactions are processed correctly.
+// It sends multiple transactions with the same sender using asynchronous broadcast mode,
+// and checks that they are processed within at most two consecutive blocks,
+// even if they are sent in parallel.
+func TestUnorderedTransactions(t *testing.T) {
+	t.Parallel()
+
+	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+
+	sender := chain.GenAccount()
+
+	chain.FundAccountWithOptions(ctx, t, sender, integration.BalancesOptions{
+		Messages: []sdk.Msg{&banktypes.MsgSend{}},
+		Amount:   sdkmath.NewInt(1_000_000),
+	})
+
+	msg := &banktypes.MsgSend{
+		FromAddress: sender.String(),
+		ToAddress:   sender.String(),
+		Amount:      sdk.NewCoins(chain.NewCoin(sdkmath.NewInt(1))),
+	}
+	sendGasLimit := chain.GasLimitByMsgs(msg)
+
+	latestBlock, err := chain.LatestBlockHeader(ctx)
+	require.NoError(t, err)
+
+	// get enough timeout timestamp to ensure that all transactions will go through
+	// without getting caught in the timeout timestamp error.
+	txTimeout := latestBlock.Time.Add(2 * time.Second)
+
+	// Send multiple unordered transactions with async mode.
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var txHashes []string
+
+	// list of nanoseconds to be added to the timeout timestamp.
+	nanosecondsToAdd := []int{1, 2, 3, 4, 5}
+
+	// Shuffle the indices using rand.Shuffle.
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rng.Shuffle(len(nanosecondsToAdd), func(i, j int) {
+		nanosecondsToAdd[i], nanosecondsToAdd[j] = nanosecondsToAdd[j], nanosecondsToAdd[i]
+	})
+
+	for _, ns := range nanosecondsToAdd {
+		wg.Add(1)
+		go func(ns int) {
+			defer wg.Done()
+
+			// Use asynchronous mode with awaittx=false
+			clientCtx := chain.ClientContext.
+				WithFromAddress(sender).
+				WithBroadcastMode(flags.BroadcastAsync).
+				WithAwaitTx(false)
+
+			txRes, err := client.BroadcastTx(ctx,
+				clientCtx,
+				chain.TxFactory().
+					WithUnordered(true).
+					// to prevent to caught in same timeout timestamp error
+					// we use different timeout timestamp for each transaction.
+					WithTimeoutTimestamp(txTimeout.Add(time.Duration(ns)*time.Nanosecond)).
+					WithGas(sendGasLimit),
+				msg)
+			assert.NoError(t, err)
+
+			mu.Lock()
+			txHashes = append(txHashes, txRes.TxHash)
+			mu.Unlock()
+		}(ns)
+	}
+	wg.Wait()
+
+	// Await all async transactions
+	var finalTxResults []*sdk.TxResponse
+	for _, txHash := range txHashes {
+		txRes, err := client.AwaitTx(ctx, chain.ClientContext, txHash)
+		require.NoError(t, err)
+		finalTxResults = append(finalTxResults, txRes)
+	}
+
+	// Find the minimum height among all transactions
+	minHeight := finalTxResults[0].Height
+	for _, txRes := range finalTxResults {
+		if txRes.Height < minHeight {
+			minHeight = txRes.Height
+		}
+	}
+
+	// Verify all transactions are successful and within the allowed height range
+	for i, txRes := range finalTxResults {
+		require.Equal(t, uint32(0), txRes.Code, "Transaction %d should be successful, got code %d", i, txRes.Code)
+		// Allow transactions to be in the same block or the next block (within 2 blocks max)
+		heightDiff := txRes.Height - minHeight
+		require.True(t, heightDiff >= 0 && heightDiff <= 1,
+			"Transaction %d height %d should be within 1 block of minimum height %d (diff: %d)",
+			i, txRes.Height, minHeight, heightDiff)
+	}
+
+	latestBlockNew, err := chain.LatestBlockHeader(ctx)
+	require.NoError(t, err)
+
+	require.Greater(t, latestBlockNew.Height, latestBlock.Height)
 }
 
 func TestGasEstimation(t *testing.T) {

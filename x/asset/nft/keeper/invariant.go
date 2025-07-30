@@ -17,6 +17,8 @@ const (
 )
 
 // RegisterInvariants registers the bank module invariants.
+//
+//nolint:staticcheck
 func RegisterInvariants(ir sdk.InvariantRegistry, k Keeper) {
 	ir.RegisterRoute(types.ModuleName, OriginalClassExistsInvariantName, OriginalClassExistsInvariant(k))
 	ir.RegisterRoute(types.ModuleName, FreezingInvariantName, FreezingInvariant(k))
@@ -24,6 +26,8 @@ func RegisterInvariants(ir sdk.InvariantRegistry, k Keeper) {
 }
 
 // FreezingInvariant checks that all frozen NFTs have counterpart on the original Cosmos SDK nft module.
+//
+//nolint:staticcheck
 func FreezingInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var (
@@ -57,6 +61,7 @@ func FreezingInvariant(k Keeper) sdk.Invariant {
 			}
 		}
 
+		//nolint:staticcheck
 		return sdk.FormatInvariant(
 			types.ModuleName, FreezingInvariantName,
 			fmt.Sprintf("number of invariant violation %d\n%s", violationsCount, msg),
@@ -66,6 +71,8 @@ func FreezingInvariant(k Keeper) sdk.Invariant {
 
 // OriginalClassExistsInvariant checks that all the registered Classes have counterpart on the original
 // Cosmos SDK nft module.
+//
+//nolint:staticcheck
 func OriginalClassExistsInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var (
@@ -86,6 +93,7 @@ func OriginalClassExistsInvariant(k Keeper) sdk.Invariant {
 			panic(err)
 		}
 
+		//nolint:staticcheck
 		return sdk.FormatInvariant(
 			types.ModuleName, OriginalClassExistsInvariantName,
 			fmt.Sprintf("number of missing original definitions %d\n%s", notFoundCount, msg),
@@ -94,6 +102,8 @@ func OriginalClassExistsInvariant(k Keeper) sdk.Invariant {
 }
 
 // BurntNFTInvariant checks that all burnt NFT registered in assetnft module don't exist in the Cosmos SDK nft module.
+//
+//nolint:staticcheck
 func BurntNFTInvariant(k Keeper) sdk.Invariant {
 	return func(ctx sdk.Context) (string, bool) {
 		var (
@@ -115,6 +125,7 @@ func BurntNFTInvariant(k Keeper) sdk.Invariant {
 			}
 		}
 
+		//nolint:staticcheck
 		return sdk.FormatInvariant(
 			types.ModuleName, BurntNFTInvariantName,
 			fmt.Sprintf("number of found not burnt NFTs %d\n%s", violationCount, msg),

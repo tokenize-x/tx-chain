@@ -238,9 +238,9 @@ type App struct {
 	MintKeeper     mintkeeper.Keeper
 	DistrKeeper    distrkeeper.Keeper
 	GovKeeper      govkeeper.Keeper
-	CrisisKeeper   *crisiskeeper.Keeper
+	CrisisKeeper   *crisiskeeper.Keeper //nolint:staticcheck
 	UpgradeKeeper  *upgradekeeper.Keeper
-	ParamsKeeper   paramskeeper.Keeper
+	ParamsKeeper   paramskeeper.Keeper //nolint:staticcheck
 	// IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	IBCKeeper              *ibckeeper.Keeper
 	PacketForwardKeeper    *packetforwardkeeper.Keeper
@@ -361,6 +361,7 @@ func New(
 		interfaceRegistry.SigningContext().AddressCodec(),
 		addressPrefix,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		authkeeper.WithUnorderedTransactions(true),
 	)
 
 	app.AuthzKeeper = authzkeeper.NewKeeper(
@@ -478,6 +479,7 @@ func New(
 	)
 
 	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
+	//nolint:staticcheck
 	app.CrisisKeeper = crisiskeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[crisistypes.StoreKey]),
@@ -769,6 +771,7 @@ func New(
 
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
+	//nolint:staticcheck
 	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	assetFTModule := assetft.NewAppModule(
@@ -832,6 +835,7 @@ func New(
 		wstakingModule,
 		upgrade.NewAppModule(app.UpgradeKeeper, app.AccountKeeper.AddressCodec()),
 		evidence.NewAppModule(app.EvidenceKeeper),
+		//nolint:staticcheck
 		params.NewAppModule(app.ParamsKeeper),
 		wasm.NewAppModule(
 			appCodec,
@@ -859,6 +863,7 @@ func New(
 		ibctm.NewAppModule(tmLightClientModule),
 
 		// always be last to make sure that it checks for all invariants and not only part of them
+		//nolint:staticcheck
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)),
 	)
 
@@ -882,6 +887,7 @@ func New(
 	// NOTE: upgrade module is required to be prioritized
 	app.ModuleManager.SetOrderPreBlockers(
 		upgradetypes.ModuleName,
+		authtypes.ModuleName,
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -997,6 +1003,7 @@ func New(
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
 
+	//nolint:staticcheck
 	app.ModuleManager.RegisterInvariants(app.CrisisKeeper)
 
 	app.configurator = module.NewConfigurator(
@@ -1054,6 +1061,10 @@ func New(
 				SignModeHandler: txConfig.SignModeHandler(),
 				FeegrantKeeper:  app.FeeGrantKeeper,
 				SigGasConsumer:  authante.DefaultSigVerificationGasConsumer,
+				SigVerifyOptions: []authante.SigVerificationDecoratorOption{
+					authante.WithUnorderedTxGasCost(authante.DefaultUnorderedTxGasCost),
+					authante.WithMaxUnorderedTxTimeoutDuration(authante.DefaultMaxTimeoutDuration),
+				},
 			},
 			DeterministicGasConfig: deterministicGasConfig,
 			IBCKeeper:              app.IBCKeeper,
@@ -1351,11 +1362,14 @@ func (app *App) AutoCliOpts() autocli.AppOptions {
 }
 
 // initParamsKeeper init params keeper and its subspaces.
+//
+//nolint:staticcheck
 func initParamsKeeper(
 	appCodec codec.BinaryCodec,
 	legacyAmino *codec.LegacyAmino,
 	key, tkey storetypes.StoreKey,
 ) paramskeeper.Keeper {
+	//nolint:staticcheck
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
 	// TODO(v6): Remove after ibc is migrated to the param management system.

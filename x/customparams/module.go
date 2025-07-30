@@ -118,6 +118,8 @@ func (am AppModule) IsAppModule() {}
 func (am AppModule) IsOnePerModuleType() {}
 
 // RegisterInvariants registers the customparams module invariants.
+//
+//nolint:staticcheck
 func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
 
 // QuerierRoute returns the customparams module's querier route name.
