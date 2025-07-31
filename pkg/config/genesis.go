@@ -33,7 +33,7 @@ import (
 	dextypes "github.com/CoreumFoundation/coreum/v6/x/dex/types"
 )
 
-// GenesisInitConfig is used to pass genesis creating paramers to txd.
+// GenesisInitConfig is used to pass genesis creating parameters to txd.
 //
 //nolint:tagliatelle
 type GenesisInitConfig struct {
