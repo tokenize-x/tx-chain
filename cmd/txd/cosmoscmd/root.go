@@ -36,7 +36,6 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	tx "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	rosettaCmd "github.com/cosmos/rosetta/cmd"
 	"github.com/pkg/errors"
@@ -250,8 +249,6 @@ func initRootCmd(
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
-	//nolint:staticcheck
-	crisis.AddModuleInitFlags(startCmd)
 	wasm.AddModuleInitFlags(startCmd)
 }
 

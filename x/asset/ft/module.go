@@ -153,13 +153,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	}
 }
 
-// RegisterInvariants registers the asset ft module's invariants.
-//
-//nolint:staticcheck
-func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
-	keeper.RegisterInvariants(ir, am.keeper)
-}
-
 // InitGenesis performs the asset ft module's genesis initialization It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) {

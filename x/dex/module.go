@@ -140,11 +140,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryService(am.keeper))
 }
 
-// RegisterInvariants registers the module's invariants.
-//
-//nolint:staticcheck
-func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
-
 // InitGenesis performs the module's genesis initialization It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) {

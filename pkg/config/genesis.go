@@ -18,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -138,11 +137,6 @@ func GenDocFromInput(
 	}
 	appGenState[banktypes.ModuleName] = cdc.MustMarshalJSON(bankGenesis)
 	appGenState[authtypes.ModuleName] = cdc.MustMarshalJSON(authGenesis)
-
-	// crisis params
-	crisisGenesis := crisistypes.DefaultGenesisState()
-	crisisGenesis.ConstantFee.Amount = sdkmath.NewInt(500_000_000_000)
-	appGenState[crisistypes.ModuleName] = cdc.MustMarshalJSON(crisisGenesis)
 
 	// distribution params
 	distributionGenesis := distributiontypes.DefaultGenesisState()

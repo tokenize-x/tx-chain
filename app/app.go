@@ -72,9 +72,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -238,7 +235,6 @@ type App struct {
 	MintKeeper     mintkeeper.Keeper
 	DistrKeeper    distrkeeper.Keeper
 	GovKeeper      govkeeper.Keeper
-	CrisisKeeper   *crisiskeeper.Keeper //nolint:staticcheck
 	UpgradeKeeper  *upgradekeeper.Keeper
 	ParamsKeeper   paramskeeper.Keeper //nolint:staticcheck
 	// IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
@@ -314,7 +310,7 @@ func New(
 
 	keys := storetypes.NewKVStoreKeys(
 		authtypes.StoreKey, authz.ModuleName, banktypes.StoreKey,
-		stakingtypes.StoreKey, crisistypes.StoreKey, minttypes.StoreKey,
+		stakingtypes.StoreKey, minttypes.StoreKey,
 		distrtypes.StoreKey, slashingtypes.StoreKey, govtypes.StoreKey,
 		paramstypes.StoreKey, upgradetypes.StoreKey, feegrant.StoreKey,
 		evidencetypes.StoreKey, consensusparamtypes.StoreKey,
@@ -476,18 +472,6 @@ func New(
 		runtime.NewKVStoreService(keys[slashingtypes.StoreKey]),
 		app.StakingKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-	)
-
-	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
-	//nolint:staticcheck
-	app.CrisisKeeper = crisiskeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[crisistypes.StoreKey]),
-		invCheckPeriod,
-		app.BankKeeper,
-		authtypes.FeeCollectorName,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		app.AccountKeeper.AddressCodec(),
 	)
 
 	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(
@@ -769,11 +753,6 @@ func New(
 
 	/****  Module Options ****/
 
-	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
-	// we prefer to be more strict in what arguments the modules expect.
-	//nolint:staticcheck
-	skipGenesisInvariants := cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
-
 	assetFTModule := assetft.NewAppModule(
 		appCodec,
 		app.AssetFTKeeper,
@@ -861,10 +840,6 @@ func New(
 		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		ibctm.NewAppModule(tmLightClientModule),
-
-		// always be last to make sure that it checks for all invariants and not only part of them
-		//nolint:staticcheck
-		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)),
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
@@ -909,7 +884,6 @@ func New(
 		authz.ModuleName,
 		banktypes.ModuleName,
 		govtypes.ModuleName,
-		crisistypes.ModuleName,
 		feegrant.ModuleName,
 		group.ModuleName,
 		paramstypes.ModuleName,
@@ -928,7 +902,6 @@ func New(
 	)
 
 	app.ModuleManager.SetOrderEndBlockers(
-		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		customparamstypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -977,7 +950,6 @@ func New(
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
-		crisistypes.ModuleName,
 		ibcexported.ModuleName,
 		evidencetypes.ModuleName,
 		paramstypes.ModuleName,
@@ -1002,9 +974,6 @@ func New(
 
 	app.ModuleManager.SetOrderInitGenesis(genesisModuleOrder...)
 	app.ModuleManager.SetOrderExportGenesis(genesisModuleOrder...)
-
-	//nolint:staticcheck
-	app.ModuleManager.RegisterInvariants(app.CrisisKeeper)
 
 	app.configurator = module.NewConfigurator(
 		app.appCodec,

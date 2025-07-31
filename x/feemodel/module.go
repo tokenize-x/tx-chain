@@ -132,11 +132,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // Name returns the fee module's name.
 func (AppModule) Name() string { return types.ModuleName }
 
-// RegisterInvariants registers the fee module invariants.
-//
-//nolint:staticcheck
-func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {}
-
 // InitGenesis performs genesis initialization for the fee module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {

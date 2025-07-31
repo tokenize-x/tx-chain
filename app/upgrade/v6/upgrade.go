@@ -24,6 +24,7 @@ func New(
 			Added: []string{},
 			Deleted: []string{
 				"feeibc",
+				"crisis",
 			},
 		},
 		Upgrade: func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {

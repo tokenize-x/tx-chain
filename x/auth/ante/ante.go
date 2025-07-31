@@ -12,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	ibcante "github.com/cosmos/ibc-go/v10/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
@@ -107,7 +106,6 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 
 		authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 		deterministicgasante.NewSetInfiniteGasMeterDecorator(options.DeterministicGasConfig),
-		NewDenyMessagesDecorator(&crisistypes.MsgVerifyInvariant{}),
 		authante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		authante.NewValidateBasicDecorator(),
 		authante.NewTxTimeoutHeightDecorator(),

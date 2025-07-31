@@ -61,9 +61,7 @@ type (
 	gasByMsgFunc = func(msg sdk.Msg) (uint64, bool)
 )
 
-// Config specifies gas required by all transaction types
-// Crisis module is intentionally skipped here because it is already deterministic by design and fee is specified
-// using `consume_fee` param in genesis.
+// Config specifies gas required by all transaction types.
 type Config struct {
 	FixedGas uint64
 
