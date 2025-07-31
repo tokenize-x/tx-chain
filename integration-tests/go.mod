@@ -20,7 +20,7 @@ require (
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a
 	github.com/CoreumFoundation/coreum/v6 v6.0.0-20241002100003-2dcad94c2fbc
-	github.com/CosmWasm/wasmd v0.55.0
+	github.com/CosmWasm/wasmd v0.60.1
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-sdk v0.53.4
 	github.com/cosmos/gogoproto v1.7.0

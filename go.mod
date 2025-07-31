@@ -38,7 +38,7 @@ require (
 	cosmossdk.io/x/tx v0.14.0
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a
-	github.com/CosmWasm/wasmd v0.55.0
+	github.com/CosmWasm/wasmd v0.60.1
 	github.com/CosmWasm/wasmvm/v2 v2.2.4
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/btcutil v1.0.5
