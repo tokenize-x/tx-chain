@@ -100,6 +100,9 @@ import (
 	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
 	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/keeper"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8"
+	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/keeper"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/types"
 	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
 	icacontroller "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
@@ -239,6 +242,7 @@ type App struct {
 	ParamsKeeper   paramskeeper.Keeper //nolint:staticcheck
 	// IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	IBCKeeper              *ibckeeper.Keeper
+	IBCHooksKeeper         ibchookskeeper.Keeper
 	PacketForwardKeeper    *packetforwardkeeper.Keeper
 	ICAHostKeeper          icahostkeeper.Keeper
 	ICAControllerKeeper    icacontrollerkeeper.Keeper
@@ -267,6 +271,10 @@ type App struct {
 	sm *module.SimulationManager
 
 	configurator module.Configurator
+
+	// IBC Hooks.
+	Ics20WasmHooks   *ibchooks.WasmHooks
+	HooksICS4Wrapper ibchooks.ICS4Middleware
 }
 
 // New returns a reference to an initialized blockchain app.
@@ -539,6 +547,20 @@ func New(
 	)
 	app.NFTKeeper = wnftkeeper.NewWrappedNFTKeeper(nftKeeper, app.AssetNFTKeeper)
 
+	// IBC Hooks.
+	// The contract WASM keeper needs to be set later since it depends on WASM hooks.
+	app.keys[ibchookstypes.StoreKey] = storetypes.NewKVStoreKey(ibchookstypes.StoreKey)
+	app.IBCHooksKeeper = ibchookskeeper.NewKeeper(
+		app.keys[ibchookstypes.StoreKey],
+	)
+
+	wasmHooks := ibchooks.NewWasmHooks(&app.IBCHooksKeeper, nil, addressPrefix)
+	app.Ics20WasmHooks = &wasmHooks
+	app.HooksICS4Wrapper = ibchooks.NewICS4Middleware(
+		app.IBCKeeper.ChannelKeeper,
+		app.Ics20WasmHooks,
+	)
+
 	// Packet Forward Middleware.
 	app.PacketForwardKeeper = packetforwardkeeper.NewKeeper(
 		appCodec,
@@ -546,7 +568,7 @@ func New(
 		nil, // will be zero-value here, reference is set later on with SetTransferKeeper.
 		app.IBCKeeper.ChannelKeeper,
 		app.BankKeeper,
-		app.IBCKeeper.ChannelKeeper, // ICS4Wrapper
+		app.HooksICS4Wrapper, // Wrap IBC hooks with PFM.
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
@@ -569,7 +591,7 @@ func New(
 		appCodec,
 		runtime.NewKVStoreService(keys[icahosttypes.StoreKey]),
 		app.GetSubspace(icahosttypes.SubModuleName),
-		app.IBCKeeper.ChannelKeeper,
+		app.HooksICS4Wrapper,
 		app.IBCKeeper.ChannelKeeper,
 		app.AccountKeeper,
 		bApp.MsgServiceRouter(),
@@ -581,7 +603,7 @@ func New(
 		appCodec,
 		runtime.NewKVStoreService(keys[icacontrollertypes.StoreKey]),
 		app.GetSubspace(icacontrollertypes.SubModuleName),
-		app.IBCKeeper.ChannelKeeper, // ICS4Wrapper
+		app.HooksICS4Wrapper, // ICS4Wrapper
 		app.IBCKeeper.ChannelKeeper,
 		bApp.MsgServiceRouter(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
@@ -684,7 +706,7 @@ func New(
 		distrkeeper.NewQuerier(app.DistrKeeper),
 		app.IBCKeeper.ChannelKeeper,
 		app.IBCKeeper.ChannelKeeper,
-		app.TransferKeeper,
+		&app.TransferKeeper,
 		app.MsgServiceRouter(),
 		app.GRPCQueryRouter(),
 		wasmDir,
@@ -694,6 +716,8 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		wasmOpts...,
 	)
+	// Set WASM keeper in WASM hooks.
+	app.Ics20WasmHooks.ContractKeeper = &app.WasmKeeper
 
 	// IBC transfer stack contains (from top to bottom):
 	// - wibctransfer
@@ -702,6 +726,7 @@ func New(
 	// - ibctransfer
 	var ibcTransferStack ibcporttypes.IBCModule
 	ibcTransferStack = transfer.NewIBCModule(app.TransferKeeper.Keeper)
+	ibcTransferStack = ibchooks.NewIBCMiddleware(ibcTransferStack, &app.HooksICS4Wrapper)
 	ibcTransferStack = packetforward.NewIBCMiddleware(
 		ibcTransferStack,
 		app.PacketForwardKeeper,
@@ -840,6 +865,7 @@ func New(
 		packetforward.NewAppModule(app.PacketForwardKeeper, app.GetSubspace(packetforwardtypes.ModuleName)),
 		ica.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
 		ibctm.NewAppModule(tmLightClientModule),
+		ibchooks.NewAppModule(app.AccountKeeper),
 	)
 
 	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
@@ -888,6 +914,7 @@ func New(
 		group.ModuleName,
 		paramstypes.ModuleName,
 		consensusparamtypes.ModuleName,
+		ibchookstypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		icatypes.ModuleName,
 		wasmtypes.ModuleName,
@@ -920,6 +947,7 @@ func New(
 		ibcexported.ModuleName,
 		ibctransfertypes.ModuleName,
 		consensusparamtypes.ModuleName,
+		ibchookstypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		icatypes.ModuleName,
 		wasmtypes.ModuleName,
@@ -955,6 +983,7 @@ func New(
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		ibctransfertypes.ModuleName,
+		ibchookstypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		icatypes.ModuleName,
 		feegrant.ModuleName,

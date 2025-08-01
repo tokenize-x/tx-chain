@@ -27,8 +27,6 @@ import (
 // TestIBCHooksCounterWASMCall tests ibc-hooks integration by deploying the ibc-hooks-counter WASM contract
 // on Coreum and calling it from Osmosis.
 func TestIBCHooksCounterWASMCall(t *testing.T) {
-	// TODO: Fix after enabling callbacks
-	t.SkipNow()
 	t.Parallel()
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
@@ -217,8 +215,6 @@ func TestIBCHooksCounterWASMCall(t *testing.T) {
 // TestIBCHooksCounterWASMCallback tests ibc-hooks integration by deploying the ibc-hooks-counter WASM contract
 // on Coreum and using it as a callback for IBC transfer sent to Osmosis.
 func TestIBCHooksCounterWASMCallback(t *testing.T) {
-	// TODO: Fix after enabling callbacks
-	t.SkipNow()
 	t.Parallel()
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)

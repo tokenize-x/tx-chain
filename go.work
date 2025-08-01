@@ -7,3 +7,5 @@ use .
 use ./build
 
 use ./integration-tests
+
+replace github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 => github.com/CoreumFoundation/ibc-apps/modules/ibc-hooks/v8 v8.0.0-20250730151409-4daa3af33425

@@ -55,7 +55,6 @@ func TestLegacyAmino_ExpectedMessages(t *testing.T) {
 		//nolint:staticcheck // it is here so the list is complete.
 		sdk.MsgTypeURL(&ibcclienttypes.MsgSubmitMisbehaviour{}):     {},
 		sdk.MsgTypeURL(&ibcclienttypes.MsgIBCSoftwareUpgrade{}):     {},
-		sdk.MsgTypeURL(&ibcclienttypes.MsgRecoverClient{}):          {},
 		sdk.MsgTypeURL(&ibcclienttypes.MsgUpdateParams{}):           {},
 		sdk.MsgTypeURL(&ibcv2clienttypes.MsgRegisterCounterparty{}): {},
 		sdk.MsgTypeURL(&ibcv2clienttypes.MsgUpdateClientConfig{}):   {},
