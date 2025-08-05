@@ -166,7 +166,7 @@ import (
 
 const (
 	// Name is the blockchain name.
-	Name = "core"
+	Name = "tx"
 
 	// DefaultChainID is the default chain id of the network.
 	DefaultChainID = constant.ChainIDMain
@@ -209,7 +209,7 @@ func init() {
 		panic(err)
 	}
 
-	DefaultNodeHome = filepath.Join(userHomeDir, "."+Name)
+	DefaultNodeHome = filepath.Join(userHomeDir, ".core")
 }
 
 // mergeProtos used to make sure proto files are merged only once.
