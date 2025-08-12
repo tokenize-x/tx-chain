@@ -222,7 +222,7 @@ func TestMsgFreeze_ValidateBasic(t *testing.T) {
 			name: "valid msg",
 			message: types.MsgFreeze{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -233,7 +233,7 @@ func TestMsgFreeze_ValidateBasic(t *testing.T) {
 			name: "invalid sender address",
 			message: types.MsgFreeze{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5+",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -245,7 +245,7 @@ func TestMsgFreeze_ValidateBasic(t *testing.T) {
 			name: "invalid account",
 			message: types.MsgFreeze{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq+",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s+",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -280,7 +280,7 @@ func TestMsgUnfreeze_ValidateBasic(t *testing.T) {
 			name: "valid msg",
 			message: types.MsgUnfreeze{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -291,7 +291,7 @@ func TestMsgUnfreeze_ValidateBasic(t *testing.T) {
 			name: "invalid sender address",
 			message: types.MsgUnfreeze{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5+",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -303,7 +303,7 @@ func TestMsgUnfreeze_ValidateBasic(t *testing.T) {
 			name: "invalid account",
 			message: types.MsgUnfreeze{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq+",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s+",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -315,7 +315,7 @@ func TestMsgUnfreeze_ValidateBasic(t *testing.T) {
 			name: "invalid denom",
 			message: types.MsgUnfreeze{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "0abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -442,7 +442,7 @@ func TestMsgClawback_ValidateBasic(t *testing.T) {
 			name: "valid msg",
 			message: types.MsgClawback{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -453,7 +453,7 @@ func TestMsgClawback_ValidateBasic(t *testing.T) {
 			name: "invalid sender address",
 			message: types.MsgClawback{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5+",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -465,7 +465,7 @@ func TestMsgClawback_ValidateBasic(t *testing.T) {
 			name: "invalid account",
 			message: types.MsgClawback{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq+",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s+",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -500,7 +500,7 @@ func TestMsgSetWhitelistedLimit_ValidateBasic(t *testing.T) {
 			name: "valid msg",
 			message: types.MsgSetWhitelistedLimit{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -511,7 +511,7 @@ func TestMsgSetWhitelistedLimit_ValidateBasic(t *testing.T) {
 			name: "invalid sender address",
 			message: types.MsgSetWhitelistedLimit{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5+",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -523,7 +523,7 @@ func TestMsgSetWhitelistedLimit_ValidateBasic(t *testing.T) {
 			name: "invalid account",
 			message: types.MsgSetWhitelistedLimit{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq+",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s+",
 				Coin: sdk.Coin{
 					Denom:  "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -535,7 +535,7 @@ func TestMsgSetWhitelistedLimit_ValidateBasic(t *testing.T) {
 			name: "invalid denom",
 			message: types.MsgSetWhitelistedLimit{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Coin: sdk.Coin{
 					Denom:  "0abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 					Amount: sdkmath.NewInt(100),
@@ -573,7 +573,7 @@ func TestMsgTransferAdmin_ValidateBasic(t *testing.T) {
 			name: "valid msg",
 			message: types.MsgTransferAdmin{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Denom:   "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 			},
 		},
@@ -581,7 +581,7 @@ func TestMsgTransferAdmin_ValidateBasic(t *testing.T) {
 			name: "invalid sender address",
 			message: types.MsgTransferAdmin{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5+",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s",
 				Denom:   "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 			},
 			expectedError: cosmoserrors.ErrInvalidAddress,
@@ -590,7 +590,7 @@ func TestMsgTransferAdmin_ValidateBasic(t *testing.T) {
 			name: "invalid account",
 			message: types.MsgTransferAdmin{
 				Sender:  "devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
-				Account: "devcore1k3mke3gyf9apyd8vxveutgp9h4j2e80e05yfuq+",
+				Account: "devcore1szhvg2jzfpj5f4jtgzgjrul9292vh4st57td6s+",
 				Denom:   "abc-devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5",
 			},
 			expectedError: cosmoserrors.ErrInvalidAddress,

@@ -136,7 +136,7 @@ func NewRootCmd() *cobra.Command {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "tx" {
 			installAwaitBroadcastModeWrapper(cmd)
-			addQueryGasPriceToAllLeafs(cmd)
+			addQueryGasPriceToAllLeaves(cmd)
 			break
 		}
 	}

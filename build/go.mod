@@ -36,8 +36,8 @@ require (
 
 replace (
 	// Use private crust fork to avoid using the public one.
-	github.com/CoreumFoundation/crust => github.com/CoreumFoundation/crust-private v0.0.0-20250729113300-00661fc51386
-	github.com/CoreumFoundation/crust/znet => github.com/CoreumFoundation/crust-private/znet v0.0.0-20250729113300-00661fc51386
+	github.com/CoreumFoundation/crust => github.com/CoreumFoundation/crust-private v0.0.0-20250731150919-0921ecdf035f
+	github.com/CoreumFoundation/crust/znet => github.com/CoreumFoundation/crust-private/znet v0.0.0-20250731150919-0921ecdf035f
 )
 
 require (

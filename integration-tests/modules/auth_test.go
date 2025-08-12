@@ -148,8 +148,8 @@ func TestAuthMultisig(t *testing.T) {
 	amountToSendFromMultisigAccount := int64(1_000_000)
 
 	signersCount := 7
-	multisigTreshold := 6
-	multisigPublicKey, keyNamesSet, err := chain.GenMultisigAccount(signersCount, multisigTreshold)
+	multisigThreshold := 6
+	multisigPublicKey, keyNamesSet, err := chain.GenMultisigAccount(signersCount, multisigThreshold)
 	requireT.NoError(err)
 	multisigAddress := sdk.AccAddress(multisigPublicKey.Address())
 
@@ -201,7 +201,7 @@ func TestAuthMultisig(t *testing.T) {
 		chain.ClientContext.WithFromAddress(multisigAddress),
 		chain.TxFactoryAuto(),
 		bankSendMsg,
-		keyNamesSet[:multisigTreshold]...)
+		keyNamesSet[:multisigThreshold]...)
 	requireT.NoError(err)
 	t.Logf("Fully signed tx executed, txHash:%s, gasUsed:%d, gasWanted:%d", txRes.TxHash, txRes.GasUsed, txRes.GasWanted)
 

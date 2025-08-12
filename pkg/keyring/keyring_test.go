@@ -29,8 +29,8 @@ func TestMultisigAddressGeneration(t *testing.T) {
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	keystore := keyring.NewInMemory(cdc)
 
-	accAddr1 := importMnemonic(keystore, "human scan federal dose project toward nominee chief wheel swamp drop pitch olympic job inner critic mask laundry corn dice fame expect brave feel")
-	assert.Equal(t, "cosmos15lu0zdjkqzvh7x7pevp3n08anzt49sz87l7vry", accAddr1.String())
+	accAddr1 := importMnemonic(keystore, "system voyage notice mother enrich glow person blur winter clog equip dignity will bicycle stumble purse shock casino wet fan neglect essay vote school")
+	assert.Equal(t, "cosmos14qxhtj938kyl2awp3fpul67g7qk6sr4lplpnm6", accAddr1.String())
 
 	signerKeyInfo1, err := keystore.KeyByAddress(accAddr1)
 	require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestMultisigAddressGeneration(t *testing.T) {
 		signer2PubKey,
 	})
 
-	expectedMultisigAddr := "cosmos1gst5qagnzl36jx77r5gtcwg6gfcuyc2e66g64r"
+	expectedMultisigAddr := "cosmos17zyytvedd87lunh504hpw458dka0600vws3rk4"
 	assert.Equal(t, expectedMultisigAddr, sdk.AccAddress(multisigPublicKey.Address()).String())
 }
 

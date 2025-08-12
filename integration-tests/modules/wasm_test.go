@@ -3715,7 +3715,7 @@ func TestWASMDEXInContract(t *testing.T) {
 	txf := chain.TxFactoryAuto()
 	bankClient := banktypes.NewQueryClient(clientCtx)
 
-	dexParms := chain.QueryDEXParams(ctx, t)
+	dexParams := chain.QueryDEXParams(ctx, t)
 
 	// Issue a normal fungible token
 	issueMsg := &assetfttypes.MsgIssue{
@@ -3807,7 +3807,7 @@ func TestWASMDEXInContract(t *testing.T) {
 	requireT.Equal(sendMsg.Amount.AmountOf(denom1).String(), balanceRes.Balance.Amount.String())
 
 	chain.FundAccountWithOptions(ctx, t, sdk.MustAccAddressFromBech32(contractAddr), integration.BalancesOptions{
-		Amount: dexParms.OrderReserve.Amount,
+		Amount: dexParams.OrderReserve.Amount,
 	})
 
 	latestBlock, err := chain.LatestBlockHeader(ctx)
@@ -3824,17 +3824,17 @@ func TestWASMDEXInContract(t *testing.T) {
 	var wasmParamsRes dextypes.QueryParamsResponse
 	requireT.NoError(json.Unmarshal(queryOut, &wasmParamsRes))
 	requireT.Equal(
-		dexParms.OrderReserve.Amount.String(), wasmParamsRes.Params.OrderReserve.Amount.String(),
+		dexParams.OrderReserve.Amount.String(), wasmParamsRes.Params.OrderReserve.Amount.String(),
 	)
 	requireT.Equal(
-		dexParms.MaxOrdersPerDenom, wasmParamsRes.Params.MaxOrdersPerDenom,
+		dexParams.MaxOrdersPerDenom, wasmParamsRes.Params.MaxOrdersPerDenom,
 	)
 	requireT.Equal(
-		dexParms.PriceTickExponent, wasmParamsRes.Params.PriceTickExponent,
+		dexParams.PriceTickExponent, wasmParamsRes.Params.PriceTickExponent,
 	)
 
 	requireT.Equal(
-		dexParms.QuantityStepExponent, wasmParamsRes.Params.QuantityStepExponent,
+		dexParams.QuantityStepExponent, wasmParamsRes.Params.QuantityStepExponent,
 	)
 
 	// ********** Query and update asset FT DEX settings **********
@@ -3955,7 +3955,7 @@ func TestWASMDEXInContract(t *testing.T) {
 		TimeInForce:               dextypes.TIME_IN_FORCE_GTC,
 		RemainingBaseQuantity:     orderQuantity,
 		RemainingSpendableBalance: orderQuantity,
-		Reserve:                   dexParms.OrderReserve,
+		Reserve:                   dexParams.OrderReserve,
 	}
 	requireT.Equal(expectedOrder, wasmOrderRes.Order)
 

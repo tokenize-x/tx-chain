@@ -197,7 +197,7 @@ func TestInitAndExportGenesis(t *testing.T) {
 	require.Equal(t, uint64(1), denom3Count)
 
 	// place an order with the existing order book
-	orderWithExisingOrderBook := types.Order{
+	orderWithExistingOrderBook := types.Order{
 		Creator:     acc2.String(),
 		Type:        types.ORDER_TYPE_LIMIT,
 		ID:          "id4",
@@ -209,17 +209,17 @@ func TestInitAndExportGenesis(t *testing.T) {
 		Side:        types.SIDE_BUY,
 		TimeInForce: types.TIME_IN_FORCE_GTC,
 	}
-	lockedBalance, err := orderWithExisingOrderBook.ComputeLimitOrderLockedBalance()
+	lockedBalance, err := orderWithExistingOrderBook.ComputeLimitOrderLockedBalance()
 	require.NoError(t, err)
 	testApp.MintAndSendCoin(t, sdkCtx, acc2, sdk.NewCoins(lockedBalance))
 	testApp.MintAndSendCoin(t, sdkCtx, acc2, sdk.NewCoins(params.OrderReserve))
-	require.NoError(t, dexKeeper.PlaceOrder(sdkCtx, orderWithExisingOrderBook))
+	require.NoError(t, dexKeeper.PlaceOrder(sdkCtx, orderWithExistingOrderBook))
 
 	// set the expected state
-	orderWithExisingOrderBook.Sequence = 4
-	orderWithExisingOrderBook.RemainingBaseQuantity = sdkmath.NewInt(10000000)
-	orderWithExisingOrderBook.RemainingSpendableBalance = sdkmath.NewInt(40000000000)
-	orderWithExisingOrderBook.Reserve = params.OrderReserve
+	orderWithExistingOrderBook.Sequence = 4
+	orderWithExistingOrderBook.RemainingBaseQuantity = sdkmath.NewInt(10000000)
+	orderWithExistingOrderBook.RemainingSpendableBalance = sdkmath.NewInt(40000000000)
+	orderWithExistingOrderBook.Reserve = params.OrderReserve
 
 	// check that denom orders counters are incremented
 	denom2Count, err = dexKeeper.GetAccountDenomOrdersCount(sdkCtx, acc2, denoms[1])
@@ -237,10 +237,10 @@ func TestInitAndExportGenesis(t *testing.T) {
 
 	orderFound := false
 	for _, order := range orders {
-		if order.Creator == acc2.String() && order.ID == orderWithExisingOrderBook.ID {
+		if order.Creator == acc2.String() && order.ID == orderWithExistingOrderBook.ID {
 			orderFound = true
-			// the `orderWithExisingOrderBook` has the sequence eq to 4 to check that next sequence from imported is used
-			requireT.Equal(orderWithExisingOrderBook, order)
+			// the `orderWithExistingOrderBook` has the sequence eq to 4 to check that next sequence from imported is used
+			requireT.Equal(orderWithExistingOrderBook, order)
 		}
 	}
 	require.True(t, orderFound)

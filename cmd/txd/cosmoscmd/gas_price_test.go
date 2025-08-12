@@ -76,7 +76,7 @@ func TestAutoGasPrices(t *testing.T) {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 			}, tc.flags...)
 			bankTx := bankcli.NewTxCmd(addresscodec.NewBech32Codec(app.ChosenNetwork.Provider.GetAddressPrefix()))
-			addQueryGasPriceToAllLeafs(bankTx)
+			addQueryGasPriceToAllLeaves(bankTx)
 
 			res, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, bankTx, args)
 			if tc.expectError {

@@ -99,7 +99,7 @@ func TestTokenUpgradeV1(t *testing.T) {
 	// for second denom we turn IBC on
 	requireT.NoError(ftKeeper.AddDelayedTokenUpgradeV1(ctxSDK, issuer2, denom2, true))
 
-	// ibc is set to true so the change should be posponed and parameters should stay the same for now
+	// ibc is set to true so the change should be postponed and parameters should stay the same for now
 	token2, err := ftKeeper.GetToken(ctxSDK, denom2)
 	requireT.NoError(err)
 	requireT.Empty(token2.Features)

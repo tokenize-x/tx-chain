@@ -91,7 +91,7 @@ $ %s tx %s place-order ORDER_TYPE_LIMIT "my-order-id1" denom1 denom2 1000 SIDE_S
 
 			quantity, ok := sdkmath.NewIntFromString(args[4])
 			if !ok {
-				return sdkerrors.Wrapf(types.ErrInvalidInput, "quantity is ivalid or too big")
+				return sdkerrors.Wrapf(types.ErrInvalidInput, "quantity is invalid or too big")
 			}
 
 			side, ok := types.Side_value[args[5]]
