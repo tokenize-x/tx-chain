@@ -111,6 +111,7 @@ import (
 	icahostkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/keeper"
 	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
+	ibccallbacks "github.com/cosmos/ibc-go/v10/modules/apps/callbacks"
 	"github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
@@ -726,14 +727,6 @@ func New(
 	// - ibctransfer
 	var ibcTransferStack ibcporttypes.IBCModule
 	ibcTransferStack = transfer.NewIBCModule(app.TransferKeeper.Keeper)
-	ibcTransferStack = ibchooks.NewIBCMiddleware(ibcTransferStack, &app.HooksICS4Wrapper)
-	ibcTransferStack = packetforward.NewIBCMiddleware(
-		ibcTransferStack,
-		app.PacketForwardKeeper,
-		0,
-		packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
-	)
-	ibcTransferStack = wibctransfer.NewPurposeMiddleware(ibcTransferStack)
 
 	// Light client modules
 	clientKeeper := app.IBCKeeper.ClientKeeper
@@ -749,6 +742,23 @@ func New(
 	icaControllerStack := icacontroller.NewIBCMiddleware(app.ICAControllerKeeper)
 
 	ibcWasmStack := wasm.NewIBCHandler(app.WasmKeeper, app.IBCKeeper.ChannelKeeper, app.IBCKeeper.ChannelKeeper)
+
+	// initialize the gas limit for callbacks, recommended to be 10M for use with cosmwasm contracts
+	maxCallbackGas := uint64(10_000_000)
+
+	cbStack := ibccallbacks.NewIBCMiddleware(
+		ibcTransferStack, app.PacketForwardKeeper, ibcWasmStack, maxCallbackGas,
+	)
+	app.TransferKeeper.WithICS4Wrapper(cbStack)
+
+	ibcTransferStack = ibchooks.NewIBCMiddleware(cbStack, &app.HooksICS4Wrapper)
+	ibcTransferStack = packetforward.NewIBCMiddleware(
+		ibcTransferStack,
+		app.PacketForwardKeeper,
+		0,
+		packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
+	)
+	ibcTransferStack = wibctransfer.NewPurposeMiddleware(ibcTransferStack)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := ibcporttypes.NewRouter().

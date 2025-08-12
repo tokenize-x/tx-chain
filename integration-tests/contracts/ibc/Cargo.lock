@@ -612,6 +612,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ibc-callbacks-counter"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "ibc-hooks-counter"
 version = "0.1.0"
 dependencies = [

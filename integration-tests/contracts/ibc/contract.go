@@ -17,6 +17,8 @@ var (
 	IBCCallWASM []byte
 	//go:embed ibc-hooks-counter/artifacts/ibc_hooks_counter.wasm
 	IBCHooksCounter []byte
+	//go:embed ibc-callbacks-counter/artifacts/ibc_callbacks_counter.wasm
+	IBCCallbacksCounter []byte
 )
 
 // EmptyPayload represents empty payload.

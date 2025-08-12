@@ -157,7 +157,7 @@ func TestIBCHooksCounterWASMCall(t *testing.T) {
 		ibcHookMemo,
 	)
 	requireT.NoError(err)
-	awaitHooksCounterContractState(
+	awaitCounterContractState(
 		ctx,
 		t,
 		coreumChain,
@@ -179,7 +179,7 @@ func TestIBCHooksCounterWASMCall(t *testing.T) {
 		ibcHookMemo,
 	)
 	requireT.NoError(err)
-	awaitHooksCounterContractState(
+	awaitCounterContractState(
 		ctx,
 		t,
 		coreumChain,
@@ -201,7 +201,7 @@ func TestIBCHooksCounterWASMCall(t *testing.T) {
 		ibcHookMemo,
 	)
 	requireT.NoError(err)
-	awaitHooksCounterContractState(
+	awaitCounterContractState(
 		ctx,
 		t,
 		coreumChain,
@@ -288,7 +288,7 @@ func TestIBCHooksCounterWASMCallback(t *testing.T) {
 
 	// Contract increments differently in callback logic.
 	// For IBCAck counter associated with contract address is incremented by 1 and coins are not added.
-	awaitHooksCounterContractState(
+	awaitCounterContractState(
 		ctx,
 		t,
 		coreumChain,
@@ -299,7 +299,7 @@ func TestIBCHooksCounterWASMCallback(t *testing.T) {
 	)
 }
 
-func awaitHooksCounterContractState(
+func awaitCounterContractState(
 	ctx context.Context,
 	t *testing.T,
 	coreumChain integration.CoreumChain,
