@@ -6,6 +6,7 @@ import (
 	store "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 
 	"github.com/CoreumFoundation/coreum/v6/app/upgrade"
 	wbankkeeper "github.com/CoreumFoundation/coreum/v6/x/wbank/keeper"
@@ -16,7 +17,10 @@ const Name = "v6"
 
 // New makes an upgrade handler for v6 upgrade.
 func New(
-	mm *module.Manager, configurator module.Configurator, bankKeeper wbankkeeper.BaseKeeperWrapper,
+	mm *module.Manager,
+	configurator module.Configurator,
+	bankKeeper wbankkeeper.BaseKeeperWrapper,
+	mintKeeper mintkeeper.Keeper,
 ) upgrade.Upgrade {
 	return upgrade.Upgrade{
 		Name: Name,
@@ -34,6 +38,10 @@ func New(
 			}
 
 			if err := migrateDenomSymbol(ctx, bankKeeper); err != nil {
+				return nil, err
+			}
+
+			if err := migrateMintParams(ctx, mintKeeper); err != nil {
 				return nil, err
 			}
 

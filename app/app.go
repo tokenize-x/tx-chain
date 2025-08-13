@@ -1136,6 +1136,7 @@ func New(
 			app.ModuleManager,
 			app.configurator,
 			app.BankKeeper,
+			app.MintKeeper,
 		),
 	}
 
