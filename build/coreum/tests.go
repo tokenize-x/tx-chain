@@ -10,10 +10,12 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
 	"github.com/CoreumFoundation/crust/build/golang"
 	"github.com/CoreumFoundation/crust/build/types"
 	"github.com/CoreumFoundation/crust/znet/infra"
 	"github.com/CoreumFoundation/crust/znet/infra/apps"
+	"github.com/CoreumFoundation/crust/znet/infra/apps/txd"
 	"github.com/CoreumFoundation/crust/znet/pkg/znet"
 )
 
@@ -23,6 +25,8 @@ const (
 	TestModules = "modules"
 	TestUpgrade = "upgrade"
 	TestStress  = "stress"
+	// TestExport is a special test that runs after all other tests.
+	TestExport = "export"
 )
 
 // Test run unit tests in coreum repo.
@@ -54,7 +58,7 @@ func RunIntegrationTestsModules(runUnsafe bool) types.CommandFunc {
 		znetConfig.Profiles = []string{apps.Profile3TXd}
 		znetConfig.CoverageOutputFile = "coverage/coreum-integration-tests-modules"
 
-		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestModules)
+		return runIntegrationTests(ctx, deps, runUnsafe, false, znetConfig, TestModules)
 	}
 }
 
@@ -67,7 +71,7 @@ func RunIntegrationTestsStress(runUnsafe bool) types.CommandFunc {
 		znetConfig.Profiles = []string{apps.Profile3TXd, apps.ProfileDEX}
 		znetConfig.CoverageOutputFile = "coverage/coreum-integration-tests-stress"
 
-		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestStress)
+		return runIntegrationTests(ctx, deps, runUnsafe, false, znetConfig, TestStress)
 	}
 }
 
@@ -81,7 +85,7 @@ func RunIntegrationTestsIBC(runUnsafe bool) types.CommandFunc {
 		znetConfig := defaultZNetConfig()
 		znetConfig.Profiles = []string{apps.Profile3TXd, apps.ProfileIBC}
 
-		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestIBC)
+		return runIntegrationTests(ctx, deps, runUnsafe, false, znetConfig, TestIBC)
 	}
 }
 
@@ -96,7 +100,7 @@ func RunIntegrationTestsUpgrade(runUnsafe bool) types.CommandFunc {
 		znetConfig.Profiles = []string{apps.Profile3TXd, apps.ProfileIBC}
 		znetConfig.TXdVersion = "v5.0.0"
 
-		return runIntegrationTests(ctx, deps, runUnsafe, znetConfig, TestUpgrade, TestIBC, TestModules)
+		return runIntegrationTests(ctx, deps, runUnsafe, true, znetConfig, TestUpgrade, TestIBC, TestModules)
 	}
 }
 
@@ -111,18 +115,18 @@ func runIntegrationTests(
 	ctx context.Context,
 	deps types.DepsFunc,
 	runUnsafe bool,
+	runExport bool,
 	znetConfig *infra.ConfigFactory,
 	testDirs ...string,
 ) error {
-	flags := []string{
+	// General flags for all tests
+	generalFlags := []string{
 		"-tags=integrationtests",
 		fmt.Sprintf("-parallel=%d", 2*runtime.NumCPU()),
 		"-timeout=1h",
 	}
-	if runUnsafe {
-		flags = append(flags, "--run-unsafe")
-	}
 
+	// Start znet for regular tests
 	if err := znet.Remove(ctx, znetConfig); err != nil {
 		return err
 	}
@@ -130,10 +134,45 @@ func runIntegrationTests(
 		return err
 	}
 
+	// Run regular integration tests with general flags (+ --run-unsafe if set)
+	regularFlags := append([]string{}, generalFlags...)
+	if runUnsafe {
+		regularFlags = append(regularFlags, "--run-unsafe")
+	}
 	for _, testDir := range testDirs {
 		if err := golang.RunTests(ctx, deps, golang.TestConfig{
 			PackagePath: filepath.Join(integrationTestsDir, testDir),
-			Flags:       flags,
+			Flags:       regularFlags,
+		}); err != nil {
+			return err
+		}
+	}
+
+	// Run export test last, with general flags + node-app-dir and exported-genesis-path
+	if runExport {
+		// Stop znet before export test
+		if err := znet.Stop(ctx, znetConfig); err != nil {
+			return err
+		}
+
+		// Dump the validator application directory
+		nodeAppDir, err := znet.DumpAppDir(znetConfig, txd.AppType)
+		if err != nil {
+			return err
+		}
+
+		// Export the genesis state
+		exportedGenesisPath, err := znet.ExportGenesis(ctx, znetConfig, simapp.GetModulesToExport())
+		if err != nil {
+			return err
+		}
+
+		exportFlags := append([]string{}, generalFlags...)
+		exportFlags = append(exportFlags, "--node-app-dir="+nodeAppDir)
+		exportFlags = append(exportFlags, "--exported-genesis-path="+exportedGenesisPath)
+		if err := golang.RunTests(ctx, deps, golang.TestConfig{
+			PackagePath: filepath.Join(integrationTestsDir, TestExport),
+			Flags:       exportFlags,
 		}); err != nil {
 			return err
 		}

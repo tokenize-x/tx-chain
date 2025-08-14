@@ -2,29 +2,41 @@
 package simapp
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
 
 	"cosmossdk.io/log"
+	pruningtypes "cosmossdk.io/store/pruning/types"
 	storetypes "cosmossdk.io/store/types"
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/json"
+	cmjson "github.com/cometbft/cometbft/libs/json"
+	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypes "github.com/cometbft/cometbft/types"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/server"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/CoreumFoundation/coreum/v6/app"
@@ -33,6 +45,13 @@ import (
 )
 
 const appHash = "sim-app-hash"
+
+// IgnoredModulesForExport defines module names that should be ignored in entire process.
+var IgnoredModulesForExport = map[string]struct{}{
+	upgradetypes.ModuleName: {}, // Upgrade exports empty genesis.
+	// TODO: fix Error calling the VM: Cache error: Error opening Wasm file for reading
+	"wasm": {},
+}
 
 // Settings for the simapp initialization.
 type Settings struct {
@@ -108,7 +127,7 @@ func New(options ...Option) *App {
 		panic(fmt.Sprintf("can't generate genesis state with wallet, err: %s", err))
 	}
 
-	stateBytes, err := json.MarshalIndent(genesisState, "", " ")
+	stateBytes, err := cmjson.MarshalIndent(genesisState, "", " ")
 	if err != nil {
 		panic(errors.Errorf("can't Marshal genesisState: %s", err))
 	}
@@ -125,6 +144,46 @@ func New(options ...Option) *App {
 	simApp := &App{*coreApp}
 
 	return simApp
+}
+
+// NewWithGenesis creates application instance with in-memory database and disabled logging,
+// using provided genesis bytes.
+func NewWithGenesis(
+	genesisBytes []byte,
+	options ...Option,
+) (App, string, map[string]json.RawMessage, *abci.RequestInitChain, *abci.ResponseInitChain) {
+	homeDir := tempDir()
+
+	settings := Settings{
+		db:     dbm.NewMemDB(),
+		logger: log.NewNopLogger(),
+	}
+
+	for _, option := range options {
+		settings = option(settings)
+	}
+
+	initChainReq, appState, err := convertExportedGenesisToInitChain(genesisBytes)
+	if err != nil {
+		panic(errors.Errorf("can't convert genesis bytes to init chain: %s", err))
+	}
+
+	coreApp := app.New(
+		settings.logger,
+		settings.db,
+		nil,
+		true,
+		simtestutil.NewAppOptionsWithFlagHome(homeDir),
+		baseapp.SetChainID(initChainReq.ChainId),
+		baseapp.SetPruning(pruningtypes.NewPruningOptions(pruningtypes.PruningNothing)),
+	)
+
+	initChainRes, err := coreApp.InitChain(initChainReq)
+	if err != nil {
+		panic(errors.Errorf("can't init chain: %s", err))
+	}
+
+	return App{*coreApp}, homeDir, appState, initChainReq, initChainRes
 }
 
 // BeginNextBlock begins new SimApp block and returns the ctx of the new block.
@@ -279,6 +338,84 @@ func (s *App) MintAndSendCoin(
 	)
 }
 
+// GetModulesToExport returns the list of modules to export, it filters out ignored modules.
+func GetModulesToExport() []string {
+	sdkConfigOnce.Do(func() {
+		network, err := config.NetworkConfigByChainID(constant.ChainIDDev)
+		if err != nil {
+			panic(err)
+		}
+
+		app.ChosenNetwork = network
+		network.SetSDKConfig()
+	})
+
+	settings := Settings{
+		db:     dbm.NewMemDB(),
+		logger: log.NewNopLogger(),
+	}
+
+	tmpApp := app.New(settings.logger, settings.db, nil, false, simtestutil.AppOptionsMap{
+		flags.FlagHome:            os.TempDir(),
+		server.FlagInvCheckPeriod: time.Millisecond * 100,
+	})
+
+	// Filter out ignored modules
+	var modulesToExport []string
+	for _, m := range tmpApp.ModuleManager.ModuleNames() {
+		if _, ignored := IgnoredModulesForExport[m]; !ignored {
+			modulesToExport = append(modulesToExport, m)
+		}
+	}
+
+	return modulesToExport
+}
+
+// ParseExportedGenesisAndApp parses the exported genesis and application state from a val/full node
+// and returns the application instance and the exported genesis as a bytes buffer.
+func ParseExportedGenesisAndApp(nodeAppDir, exportedGenesisPath string) (*app.App, bytes.Buffer, error) {
+	sdkConfigOnce.Do(func() {
+		network, err := config.NetworkConfigByChainID(constant.ChainIDDev)
+		if err != nil {
+			panic(err)
+		}
+
+		app.ChosenNetwork = network
+		network.SetSDKConfig()
+	})
+
+	settings := Settings{
+		logger: log.NewNopLogger(),
+	}
+
+	nodeDbDir := filepath.Join(nodeAppDir, "data")
+	var err error
+	settings.db, err = dbm.NewDB("application", dbm.GoLevelDBBackend, nodeDbDir)
+	if err != nil {
+		return nil, bytes.Buffer{}, errors.Wrapf(err, "failed to open node DB at %s", nodeDbDir)
+	}
+
+	var exportBuf bytes.Buffer
+	// Read the exported genesis file
+	exportedGenesis, err := os.ReadFile(exportedGenesisPath)
+	if err != nil {
+		return nil, bytes.Buffer{}, errors.Wrap(err, "failed to read exported genesis file")
+	}
+
+	_, err = exportBuf.Write(exportedGenesis)
+	if err != nil {
+		return nil, bytes.Buffer{}, errors.Wrap(err, "failed to write exported genesis to buffer")
+	}
+
+	// this is a temporary app equivalent to the actual running chain exported app
+	chainNodeApp := app.New(settings.logger, settings.db, nil, false, simtestutil.AppOptionsMap{
+		flags.FlagHome:            nodeAppDir,
+		server.FlagInvCheckPeriod: time.Millisecond * 100,
+	})
+
+	return chainNodeApp, exportBuf, err
+}
+
 func tempDir() string {
 	dir, err := os.MkdirTemp("", "txd")
 	if err != nil {
@@ -292,4 +429,110 @@ func tempDir() string {
 // CopyContextWithMultiStore returns a sdk.Context with a copied MultiStore.
 func CopyContextWithMultiStore(sdkCtx sdk.Context) sdk.Context {
 	return sdkCtx.WithMultiStore(sdkCtx.MultiStore().CacheWrap().(storetypes.MultiStore))
+}
+
+func convertExportedGenesisToInitChain(jsonBytes []byte) (*abci.RequestInitChain, map[string]json.RawMessage, error) {
+	var export struct {
+		InitialHeight int64                      `json:"initial_height"` //nolint:tagliatelle
+		GenesisTime   string                     `json:"genesis_time"`   //nolint:tagliatelle
+		ChainID       string                     `json:"chain_id"`       //nolint:tagliatelle
+		AppState      map[string]json.RawMessage `json:"app_state"`      //nolint:tagliatelle
+		Consensus     struct {
+			Params struct {
+				Block struct {
+					MaxBytes string `json:"max_bytes"` //nolint:tagliatelle
+					MaxGas   string `json:"max_gas"`   //nolint:tagliatelle
+				} `json:"block"`
+				Evidence struct {
+					MaxAgeNumBlocks string `json:"max_age_num_blocks"` //nolint:tagliatelle
+					MaxAgeDuration  string `json:"max_age_duration"`   //nolint:tagliatelle
+					MaxBytes        string `json:"max_bytes"`          //nolint:tagliatelle
+				} `json:"evidence"`
+				Validator struct {
+					PubKeyTypes []string `json:"pub_key_types"` //nolint:tagliatelle
+				} `json:"validator"`
+				Version struct {
+					App string `json:"app"`
+				} `json:"version"`
+				ABCI struct {
+					VoteExtensionsEnableHeight string `json:"vote_extensions_enable_height"` //nolint:tagliatelle
+				} `json:"abci"`
+			} `json:"params"`
+			Validators []struct {
+				Address string `json:"address"`
+				PubKey  struct {
+					Type  string `json:"type"`
+					Value string `json:"value"`
+				} `json:"pub_key"` //nolint:tagliatelle
+				Power string `json:"power"`
+				Name  string `json:"name"`
+			} `json:"validators"`
+		} `json:"consensus"`
+	}
+	if err := json.Unmarshal(jsonBytes, &export); err != nil {
+		return nil, nil, err
+	}
+
+	// Marshal app_state to bytes
+	appStateBytes, err := json.Marshal(export.AppState)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Parse genesis_time
+	genesisTime, err := time.Parse(time.RFC3339Nano, export.GenesisTime)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Build ConsensusParams
+	consensusParams := &tmproto.ConsensusParams{
+		Block: &tmproto.BlockParams{
+			MaxBytes: mustParseInt64(export.Consensus.Params.Block.MaxBytes),
+			MaxGas:   mustParseInt64(export.Consensus.Params.Block.MaxGas),
+		},
+		Evidence: &tmproto.EvidenceParams{
+			MaxAgeNumBlocks: mustParseInt64(export.Consensus.Params.Evidence.MaxAgeNumBlocks),
+			MaxAgeDuration:  lo.Must(time.ParseDuration(export.Consensus.Params.Evidence.MaxAgeDuration + "ns")),
+			MaxBytes:        mustParseInt64(export.Consensus.Params.Evidence.MaxBytes),
+		},
+		Validator: &tmproto.ValidatorParams{
+			PubKeyTypes: export.Consensus.Params.Validator.PubKeyTypes,
+		},
+		Version: &tmproto.VersionParams{
+			App: lo.Must(strconv.ParseUint(export.Consensus.Params.Version.App, 10, 64)),
+		},
+		Abci: &tmproto.ABCIParams{
+			VoteExtensionsEnableHeight: mustParseInt64(export.Consensus.Params.ABCI.VoteExtensionsEnableHeight),
+		},
+	}
+
+	// Build Validators
+	var validators []abci.ValidatorUpdate
+	for _, v := range export.Consensus.Validators {
+		pubKey, err := base64.StdEncoding.DecodeString(v.PubKey.Value)
+		if err != nil {
+			return nil, nil, err
+		}
+		validators = append(validators, abci.ValidatorUpdate{
+			PubKey: crypto.PublicKey{
+				Sum: &crypto.PublicKey_Ed25519{Ed25519: pubKey},
+			},
+			Power: mustParseInt64(v.Power),
+		})
+	}
+
+	return &abci.RequestInitChain{
+		Time:            genesisTime,
+		ChainId:         export.ChainID,
+		ConsensusParams: consensusParams,
+		Validators:      validators,
+		AppStateBytes:   appStateBytes,
+		InitialHeight:   export.InitialHeight,
+	}, export.AppState, nil
+}
+
+// Helper functions.
+func mustParseInt64(s string) int64 {
+	return lo.Must(strconv.ParseInt(s, 10, 64))
 }
