@@ -307,6 +307,10 @@ func (k Keeper) IssueVersioned(ctx sdk.Context, settings types.IssueSettings, ve
 		definition.ExtensionCWAddress = contractAddress.String()
 	}
 
+	if settings.ExtensionSettings != nil && !definition.IsFeatureEnabled(types.Feature_extension) {
+		return "", types.ErrInvalidInput.Wrap("extension settings provided but the feature is not enabled")
+	}
+
 	if err = k.SetDenomMetadata(
 		ctx,
 		denom,

@@ -71,11 +71,9 @@ func TestAssetFTExtensionIssue(t *testing.T) {
 		Precision:     6,
 		Description:   "ABC Description",
 		InitialAmount: sdkmath.NewInt(1000),
-		Features: []assetfttypes.Feature{
-			assetfttypes.Feature_extension,
-		},
-		URI:     "https://my-class-meta.invalid/1",
-		URIHash: "content-hash",
+		Features:      []assetfttypes.Feature{},
+		URI:           "https://my-class-meta.invalid/1",
+		URIHash:       "content-hash",
 		ExtensionSettings: &assetfttypes.ExtensionIssueSettings{
 			CodeId:      codeID,
 			Funds:       sdk.NewCoins(attachedFund),
@@ -85,6 +83,17 @@ func TestAssetFTExtensionIssue(t *testing.T) {
 	}
 
 	denom := assetfttypes.BuildDenom(issueMsg.Subunit, issuer)
+
+	// will fail if we set extension settings without enabling the extension feature
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(issuer),
+		chain.TxFactoryAuto(),
+		issueMsg,
+	)
+	requireT.ErrorContains(err, "extension settings provided but the feature is not enabled")
+
+	issueMsg.Features = append(issueMsg.Features, assetfttypes.Feature_extension)
 
 	res, err := client.BroadcastTx(
 		ctx,

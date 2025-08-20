@@ -318,11 +318,6 @@ func TestExtensionIBCAssetFTFreezing(t *testing.T) {
 		},
 	})
 
-	codeID, err := chains.Coreum.Wasm.DeployWASMContract(
-		ctx, chains.Coreum.TxFactory().WithSimulateAndExecute(true), coreumIssuer, testcontracts.AssetExtensionWasm,
-	)
-	requireT.NoError(err)
-
 	issueMsg := &assetfttypes.MsgIssue{
 		Issuer:        coreumIssuer.String(),
 		Symbol:        "mysymbol",
@@ -334,12 +329,8 @@ func TestExtensionIBCAssetFTFreezing(t *testing.T) {
 			assetfttypes.Feature_ibc,
 			assetfttypes.Feature_freezing,
 		},
-		ExtensionSettings: &assetfttypes.ExtensionIssueSettings{
-			CodeId: codeID,
-			Label:  "testing-ibc",
-		},
 	}
-	_, err = client.BroadcastTx(
+	_, err := client.BroadcastTx(
 		ctx,
 		coreumChain.ClientContext.WithFromAddress(coreumIssuer),
 		coreumChain.TxFactoryAuto(),
