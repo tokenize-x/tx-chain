@@ -81,6 +81,7 @@ import (
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/cosmos/cosmos-sdk/x/group"
 	groupkeeper "github.com/cosmos/cosmos-sdk/x/group/keeper"
 	groupmodule "github.com/cosmos/cosmos-sdk/x/group/module"
@@ -91,6 +92,7 @@ import (
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -392,6 +394,7 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		logger,
 	)
+
 	app.WasmPermissionedKeeper = wasmkeeper.NewGovPermissionKeeper(&app.WasmKeeper)
 	if err := delayRouter.RegisterHandler(
 		&assetfttypes.DelayedTokenUpgradeV1{},
@@ -421,7 +424,9 @@ func New(
 		EnabledSignModes:           enabledSignModes,
 		TextualCoinMetadataQueryFn: tx.NewBankKeeperCoinMetadataQueryFn(app.BankKeeper),
 	}
+
 	var err error
+
 	txConfig, err = authtx.NewTxConfigWithOptions(
 		appCodec,
 		txConfigOpts,
@@ -494,6 +499,7 @@ func New(
 	for _, h := range cast.ToIntSlice(appOpts.Get(server.FlagUnsafeSkipUpgrades)) {
 		skipUpgradeHeights[int64(h)] = true
 	}
+
 	homePath := cast.ToString(appOpts.Get(flags.FlagHome))
 
 	app.UpgradeKeeper = upgradekeeper.NewKeeper(
@@ -628,6 +634,18 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
+	// Register the proposal types
+	// Deprecated: Refrain from adding new handlers; instead, adopt the revised proposal flow.
+	// By granting the governance module the authority to execute the message.
+	// Ref: https://docs.cosmos.network/main/modules/gov#proposal-messages
+	govRouter := govv1beta1.NewRouter()
+	govRouter.
+		AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
+		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper))
+
+	// Set legacy router for backwards compatibility with gov v1beta1
+	app.GovKeeper.SetLegacyRouter(govRouter)
+
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
 		// register the governance hooks
@@ -660,10 +678,12 @@ func New(
 	app.EvidenceKeeper = *evidenceKeeper
 
 	wasmDir := filepath.Join(homePath, "wasm-data")
+
 	wasmNodeConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		panic(errors.Wrapf(err, "error while reading wasm node config"))
 	}
+
 	wasmVMConfig := wasmtypes.VMConfig{}
 
 	wasmOpts := []wasmkeeper.Option{
@@ -726,6 +746,7 @@ func New(
 	// - ibchooks
 	// - ibctransfer
 	var ibcTransferStack ibcporttypes.IBCModule
+
 	ibcTransferStack = transfer.NewIBCModule(app.TransferKeeper.Keeper)
 
 	// Light client modules
@@ -763,8 +784,6 @@ func New(
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := ibcporttypes.NewRouter().
 		AddRoute(ibctransfertypes.ModuleName, ibcTransferStack).
-		// TODO: I guess this needs CosmosSDK v0.53
-		// AddRoute(proposal.RouterKey, params.NewParamChangeProposalHandler(app.ParamsKeeper)).
 		AddRoute(icahosttypes.SubModuleName, icaHostStack).
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(wasmtypes.ModuleName, ibcWasmStack)
@@ -1033,6 +1052,7 @@ func New(
 	if err != nil {
 		panic(err)
 	}
+
 	reflectionv1.RegisterReflectionServiceServer(app.GRPCQueryRouter(), reflectionSvc)
 
 	// add test gRPC service for testing gRPC queries in isolation
@@ -1170,6 +1190,7 @@ func New(
 	if err != nil {
 		logger.Error("failed to merge proto files", "err", err)
 	}
+
 	err = msgservice.ValidateProtoAnnotations(protoFiles)
 	if err != nil {
 		// Once we switch to using protoreflect-based antehandlers, we might
@@ -1182,14 +1203,16 @@ func New(
 	})
 
 	if loadLatest {
-		if err := app.LoadLatestVersion(); err != nil {
+		err := app.LoadLatestVersion()
+		if err != nil {
 			tmos.Exit(err.Error())
 		}
 
 		ctx := app.NewUncachedContext(true, tmproto.Header{})
 
 		// Initialize pinned codes in wasmvm as they are not persisted there
-		if err := app.WasmKeeper.InitializePinnedCodes(ctx); err != nil {
+		err = app.WasmKeeper.InitializePinnedCodes(ctx)
+		if err != nil {
 			tmos.Exit(errors.Wrapf(err, "failed initialize wasmp pinned codes").Error())
 		}
 	}
@@ -1226,12 +1249,17 @@ func (app *App) Configurator() module.Configurator {
 // InitChainer application update at chain initialization.
 func (app *App) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	var genesisState GenesisState
-	if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
+
+	err := json.Unmarshal(req.AppStateBytes, &genesisState)
+	if err != nil {
 		return nil, err
 	}
-	if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
+
+	err = app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
+	if err != nil {
 		return nil, err
 	}
+
 	return app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
@@ -1352,6 +1380,7 @@ func (app *App) RegisterNodeService(clientCtx client.Context, cfg serverconfig.C
 // AutoCliOpts returns the autocli options for the app.
 func (app *App) AutoCliOpts() autocli.AppOptions {
 	modules := make(map[string]appmodule.AppModule, 0)
+
 	for _, m := range app.ModuleManager.Modules {
 		if moduleWithName, ok := m.(module.HasName); ok {
 			moduleName := moduleWithName.Name()
@@ -1381,8 +1410,9 @@ func initParamsKeeper(
 	//nolint:staticcheck
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
-	// TODO(v6): Remove after ibc is migrated to the param management system.
-	// register the key tables for legacy param subspaces
+	// TODO(v7): Remove after ibc is migrated to the param management system, we should remove this after ParamKeyTable
+	// of the ibc types get deprecated.
+	// register the key tables for legacy param subspaces.
 	keyTable := ibcclienttypes.ParamKeyTable()
 	keyTable.RegisterParamSet(&ibcconnectiontypes.Params{})
 	paramsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keyTable)
@@ -1395,6 +1425,7 @@ func initParamsKeeper(
 
 func excludeModules(modules map[string]interface{}, modulesToExclude []string) map[string]interface{} {
 	filteredModules := make(map[string]interface{}, 0)
+
 	modulesToExcludeMap := lo.SliceToMap(modulesToExclude, func(k string) (string, struct{}) {
 		return k, struct{}{}
 	})
@@ -1402,6 +1433,7 @@ func excludeModules(modules map[string]interface{}, modulesToExclude []string) m
 		if _, ok := modulesToExcludeMap[n]; ok {
 			continue
 		}
+
 		filteredModules[n] = m
 	}
 

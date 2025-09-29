@@ -309,7 +309,7 @@ func (k Keeper) Mint(ctx sdk.Context, settings types.MintSettings) error {
 	}
 
 	if definition.IsFeatureEnabled(types.ClassFeature_whitelisting) && !definition.IsIssuer(settings.Recipient) {
-		isWhitelisted, err := k.isClassWhitelisted(ctx, settings.ClassID, settings.Recipient)
+		isWhitelisted, err := k.validateClassWhitelistedNFT(ctx, settings.ClassID, settings.Recipient)
 		if err != nil {
 			return err
 		}
@@ -462,7 +462,7 @@ func (k Keeper) Burn(ctx sdk.Context, owner sdk.AccAddress, classID, id string) 
 		return sdkerrors.Wrap(cosmoserrors.ErrUnauthorized, "only owner can burn the nft")
 	}
 
-	if err := k.checkBurnable(ctx, owner, ndfd, classID, id); err != nil {
+	if err := k.validateBurnableNFT(ctx, owner, ndfd, classID, id); err != nil {
 		return err
 	}
 
@@ -843,7 +843,7 @@ func (k Keeper) IsWhitelisted(ctx sdk.Context, classID, nftID string, account sd
 		return false, sdkerrors.Wrapf(types.ErrFeatureDisabled, `feature "whitelisting" is disabled`)
 	}
 
-	isWhitelisted, err := k.isTokenWhitelisted(ctx, classID, nftID, account)
+	isWhitelisted, err := k.validateTokenWhitelistedNFT(ctx, classID, nftID, account)
 	if err != nil {
 		return false, err
 	}
@@ -851,7 +851,7 @@ func (k Keeper) IsWhitelisted(ctx sdk.Context, classID, nftID string, account sd
 		return true, nil
 	}
 
-	return k.isClassWhitelisted(ctx, classID, account)
+	return k.validateClassWhitelistedNFT(ctx, classID, account)
 }
 
 func isDataDynamicItemUpdateAllowed(
@@ -863,7 +863,7 @@ func isDataDynamicItemUpdateAllowed(
 	for _, editor := range item.Editors {
 		switch editor {
 		case types.DataEditor_admin:
-			// TODO(v6) use admin instead of issuer once the admin is introduced
+			// TODO(v7) use admin instead of issuer once the admin is introduced
 			if classDefinition.IsIssuer(sender) {
 				return true, nil
 			}
@@ -1113,7 +1113,7 @@ func (k Keeper) SetClassWhitelisting(
 	return store.Delete(key)
 }
 
-func (k Keeper) isNFTSendable(ctx sdk.Context, classID, nftID string) error {
+func (k Keeper) validateSendableNFT(ctx sdk.Context, classID, nftID string) error {
 	classDefinition, err := k.GetClassDefinition(ctx, classID)
 	// we return nil here, since we want the original tests of the nft module to pass, but they
 	// fail if we return errors for unregistered NFTs on asset. Also, the original nft module
@@ -1169,8 +1169,7 @@ func (k Keeper) validateNFTNotFrozen(ctx sdk.Context, classID, nftID string) err
 	return nil
 }
 
-// TODO: probably we should path naming `is` -> `validate` here and for all similar.
-func (k Keeper) isNFTReceivable(ctx sdk.Context, classID, nftID string, receiver sdk.AccAddress) error {
+func (k Keeper) validateReceivableNFT(ctx sdk.Context, classID, nftID string, receiver sdk.AccAddress) error {
 	classDefinition, err := k.GetClassDefinition(ctx, classID)
 	// we return nil here, since we want the original tests of the nft module to pass, but they
 	// fail if we return errors for unregistered NFTs on asset. Also the original nft module
@@ -1382,7 +1381,7 @@ func (k Keeper) addToWhitelistOrRemoveFromWhitelist(
 	return nil
 }
 
-func (k Keeper) checkBurnable(
+func (k Keeper) validateBurnableNFT(
 	ctx sdk.Context, owner sdk.AccAddress, ndfd types.ClassDefinition, classID, nftID string,
 ) error {
 	frozen, err := k.IsFrozen(ctx, classID, nftID)
@@ -1398,7 +1397,7 @@ func (k Keeper) checkBurnable(
 	return nil
 }
 
-func (k Keeper) isClassWhitelisted(ctx sdk.Context, classID string, account sdk.AccAddress) (bool, error) {
+func (k Keeper) validateClassWhitelistedNFT(ctx sdk.Context, classID string, account sdk.AccAddress) (bool, error) {
 	if !k.nftKeeper.HasClass(ctx, classID) {
 		return false, sdkerrors.Wrapf(types.ErrNFTNotFound, "nft class with classID:%s not found", classID)
 	}
@@ -1415,7 +1414,8 @@ func (k Keeper) isClassWhitelisted(ctx sdk.Context, classID string, account sdk.
 	return bytes.Equal(val, types.StoreTrue), nil
 }
 
-func (k Keeper) isTokenWhitelisted(ctx sdk.Context, classID, nftID string, account sdk.AccAddress) (bool, error) {
+func (k Keeper) validateTokenWhitelistedNFT(ctx sdk.Context, classID, nftID string, account sdk.AccAddress,
+) (bool, error) {
 	if !k.nftKeeper.HasNFT(ctx, classID, nftID) {
 		return false, sdkerrors.Wrapf(types.ErrNFTNotFound, "nft with classID:%s and ID:%s not found", classID, nftID)
 	}

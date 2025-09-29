@@ -105,7 +105,7 @@ func (op *OperationFactory) randomIssueMsg(
 		InitialAmount: simtypes.RandomAmount(r, sdkmath.NewIntWithDecimal(1, 30)),
 		Description:   simtypes.RandStringOfLength(r, simtypes.RandIntBetween(r, 1, types.MaxDescriptionLength)),
 		Features:      nil,
-		// TODO(dzmitryhil) fix the simulation to work with the commissions since now it is failed
+		// TODO (v7): fix the simulation to work with the commissions since now it is failed
 		// in the distribution EndBlocker since tries to allocate all tokens for the fee_collector
 		// and the fee_collector has the asset_ft_tokens with the SendCommissionRate and BurnRate
 		// BurnRate: sdkmath.LegacyNewDec(int64(simtypes.RandIntBetween(r, 1, 1000))).QuoInt64(10000),

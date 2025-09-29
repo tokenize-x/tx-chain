@@ -62,7 +62,7 @@ func New(t *testing.T, configs ...network.Config) *network.Network {
 
 	// Sometimes another process already binds the port to bind to.
 	// So we need to retry to used another random port.
-	// TODO: Remove the retry when upgrading to cosmos v0.52.x
+	// TODO (v7): Remove the retry when upgrading to cosmos v0.52.x
 	retryCtx, retryCancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer retryCancel()
 	err := retry.Do(retryCtx, 2*time.Second, func() error {

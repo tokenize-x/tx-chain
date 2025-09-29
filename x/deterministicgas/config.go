@@ -132,13 +132,6 @@ func DefaultConfig() Config {
 		MsgToMsgURL(&distributiontypes.MsgWithdrawValidatorCommission{}): constantGasFunc(22_000),
 		MsgToMsgURL(&distributiontypes.MsgDepositValidatorRewardsPool{}): constantGasFunc(39_000),
 
-		// protocolpool
-		// TODO: fill with proper values after enabling the module
-		MsgToMsgURL(&protocolpooltypes.MsgCancelContinuousFund{}): constantGasFunc(1),
-		MsgToMsgURL(&protocolpooltypes.MsgCreateContinuousFund{}): constantGasFunc(1),
-		MsgToMsgURL(&protocolpooltypes.MsgFundCommunityPool{}):    constantGasFunc(1),
-		MsgToMsgURL(&protocolpooltypes.MsgCommunityPoolSpend{}):   constantGasFunc(1),
-
 		// feegrant
 		MsgToMsgURL(&feegranttypes.MsgRevokeAllowance{}): constantGasFunc(2_500),
 
@@ -327,7 +320,7 @@ func DefaultConfig() Config {
 			&ibcclienttypes.MsgUpdateClient{},
 			&ibcclienttypes.MsgUpgradeClient{},
 			&ibcclienttypes.MsgDeleteClientCreator{},
-			&ibcclienttypes.MsgSubmitMisbehaviour{}, //nolint // TODO remove legacy message
+			&ibcclienttypes.MsgSubmitMisbehaviour{}, //nolint // TODO (v7) remove legacy message
 			&ibcclienttypes.MsgUpdateParams{},
 			&ibcclienttypes.MsgIBCSoftwareUpgrade{},
 			&ibcclienttypes.MsgRecoverClient{},
@@ -364,6 +357,12 @@ func DefaultConfig() Config {
 
 			&ibcv2clienttypes.MsgRegisterCounterparty{},
 			&ibcv2clienttypes.MsgUpdateClientConfig{},
+
+			// protocolpool
+			&protocolpooltypes.MsgCancelContinuousFund{},
+			&protocolpooltypes.MsgCreateContinuousFund{},
+			&protocolpooltypes.MsgFundCommunityPool{},
+			&protocolpooltypes.MsgCommunityPoolSpend{},
 		},
 	)
 

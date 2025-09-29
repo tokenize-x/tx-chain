@@ -14,9 +14,9 @@ func (k Keeper) Transfer(ctx sdk.Context, classID, nftID string, receiver sdk.Ac
 }
 
 func (k Keeper) beforeTransfer(ctx sdk.Context, classID, nftID string, receiver sdk.AccAddress) error {
-	if err := k.isNFTSendable(ctx, classID, nftID); err != nil {
+	if err := k.validateSendableNFT(ctx, classID, nftID); err != nil {
 		return err
 	}
 
-	return k.isNFTReceivable(ctx, classID, nftID, receiver)
+	return k.validateReceivableNFT(ctx, classID, nftID, receiver)
 }

@@ -109,7 +109,6 @@ func TestLegacyAmino_ExpectedMessages(t *testing.T) {
 		// protocolpool
 		// added because of upgrading to cosmos-sdk v0.53.x
 		// the module is not enabled yet.
-		// TODO: remove comment after enabling the module
 		sdk.MsgTypeURL(&protocolpooltypes.MsgCreateContinuousFund{}): {},
 		sdk.MsgTypeURL(&protocolpooltypes.MsgCancelContinuousFund{}): {},
 		sdk.MsgTypeURL(&protocolpooltypes.MsgFundCommunityPool{}):    {},
