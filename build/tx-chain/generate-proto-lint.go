@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -7,13 +7,13 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/crust/build/golang"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/golang"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
+	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 //go:embed proto-lint.json
@@ -45,7 +45,7 @@ func lintProto(ctx context.Context, deps types.DepsFunc) error {
 }
 
 func executeLintProtocCommand(ctx context.Context, deps types.DepsFunc, includeDirs, generateDirs []string) error {
-	deps(coreumtools.EnsureProtoc, coreumtools.EnsureProtocGenBufLint)
+	deps(txchaintools.EnsureProtoc, txchaintools.EnsureProtocGenBufLint)
 
 	// Linting rule descriptions might be found here: https://buf.build/docs/lint/rules
 

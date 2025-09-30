@@ -23,14 +23,14 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/app"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
-	coreumclitestutil "github.com/CoreumFoundation/coreum/v6/testutil/cli"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/network"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/client/cli"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v6/app"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/network"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/client/cli"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
 func TestIssue(t *testing.T) {
@@ -57,7 +57,7 @@ func TestIssue(t *testing.T) {
 	denom := issue(requireT, ctx, token, initialAmount, nil, testNetwork)
 
 	var resp types.QueryTokenResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
 	// set generated values
 	token.Denom = denom
 	token.Issuer = resp.Token.Issuer
@@ -77,7 +77,7 @@ func TestIssueWithExtension(t *testing.T) {
 		fmt.Sprintf("--%s=%s", flags.FlagGas, "auto"),
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	res, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, wasmcli.StoreCodeCmd(), args)
+	res, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, wasmcli.StoreCodeCmd(), args)
 	requireT.NoError(err)
 
 	codeID, err := event.FindUint64EventAttribute(res.Events, wasmtypes.EventTypeStoreCode, wasmtypes.AttributeKeyCodeID)
@@ -119,7 +119,7 @@ func TestIssueWithExtension(t *testing.T) {
 	denom := issue(requireT, ctx, token, initialAmount, extension, testNetwork)
 
 	var resp types.QueryTokenResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
 	// set generated values
 	token.Denom = denom
 	token.Issuer = resp.Token.Issuer
@@ -131,7 +131,7 @@ func TestIssueWithExtension(t *testing.T) {
 
 	args = []string{resp.Token.ExtensionCWAddress, `{"query_issuance_msg":{}}`}
 	var queryResp wasmtypes.QuerySmartContractStateResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, wasmcli.GetCmdGetContractStateSmart(), args, &queryResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, wasmcli.GetCmdGetContractStateSmart(), args, &queryResp)
 	requireT.NoError(json.Unmarshal(queryResp.Data, &issuanceMsg))
 	requireT.Equal("test", issuanceMsg.ExtraData)
 }
@@ -159,7 +159,7 @@ func TestIssueWithDEXSetting(t *testing.T) {
 	denom := issue(requireT, ctx, token, initialAmount, nil, testNetwork)
 
 	var resp types.QueryTokenResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
 	requireT.Equal(types.DEXSettings{
 		UnifiedRefAmount:  lo.ToPtr(sdkmath.LegacyMustNewDecFromStr("0.9")),
 		WhitelistedDenoms: make([]string, 0),
@@ -189,37 +189,39 @@ func TestMintBurn(t *testing.T) {
 	// mint new tokens
 	coinToMint := sdk.NewInt64Coin(denom, 100)
 	args := append([]string{coinToMint.String()}, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
 	requireT.NoError(err)
 
 	var balanceRes banktypes.QueryAllBalancesResponse
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", issuer.String()}, &balanceRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", issuer.String()}, &balanceRes)
 	requireT.Equal(sdkmath.NewInt(877).String(), balanceRes.Balances.AmountOf(denom).String())
 
 	var supplyRes banktypes.QuerySupplyOfResponse
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "total-supply-of", denom}, &supplyRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "total-supply-of", denom}, &supplyRes)
 	requireT.Equal(sdk.NewInt64Coin(denom, 877).String(), supplyRes.Amount.String())
 
 	// mint to recipient
 	recipient := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 
 	args = append([]string{coinToMint.String(), "--recipient", recipient.String()}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
 	requireT.NoError(err)
 
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", recipient.String()}, &balanceRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx,
+		[]string{banktypes.ModuleName, "balances", recipient.String()}, &balanceRes,
+	)
 	requireT.Equal(sdkmath.NewInt(100).String(), balanceRes.Balances.AmountOf(denom).String())
 
 	// burn tokens
 	coinToMint = sdk.NewInt64Coin(denom, 200)
 	args = append([]string{coinToMint.String()}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxBurn(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxBurn(), args)
 	requireT.NoError(err)
 
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", issuer.String()}, &balanceRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", issuer.String()}, &balanceRes)
 	requireT.Equal(sdkmath.NewInt(677).String(), balanceRes.Balances.AmountOf(denom).String())
 
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "total-supply-of", denom}, &supplyRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "total-supply-of", denom}, &supplyRes)
 	requireT.Equal(sdk.NewInt64Coin(denom, 777).String(), supplyRes.Amount.String())
 }
 
@@ -245,12 +247,12 @@ func TestFreezeAndQueryFrozen(t *testing.T) {
 	// freeze part of the token
 	coinToFreeze := sdk.NewInt64Coin(denom, 100)
 	args := append([]string{recipient.String(), coinToFreeze.String()}, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
 	requireT.NoError(err)
 
 	// query frozen balance
 	var respFrozen types.QueryFrozenBalanceResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryFrozenBalance(),
@@ -261,7 +263,7 @@ func TestFreezeAndQueryFrozen(t *testing.T) {
 
 	// query balance
 	var respBalance types.QueryBalanceResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryBalance(),
@@ -277,12 +279,12 @@ func TestFreezeAndQueryFrozen(t *testing.T) {
 		newDenom := issue(requireT, ctx, token, initialAmount, nil, testNetwork)
 		coinToFreeze = sdk.NewInt64Coin(newDenom, 100)
 		args = append([]string{recipient.String(), coinToFreeze.String()}, txValidator1Args(testNetwork)...)
-		_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
+		_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
 		requireT.NoError(err)
 	}
 
 	var balancesResp types.QueryFrozenBalancesResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryFrozenBalances(),
@@ -291,7 +293,7 @@ func TestFreezeAndQueryFrozen(t *testing.T) {
 	)
 	requireT.Len(balancesResp.Balances, 3)
 
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryFrozenBalances(),
@@ -303,10 +305,10 @@ func TestFreezeAndQueryFrozen(t *testing.T) {
 	// unfreeze part of the frozen token
 	unfreezeTokens := sdk.NewInt64Coin(denom, 75)
 	args = append([]string{recipient.String(), unfreezeTokens.String()}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUnfreeze(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUnfreeze(), args)
 	requireT.NoError(err)
 
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryFrozenBalance(),
@@ -318,10 +320,10 @@ func TestFreezeAndQueryFrozen(t *testing.T) {
 	// set absolute frozen amount
 	setFrozenTokens := sdk.NewInt64Coin(denom, 100)
 	args = append([]string{recipient.String(), setFrozenTokens.String()}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxSetFrozen(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxSetFrozen(), args)
 	requireT.NoError(err)
 
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryFrozenBalance(),
@@ -354,19 +356,19 @@ func TestGloballyFreezeUnfreeze(t *testing.T) {
 
 	// globally freeze the token
 	args := append([]string{denom}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxGloballyFreeze(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxGloballyFreeze(), args)
 	requireT.NoError(err)
 
 	var resp types.QueryTokenResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
 	requireT.True(resp.Token.GloballyFrozen)
 
 	// globally unfreeze the token
 	args = append([]string{denom}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxGloballyUnfreeze(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxGloballyUnfreeze(), args)
 	requireT.NoError(err)
 
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
 	requireT.False(resp.Token.GloballyFrozen)
 }
 
@@ -396,7 +398,7 @@ func TestClawback(t *testing.T) {
 		[]string{valAddr, account.String(), coin.String()},
 		txValidator1Args(testNetwork)...,
 	)
-	_, err := coreumclitestutil.ExecTxCmd(
+	_, err := txchainclitestutil.ExecTxCmd(
 		ctx,
 		testNetwork,
 		bankcli.NewSendTxCmd(authcodec.NewBech32Codec(app.ChosenNetwork.Provider.GetAddressPrefix())),
@@ -405,14 +407,14 @@ func TestClawback(t *testing.T) {
 	requireT.NoError(err)
 
 	var balanceRes banktypes.QueryAllBalancesResponse
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", account.String()}, &balanceRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", account.String()}, &balanceRes)
 	requireT.Equal(sdkmath.NewInt(100).String(), balanceRes.Balances.AmountOf(denom).String())
 
 	args = append([]string{account.String(), coin.String()}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClawback(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClawback(), args)
 	requireT.NoError(err)
 
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", account.String()}, &balanceRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "balances", account.String()}, &balanceRes)
 	requireT.Equal(sdkmath.NewInt(0).String(), balanceRes.Balances.AmountOf(denom).String())
 }
 
@@ -444,12 +446,12 @@ func TestWhitelistAndQueryWhitelisted(t *testing.T) {
 
 		coinToWhitelist := sdk.NewInt64Coin(denom, 100)
 		args := append([]string{recipient.String(), coinToWhitelist.String()}, txValidator1Args(testNetwork)...)
-		_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxSetWhitelistedLimit(), args)
+		_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxSetWhitelistedLimit(), args)
 		requireT.NoError(err)
 
 		// query whitelisted balance
 		var respWhitelisted types.QueryWhitelistedBalanceResponse
-		coreumclitestutil.ExecQueryCmd(
+		txchainclitestutil.ExecQueryCmd(
 			t,
 			ctx,
 			cli.CmdQueryWhitelistedBalance(),
@@ -460,7 +462,7 @@ func TestWhitelistAndQueryWhitelisted(t *testing.T) {
 
 		// query balance
 		var respBalance types.QueryBalanceResponse
-		coreumclitestutil.ExecQueryCmd(
+		txchainclitestutil.ExecQueryCmd(
 			t,
 			ctx,
 			cli.CmdQueryBalance(),
@@ -471,7 +473,7 @@ func TestWhitelistAndQueryWhitelisted(t *testing.T) {
 	}
 
 	var balancesResp types.QueryWhitelistedBalancesResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryWhitelistedBalances(),
@@ -480,7 +482,7 @@ func TestWhitelistAndQueryWhitelisted(t *testing.T) {
 	)
 	requireT.Len(balancesResp.Balances, 2)
 
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryWhitelistedBalances(),
@@ -512,12 +514,12 @@ func TestTransferAdmin(t *testing.T) {
 
 	// transfer admin from issuer to new admin
 	args := append([]string{newAdmin.String(), denom}, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxTransferAdmin(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxTransferAdmin(), args)
 	requireT.NoError(err)
 
 	// query token
 	var respToken types.QueryTokenResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryToken(),
@@ -528,7 +530,7 @@ func TestTransferAdmin(t *testing.T) {
 
 	// try to transfer admin from issuer to new admin again
 	args = append([]string{newAdmin.String(), denom}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxTransferAdmin(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxTransferAdmin(), args)
 	requireT.ErrorIs(err, cosmoserrors.ErrUnauthorized)
 
 	recipient := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
@@ -536,7 +538,7 @@ func TestTransferAdmin(t *testing.T) {
 	// try to freeze part of the token by issuer which is not admin anymore
 	coinToFreeze := sdk.NewInt64Coin(denom, 100)
 	args = append([]string{recipient.String(), coinToFreeze.String()}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
 	requireT.ErrorIs(err, cosmoserrors.ErrUnauthorized)
 }
 
@@ -560,12 +562,12 @@ func TestClearAdmin(t *testing.T) {
 
 	// clear admin
 	args := append([]string{denom}, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClearAdmin(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClearAdmin(), args)
 	requireT.NoError(err)
 
 	// query token
 	var respToken types.QueryTokenResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryToken(),
@@ -576,7 +578,7 @@ func TestClearAdmin(t *testing.T) {
 
 	// try to clear admin again
 	args = append([]string{denom}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClearAdmin(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClearAdmin(), args)
 	requireT.ErrorIs(err, cosmoserrors.ErrUnauthorized)
 
 	recipient := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
@@ -584,7 +586,7 @@ func TestClearAdmin(t *testing.T) {
 	// try to freeze part of the token by previous admin
 	coinToFreeze := sdk.NewInt64Coin(denom, 100)
 	args = append([]string{recipient.String(), coinToFreeze.String()}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
 	requireT.ErrorIs(err, cosmoserrors.ErrUnauthorized)
 }
 
@@ -616,11 +618,11 @@ func TestUpdateDEXUnifiedRefAmount(t *testing.T) {
 		denom,
 		newUnifiedRefAmount.String(),
 	}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdUpdateDEXUnifiedRefAmount(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdUpdateDEXUnifiedRefAmount(), args)
 	requireT.NoError(err)
 
 	var resp types.QueryDEXSettingsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryDEXSettings(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryDEXSettings(), []string{denom}, &resp)
 	requireT.Equal(types.DEXSettings{
 		UnifiedRefAmount:  lo.ToPtr(newUnifiedRefAmount),
 		WhitelistedDenoms: make([]string, 0),
@@ -655,11 +657,11 @@ func TestUpdateDEXWhitelistedDenoms(t *testing.T) {
 		denom,
 		fmt.Sprintf("--%s=%s", cli.DEXWhitelistedDenomsFlag, strings.Join(newWhitelistedDenoms, ",")),
 	}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdUpdateDEXWhitelistedDenoms(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdUpdateDEXWhitelistedDenoms(), args)
 	requireT.NoError(err)
 
 	var resp types.QueryDEXSettingsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryDEXSettings(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryDEXSettings(), []string{denom}, &resp)
 	requireT.Equal(types.DEXSettings{
 		WhitelistedDenoms: newWhitelistedDenoms,
 	}, resp.DEXSettings)
@@ -693,11 +695,11 @@ func TestUpdateDEXWhitelistedDenomsToEmptyList(t *testing.T) {
 		denom,
 		fmt.Sprintf("--%s=%s", cli.DEXWhitelistedDenomsFlag, ""),
 	}, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdUpdateDEXWhitelistedDenoms(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdUpdateDEXWhitelistedDenoms(), args)
 	requireT.NoError(err)
 
 	var resp types.QueryDEXSettingsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryDEXSettings(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryDEXSettings(), []string{denom}, &resp)
 	requireT.Equal(types.DEXSettings{
 		WhitelistedDenoms: newWhitelistedDenoms,
 	}, resp.DEXSettings)
@@ -747,7 +749,7 @@ func issue(
 	}
 
 	args = append(args, txValidator1Args(testNetwork)...)
-	res, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxIssue(), args)
+	res, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxIssue(), args)
 	requireT.NoError(err)
 
 	requireT.NotEmpty(res.TxHash)

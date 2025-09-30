@@ -1,4 +1,4 @@
-BUILDER = ./bin/tx-core-builder
+BUILDER = ./bin/tx-chain-builder
 
 .PHONY: znet
 znet:

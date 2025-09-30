@@ -27,19 +27,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	moduleswasm "github.com/CoreumFoundation/coreum/v6/integration-tests/contracts/modules"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
 // TestAssetFTQueryParams queries parameters of asset/ft module.
 func TestAssetFTQueryParams(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	issueFee := chain.QueryAssetFTParams(ctx, t).IssueFee
 
 	assert.True(t, issueFee.Amount.GT(sdkmath.ZeroInt()))
@@ -50,7 +50,7 @@ func TestAssetFTQueryParams(t *testing.T) {
 func TestAssetFTIssue(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -150,7 +150,7 @@ func TestAssetFTIssue(t *testing.T) {
 func TestAssetFTIssueInvalidFeatures(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	issuer := chain.GenAccount()
@@ -217,7 +217,7 @@ func TestAssetFTIssueFeeProposal(t *testing.T) {
 	// This test can't be run together with other tests because it affects balances due to unexpected issue fee.
 	// That's why t.Parallel() is not here.
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 	origParams := chain.QueryAssetFTParams(ctx, t)
 	newParams := origParams
@@ -273,7 +273,7 @@ func TestAssetFTIssueFeeProposal(t *testing.T) {
 func TestAssetFTDEXSettingsCreationAndUpdate(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	ftClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -405,7 +405,7 @@ func TestAssetFTDEXSettingsCreationAndUpdate(t *testing.T) {
 func TestAssetFTDEXUnifiedRefAmountCreationAndUpdateVIAGov(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -530,7 +530,7 @@ func TestAssetFTDEXUnifiedRefAmountCreationAndUpdateVIAGov(t *testing.T) {
 func TestAssetFTDEXWhitelistedDenomsCreationAndUpdateVIAGov(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -646,7 +646,7 @@ func TestAssetFTDEXWhitelistedDenomsCreationAndUpdateVIAGov(t *testing.T) {
 func TestAssetIssueAndQueryTokens(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	clientCtx := chain.ClientContext
@@ -742,7 +742,7 @@ func TestAssetIssueAndQueryTokens(t *testing.T) {
 func TestBalanceQuery(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -910,7 +910,7 @@ func TestBalanceQuery(t *testing.T) {
 func TestSpendableBalanceQuery(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
@@ -1122,7 +1122,7 @@ func TestSpendableBalanceQuery(t *testing.T) {
 func TestEmptyBalanceQuery(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -1152,7 +1152,7 @@ func TestEmptyBalanceQuery(t *testing.T) {
 func TestAssetFTMint(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -1362,7 +1362,7 @@ func TestAssetFTMint(t *testing.T) {
 func TestAssetFTBurn(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -1554,7 +1554,7 @@ func TestAssetFTBurn(t *testing.T) {
 func TestAssetFTBurnRate(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	issuer := chain.GenAccount()
@@ -1715,7 +1715,7 @@ func TestAssetFTBurnRate(t *testing.T) {
 func TestAssetFTSendCommissionRate(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	issuer := chain.GenAccount()
@@ -1877,7 +1877,7 @@ func TestAssetFTSendCommissionRate(t *testing.T) {
 func TestAssetFTFeesAreChargedWhenSmartContractExecutesAuthZTransfer(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	issuer := chain.GenAccount()
@@ -2063,7 +2063,7 @@ func TestAssetFTFeesAreChargedWhenSmartContractExecutesAuthZTransfer(t *testing.
 func TestAssetFTFeesAreNotChargedWhenTokensAreTransferredFromSmartContractUsingAuthZGrant(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	issuer := chain.GenAccount()
@@ -2193,7 +2193,7 @@ func TestAssetFTFeesAreNotChargedWhenTokensAreTransferredFromSmartContractUsingA
 func TestAssetFTFreeze(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -2531,7 +2531,7 @@ func TestAssetFTFreeze(t *testing.T) {
 func TestAssetFTClawback(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -2673,7 +2673,7 @@ func TestAssetFTClawback(t *testing.T) {
 func TestAssetFTClawbackWithTextualSigning(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -2814,7 +2814,7 @@ func TestAssetFTClawbackWithTextualSigning(t *testing.T) {
 func TestAssetFTClawbackSmartContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -2902,7 +2902,7 @@ func TestAssetFTClawbackSmartContract(t *testing.T) {
 func TestAssetFTFreezeUnfreezable(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -2958,7 +2958,7 @@ func TestAssetFTFreezeUnfreezable(t *testing.T) {
 func TestAssetFTFreezeIssuerAccount(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	issuer := chain.GenAccount()
@@ -3011,7 +3011,7 @@ func TestAssetFTFreezeIssuerAccount(t *testing.T) {
 func TestAssetFTGloballyFreeze(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	issuer := chain.GenAccount()
@@ -3183,7 +3183,7 @@ func TestAssetFTGloballyFreeze(t *testing.T) {
 func TestAssetCommissionRateExceedFreeze(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -3271,12 +3271,12 @@ func TestAssetCommissionRateExceedFreeze(t *testing.T) {
 	assertT.True(cosmoserrors.ErrInsufficientFunds.Is(err))
 }
 
-// TestSendCoreTokenWithRestrictedToken checks tx will fail if try to send core token
+// TestSendTXTokenWithRestrictedToken checks tx will fail if try to send core token
 // alongside restricted user issued token.
-func TestSendCoreTokenWithRestrictedToken(t *testing.T) {
+func TestSendTXTokenWithRestrictedToken(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -3371,7 +3371,7 @@ func TestSendCoreTokenWithRestrictedToken(t *testing.T) {
 func TestNotEnoughBalanceForBurnRate(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -3456,7 +3456,7 @@ func TestNotEnoughBalanceForBurnRate(t *testing.T) {
 func TestNotEnoughBalanceForCommissionRate(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -3541,7 +3541,7 @@ func TestNotEnoughBalanceForCommissionRate(t *testing.T) {
 func TestAssetFTWhitelist(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -3841,7 +3841,7 @@ func TestAssetFTWhitelist(t *testing.T) {
 func TestAssetFTWhitelistUnwhitelistable(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -3897,7 +3897,7 @@ func TestAssetFTWhitelistUnwhitelistable(t *testing.T) {
 func TestAssetFTWhitelistIssuerAccount(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	issuer := chain.GenAccount()
@@ -3955,7 +3955,7 @@ func TestAssetFTWhitelistIssuerAccount(t *testing.T) {
 func TestAssetFTSendingToNonWhitelistedSmartContractIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -4030,7 +4030,7 @@ func TestAssetFTSendingToNonWhitelistedSmartContractIsDenied(t *testing.T) {
 func TestAssetFTAttachingToNonWhitelistedSmartContractCallIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -4097,7 +4097,7 @@ func TestAssetFTAttachingToNonWhitelistedSmartContractCallIsDenied(t *testing.T)
 func TestAssetFTAttachingToNonWhitelistedSmartContractInstantiationIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -4159,7 +4159,7 @@ func TestAssetFTAttachingToNonWhitelistedSmartContractInstantiationIsDenied(t *t
 func TestBareToken(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -4309,7 +4309,7 @@ func TestBareToken(t *testing.T) {
 func TestAuthzWithAssetFT(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -4426,7 +4426,7 @@ func TestAuthzWithAssetFT(t *testing.T) {
 func TestAuthzMintAuthorizationLimit(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -4565,7 +4565,7 @@ func TestAuthzMintAuthorizationLimit(t *testing.T) {
 func TestAuthzMintAuthorizationLimit_GrantFromNonIssuer(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -4667,7 +4667,7 @@ func TestAuthzMintAuthorizationLimit_GrantFromNonIssuer(t *testing.T) {
 func TestAuthzMintAuthorizationLimit_MultipleCoins(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -4785,7 +4785,7 @@ func TestAuthzMintAuthorizationLimit_MultipleCoins(t *testing.T) {
 func TestAuthzBurnAuthorizationLimit(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -4925,7 +4925,7 @@ func TestAuthzBurnAuthorizationLimit(t *testing.T) {
 func TestAuthzBurnAuthorizationLimit_GrantFromNonIssuer(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -5077,7 +5077,7 @@ func TestAssetFT_RatesAreNotApplied_OnMinting(t *testing.T) {
 	assertT := assert.New(t)
 	requireT := require.New(t)
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	issuer := chain.GenAccount()
 
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
@@ -5139,7 +5139,7 @@ func TestAssetFT_RatesAreNotApplied_OnMinting(t *testing.T) {
 func TestAssetFTBurnRate_SendCommissionRate_OnBurning(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -5246,7 +5246,7 @@ func TestAssetFTBurnRate_SendCommissionRate_OnBurning(t *testing.T) {
 func TestAssetFTFreezeAndBurn(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -5353,7 +5353,7 @@ func TestAssetFTFreezeAndBurn(t *testing.T) {
 	// verify recipient balance after burning
 	assertT.Equal(sdk.NewCoin(denom, sdkmath.NewInt(350)).String(), recipientBalance.GetBalance().String())
 
-	// recipient tries to burn more token than allowed (left from unfrozen balance). Tx should fail
+	// recipient tries to burn more token than allowed (left from unfrozen balance). Transaction should fail
 	_, err = client.BroadcastTx(
 		ctx,
 		chain.ClientContext.WithFromAddress(recipient),
@@ -5391,7 +5391,7 @@ func TestAssetFTFreeze_WithRates(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, chain := integrationtests.NewCoreumTestingContext(t)
+			ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 			requireT := require.New(t)
 			assertT := assert.New(t)
@@ -5495,7 +5495,7 @@ func TestAssetFTFreeze_WithRates(t *testing.T) {
 				&recipient2: int64(tc.expectedCoinDistribution[2]),
 			})
 
-			// try to send from recipient1 to recipient2. Tx should fail because one of the rates
+			// try to send from recipient1 to recipient2. TX should fail because one of the rates
 			// (in the 1st case - burn rate, in the 2nd case - send commission rate) exceeds unfrozen balance limit
 			sendMsg = &banktypes.MsgSend{
 				FromAddress: recipient1.String(),
@@ -5525,7 +5525,7 @@ func TestAssetFTFreeze_WithRates(t *testing.T) {
 func TestAssetFTAminoMultisig(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	multisigPublicKey, keyNamesSet, err := chain.GenMultisigAccount(2, 2)
@@ -5591,7 +5591,7 @@ func TestAssetFTAminoMultisig(t *testing.T) {
 func TestAssetFTAminoMultisigWithAuthz(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	multisigPublicKeyGranter, keyNamesSet, err := chain.GenMultisigAccount(2, 2)
@@ -5678,7 +5678,7 @@ func TestAssetFTAminoMultisigWithAuthz(t *testing.T) {
 func TestAssetFTSendCommissionAndBurnRateWithSmartContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 	admin := chain.GenAccount()
@@ -5907,7 +5907,7 @@ func TestAssetFTSendCommissionAndBurnRateWithSmartContract(t *testing.T) {
 func TestAssetFTSendCommissionAndBurnRateWithSmartContractInstantiation(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 	recipient := chain.GenAccount()
@@ -5973,7 +5973,7 @@ func TestAssetFTSendCommissionAndBurnRateWithSmartContractInstantiation(t *testi
 func TestAssetFTSendingToSmartContractIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -6070,7 +6070,7 @@ func TestAssetFTSendingToSmartContractIsDenied(t *testing.T) {
 func TestAssetFTAttachingToSmartContractCallIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -6137,7 +6137,7 @@ func TestAssetFTAttachingToSmartContractCallIsDenied(t *testing.T) {
 func TestAssetFTAttachingToSmartContractInstantiationIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -6200,7 +6200,7 @@ func TestAssetFTAttachingToSmartContractInstantiationIsDenied(t *testing.T) {
 func TestAssetFTIssuingSmartContractIsAllowedToSendAndReceive(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	recipient := chain.GenAccount()
@@ -6307,7 +6307,7 @@ func TestAssetFTIssuingSmartContractIsAllowedToSendAndReceive(t *testing.T) {
 func TestAssetFTMintingAndSendingOnBehalfOfIssuingSmartContractIsPossibleEvenIfSmartContractsAreBlocked(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	grantee := chain.GenAccount()
@@ -6448,7 +6448,7 @@ func TestAssetFTMintingAndSendingOnBehalfOfIssuingSmartContractIsPossibleEvenIfS
 func TestAssetFTSendingTokensFromRegularAccountBySmartContractUsingAuthZIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 	admin := chain.GenAccount()
@@ -6655,7 +6655,7 @@ func assertCoinDistribution(
 func TestAssetFTTransferAdmin(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -6816,7 +6816,7 @@ func TestAssetFTTransferAdmin(t *testing.T) {
 func TestAssetFTTransferAdminMint(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -7139,7 +7139,7 @@ func TestAssetFTTransferAdminMint(t *testing.T) {
 func TestAssetFTTransferAdminBurn(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -7444,7 +7444,7 @@ func TestAssetFTTransferAdminBurn(t *testing.T) {
 func TestAssetFTTransferAdminFreeze(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -7851,7 +7851,7 @@ func TestAssetFTTransferAdminFreeze(t *testing.T) {
 func TestAssetFTTransferAdminFreezeAdminAccount(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -7958,7 +7958,7 @@ func TestAssetFTTransferAdminFreezeAdminAccount(t *testing.T) {
 func TestAssetFTTransferAdminToUserWithFrozenAmount(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -8057,7 +8057,7 @@ func TestAssetFTTransferAdminToUserWithFrozenAmount(t *testing.T) {
 func TestAssetFTTransferAdminGloballyFreeze(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 	assertT := assert.New(t)
 
@@ -8334,7 +8334,7 @@ func TestAssetFTTransferAdminGloballyFreeze(t *testing.T) {
 func TestAssetFTTransferAdminClawback(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -8523,7 +8523,7 @@ func TestAssetFTTransferAdminClawback(t *testing.T) {
 func TestAssetFTTransferAdminWhitelist(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -8875,7 +8875,7 @@ func TestAssetFTTransferAdminWhitelist(t *testing.T) {
 func TestAssetFTTransferAdminWhitelistAdminAccount(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -8985,7 +8985,7 @@ func TestAssetFTTransferAdminWhitelistAdminAccount(t *testing.T) {
 func TestAssetFTClearAdmin(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)

@@ -15,10 +15,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	coreumclitestutil "github.com/CoreumFoundation/coreum/v6/testutil/cli"
-	"github.com/CoreumFoundation/coreum/v6/testutil/network"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/nft/client/cli"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v6/testutil/network"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/client/cli"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
 )
 
 const nftID = "nft-1"
@@ -40,7 +40,7 @@ func TestCmdTxIssueClass(t *testing.T) {
 		fmt.Sprintf("--%s=%s", cli.URIHashFlag, "content-hash"),
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	res, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxIssueClass(), args)
+	res, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxIssueClass(), args)
 	requireT.NoError(err)
 
 	requireT.NotEmpty(res.TxHash)
@@ -105,18 +105,18 @@ func TestCmdTxBurn(t *testing.T) {
 
 	args := []string{classID, "nft-1"}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxBurn(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxBurn(), args)
 	requireT.NoError(err)
 
 	var resp types.QueryBurntNFTResponse
 	args = []string{classID, "nft-1", "--output", "json"}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryBurnt(), args, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryBurnt(), args, &resp)
 
 	requireT.True(resp.Burnt)
 
 	args = []string{classID, "--output", "json"}
 	var respList types.QueryBurntNFTsInClassResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryBurnt(), args, &respList)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryBurnt(), args, &respList)
 	requireT.Len(respList.NftIds, 1)
 }
 
@@ -151,12 +151,12 @@ func TestCmdMintToRecipient(t *testing.T) {
 		fmt.Sprintf("--%s=%s", cli.URIHashFlag, "content-hash"),
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
 	requireT.NoError(err)
 
 	// query recipient
 	var resp nfttypes.QueryOwnerResponse
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "owner", classID, nftID}, &resp)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "owner", classID, nftID}, &resp)
 	requireT.Equal(recipient.String(), resp.Owner)
 }
 
@@ -199,12 +199,12 @@ func TestCmdMintDataDynamic(t *testing.T) {
 		fmt.Sprintf("--%s=%s", cli.DataTypeFlag, cli.DataTypeDynamic),
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
 	requireT.NoError(err)
 
 	// query stored
 	var nftRes nfttypes.QueryNFTResponse
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "nft", classID, nftID}, &nftRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "nft", classID, nftID}, &nftRes)
 	var gotDataDynamic types.DataDynamic
 	decodeAnyDataFromAmino(t, ctx, nftRes.Nft.Data, &gotDataDynamic)
 	requireT.NoError(gotDataDynamic.Unmarshal(nftRes.Nft.Data.Value))
@@ -253,7 +253,7 @@ func TestCmdUpdateData(t *testing.T) {
 		fmt.Sprintf("--%s=%s", cli.DataTypeFlag, cli.DataTypeDynamic),
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
 	requireT.NoError(err)
 
 	// update the data
@@ -276,13 +276,13 @@ func TestCmdUpdateData(t *testing.T) {
 		fmt.Sprintf("--%s=%s", cli.DataFileFlag, updateDataFile),
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUpdateData(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUpdateData(), args)
 	requireT.NoError(err)
 
 	// query stored
 
 	var nftRes nfttypes.QueryNFTResponse
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "nft", classID, nftID}, &nftRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "nft", classID, nftID}, &nftRes)
 
 	var gotDataDynamic types.DataDynamic
 	decodeAnyDataFromAmino(t, ctx, nftRes.Nft.Data, &gotDataDynamic)
@@ -326,23 +326,23 @@ func TestCmdFreeze(t *testing.T) {
 	// freeze
 	args := []string{classID, nftID}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxFreeze(), args)
 	requireT.NoError(err)
 
 	// query frozen
 	var frozenResp types.QueryFrozenResponse
 	args = []string{classID, nftID}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryFrozen(), args, &frozenResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryFrozen(), args, &frozenResp)
 
 	// unfreeze
 	args = []string{classID, nftID}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUnfreeze(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUnfreeze(), args)
 	requireT.NoError(err)
 
 	// query frozen
 	args = []string{classID, nftID}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryFrozen(), args, &frozenResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryFrozen(), args, &frozenResp)
 	requireT.False(frozenResp.Frozen)
 }
 
@@ -383,30 +383,30 @@ func TestCmdWhitelist(t *testing.T) {
 	// whitelist
 	args := []string{classID, nftID, account.String()}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxWhitelist(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxWhitelist(), args)
 	requireT.NoError(err)
 
 	// query whitelisted
 	var whitelistedResp types.QueryWhitelistedResponse
 	args = []string{classID, nftID, account.String()}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
 	requireT.True(whitelistedResp.Whitelisted)
 
 	// query with pagination
 	var resPage types.QueryWhitelistedAccountsForNFTResponse
 	args = []string{classID, nftID}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelistedAccounts(), args, &resPage)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelistedAccounts(), args, &resPage)
 	requireT.ElementsMatch([]string{account.String()}, resPage.Accounts)
 
 	// unwhitelist
 	args = []string{classID, nftID, account.String()}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUnwhitelist(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxUnwhitelist(), args)
 	requireT.NoError(err)
 
 	// query whitelisted
 	args = []string{classID, nftID, account.String()}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
 	requireT.False(whitelistedResp.Whitelisted)
 }
 
@@ -448,30 +448,30 @@ func TestCmdClassWhitelist(t *testing.T) {
 	// whitelist
 	args := []string{classID, account.String()}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassWhitelist(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassWhitelist(), args)
 	requireT.NoError(err)
 
 	// query whitelisted
 	var whitelistedResp types.QueryWhitelistedResponse
 	args = []string{classID, nftID, account.String()}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
 	requireT.True(whitelistedResp.Whitelisted)
 
 	// query with pagination
 	var resPage types.QueryClassWhitelistedAccountsResponse
 	args = []string{classID}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassWhitelistedAccounts(), args, &resPage)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassWhitelistedAccounts(), args, &resPage)
 	requireT.ElementsMatch([]string{account.String()}, resPage.Accounts)
 
 	// unwhitelist
 	args = []string{classID, account.String()}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassUnwhitelist(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassUnwhitelist(), args)
 	requireT.NoError(err)
 
 	// query whitelisted
 	args = []string{classID, nftID, account.String()}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryWhitelisted(), args, &whitelistedResp)
 	requireT.False(whitelistedResp.Whitelisted)
 }
 
@@ -512,36 +512,36 @@ func TestCmdClassFreeze(t *testing.T) {
 	// class-freeze
 	args := []string{classID, account.String()}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassFreeze(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassFreeze(), args)
 	requireT.NoError(err)
 
 	// query class frozen
 	var classFrozenResp types.QueryFrozenResponse
 	args = []string{classID, account.String()}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassFrozen(), args, &classFrozenResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassFrozen(), args, &classFrozenResp)
 	requireT.True(classFrozenResp.Frozen)
 
 	// query frozen
 	var frozenResp types.QueryFrozenResponse
 	args = []string{classID, nftID}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryFrozen(), args, &frozenResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryFrozen(), args, &frozenResp)
 	requireT.False(frozenResp.Frozen)
 
 	// query with pagination
 	var resPage types.QueryClassFrozenAccountsResponse
 	args = []string{classID}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassFrozenAccounts(), args, &resPage)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassFrozenAccounts(), args, &resPage)
 	requireT.ElementsMatch([]string{account.String()}, resPage.Accounts)
 
 	// unfreeze
 	args = []string{classID, account.String()}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err = coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassUnfreeze(), args)
+	_, err = txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxClassUnfreeze(), args)
 	requireT.NoError(err)
 
 	// query class frozen
 	args = []string{classID, account.String()}
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassFrozen(), args, &classFrozenResp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClassFrozen(), args, &classFrozenResp)
 	requireT.False(classFrozenResp.Frozen)
 }
 

@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/crust/build/golang"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/golang"
+	"github.com/tokenize-x/crust/build/types"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 	grpcGatewayModule  = "github.com/grpc-ecosystem/grpc-gateway"
 )
 
-// Generate regenerates everything in coreum.
+// Generate regenerates everything in tx-chain.
 func Generate(ctx context.Context, deps types.DepsFunc) error {
 	deps(generateProtoDocs, generateProtoGo, generateProtoOpenAPI)
 

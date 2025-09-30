@@ -1,10 +1,10 @@
 package main
 
 import (
-	selfBuild "github.com/CoreumFoundation/coreum/build"
-	selfTools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/crust/build"
-	"github.com/CoreumFoundation/crust/build/tools"
+	"github.com/tokenize-x/crust/build"
+	"github.com/tokenize-x/crust/build/tools"
+	selfBuild "github.com/tokenize-x/tx-chain/build"
+	selfTools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 func init() {

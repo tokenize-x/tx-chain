@@ -11,8 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
 )
 
 // InstantiateConfig contains params specific to contract instantiation.

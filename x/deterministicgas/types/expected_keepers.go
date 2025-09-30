@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
 // AssetFTKeeper is the expected keeper from the assetft module.

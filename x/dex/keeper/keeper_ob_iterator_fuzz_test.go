@@ -8,8 +8,8 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
-	"github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 func FuzzSaveSellOrderAndReadWithSorting(f *testing.F) {

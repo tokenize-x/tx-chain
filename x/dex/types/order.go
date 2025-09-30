@@ -9,7 +9,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	cbig "github.com/CoreumFoundation/coreum/v6/pkg/math/big"
+	cbig "github.com/tokenize-x/tx-chain/v6/pkg/math/big"
 )
 
 const (

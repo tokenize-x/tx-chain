@@ -21,12 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	wbankkeeper "github.com/CoreumFoundation/coreum/v6/x/wbank/keeper"
-	wibctransfertypes "github.com/CoreumFoundation/coreum/v6/x/wibctransfer/types"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
+	wibctransfertypes "github.com/tokenize-x/tx-chain/v6/x/wibctransfer/types"
 )
 
 const (

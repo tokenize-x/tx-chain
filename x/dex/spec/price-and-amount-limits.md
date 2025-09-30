@@ -49,11 +49,11 @@ Since tick size is set by the exchange where an asset is traded and is primarily
 
 To define an asset’s price on-chain, we introduce a parameter called `unified_ref_amount`. This represents the quantity of the token’s **subunit** that corresponds to **1 USD**.
 
-For instance, if BTC is issued on Coreum with satoshi as its subunit (where **1 BTC = 100,000,000 satoshis**) and its market price is **$90,000**, then `unified_ref_amount` should be **0.0000111 BTC (or 1110 satoshis)**, since **1 BTC / 90,000 = 0.0000111 BTC**, which approximates **1 USD** in satoshi terms.
+For instance, if BTC is issued on TX Blockchain with satoshi as its subunit (where **1 BTC = 100,000,000 satoshis**) and its market price is **$90,000**, then `unified_ref_amount` should be **0.0000111 BTC (or 1110 satoshis)**, since **1 BTC / 90,000 = 0.0000111 BTC**, which approximates **1 USD** in satoshi terms.
 
 ## How `unified_ref_amount` is Defined
 
-1. **Coreum Native Assets**: If the token is issued on the Coreum chain, this variable can be set or updated by the token admin.
+1. **TX Blockchain Native Assets**: If the token is issued on the TX Blockchain, this variable can be set or updated by the token admin.
 2. **IBC Tokens & Admin-less Tokens**: If the token is an IBC token or does not have an admin, this variable can be set or updated through chain governance.
 3. **Default Value**: If `unified_ref_amount` is not explicitly set for a token, a default value of **10^6** is used.
 
@@ -70,7 +70,7 @@ Where:
 - `price_tick_exponent` is a coefficient that controls the price precision for a market. The current value of  `price_tick_exponent` is `-6`, but it can be changed through governance.
 - `ceil(log10(unified_ref_amount(BBB)/unified_ref_amount(AAA)))` ensures that price step size takes into account both asset magnitude
 
-For more details on the logic behind this formula and the constants used, refer to the [Theoretical Justification](#Theoretical-Justification) section.
+For more details on the logic behind this formula and the constants used, refer to the <!-- markdown-link-check-disable -->[Theoretical Justification](#Theoretical-Justification)<!-- markdown-link-check-enable --> section.
 
 # Quantity Step (Base Quantity Step)
 
@@ -91,7 +91,7 @@ Where:
 
 This approach ensures that minimum trade sizes scale appropriately with asset value while maintaining a consistent precision level.
 
-For more details on the logic behind this formula and the constants used, refer to the [Theoretical Justification](#Theoretical-Justification) section.
+For more details on the logic behind this formula and the constants used, refer to the <!-- markdown-link-check-disable -->[Theoretical Justification](#Theoretical-Justification)<!-- markdown-link-check-enable --> section.
 
 ## Interactive Spreadsheet
 
@@ -234,12 +234,12 @@ As seen, these values largely align with or extend beyond the ranges observed on
 
 To validate the proposed tick sizes, let's compare with other exchanges.
 
-| Exchange   | Market  | Price Tick Size     | Base Quantity Step | Quote Quantity Step |
-| ---------- | ------- | ------------------- | ------------------ | ------------------- |
-| Binance    | ETH/BTC | `0.00001 = 10^-5`   | `0.0001 = 10^-3`   | `10^-8`             |
-| OKX        | ETH/BTC | `0.00001 = 10^-5`   | `0.000001 = 10^-6` | `10^-11`            |
-| ByBit      | ETH/BTC | `0.000001 = 10^-6`  | `0.00001 = 10^-5`  | `10^-11`            |
-| Coreum DEX | ETH/BTC | `0.0000001 = 10^-7` | `0.00001 = 10^-5`  | `10^-12`            |
+| Exchange     | Market  | Price Tick Size     | Base Quantity Step | Quote Quantity Step |
+| ------------ | ------- | ------------------- | ------------------ | ------------------- |
+| Binance      | ETH/BTC | `0.00001 = 10^-5`   | `0.0001 = 10^-3`   | `10^-8`             |
+| OKX          | ETH/BTC | `0.00001 = 10^-5`   | `0.000001 = 10^-6` | `10^-11`            |
+| ByBit        | ETH/BTC | `0.000001 = 10^-6`  | `0.00001 = 10^-5`  | `10^-11`            |
+| TX DEX       | ETH/BTC | `0.0000001 = 10^-7` | `0.00001 = 10^-5`  | `10^-12`            |
 
 ## References:
 - [Investopedia: Price Tick](https://www.investopedia.com/terms/t/tick.asp)

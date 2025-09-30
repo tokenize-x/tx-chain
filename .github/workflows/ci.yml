@@ -87,11 +87,12 @@ jobs:
           key: ${{ runner.os }}-crust-${{ hashFiles('build/go.sum') }}
       - name: Make builder
         run: |
-          export GOPRIVATE=github.com/CoreumFoundation/crust-private
-          export GONOSUMDB=github.com/CoreumFoundation
+          # TODO: Remove this once we have a public crust repo in tokenize-x organization
+          export GOPRIVATE=github.com/CoreumFoundation/crust-private,github.com/tokenize-x/crust-private
+          export GONOSUMDB=github.com/CoreumFoundation,github.com/tokenize-x
           echo -e "machine github.com\nlogin ${{ secrets.CRUST_PRIVATE_PAT_USR }}\npassword ${{ secrets.CRUST_PRIVATE_PAT }}" > ~/.netrc
           echo -e "[url \"https://${{ secrets.CRUST_PRIVATE_PAT_USR }}:${{ secrets.CRUST_PRIVATE_PAT }}@github.com/CoreumFoundation/crust-private\"]\n        insteadOf = \"https://github.com/CoreumFoundation/crust-private\"" > ~/.gitconfig
-          ${{ github.workspace }}/bin/tx-core-builder build/me
+          ${{ github.workspace }}/bin/tx-chain-builder build/me
       - name: Retrieve go version
         id: goversion
         run: echo "GO_VERSION=$(${{ github.workspace }}/bin/go version)" >> $GITHUB_OUTPUT

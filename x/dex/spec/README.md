@@ -1,8 +1,8 @@
-# Coreum DEX Specification
+# TX DEX Specification
 
 ## Overview
 
-The Coreum DEX allows any Coreum user to create orders for trading any token pair. This means the order book is
+The TX DEX allows any TX Blockchain user to create orders for trading any token pair. This means the order book is
 bidirectional and permissionless, allowing for flexible and open trading.
 
 ## Order book
@@ -110,7 +110,7 @@ opposite_execution_quantity = floor(remaining_quantity / price_denominator) * pr
 
 This method is implemented inside `x/dex`. The func name is `func computeMaxExecutionQuantity`
 
-Let's return back to the example with the [Rounding issue](#Rounding-issue) :
+Let's return back to the example with the <!-- markdown-link-check-disable -->[Rounding issue](#Rounding-issue)<!-- markdown-link-check-enable --> :
 
 | order_id | base_denom | quote_denom | side | remaining_quantity | price |
 |----------|------------|-------------|------|--------------------|-------|
@@ -131,7 +131,7 @@ additionally not filled 250 BBB.
 
 ### 2-way matching
 
-Coreum DEX uses a 2-way matching system for processing all placed orders. This approach matches orders within its own
+TX DEX uses a 2-way matching system for processing all placed orders. This approach matches orders within its own
 order book (the self order book), where the base and quote denominations are identical (e.g., AAA/BBB). Additionally,
 it simultaneously checks the corresponding opposite order book (e.g., BBB/AAA) to find the best possible execution
 price. This 2-way order book matching ensures that orders are filled at the most favorable rates available,
@@ -169,7 +169,7 @@ When a user places an order we lock the coins in the assetft (similar to freezin
 receiving amount if whitelisting for the token the user expects to receive is enabled. At the time of the placement we
 enforce all assetft rules. If, at the time of matching, the assetft rules for the maker orders are changed, the orders
 will be still executed with the amounts in the order book. That's why to avoid unexpected behavior with the
-`freezing/whitelisting/clawback` the token admin should [cancel](#Order-cancellation) user's orders before update the
+`freezing/whitelisting/clawback` the token admin should <!-- markdown-link-check-disable -->[cancel](#Order-cancellation)<!-- markdown-link-check-enable --> user's orders before update the
 rules.
 
 ### Time in force
@@ -224,8 +224,8 @@ for each order that was placed. The events are:
 
 ### Unified ref amount
 
-The `unified_ref_amount` used in [price tick and precision](#price-tick-and-precision) can be updated and by the gov
-or the token admin. Check the [price tick and precision](#price-tick-and-precision) to get the details.
+The `unified_ref_amount` used in <!-- markdown-link-check-disable -->[price tick and precision](#price-tick-and-precision)<!-- markdown-link-check-enable --> can be updated and by the gov
+or the token admin. Check the <!-- markdown-link-check-disable -->[price tick and precision](#price-tick-and-precision)<!-- markdown-link-check-enable --> to get the details.
 
 ### Order cancellation
 

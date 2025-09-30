@@ -14,16 +14,16 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 )
 
 // TestAuthzDirectTransferFails if grantee sends message directly, without using authz.
 func TestAuthzDirectTransferFails(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -75,7 +75,7 @@ func TestAuthzDirectTransferFails(t *testing.T) {
 func TestAuthz(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -193,7 +193,7 @@ func TestAuthz(t *testing.T) {
 func TestAuthZWithMultisigGrantee(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -280,7 +280,7 @@ func TestAuthZWithMultisigGrantee(t *testing.T) {
 func TestAuthZWithMultisigGranter(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 

@@ -6,7 +6,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 func validateGoodTil(ctx sdk.Context, order types.Order) error {

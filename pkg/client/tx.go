@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	sdkerrors "cosmossdk.io/errors"
+	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	"github.com/cometbft/cometbft/mempool"
 	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -27,8 +28,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
-	feemodeltypes "github.com/CoreumFoundation/coreum/v6/x/feemodel/types"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
 )
 
 // Factory is a re-export of the cosmos sdk tx.Factory type, to make usage of this package more convenient.

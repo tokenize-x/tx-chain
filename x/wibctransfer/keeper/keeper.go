@@ -12,7 +12,7 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
 
-	"github.com/CoreumFoundation/coreum/v6/x/wibctransfer/types"
+	"github.com/tokenize-x/tx-chain/v6/x/wibctransfer/types"
 )
 
 // TransferKeeperWrapper is a wrapper of the IBC transfer keeper.

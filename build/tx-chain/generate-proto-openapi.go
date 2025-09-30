@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/crust/build/golang"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/golang"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
+	txbuildtools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 type swaggerDoc struct {
@@ -46,15 +46,15 @@ func generateProtoOpenAPI(ctx context.Context, deps types.DepsFunc) error {
 		return errors.WithStack(err)
 	}
 
-	coreumPath := filepath.Join(absPath, "proto", "coreum")
+	txPath := filepath.Join(absPath, "proto", "coreum")
 	cosmosPath := filepath.Join(moduleDirs[cosmosSDKModule], "proto", "cosmos")
 	ibcPath := filepath.Join(moduleDirs[cosmosIBCModule], "proto", "ibc")
 	generateDirs := []string{
-		filepath.Join(coreumPath, "asset", "ft", "v1"),
-		filepath.Join(coreumPath, "asset", "nft", "v1"),
-		filepath.Join(coreumPath, "customparams", "v1"),
-		filepath.Join(coreumPath, "dex", "v1"),
-		filepath.Join(coreumPath, "feemodel", "v1"),
+		filepath.Join(txPath, "asset", "ft", "v1"),
+		filepath.Join(txPath, "asset", "nft", "v1"),
+		filepath.Join(txPath, "customparams", "v1"),
+		filepath.Join(txPath, "dex", "v1"),
+		filepath.Join(txPath, "feemodel", "v1"),
 		filepath.Join(cosmosPath, "base", "node", "v1beta1"),
 		filepath.Join(cosmosPath, "base", "tendermint", "v1beta1"),
 		filepath.Join(cosmosPath, "tx", "v1beta1"),
@@ -87,7 +87,7 @@ func generateProtoOpenAPI(ctx context.Context, deps types.DepsFunc) error {
 
 // executeGoProtocCommand generates go code from proto files.
 func executeOpenAPIProtocCommand(ctx context.Context, deps types.DepsFunc, includeDirs, generateDirs []string) error {
-	deps(coreumtools.EnsureProtoc, coreumtools.EnsureProtocGenOpenAPIV2)
+	deps(txbuildtools.EnsureProtoc, txbuildtools.EnsureProtocGenOpenAPIV2)
 
 	outDir, err := os.MkdirTemp("", "")
 	if err != nil {

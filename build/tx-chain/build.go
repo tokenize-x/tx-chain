@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -7,22 +7,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/crust/build/config"
-	"github.com/CoreumFoundation/crust/build/docker"
-	dockerbasic "github.com/CoreumFoundation/crust/build/docker/basic"
-	"github.com/CoreumFoundation/crust/build/git"
-	"github.com/CoreumFoundation/crust/build/golang"
-	"github.com/CoreumFoundation/crust/build/lint"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/config"
+	"github.com/tokenize-x/crust/build/docker"
+	dockerbasic "github.com/tokenize-x/crust/build/docker/basic"
+	"github.com/tokenize-x/crust/build/git"
+	"github.com/tokenize-x/crust/build/golang"
+	"github.com/tokenize-x/crust/build/lint"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
+	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 const (
-	blockchainName    = "tx-core"
+	blockchainName    = "tx-chain"
 	binaryName        = "txd"
 	gaiaBinaryName    = "gaiad"
 	hermesBinaryName  = "hermes"
@@ -71,7 +71,7 @@ func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildGaiaDockerImage builds docker image of the gaia.
 func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := crusttools.Ensure(ctx, coreumtools.Gaia, crusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
+	if err := crusttools.Ensure(ctx, txchaintools.Gaia, crusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
 		"bin", ".cache", gaiaBinaryName, crusttools.TargetPlatformLinuxAMD64InDocker.String(),
 	)
 	if err := crusttools.CopyToolBinaries(
-		coreumtools.Gaia,
+		txchaintools.Gaia,
 		crusttools.TargetPlatformLinuxAMD64InDocker,
 		gaiaLocalPath,
 		gaiaBinaryPath,
@@ -106,7 +106,7 @@ func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildHermesDockerImage builds docker image of the ibc relayer.
 func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := crusttools.Ensure(ctx, coreumtools.Hermes, crusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
+	if err := crusttools.Ensure(ctx, txchaintools.Hermes, crusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
 		return err
 	}
 
@@ -114,7 +114,7 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 		"bin", ".cache", hermesBinaryName, crusttools.TargetPlatformLinuxAMD64InDocker.String(),
 	)
 	if err := crusttools.CopyToolBinaries(
-		coreumtools.Hermes,
+		txchaintools.Hermes,
 		crusttools.TargetPlatformLinuxAMD64InDocker,
 		hermesLocalPath,
 		hermesBinaryPath,
@@ -142,7 +142,7 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildOsmosisDockerImage builds docker image of the osmosis.
 func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := crusttools.Ensure(ctx, coreumtools.Osmosis, crusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
+	if err := crusttools.Ensure(ctx, txchaintools.Osmosis, crusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}
 
@@ -150,7 +150,7 @@ func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
 		"bin", ".cache", osmosisBinaryName, crusttools.TargetPlatformLinuxLocalArchInDocker.String(),
 	)
 	if err := crusttools.CopyToolBinaries(
-		coreumtools.Osmosis,
+		txchaintools.Osmosis,
 		crusttools.TargetPlatformLinuxLocalArchInDocker,
 		binaryLocalPath,
 		osmosisBinaryPath,
@@ -180,7 +180,7 @@ func buildTXdInDocker(
 	targetPlatform crusttools.TargetPlatform,
 	extraFlags []string,
 ) error {
-	if err := crusttools.Ensure(ctx, coreumtools.LibWASM, targetPlatform); err != nil {
+	if err := crusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
 		return err
 	}
 
@@ -192,7 +192,7 @@ func buildTXdInDocker(
 	switch targetPlatform.OS {
 	case crusttools.OSLinux:
 		// use cc not installed on the image we use for the build
-		if err := crusttools.Ensure(ctx, coreumtools.MuslCC, targetPlatform); err != nil {
+		if err := crusttools.Ensure(ctx, txchaintools.MuslCC, targetPlatform); err != nil {
 			return err
 		}
 		buildTags = append(buildTags, "muslc")
@@ -270,7 +270,7 @@ func buildTXdInDocker(
 	})
 }
 
-// Lint lints coreum repo.
+// Lint lints tx-chain repo.
 func Lint(ctx context.Context, deps types.DepsFunc) error {
 	deps(
 		Generate,
@@ -316,7 +316,7 @@ func txdVersionLDFlags(ctx context.Context, buildTags []string) ([]string, error
 }
 
 func formatProto(ctx context.Context, deps types.DepsFunc) error {
-	deps(coreumtools.EnsureBuf)
+	deps(txchaintools.EnsureBuf)
 
 	cmd := exec.Command(crusttools.Path("bin/buf", crusttools.TargetPlatformLocal), "format", "-w")
 	cmd.Dir = filepath.Join(repoPath, "proto", "coreum")

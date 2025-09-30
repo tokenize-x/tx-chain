@@ -1,10 +1,10 @@
-module github.com/CoreumFoundation/coreum/build
+module github.com/tokenize-x/tx-chain/build
 
 go 1.24
 
 toolchain go1.24.2
 
-replace github.com/CoreumFoundation/coreum/v6 => ../
+replace github.com/tokenize-x/tx-chain/v6 => ../
 
 // CosmosSDK replacements
 replace (
@@ -26,18 +26,18 @@ replace (
 
 require (
 	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a
-	github.com/CoreumFoundation/coreum/v6 v6.0.0-20250421142245-52bdcb2a0560
-	github.com/CoreumFoundation/crust v0.0.0-20250517130213-2f1a1d58aebc
-	github.com/CoreumFoundation/crust/znet v0.0.0-20250517130213-2f1a1d58aebc
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
+	github.com/tokenize-x/crust v0.0.0-20250517130213-2f1a1d58aebc
+	github.com/tokenize-x/crust/znet v0.0.0-20250517130213-2f1a1d58aebc
+	github.com/tokenize-x/tx-chain/v6 v6.0.0-20250421142245-52bdcb2a0560
 )
 
 replace (
 	// Use private crust fork to avoid using the public one.
-	github.com/CoreumFoundation/crust => github.com/CoreumFoundation/crust-private v0.0.0-20250812171441-5849c9d0317c
-	github.com/CoreumFoundation/crust/znet => github.com/CoreumFoundation/crust-private/znet v0.0.0-20250812171441-5849c9d0317c
+	github.com/tokenize-x/crust => github.com/CoreumFoundation/crust-private v0.0.0-20250919142459-d3c464c5e5bb
+	github.com/tokenize-x/crust/znet => github.com/CoreumFoundation/crust-private/znet v0.0.0-20250919142459-d3c464c5e5bb
 )
 
 require (
@@ -204,11 +204,13 @@ require (
 	github.com/minio/highwayhash v1.0.3 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
+	github.com/moby/sys/user v0.3.0 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/runc v1.2.0-rc.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect

@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	deterministicgastypes "github.com/CoreumFoundation/coreum/v6/x/deterministicgas/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	deterministicgastypes "github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
 )
 
 var maxMemo = strings.Repeat("-", 256) // cosmos sdk is configured to accept maximum memo of 256 characters by default
@@ -28,7 +28,7 @@ var maxMemo = strings.Repeat("-", 256) // cosmos sdk is configured to accept max
 func TestBankSendDeterministicGas(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 	recipient := chain.GenAccount()
@@ -73,7 +73,7 @@ func TestBankSendDeterministicGas(t *testing.T) {
 func TestBankSendDeterministicGasTwoBankSends(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 	recipient1 := chain.GenAccount()
@@ -108,7 +108,7 @@ func TestBankSendDeterministicGasTwoBankSends(t *testing.T) {
 func TestBankSendDeterministicGasManyCoins(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	const numOfTokens = 3
 
@@ -183,7 +183,7 @@ func TestBankSendDeterministicGasManyCoins(t *testing.T) {
 func TestBankSendFailsIfNotEnoughGasIsProvided(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 
@@ -214,7 +214,7 @@ func TestBankSendFailsIfNotEnoughGasIsProvided(t *testing.T) {
 func TestBankSendGasEstimation(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 
@@ -246,7 +246,7 @@ func TestBankSendGasEstimation(t *testing.T) {
 func TestBankMultiSendDeterministicGasManyCoins(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	const numOfTokens = 3
 
@@ -335,7 +335,7 @@ func TestBankMultiSendDeterministicGasManyCoins(t *testing.T) {
 func TestBankMultiSend(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 	recipient1 := chain.GenAccount()
@@ -472,7 +472,7 @@ func TestBankMultiSend(t *testing.T) {
 func TestTryBankMultiSendFromMultipleAccounts(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -603,7 +603,7 @@ func TestTryBankMultiSendFromMultipleAccounts(t *testing.T) {
 func TestBankCoreSend(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 	recipient := chain.GenAccount()

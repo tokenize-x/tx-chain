@@ -1,25 +1,25 @@
-# Coreum Blockchain
+# TX Blockchain
 
-Coreum addresses the existing limitations of the current blockchains and empowers a solid foundation for future decentralized projects.
-Coreum’s unique approach is to provide built-in, on-chain solutions to process transactions in a deterministic way to ensure fast, secure, cheap and a green network for a variety of use-cases.
+TX Blockchain addresses the existing limitations of the current blockchains and empowers a solid foundation for future decentralized projects.
+TX Blockchain’s unique approach is to provide built-in, on-chain solutions to process transactions in a deterministic way to ensure fast, secure, cheap and a green network for a variety of use-cases.
 
 The chain is designed to solve real-world problems at scale by providing native token management systems and Decentralized 
-Exchange (DEX), while being fully decentralized. In addition to the built-on-chain solutions, Coreum uses WebAssembly (WASM)
+Exchange (DEX), while being fully decentralized. In addition to the built-on-chain solutions, TX Blockchain uses WebAssembly (WASM)
 to process smart contracts, and utilizes the Tendermint Byzantine Fault Tolerance (BFT) consensus mechanism and Cosmos SDK’s 
 proven Bonded Proof of Stake (BPoS).
 
-Read more on [our website](https://www.coreum.com) and [documentation portal](https://docs.coreum.dev).
+Read more on [our website](https://www.tx.org) and <!-- markdown-link-check-disable -->[documentation portal](https://docs.tx.dev)<!-- markdown-link-check-enable -->.
 
 ## Binaries
 
-We share different binaries to be downloaded from our [Releases](https://github.com/CoreumFoundation/coreum/releases) page:
+We share different binaries to be downloaded from our <!-- markdown-link-check-disable -->[Releases](https://github.com/tokenize-x/tx-chain/releases)<!-- markdown-link-check-enable --> page:
 
 * `txd-linux-[amd64 | arm64]` - fully featured node & client binaries compiled for linux (supports Ledger devices).
 * `txd-client-darwin-[amd64 | arm64]` - client-only binaries for Darwin, which might be used to prepare and send transactions but not to run the node. This binary does not support Ledger devices
 
 ## Build and Play
 
-Coreum blockchain is under development and all the features are going to be added progressively over time.
+TX blockchain is under development and all the features are going to be added progressively over time.
 Everyone is encouraged to run a chain locally for development and testing purposes.
 
 Entire process of running local chain is automated by our tooling. The only prerequisites are:
@@ -32,9 +32,9 @@ Entire process of running local chain is automated by our tooling. The only prer
 Steps to build required binaries:
 1. Clone this repository and setup initial dependencies
 ```
-$ git clone https://github.com/CoreumFoundation/coreum
-$ cd coreum
-$ ./bin/tx-core-builder setup
+$ git clone <!-- markdown-link-check-disable -->https://github.com/tokenize-x/tx-chain<!-- markdown-link-check-enable -->
+$ cd tx-chain
+$ ./bin/tx-chain-builder setup
 ```
 2. Compile the `txd` binary and related docker images:
 ```
@@ -45,7 +45,7 @@ After the command completes you may find executable `./bin/txd`, being both bloc
 
 ### Start local chain
 
-To start local Coreum blockchain execute:
+To start local TX blockchain execute:
 
 ```
 $ make znet-start
@@ -59,7 +59,7 @@ To stop and purge the testing environment run:
 $ make znet-remove
 ```
 
-To get all the details on how `znet` tool might be used, go to the [crust repository](https://github.com/CoreumFoundation/crust).
+To get all the details on how `znet` tool might be used, go to the <!-- markdown-link-check-disable -->[crust repository](https://github.com/tokenize-x/tx-chain)<!-- markdown-link-check-enable -->.
 
 ### Interact with the local chain
 
@@ -100,15 +100,15 @@ Run the query again, and you will see that there are now funds in the newly gene
 ```
 
 ## Connect to Running Chains
-Coreum has `mainnet`, `testnet` and `devnet` chains running. In order to connect to any of those networks, get the
-network variables from the docs [here](https://docs.coreum.dev/docs/next/nodes-and-validators/essentials/network-variables), and
+TX Blockchain has `mainnet`, `testnet` and `devnet` chains running. In order to connect to any of those networks, get the
+network variables from the docs <!-- markdown-link-check-disable -->[here](https://docs.tx.dev/docs/next/nodes-and-validators/essentials/network-variables)<!-- markdown-link-check-enable -->, and
 provide the correct `node` and `chain-id` flags to the cli command. 
 As an example here is a command to connect to the testnet to get the status:
 
 ```
-$ txd status --chain-id=coreum-testnet-1 --node=https://full-node.testnet-1.coreum.dev:26657
+$ txd status --chain-id=coreum-testnet-1 --node=https://full-node.testnet-1.tx.dev:26657
 ```
 It should also be mentioned that for development purposes testnet is more stable than devnet.
 
 You can also find block explorers for each chain by this
-[link](https://docs.coreum.dev/docs/tools-and-ecosystem/blockchain-explorers).
+<!-- markdown-link-check-disable -->[link](https://docs.tx.dev/docs/tools-and-ecosystem/blockchain-explorers)<!-- markdown-link-check-enable -->.

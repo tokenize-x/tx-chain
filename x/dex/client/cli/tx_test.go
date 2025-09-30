@@ -16,13 +16,13 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	coreumclitestutil "github.com/CoreumFoundation/coreum/v6/testutil/cli"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/network"
-	assetftcli "github.com/CoreumFoundation/coreum/v6/x/asset/ft/client/cli"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	"github.com/CoreumFoundation/coreum/v6/x/dex/client/cli"
-	"github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/network"
+	assetftcli "github.com/tokenize-x/tx-chain/v6/x/asset/ft/client/cli"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/client/cli"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 func TestCmdPlaceOrder(t *testing.T) {
@@ -200,7 +200,7 @@ func TestCmdCancelOrder(t *testing.T) {
 		[]string{
 			order.ID,
 		}, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(
+	_, err := txchainclitestutil.ExecTxCmd(
 		ctx,
 		testNetwork,
 		cli.CmdCancelOrder(),
@@ -235,7 +235,7 @@ func TestCmdCancelOrdersByDenom(t *testing.T) {
 			validator1Address(testNetwork).String(),
 			denom1,
 		}, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(
+	_, err := txchainclitestutil.ExecTxCmd(
 		ctx,
 		testNetwork,
 		cli.CmdCancelOrdersByDenom(),
@@ -245,7 +245,7 @@ func TestCmdCancelOrdersByDenom(t *testing.T) {
 
 	// check orders
 	var ordersRes types.QueryAccountDenomOrdersCountResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t, ctx, cli.CmdQueryAccountDenomOrdersCount(), []string{validator1Address(testNetwork).String(), denom1}, &ordersRes,
 	)
 	requireT.Zero(ordersRes.Count)
@@ -280,7 +280,7 @@ func placeOrder(
 		}
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(
+	_, err := txchainclitestutil.ExecTxCmd(
 		ctx,
 		testNetwork,
 		cli.CmdPlaceOrder(),
@@ -311,7 +311,7 @@ func issueFT(
 	args = append(args, fmt.Sprintf("--%s=%s", assetftcli.FeaturesFlag, strings.Join(features, ",")))
 
 	args = append(args, txValidator1Args(testNetwork)...)
-	res, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, assetftcli.CmdTxIssue(), args)
+	res, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, assetftcli.CmdTxIssue(), args)
 	requireT.NoError(err)
 
 	requireT.NotEmpty(res.TxHash)

@@ -13,8 +13,8 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 )
 
 const (
@@ -37,20 +37,20 @@ type pfmForwardMetadata struct {
 	Forward packetforwardtypes.ForwardMetadata `json:"forward"`
 }
 
-// TestPFMViaCoreumForOsmosisToken tests the packet
-// forwarding middleware integration into Coreum by sending Osmosis native token:
-// Osmosis -> Coreum -> Gaia IBC transfer.
-func TestPFMViaCoreumForOsmosisToken(t *testing.T) {
+// TestPFMViaTxForOsmosisToken tests the packet
+// forwarding middleware integration into TX by sending Osmosis native token:
+// Osmosis -> TX -> Gaia IBC transfer.
+func TestPFMViaTxForOsmosisToken(t *testing.T) {
 	t.Parallel()
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 	requireT := require.New(t)
-	coreumChain := chains.Coreum
+	txChain := chains.TXChain
 	osmosisChain := chains.Osmosis
 	gaiaChain := chains.Gaia
 
 	osmosisSender := osmosisChain.GenAccount()
-	coreumSender := coreumChain.GenAccount()
+	txSender := txChain.GenAccount()
 
 	gaiaReceiver := gaiaChain.GenAccount()
 
@@ -60,26 +60,26 @@ func TestPFMViaCoreumForOsmosisToken(t *testing.T) {
 			Amount:  osmosisChain.NewCoin(sdkmath.NewInt(20_000_000)),
 		},
 	)
-	coreumChain.Faucet.FundAccounts(ctx, t,
+	txChain.Faucet.FundAccounts(ctx, t,
 		integration.FundedAccount{
-			Address: coreumSender,
-			Amount:  coreumChain.NewCoin(sdkmath.NewInt(20_000_000)),
+			Address: txSender,
+			Amount:  txChain.NewCoin(sdkmath.NewInt(20_000_000)),
 		},
 	)
 
-	coreumToGaiaChannelID := coreumChain.AwaitForIBCChannelID(
+	txToGaiaChannelID := txChain.AwaitForIBCChannelID(
 		ctx,
 		t,
 		ibctransfertypes.PortID,
 		gaiaChain.ChainContext,
 	)
-	gaiaToCoreumChannelID := gaiaChain.AwaitForIBCChannelID(
+	gaiaToTXChannelID := gaiaChain.AwaitForIBCChannelID(
 		ctx,
 		t,
 		ibctransfertypes.PortID,
-		coreumChain.ChainContext,
+		txChain.ChainContext,
 	)
-	coreumToOsmosiChannelID := coreumChain.AwaitForIBCChannelID(
+	txToOsmosiChannelID := txChain.AwaitForIBCChannelID(
 		ctx,
 		t,
 		ibctransfertypes.PortID,
@@ -90,7 +90,7 @@ func TestPFMViaCoreumForOsmosisToken(t *testing.T) {
 		Forward: packetforwardtypes.ForwardMetadata{
 			Receiver: gaiaChain.MustConvertToBech32Address(gaiaReceiver),
 			Port:     ibctransfertypes.PortID,
-			Channel:  coreumToGaiaChannelID,
+			Channel:  txToGaiaChannelID,
 		},
 	}
 
@@ -104,39 +104,39 @@ func TestPFMViaCoreumForOsmosisToken(t *testing.T) {
 		osmosisChain.TxFactoryAuto(),
 		osmosisSender,
 		sendToGaiaCoin,
-		coreumChain.ChainContext,
+		txChain.ChainContext,
 		pfmRecipient,
 		string(pfmMemo),
 	)
 	requireT.NoError(err)
 
-	// Packet denom is the IBC denom sent from coreum to gaia in raw format (without bech32 encoding).
+	// Packet denom is the IBC denom sent from tx to gaia in raw format (without bech32 encoding).
 	// Example: "transfer/channel-1/stake"
-	packetDenom := fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, coreumToOsmosiChannelID, sendToGaiaCoin.Denom)
+	packetDenom := fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, txToOsmosiChannelID, sendToGaiaCoin.Denom)
 	// So a received packet on gaia looks like this:
 	// port: "transfer"
 	// channel: "channel-0"
 	// denom: "transfer/channel-1/stake"
-	receivedDenomOnGaia := ConvertToIBCDenom(gaiaToCoreumChannelID, packetDenom)
+	receivedDenomOnGaia := ConvertToIBCDenom(gaiaToTXChannelID, packetDenom)
 
 	expectedGaiaReceiverBalance := sdk.NewCoin(receivedDenomOnGaia, sendToGaiaCoin.Amount)
 	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaReceiver, expectedGaiaReceiverBalance))
 }
 
-// TestPFMViaCoreumForCoreumToken tests the packet forwarding middleware integration into Coreum
-// by sending Coreum native token to Osmosis and then sending it to gaia via Coreum:
-// tx1: Coreum -> Osmosis, tx2: Osmosis -> Coreum -> Gaia.
-func TestPFMViaCoreumForCoreumToken(t *testing.T) {
+// TestPFMViaTXforTXToken tests the packet forwarding middleware integration into TX
+// by sending TX native token to Osmosis and then sending it to gaia via TX:
+// tx1: TX -> Osmosis, tx2: Osmosis -> TX -> Gaia.
+func TestPFMViaTXforTXToken(t *testing.T) {
 	t.Parallel()
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 	requireT := require.New(t)
-	coreumChain := chains.Coreum
+	txChain := chains.TXChain
 	osmosisChain := chains.Osmosis
 	gaiaChain := chains.Gaia
 
 	osmosisSender := osmosisChain.GenAccount()
-	coreumSender := coreumChain.GenAccount()
+	txSender := txChain.GenAccount()
 
 	gaiaReceiver := gaiaChain.GenAccount()
 
@@ -146,40 +146,40 @@ func TestPFMViaCoreumForCoreumToken(t *testing.T) {
 			Amount:  osmosisChain.NewCoin(sdkmath.NewInt(20_000_000)),
 		},
 	)
-	coreumChain.Faucet.FundAccounts(ctx, t,
+	txChain.Faucet.FundAccounts(ctx, t,
 		integration.FundedAccount{
-			Address: coreumSender,
-			Amount:  coreumChain.NewCoin(sdkmath.NewInt(20_000_000)),
+			Address: txSender,
+			Amount:  txChain.NewCoin(sdkmath.NewInt(20_000_000)),
 		},
 	)
 
-	coreumToGaiaChannelID := coreumChain.AwaitForIBCChannelID(
+	txToGaiaChannelID := txChain.AwaitForIBCChannelID(
 		ctx,
 		t,
 		ibctransfertypes.PortID,
 		gaiaChain.ChainContext,
 	)
-	gaiaToCoreumChannelID := gaiaChain.AwaitForIBCChannelID(
+	gaiaToTXChannelID := gaiaChain.AwaitForIBCChannelID(
 		ctx,
 		t,
 		ibctransfertypes.PortID,
-		coreumChain.ChainContext,
+		txChain.ChainContext,
 	)
-	osmosisToCoreumChannelID := osmosisChain.AwaitForIBCChannelID(
+	osmosisToTXChannelID := osmosisChain.AwaitForIBCChannelID(
 		ctx,
 		t,
 		ibctransfertypes.PortID,
-		coreumChain.ChainContext,
+		txChain.ChainContext,
 	)
 
 	// ********** Send funds to Osmosis **********
 
-	sendToOsmosisCoin := coreumChain.NewCoin(sdkmath.NewInt(10_000_000))
-	_, err := coreumChain.ExecuteIBCTransfer(
+	sendToOsmosisCoin := txChain.NewCoin(sdkmath.NewInt(10_000_000))
+	_, err := txChain.ExecuteIBCTransfer(
 		ctx,
 		t,
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-		coreumSender,
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+		txSender,
 		sendToOsmosisCoin,
 		osmosisChain.ChainContext,
 		osmosisSender,
@@ -187,18 +187,18 @@ func TestPFMViaCoreumForCoreumToken(t *testing.T) {
 	requireT.NoError(err)
 
 	expectedOsmosisRecipientBalance := sdk.NewCoin(
-		ConvertToIBCDenom(osmosisToCoreumChannelID, sendToOsmosisCoin.Denom),
+		ConvertToIBCDenom(osmosisToTXChannelID, sendToOsmosisCoin.Denom),
 		sendToOsmosisCoin.Amount,
 	)
 	requireT.NoError(osmosisChain.AwaitForBalance(ctx, t, osmosisSender, expectedOsmosisRecipientBalance))
 
-	// ********** Send funds to Gaia via Coreum using PFM **********
+	// ********** Send funds to Gaia via TX using PFM **********
 
 	forwardMetadata := pfmForwardMetadata{
 		Forward: packetforwardtypes.ForwardMetadata{
 			Receiver: gaiaChain.MustConvertToBech32Address(gaiaReceiver),
 			Port:     ibctransfertypes.PortID,
-			Channel:  coreumToGaiaChannelID,
+			Channel:  txToGaiaChannelID,
 		},
 	}
 
@@ -212,15 +212,15 @@ func TestPFMViaCoreumForCoreumToken(t *testing.T) {
 		osmosisChain.TxFactoryAuto(),
 		osmosisSender,
 		sendToGaiaCoin,
-		coreumChain.ChainContext,
+		txChain.ChainContext,
 		pfmRecipient,
 		string(pfmMemo),
 	)
 	requireT.NoError(err)
 
-	// Note that denom is resolved in the same way as if was sent from Coreum to Gaia directly.
+	// Note that denom is resolved in the same way as if was sent from TX to Gaia directly.
 	expectedGaiaReceiverBalance := sdk.NewCoin(
-		ConvertToIBCDenom(gaiaToCoreumChannelID, coreumChain.ChainSettings.Denom),
+		ConvertToIBCDenom(gaiaToTXChannelID, txChain.ChainSettings.Denom),
 		sendToGaiaCoin.Amount,
 	)
 	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaReceiver, expectedGaiaReceiverBalance))

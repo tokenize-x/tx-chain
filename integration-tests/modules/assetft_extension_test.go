@@ -18,14 +18,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	moduleswasm "github.com/CoreumFoundation/coreum/v6/integration-tests/contracts/modules"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	testcontracts "github.com/CoreumFoundation/coreum/v6/x/asset/ft/keeper/test-contracts"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	dextypes "github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	testcontracts "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper/test-contracts"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 var (
@@ -35,7 +35,7 @@ var (
 // TestAssetFTExtensionIssue tests extension issue functionality of fungible tokens.
 func TestAssetFTExtensionIssue(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
 	wasmClient := wasmtypes.NewQueryClient(chain.ClientContext)
@@ -192,7 +192,7 @@ func TestAssetFTExtensionIssue(t *testing.T) {
 func TestAssetFTExtensionWhitelist(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -382,7 +382,7 @@ func TestAssetFTExtensionWhitelist(t *testing.T) {
 func TestAssetFTExtensionFreeze(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -554,7 +554,7 @@ func TestAssetFTExtensionFreeze(t *testing.T) {
 func TestAssetFTExtensionBurn(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -746,7 +746,7 @@ func TestAssetFTExtensionBurn(t *testing.T) {
 func TestAssetFTExtensionMint(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)
@@ -965,7 +965,7 @@ func TestAssetFTExtensionMint(t *testing.T) {
 func TestAssetFTExtensionSendingToSmartContractIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 	requireT := require.New(t)
@@ -1072,7 +1072,7 @@ func TestAssetFTExtensionSendingToSmartContractIsDenied(t *testing.T) {
 func TestAssetFTExtensionAttachingToSmartContractCallIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -1152,7 +1152,7 @@ func TestAssetFTExtensionAttachingToSmartContractCallIsDenied(t *testing.T) {
 func TestAssetFTExtensionIssuingSmartContractIsAllowedToSendAndReceive(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -1275,7 +1275,7 @@ func TestAssetFTExtensionIssuingSmartContractIsAllowedToSendAndReceive(t *testin
 func TestAssetFTExtensionAttachingToSmartContractInstantiationIsDenied(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 
@@ -1350,7 +1350,7 @@ func TestAssetFTExtensionMintingAndSendingOnBehalfOfIssuingSmartContractIsPossib
 ) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -1498,7 +1498,7 @@ func TestAssetFTExtensionMintingAndSendingOnBehalfOfIssuingSmartContractIsPossib
 func TestAssetFTExtensionBurnRate(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	admin := chain.GenAccount()
@@ -1647,7 +1647,7 @@ func TestAssetFTExtensionBurnRate(t *testing.T) {
 func TestAssetFTExtensionSendCommissionRate(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
 
@@ -1806,7 +1806,7 @@ func TestAssetFTExtensionSendCommissionRate(t *testing.T) {
 func TestAssetFTExtensionDEX(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 

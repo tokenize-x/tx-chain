@@ -10,6 +10,7 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -24,22 +25,21 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	moduleswasm "github.com/CoreumFoundation/coreum/v6/integration-tests/contracts/modules"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	customparamstypes "github.com/CoreumFoundation/coreum/v6/x/customparams/types"
-	testcontracts "github.com/CoreumFoundation/coreum/v6/x/dex/keeper/test-contracts"
-	dextypes "github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
+	testcontracts "github.com/tokenize-x/tx-chain/v6/x/dex/keeper/test-contracts"
+	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 // TestLimitOrdersMatching tests the dex modules ability to place get and match limit orders.
 func TestLimitOrdersMatching(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -152,7 +152,7 @@ func TestLimitOrdersMatching(t *testing.T) {
 // TestLimitOrdersMatchingFast tests the dex modules ability to place get and match limit orders.
 func TestLimitOrdersMatchingFast(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -265,7 +265,7 @@ func TestLimitOrdersMatchingFast(t *testing.T) {
 // TestMarketOrdersMatching tests the dex modules ability to place match market orders.
 func TestMarketOrdersMatching(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
@@ -343,7 +343,7 @@ func TestMarketOrdersMatching(t *testing.T) {
 // TestOrderCancellation tests the dex modules ability to place cancel placed order.
 func TestOrderCancellation(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -515,7 +515,7 @@ func TestOrderCancellation(t *testing.T) {
 // TestOrderTilBlockHeight tests the dex modules ability to place cancel placed order with good til block height.
 func TestOrderTilBlockHeight(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -585,7 +585,7 @@ func TestOrderTilBlockHeight(t *testing.T) {
 // TestOrderTilBlockTime tests the dex modules ability to place cancel placed order with good til block time.
 func TestOrderTilBlockTime(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -655,7 +655,7 @@ func TestOrderTilBlockTime(t *testing.T) {
 // TestOrderBooksAndOrdersQueries tests the dex modules order queries.
 func TestOrderBooksAndOrdersQueries(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -807,7 +807,7 @@ func TestDEXProposalParamChange(t *testing.T) {
 	// Since this test changes global we can't run it in parallel with other tests.
 	// That's why t.Parallel() is not here.
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -865,7 +865,7 @@ func TestDEXProposalParamChange(t *testing.T) {
 // with asset ft with freezing.
 func TestLimitOrdersMatchingWithAssetFTFreeze(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
@@ -1069,7 +1069,7 @@ func TestLimitOrdersMatchingWithAssetFTFreeze(t *testing.T) {
 // with asset ft with globally freezing.
 func TestLimitOrdersMatchingWithAssetFTGloballyFreeze(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
@@ -1292,7 +1292,7 @@ func TestLimitOrdersMatchingWithAssetFTGloballyFreeze(t *testing.T) {
 // with asset ft with clawback feature.
 func TestLimitOrdersMatchingWithAssetClawback(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -1517,7 +1517,7 @@ func TestLimitOrdersMatchingWithAssetClawback(t *testing.T) {
 // TestLimitOrdersMatchingWithStaking tests the dex modules ability to place get and match limit orders with staking.
 func TestLimitOrdersMatchingWithStaking(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -1619,7 +1619,7 @@ func TestLimitOrdersMatchingWithStaking(t *testing.T) {
 // TestLimitOrdersMatchingWithBurnRate tests the dex modules ability to place get and match limit orders with burn rate.
 func TestLimitOrdersMatchingWithBurnRate(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -1770,7 +1770,7 @@ func TestLimitOrdersMatchingWithBurnRate(t *testing.T) {
 // send commission rate.
 func TestLimitOrdersMatchingWithCommissionRate(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -1921,7 +1921,7 @@ func TestLimitOrdersMatchingWithCommissionRate(t *testing.T) {
 // with asset ft with whitelisting.
 func TestLimitOrdersMatchingWithAssetFTWhitelist(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
@@ -2118,7 +2118,7 @@ func TestLimitOrdersMatchingWithAssetFTWhitelist(t *testing.T) {
 // TestCancelOrdersByDenom tests the dex modules ability to cancel all orders of the account and by denom.
 func TestCancelOrdersByDenom(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	const ordersPerChunk = 10
 
 	requireT := require.New(t)
@@ -2273,7 +2273,7 @@ func TestCancelOrdersByDenom(t *testing.T) {
 // block_smart_contracts features.
 func TestAssetFTBlockSmartContractsFeatureWithDEX(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -2484,7 +2484,7 @@ func TestAssetFTBlockSmartContractsFeatureWithDEX(t *testing.T) {
 // with asset ft with burning feature.
 func TestLimitOrdersMatchingWithAssetBurning(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
@@ -2618,7 +2618,7 @@ func TestLimitOrdersMatchingWithAssetBurning(t *testing.T) {
 func TestDEXReentrancyViaExtension(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 
@@ -2784,7 +2784,7 @@ func TestDEXReentrancyViaExtension(t *testing.T) {
 
 func placeOrder(
 	ctx context.Context,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	acc sdk.AccAddress,
 	side dextypes.Side,
 	id, denomA, denomB, price string,
@@ -2813,7 +2813,7 @@ func placeOrder(
 func TestTradeByAdmin(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	dexClient := dextypes.NewQueryClient(chain.ClientContext)
@@ -2917,7 +2917,7 @@ func TestTradeByAdmin(t *testing.T) {
 func issueFT(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	issuer sdk.AccAddress,
 	initialAmount sdkmath.Int,
 	features ...assetfttypes.Feature,
@@ -2950,7 +2950,7 @@ func issueFT(
 func genAccountAndIssueFT(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	balance int64,
 	initialIssueAmount sdkmath.Int,
 	features ...assetfttypes.Feature,

@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/app"
-	coreumclitestutil "github.com/CoreumFoundation/coreum/v6/testutil/cli"
-	"github.com/CoreumFoundation/coreum/v6/testutil/network"
+	"github.com/tokenize-x/tx-chain/v6/app"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v6/testutil/network"
 )
 
 func TestAutoGasPrices(t *testing.T) {
@@ -78,7 +78,7 @@ func TestAutoGasPrices(t *testing.T) {
 			bankTx := bankcli.NewTxCmd(addresscodec.NewBech32Codec(app.ChosenNetwork.Provider.GetAddressPrefix()))
 			addQueryGasPriceToAllLeaves(bankTx)
 
-			res, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, bankTx, args)
+			res, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, bankTx, args)
 			if tc.expectError {
 				requireT.Error(err)
 				return

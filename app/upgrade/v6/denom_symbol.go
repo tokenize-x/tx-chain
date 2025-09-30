@@ -6,8 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
-	wbankkeeper "github.com/CoreumFoundation/coreum/v6/x/wbank/keeper"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
 )
 
 func migrateDenomSymbol(ctx context.Context, bankKeeper wbankkeeper.BaseKeeperWrapper) error {

@@ -41,10 +41,10 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/CoreumFoundation/coreum/v6/app"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config"
-	coreumkeyring "github.com/CoreumFoundation/coreum/v6/pkg/keyring"
+	"github.com/tokenize-x/tx-chain/v6/app"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config"
+	txchainkeyring "github.com/tokenize-x/tx-chain/v6/pkg/keyring"
 )
 
 // defaultGasAdjustment is gas adjustment used for the nondeterministic gas messages.
@@ -308,7 +308,7 @@ func NewChain(
 		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
 		WithTxConfig(encodingConfig.TxConfig).
 		WithChainID(chainSettings.ChainID).
-		WithKeyring(coreumkeyring.NewConcurrentSafeKeyring(keyring.NewInMemory(encodingConfig.Codec))).
+		WithKeyring(txchainkeyring.NewConcurrentSafeKeyring(keyring.NewInMemory(encodingConfig.Codec))).
 		WithBroadcastMode(flags.BroadcastSync).
 		WithGRPCClient(grpcClient).
 		WithClient(rpcClient).

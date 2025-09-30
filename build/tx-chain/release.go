@@ -1,15 +1,15 @@
-package coreum
+package txchain
 
 import (
 	"context"
 
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/crust/build/config"
-	"github.com/CoreumFoundation/crust/build/docker"
-	"github.com/CoreumFoundation/crust/build/git"
-	"github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/config"
+	"github.com/tokenize-x/crust/build/docker"
+	"github.com/tokenize-x/crust/build/git"
+	"github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
 )
 
 // ReleaseTXd releases txd binary for amd64 and arm64 to be published inside the release.

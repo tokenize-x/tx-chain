@@ -5,7 +5,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 // MatchingEngine takes an incoming order and returns a MatchingResult.

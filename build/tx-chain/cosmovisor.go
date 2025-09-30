@@ -1,21 +1,21 @@
-package coreum
+package txchain
 
 import (
 	"context"
 	"path/filepath"
 
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 func ensureCosmovisorWithInstalledBinary(
 	ctx context.Context, platform crusttools.TargetPlatform, binaryName string,
 ) error {
-	if err := crusttools.Ensure(ctx, coreumtools.Cosmovisor, platform); err != nil {
+	if err := crusttools.Ensure(ctx, txchaintools.Cosmovisor, platform); err != nil {
 		return err
 	}
 
-	return crusttools.CopyToolBinaries(coreumtools.Cosmovisor,
+	return crusttools.CopyToolBinaries(txchaintools.Cosmovisor,
 		platform,
 		filepath.Join("bin", ".cache", binaryName, platform.String()),
 		cosmovisorBinaryPath)

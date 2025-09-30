@@ -26,16 +26,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	legacymoduleswasm "github.com/CoreumFoundation/coreum/v6/integration-tests/contracts/legacy-modules"
-	moduleswasm "github.com/CoreumFoundation/coreum/v6/integration-tests/contracts/modules"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/event"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	assetnfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
-	deterministicgastypes "github.com/CoreumFoundation/coreum/v6/x/deterministicgas/types"
-	dextypes "github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	legacymoduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/legacy-modules"
+	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	deterministicgastypes "github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
+	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 // authz models
@@ -234,7 +234,7 @@ const (
 func TestContractInstantiation(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	admin := chain.GenAccount()
 
 	requireT := require.New(t)
@@ -343,7 +343,7 @@ func TestContractInstantiation(t *testing.T) {
 func TestWASMBankSendContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	nativeDenom := chain.ChainSettings.Denom
@@ -457,7 +457,7 @@ func TestWASMBankSendContract(t *testing.T) {
 func TestWASMGasBankSendAndBankSend(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	admin := chain.GenAccount()
@@ -519,7 +519,7 @@ func TestWASMGasBankSendAndBankSend(t *testing.T) {
 func TestWASMPinningAndUnpinningSmartContractUsingGovernance(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	proposer := chain.GenAccount()
@@ -660,7 +660,7 @@ func TestWASMPinningAndUnpinningSmartContractUsingGovernance(t *testing.T) {
 func TestWASMContractUpgrade(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	noneAdmin := chain.GenAccount()
@@ -754,7 +754,7 @@ func TestWASMContractUpgrade(t *testing.T) {
 func TestUpdateAndClearAdminOfContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	newAdmin := chain.GenAccount()
@@ -853,7 +853,7 @@ func TestUpdateAndClearAdminOfContract(t *testing.T) {
 func TestWASMAuthzContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	granter := chain.GenAccount()
@@ -1159,12 +1159,12 @@ func TestWASMAuthzContract(t *testing.T) {
 	requireT.Equal(ownerResp.Owner, receiver.String())
 }
 
-// TestWASMFungibleTokenInContract verifies that smart contract is able to execute all Coreum fungible token messages
+// TestWASMFungibleTokenInContract verifies that smart contract is able to execute all TX-Chain fungible token messages
 // and queries.
 func TestWASMFungibleTokenInContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	recipient1 := chain.GenAccount()
@@ -1555,11 +1555,11 @@ func TestWASMFungibleTokenInContract(t *testing.T) {
 }
 
 // TestWASMFungibleTokenInContractLegacy verifies that smart contract is able to execute all
-// Coreum fungible token messages and queries using the deprecated wasm bindings/handler.
+// TX-Chain fungible token messages and queries using the deprecated wasm bindings/handler.
 func TestWASMFungibleTokenInContractLegacy(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	recipient1 := chain.GenAccount()
@@ -1976,14 +1976,14 @@ func TestWASMFungibleTokenInContractLegacy(t *testing.T) {
 	)
 }
 
-// TestWASMNonFungibleTokenInContract verifies that smart contract is able to execute all non-fungible Coreum
+// TestWASMNonFungibleTokenInContract verifies that smart contract is able to execute all non-fungible TX-Chain
 // token messages and queries from smart contracts.
 //
 //nolint:nosnakecase
 func TestWASMNonFungibleTokenInContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	recipient := chain.GenAccount()
@@ -2573,13 +2573,13 @@ func TestWASMNonFungibleTokenInContract(t *testing.T) {
 }
 
 // TestWASMNonFungibleTokenInContractLegacy verifies that smart contract is able to execute all
-// non-fungible Coreum token messages and queries from the deprecated wasm bindings/handler.
+// non-fungible TX-Chain token messages and queries from the deprecated wasm bindings/handler.
 //
 //nolint:nosnakecase
 func TestWASMNonFungibleTokenInContractLegacy(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	recipient := chain.GenAccount()
@@ -3443,7 +3443,7 @@ func TestWASMContractInstantiationIsNotRejectedIfAccountExists(t *testing.T) {
 	t.Parallel()
 
 	requireT := require.New(t)
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	adminAccount := chain.GenAccount()
 	chain.FundAccountWithOptions(ctx, t, adminAccount, integration.BalancesOptions{
@@ -3558,7 +3558,7 @@ func TestWASMContractInstantiationIsNotRejectedIfAccountExists(t *testing.T) {
 func TestVestingToWASMContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	admin := chain.GenAccount()
 	recipient := chain.GenAccount()
 	amount := chain.NewCoin(sdkmath.NewInt(500))
@@ -3678,11 +3678,11 @@ func TestVestingToWASMContract(t *testing.T) {
 	requireT.NoError(err)
 }
 
-// TestWASMDEXInContract verifies that smart contract is able to execute all Coreum DEX messages and queries.
+// TestWASMDEXInContract verifies that smart contract is able to execute all TX-Chain DEX messages and queries.
 func TestWASMDEXInContract(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	issuer := chain.GenAccount()
@@ -4056,7 +4056,7 @@ func TestWASMDEXInContract(t *testing.T) {
 func testSmartContractAccount(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	codeID uint64,
 	salt []byte,
 	contractAddress sdk.AccAddress,

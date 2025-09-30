@@ -7,10 +7,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	coreumclitestutil "github.com/CoreumFoundation/coreum/v6/testutil/cli"
-	"github.com/CoreumFoundation/coreum/v6/testutil/network"
-	"github.com/CoreumFoundation/coreum/v6/x/dex/client/cli"
-	"github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v6/testutil/network"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/client/cli"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 var defaultQuantity = sdkmath.NewInt(1_000_000)
@@ -23,7 +23,7 @@ func TestQueryParams(t *testing.T) {
 	ctx := testNetwork.Validators[0].ClientCtx
 
 	var resp types.QueryParamsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
 	requireT.Equal(types.DefaultParams(), resp.Params)
 }
 
@@ -37,7 +37,7 @@ func TestQueryOrderBookParams(t *testing.T) {
 	denom2 := issueFT(ctx, requireT, testNetwork, sdkmath.NewInt(1_000_000))
 
 	var resp types.QueryOrderBookParamsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrderBookParams(), []string{denom1, denom2}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrderBookParams(), []string{denom1, denom2}, &resp)
 	requireT.Equal("1e-6", resp.PriceTick.String())
 	requireT.Equal("10000", resp.QuantityStep.String())
 	requireT.Equal("1000000", resp.BaseDenomUnifiedRefAmount.TruncateInt().String())
@@ -54,7 +54,7 @@ func TestCmdQueryOrderBooksAndOrders(t *testing.T) {
 	denom3 := issueFT(ctx, requireT, testNetwork, defaultQuantity)
 
 	var resp types.QueryParamsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
 
 	creator := validator1Address(testNetwork)
 	order1 := types.Order{
@@ -76,14 +76,14 @@ func TestCmdQueryOrderBooksAndOrders(t *testing.T) {
 
 	// check single order
 	var orderRes types.QueryOrderResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t, ctx, cli.CmdQueryOrder(), []string{creator.String(), order1.ID}, &orderRes,
 	)
 	requireT.Equal(order1, orderRes.Order)
 
 	// check order books
 	var orderBooksRes types.QueryOrderBooksResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrderBooks(), []string{}, &orderBooksRes)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrderBooks(), []string{}, &orderBooksRes)
 	requireT.ElementsMatch([]types.OrderBookData{
 		{
 			BaseDenom:  denom1,
@@ -114,7 +114,7 @@ func TestCmdQueryOrderBooksAndOrders(t *testing.T) {
 
 	// check orders
 	var ordersRes types.QueryOrdersResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrders(), []string{creator.String()}, &ordersRes)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrders(), []string{creator.String()}, &ordersRes)
 	requireT.ElementsMatch([]types.Order{
 		order1,
 		order2,
@@ -122,7 +122,7 @@ func TestCmdQueryOrderBooksAndOrders(t *testing.T) {
 
 	// check order book orders
 	var orderBookOrdersRes types.QueryOrderBookOrdersResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t, ctx, cli.CmdQueryOrderBookOrders(), []string{denom1, denom2, types.SIDE_SELL.String()}, &orderBookOrdersRes,
 	)
 	requireT.ElementsMatch([]types.Order{
@@ -140,7 +140,7 @@ func TestCmdQueryAccountDenomOrdersCount(t *testing.T) {
 	denom3 := issueFT(ctx, requireT, testNetwork, defaultQuantity)
 
 	var resp types.QueryParamsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
 
 	creator := validator1Address(testNetwork)
 	order1 := types.Order{
@@ -162,14 +162,14 @@ func TestCmdQueryAccountDenomOrdersCount(t *testing.T) {
 
 	// check single order
 	var orderRes types.QueryOrderResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t, ctx, cli.CmdQueryOrder(), []string{creator.String(), order1.ID}, &orderRes,
 	)
 	requireT.Equal(order1, orderRes.Order)
 
 	// check order books
 	var orderBooksRes types.QueryOrderBooksResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrderBooks(), []string{}, &orderBooksRes)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryOrderBooks(), []string{}, &orderBooksRes)
 	requireT.ElementsMatch([]types.OrderBookData{
 		{
 			BaseDenom:  denom1,
@@ -199,7 +199,7 @@ func TestCmdQueryAccountDenomOrdersCount(t *testing.T) {
 
 	// check orders
 	var ordersRes types.QueryAccountDenomOrdersCountResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t, ctx, cli.CmdQueryAccountDenomOrdersCount(), []string{creator.String(), denom1}, &ordersRes,
 	)
 	requireT.Equal(uint64(2), ordersRes.Count)

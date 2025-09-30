@@ -8,6 +8,7 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -18,23 +19,22 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 )
 
 // TestICAController tests the ICA controller capabilities.
-func TestICACoreumController(t *testing.T) {
+func TestICATXChainController(t *testing.T) {
 	t.Parallel()
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
-	testICAIntegration(ctx, t, chains.Coreum.Chain, chains.Gaia)
+	testICAIntegration(ctx, t, chains.TXChain.Chain, chains.Gaia)
 }
 
 // TestICAController tests the ICA host capabilities.
-func TestICACoreumHost(t *testing.T) {
+func TestICATXChainHost(t *testing.T) {
 	t.Parallel()
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
-	testICAIntegration(ctx, t, chains.Gaia, chains.Coreum.Chain)
+	testICAIntegration(ctx, t, chains.Gaia, chains.TXChain.Chain)
 }
 
 // TestICADeterministicGas tests the ICA deterministic gas messages.
@@ -45,27 +45,27 @@ func TestICADeterministicGas(t *testing.T) {
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 
-	controllerCaller := chains.Coreum.GenAccount()
-	chains.Coreum.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
+	controllerCaller := chains.TXChain.GenAccount()
+	chains.TXChain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
 		Address: controllerCaller,
-		Amount:  chains.Coreum.NewCoin(sdkmath.NewIntWithDecimal(1, 7)),
+		Amount:  chains.TXChain.NewCoin(sdkmath.NewIntWithDecimal(1, 7)),
 	})
-	_, controllerToHostConnectionID := chains.Coreum.AwaitForIBCClientAndConnectionIDs(
+	_, controllerToHostConnectionID := chains.TXChain.AwaitForIBCClientAndConnectionIDs(
 		ctx, t, chains.Gaia.ChainSettings.ChainID,
 	)
 	msgRegisterInterchainAccountOnHost := icacontrollertypes.MsgRegisterInterchainAccount{
 		ConnectionId: controllerToHostConnectionID,
-		Owner:        chains.Coreum.MustConvertToBech32Address(controllerCaller),
+		Owner:        chains.TXChain.MustConvertToBech32Address(controllerCaller),
 		Ordering:     types.UNORDERED,
 	}
-	txRes, err := chains.Coreum.BroadcastTxWithSigner(
+	txRes, err := chains.TXChain.BroadcastTxWithSigner(
 		ctx,
-		chains.Coreum.TxFactory().WithGas(chains.Coreum.GasLimitByMsgs(&icacontrollertypes.MsgRegisterInterchainAccount{})),
+		chains.TXChain.TxFactory().WithGas(chains.TXChain.GasLimitByMsgs(&icacontrollertypes.MsgRegisterInterchainAccount{})),
 		controllerCaller,
 		&msgRegisterInterchainAccountOnHost,
 	)
 	requireT.NoError(err)
-	requireT.EqualValues(txRes.GasUsed, chains.Coreum.GasLimitByMsgs(&icacontrollertypes.MsgRegisterInterchainAccount{}))
+	requireT.EqualValues(txRes.GasUsed, chains.TXChain.GasLimitByMsgs(&icacontrollertypes.MsgRegisterInterchainAccount{}))
 }
 
 func testICAIntegration(

@@ -12,10 +12,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	customparamstypes "github.com/CoreumFoundation/coreum/v6/x/customparams/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
 )
 
 // TestDistributionWithdrawRewardWithDeterministicGas checks that withdraw reward works correctly and
@@ -23,7 +23,7 @@ import (
 func TestDistributionWithdrawRewardWithDeterministicGas(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	delegator := chain.GenAccount()
 	delegatorRewardRecipient := chain.GenAccount()

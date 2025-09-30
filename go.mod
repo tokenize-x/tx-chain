@@ -1,10 +1,10 @@
-module github.com/CoreumFoundation/coreum/v6
+module github.com/tokenize-x/tx-chain/v6
 
 go 1.24
 
 toolchain go1.24.2
 
-replace github.com/CoreumFoundation/coreum/v6 => ./
+replace github.com/tokenize-x/tx-chain/v6 => ./
 
 replace (
 	// use cosmos fork of keyring

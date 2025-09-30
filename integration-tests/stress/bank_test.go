@@ -13,17 +13,17 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
 // TestBankMultiSendBatchOutputs tests MultiSend message with maximum amount of addresses.
 func TestBankMultiSendBatchOutputs(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 	requireT := require.New(t)
@@ -116,7 +116,7 @@ func TestBankMultiSendBatchOutputs(t *testing.T) {
 func TestBankSendBatchMsgs(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 	requireT := require.New(t)
@@ -194,7 +194,7 @@ func TestBankSendBatchMsgs(t *testing.T) {
 
 func assertBatchAccounts(
 	ctx context.Context,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	expectedCoins sdk.Coins,
 	fundedAccounts []sdk.AccAddress,
 	denom string,

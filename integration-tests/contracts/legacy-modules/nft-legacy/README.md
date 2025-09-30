@@ -24,7 +24,7 @@ The instantiation of the contract will issue a new AssetNFT (and therefore becom
 Features define what actions can be performed on the new non fungible token (These features are immutable in the future). Available features: Burning (0), Freezing(1), Whitelisting(2), Disable Sending(3).
 Royalty rate is a number between 0 and 1 (in String format). Whenever an NFT of this class is traded for a certain amount, the royalty fee will be multiplied by this amount and sent to the issuer of the NFT
 
-For more detailed information of the AssetNFT module and functionality go to [AssetNFT](https://github.com/CoreumFoundation/coreum/tree/master/x/asset/nft/spec)
+For more detailed information of the AssetNFT module and functionality go to <!-- markdown-link-check-disable -->[AssetNFT](https://github.com/tokenize-x/tx-chain/tree/master/x/asset/nft/spec)<!-- markdown-link-check-enable -->
 
 # Messages
 
@@ -32,11 +32,11 @@ For more detailed information of the AssetNFT module and functionality go to [As
 
 The contract (issuer) will mint an NFT with the information provided (only id is mandatory).
 
-### Burn (id) [Burning](https://github.com/CoreumFoundation/coreum/tree/master/x/asset/nft/spec#burning)
+### Burn (id) <!-- markdown-link-check-disable -->[Burning](https://github.com/tokenize-x/tx-chain/tree/master/x/asset/nft/spec#burning)<!-- markdown-link-check-enable -->
 
 Burns the NFT with a certain id.
 
-### Freeze (id) [Freezing](https://github.com/CoreumFoundation/coreum/tree/master/x/asset/nft/spec#freezing)
+### Freeze (id) <!-- markdown-link-check-disable -->[Freezing](https://github.com/tokenize-x/tx-chain/tree/master/x/asset/nft/spec#freezing)<!-- markdown-link-check-enable -->
 
 Freezes the NFT with that id.
 
@@ -44,7 +44,7 @@ Freezes the NFT with that id.
 
 Unfreezes a frozen NFT.
 
-### AddToWhitelist (id, account) [Whitelisting](https://github.com/CoreumFoundation/coreum/tree/master/x/asset/nft/spec#whitelisting)
+### AddToWhitelist (id, account) <!-- markdown-link-check-disable -->[Whitelisting](https://github.com/tokenize-x/tx-chain/tree/master/x/asset/nft/spec#whitelisting)<!-- markdown-link-check-enable -->
 
 Whitelists an address so that it can receive the NFT with that id.
 

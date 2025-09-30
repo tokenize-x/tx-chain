@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/crust/build/golang"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/golang"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
+	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 // generateProtoDocs collects cosmos-sdk, cosmwasm and tendermint proto files from coreum go.mod,
@@ -47,7 +47,7 @@ func generateProtoDocs(ctx context.Context, deps types.DepsFunc) error {
 
 // executeProtocCommand ensures needed dependencies, composes the protoc command and executes it.
 func executeProtocCommand(ctx context.Context, deps types.DepsFunc, includeDirs, generateDirs []string) error {
-	deps(coreumtools.EnsureProtoc, coreumtools.EnsureProtocGenDoc)
+	deps(txchaintools.EnsureProtoc, txchaintools.EnsureProtocGenDoc)
 
 	args := []string{
 		"--doc_out=docs",

@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 func TestMsgUpdateParams_ValidateBasic(t *testing.T) {

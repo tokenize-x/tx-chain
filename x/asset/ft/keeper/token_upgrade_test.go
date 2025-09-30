@@ -6,7 +6,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 )
 
 func TestOneTokenUpgradeAtATimeIsAllowed(t *testing.T) {

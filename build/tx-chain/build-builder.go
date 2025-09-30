@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/CoreumFoundation/coreum-tools/pkg/must"
-	"github.com/CoreumFoundation/crust/build/golang"
-	"github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+
+	"github.com/tokenize-x/crust/build/golang"
+	"github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
 )
 
 // BuildBuilder builds building tool in the current repository.

@@ -3,9 +3,8 @@ package modules
 import (
 	"encoding/json"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/CoreumFoundation/coreum-tools/pkg/must"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // BankSendWithdrawPayload generates json containing withdraw payload.

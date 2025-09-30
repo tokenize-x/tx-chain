@@ -3,8 +3,8 @@ package delay
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CoreumFoundation/coreum/v6/x/delay/keeper"
-	"github.com/CoreumFoundation/coreum/v6/x/delay/types"
+	"github.com/tokenize-x/tx-chain/v6/x/delay/keeper"
+	"github.com/tokenize-x/tx-chain/v6/x/delay/types"
 )
 
 // DefaultGenesis returns the default genesis state.

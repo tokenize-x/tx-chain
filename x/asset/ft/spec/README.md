@@ -1,7 +1,7 @@
 # x/asset/ft
 
 This document specifies `assetft` module, which allows public users of the blockchain to create fungible tokens on
-Coreum blockchain.
+TX blockchain.
 
 # Concepts
 
@@ -24,7 +24,7 @@ Here is the list of functionalities provided by this module, we will examine eac
 
 ## Interaction with bank module, introducing wbank module
 
-Since Coreum is based on Cosmos SDK, We should mention that Cosmos SDK provides the native bank module which is
+Since TX Blockchain is based on Cosmos SDK, We should mention that Cosmos SDK provides the native bank module which is
 responsible for tracking fungible token creation and balances of each account. But this module does not allow any public
 to create a fungible token, mint/burn it, and also does not allow for other features such as freezing and whitelisting.
 To work around this issue we have wrapped the `bank` module into the `wbank` module.
@@ -46,7 +46,7 @@ In a nutshell, `assetft` module interacts with `wbank` which in turn wraps the o
 
 ### Issue
 
-Coreum provides a decentralized platform which allows everyone to tokenize their assets. Although the functionality of
+TX Blockchain provides a decentralized platform which allows everyone to tokenize their assets. Although the functionality of
 fungible token creation and minting is present in the original `bank` module of Cosmos SDK, it is not exposed to end
 users, and it is only possible to create new fungible tokens via either the governance or IBC. The Issue method
 described here, makes it possible for everyone to create a fungible token and manage its supply. When the admin (issuer
@@ -62,7 +62,7 @@ the main identifier of the token, will be created by joining the subunit and the
 `{subunit}-{address}`). The user also provides the symbol and precision which will only be used for display purposes and will
 be stored in bank module's metadata field.
 
-For example to represent Bitcoin on Coreum, one could choose satoshi as subunit, BTC as Symbol and 8 as precision. It
+For example to represent Bitcoin on TX Blockchain, one could choose satoshi as subunit, BTC as Symbol and 8 as precision. It
 means that if the issuer address is core1tr3w86yesnj8f290l6ve02cqhae8x4ze0nk0a8 then the denom will
 be `satoshi-core1tr3w86yesnj8f290l6ve02cqhae8x4ze0nk0a8` and since we have chosen BTC as symbol and 8 as precision, it
 will follow that (1 BTC = 10^8 `satoshi-core1tr3w86yesnj8f290l6ve02cqhae8x4ze0nk0a8`)
@@ -78,15 +78,15 @@ These are recommended values intended to prevent trading limitations. Choosing a
 
 To future-proof your asset—especially if its price increases significantly—it's safer to choose a **smaller subunit** rather than a larger one.
 
-**Example: Coreum Subunit Choice**
+**Example: TX Blockchain Subunit Choice**
 
-Let's assume the market price of **COREUM** is **$0.10 USD**. Based on the trading rules:
+Let's assume the market price of **TX** is **$0.10 USD**. Based on the trading rules:
 
-- To be tradable as a **base unit**, 1 subunit should be worth **≤ $0.01 USD**, which means the subunit should be **≤ 0.1 COREUM**.
-- To be tradable as a **quote unit**, 1 subunit should be worth **≤ $0.000001 USD**, which means the subunit should be **≤ 0.00001 COREUM**.
+- To be tradable as a **base unit**, 1 subunit should be worth **≤ $0.01 USD**, which means the subunit should be **≤ 0.1 TX**.
+- To be tradable as a **quote unit**, 1 subunit should be worth **≤ $0.000001 USD**, which means the subunit should be **≤ 0.00001 TX**.
 
-To satisfy both conditions, we chose `ucore` as the subunit and set the precision to 6 for COREUM.
-That means `1 COREUM = 10^6 ucore`, and at a price of $0.10, `1 ucore = $0.0000001 USD` (10^-7), making it safely below both thresholds.
+To satisfy both conditions, we chose `ucore` as the subunit and set the precision to 6 for TX.
+That means `1 TX = 10^6 ucore`, and at a price of $0.10, `1 ucore = $0.0000001 USD` (10^-7), making it safely below both thresholds.
 
 ### Transferring admin
 
@@ -213,7 +213,7 @@ Same rules apply to receiving tokens over IBC transfer protocol if IBC is enable
 ### IBC
 
 When token is created, admin decides if users may send and receive it over IBC transfer protocol.
-If IBC feature is disabled token can never leave the Coreum chain.
+If IBC feature is disabled token can never leave the TX Blockchain.
 
 ### Clawback
 
@@ -247,7 +247,7 @@ contract to the token that can administrate it. When a bank transfer is initiate
 the amount plus any commission or burn amount if they should be applied, then it is called via a sudo call with the
 information related to the bank transfer and the context information. The smart contract then can decide to do whatever
 it decides with the transfer which may include overriding of some behaviors for the features explained before.
-The sudo call is received in the `pub fn sudo(deps: DepsMut<CoreumQueries>, env: Env, msg: SudoMsg)` entry point of the
+The sudo call is received in the `pub fn sudo(deps: DepsMut<TXChainQueries>, env: Env, msg: SudoMsg)` entry point of the
 smart contract and the message would be a `ExtensionTransfer` which is defined as follows.
 
 ```rust

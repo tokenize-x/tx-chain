@@ -18,10 +18,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	customparamstypes "github.com/CoreumFoundation/coreum/v6/x/customparams/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
 )
 
 // TestStakingProposalParamChange checks that staking param change proposal works correctly.
@@ -30,7 +30,7 @@ func TestStakingProposalParamChange(t *testing.T) {
 
 	requireT := require.New(t)
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	// Create new proposer.
 	proposer := chain.GenAccount()
@@ -109,7 +109,7 @@ func TestStakingProposalParamChange(t *testing.T) {
 func TestStakingValidatorCRUDAndStaking(t *testing.T) {
 	// This test cannot be run in parallel because it modifies staking params, affecting other tests.
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	// fastUnbondingTime is the coins unbonding time we use for the test only
 	const fastUnbondingTime = time.Second * 10
@@ -276,7 +276,7 @@ func TestStakingValidatorCRUDAndStaking(t *testing.T) {
 func TestValidatorCreationWithLowMinSelfDelegation(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	customParamsClient := customparamstypes.NewQueryClient(chain.ClientContext)
 
@@ -299,7 +299,7 @@ func TestValidatorUpdateWithLowMinSelfDelegation(t *testing.T) {
 	// Since this test changes global staking config we can't run it in parallel with other tests.
 	// That's why t.Parallel() is not here.
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
@@ -359,7 +359,7 @@ func TestValidatorUpdateWithLowMinSelfDelegation(t *testing.T) {
 
 // TestUnbondAndCancelUnbondingDelegation checks that it is possible to unbond and cancel unbonding delegation.
 func TestUnbondAndCancelUnbondingDelegation(t *testing.T) {
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 	customParamsClient := customparamstypes.NewQueryClient(chain.ClientContext)
@@ -452,7 +452,7 @@ func TestUnbondAndCancelUnbondingDelegation(t *testing.T) {
 func changeMinSelfDelegationCustomParam(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	customParamsClient customparamstypes.QueryClient,
 	newMinSelfDelegation sdkmath.Int,
 ) {
@@ -478,7 +478,7 @@ func changeMinSelfDelegationCustomParam(
 }
 
 func setUnbondingTimeViaGovernance(
-	ctx context.Context, t *testing.T, chain integration.CoreumChain, unbondingTime time.Duration,
+	ctx context.Context, t *testing.T, chain integration.TXChain, unbondingTime time.Duration,
 ) {
 	requireT := require.New(t)
 
@@ -526,7 +526,7 @@ func setUnbondingTimeViaGovernance(
 	requireT.Equal(unbondingTime, stakingParams.Params.UnbondingTime)
 }
 
-func getBalance(ctx context.Context, t *testing.T, chain integration.CoreumChain, addr sdk.AccAddress) sdk.Coin {
+func getBalance(ctx context.Context, t *testing.T, chain integration.TXChain, addr sdk.AccAddress) sdk.Coin {
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
 	resp, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
 		Address: addr.String(),

@@ -1,11 +1,11 @@
 # Security Policy
 
-At Coreum, we prioritize security and consider it our main concern. If you discover any security vulnerabilities,
-please adhere to the following procedure to report them to the Coreum team.
+At TX Blockchain, we prioritize security and consider it our main concern. If you discover any security vulnerabilities,
+please adhere to the following procedure to report them to the TX Blockchain team.
 
 ## Reporting Security Issues
 
-Please report security vulnerabilities to **[team-blockchain@coreum.com](mailto:team-blockchain@coreum.com)**. Please
+Please report security vulnerabilities to **[team-blockchain@tx.org](mailto:team-blockchain@tx.org)**. Please
 also avoid
 any public discussion for security issues.
 

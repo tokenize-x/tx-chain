@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	feecli "github.com/CoreumFoundation/coreum/v6/x/feemodel/client/cli"
+	feecli "github.com/tokenize-x/tx-chain/v6/x/feemodel/client/cli"
 )
 
 const (

@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	"github.com/CoreumFoundation/coreum/v6/x/wasm/handler"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/wasm/handler"
 )
 
 func TestGRPCQuerier(t *testing.T) {

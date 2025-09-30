@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"bufio"
@@ -10,13 +10,13 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/crust/build/golang"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/golang"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
+	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 func generateProtoGo(ctx context.Context, deps types.DepsFunc) error {
@@ -46,7 +46,7 @@ func generateProtoGo(ctx context.Context, deps types.DepsFunc) error {
 
 // executeGoProtocCommand generates go code from proto files.
 func executeGoProtocCommand(ctx context.Context, deps types.DepsFunc, includeDirs, generateDirs []string) error {
-	deps(coreumtools.EnsureProtoc, coreumtools.EnsureProtocGenGRPCGateway, coreumtools.EnsureProtocGenGoCosmos)
+	deps(txchaintools.EnsureProtoc, txchaintools.EnsureProtocGenGRPCGateway, txchaintools.EnsureProtocGenGoCosmos)
 
 	outDir, err := os.MkdirTemp("", "")
 	if err != nil {

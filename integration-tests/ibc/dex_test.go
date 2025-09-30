@@ -15,11 +15,11 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	dextypes "github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 func TestIBCDexLimitOrdersMatching(t *testing.T) {
@@ -27,20 +27,20 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 	requireT := require.New(t)
-	coreumChain := chains.Coreum
+	txChain := chains.TXChain
 	gaiaChain := chains.Gaia
-	assetFTClient := assetfttypes.NewQueryClient(coreumChain.ClientContext)
-	dexClient := dextypes.NewQueryClient(coreumChain.ClientContext)
+	assetFTClient := assetfttypes.NewQueryClient(txChain.ClientContext)
+	dexClient := dextypes.NewQueryClient(txChain.ClientContext)
 
 	dexParamsRes, err := dexClient.Params(ctx, &dextypes.QueryParamsRequest{})
 	requireT.NoError(err)
 
-	gaiaToCoreumChannelID := gaiaChain.AwaitForIBCChannelID(
-		ctx, t, ibctransfertypes.PortID, coreumChain.ChainContext,
+	gaiaToTXChannelID := gaiaChain.AwaitForIBCChannelID(
+		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
 	)
 
-	coreumIssuer := coreumChain.GenAccount()
-	coreumSender := coreumChain.GenAccount()
+	txChainIssuer := txChain.GenAccount()
+	txSender := txChain.GenAccount()
 	gaiaRecipient := gaiaChain.GenAccount()
 
 	gaiaChain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
@@ -48,11 +48,11 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 		Amount:  gaiaChain.NewCoin(sdkmath.NewInt(1_000_000)), // coin for the fees
 	})
 
-	issueFee := coreumChain.QueryAssetFTParams(ctx, t).IssueFee.Amount
+	issueFee := txChain.QueryAssetFTParams(ctx, t).IssueFee.Amount
 
-	coreumChain.FundAccountsWithOptions(ctx, t, []integration.AccWithBalancesOptions{
+	txChain.FundAccountsWithOptions(ctx, t, []integration.AccWithBalancesOptions{
 		{
-			Acc: coreumIssuer,
+			Acc: txChainIssuer,
 			Options: integration.BalancesOptions{
 				Messages: []sdk.Msg{
 					&assetfttypes.MsgIssue{},
@@ -62,7 +62,7 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 				Amount: issueFee,
 			},
 		}, {
-			Acc: coreumSender,
+			Acc: txSender,
 			Options: integration.BalancesOptions{
 				Messages: []sdk.Msg{
 					&ibctransfertypes.MsgTransfer{},
@@ -73,31 +73,31 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 		},
 	})
 
-	denom1 := issueFT(ctx, t, coreumChain, coreumIssuer, sdkmath.NewIntWithDecimal(1, 6), assetfttypes.Feature_ibc)
-	denom2 := issueFT(ctx, t, coreumChain, coreumIssuer, sdkmath.NewIntWithDecimal(1, 6))
+	denom1 := issueFT(ctx, t, txChain, txChainIssuer, sdkmath.NewIntWithDecimal(1, 6), assetfttypes.Feature_ibc)
+	denom2 := issueFT(ctx, t, txChain, txChainIssuer, sdkmath.NewIntWithDecimal(1, 6))
 
 	sendCoin := sdk.NewCoin(denom1, sdkmath.NewInt(100_000))
 	halfCoin := sdk.NewCoin(denom1, sdkmath.NewInt(50_000))
 	msgSend := &banktypes.MsgSend{
-		FromAddress: coreumIssuer.String(),
-		ToAddress:   coreumSender.String(),
+		FromAddress: txChainIssuer.String(),
+		ToAddress:   txSender.String(),
 		Amount:      sdk.NewCoins(sendCoin),
 	}
 	_, err = client.BroadcastTx(
 		ctx,
-		coreumChain.ClientContext.WithFromAddress(coreumIssuer),
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(msgSend)),
+		txChain.ClientContext.WithFromAddress(txChainIssuer),
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(msgSend)),
 		msgSend,
 	)
 	requireT.NoError(err)
 
 	// ibc transfer half the amount
-	ibcCoin := sdk.NewCoin(ConvertToIBCDenom(gaiaToCoreumChannelID, denom1), halfCoin.Amount)
-	_, err = coreumChain.ExecuteIBCTransfer(
+	ibcCoin := sdk.NewCoin(ConvertToIBCDenom(gaiaToTXChannelID, denom1), halfCoin.Amount)
+	_, err = txChain.ExecuteIBCTransfer(
 		ctx,
 		t,
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-		coreumSender,
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+		txSender,
 		halfCoin,
 		gaiaChain.ChainContext,
 		gaiaRecipient,
@@ -107,7 +107,7 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 
 	// place order should fail because of insufficient funds
 	placeSellOrderMsg := &dextypes.MsgPlaceOrder{
-		Sender:      coreumSender.String(),
+		Sender:      txSender.String(),
 		Type:        dextypes.ORDER_TYPE_LIMIT,
 		ID:          "id1",
 		BaseDenom:   denom1,
@@ -120,14 +120,14 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 
 	_, err = client.BroadcastTx(
 		ctx,
-		coreumChain.ClientContext.WithFromAddress(coreumSender),
-		coreumChain.TxFactoryAuto(),
+		txChain.ClientContext.WithFromAddress(txSender),
+		txChain.TxFactoryAuto(),
 		placeSellOrderMsg,
 	)
 	requireT.ErrorContains(err, cosmoserrors.ErrInsufficientFunds.Error())
 
 	balanceRes, err := assetFTClient.Balance(ctx, &assetfttypes.QueryBalanceRequest{
-		Account: coreumSender.String(),
+		Account: txSender.String(),
 		Denom:   denom1,
 	})
 	requireT.NoError(err)
@@ -135,21 +135,21 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 
 	// fund the remaining needed amount
 	msgSend = &banktypes.MsgSend{
-		FromAddress: coreumIssuer.String(),
-		ToAddress:   coreumSender.String(),
+		FromAddress: txChainIssuer.String(),
+		ToAddress:   txSender.String(),
 		Amount:      sdk.NewCoins(halfCoin),
 	}
 	_, err = client.BroadcastTx(
 		ctx,
-		coreumChain.ClientContext.WithFromAddress(coreumIssuer),
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(msgSend)),
+		txChain.ClientContext.WithFromAddress(txChainIssuer),
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(msgSend)),
 		msgSend,
 	)
 	requireT.NoError(err)
 
 	// place order should succeed
 	placeSellOrderMsg = &dextypes.MsgPlaceOrder{
-		Sender:      coreumSender.String(),
+		Sender:      txSender.String(),
 		Type:        dextypes.ORDER_TYPE_LIMIT,
 		ID:          "id1",
 		BaseDenom:   denom1,
@@ -162,14 +162,14 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 
 	_, err = client.BroadcastTx(
 		ctx,
-		coreumChain.ClientContext.WithFromAddress(coreumSender),
-		coreumChain.TxFactoryAuto(),
+		txChain.ClientContext.WithFromAddress(txSender),
+		txChain.TxFactoryAuto(),
 		placeSellOrderMsg,
 	)
 	requireT.NoError(err)
 
 	balanceRes, err = assetFTClient.Balance(ctx, &assetfttypes.QueryBalanceRequest{
-		Account: coreumSender.String(),
+		Account: txSender.String(),
 		Denom:   denom1,
 	})
 	requireT.NoError(err)
@@ -177,12 +177,12 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 	requireT.Equal(sendCoin.Amount.String(), balanceRes.LockedInDEX.String())
 
 	// ibc transfer should fail because of insufficient funds
-	ibcCoin = sdk.NewCoin(ConvertToIBCDenom(gaiaToCoreumChannelID, denom1), halfCoin.Amount)
-	_, err = coreumChain.ExecuteIBCTransfer(
+	ibcCoin = sdk.NewCoin(ConvertToIBCDenom(gaiaToTXChannelID, denom1), halfCoin.Amount)
+	_, err = txChain.ExecuteIBCTransfer(
 		ctx,
 		t,
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-		coreumSender,
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+		txSender,
 		halfCoin,
 		gaiaChain.ChainContext,
 		gaiaRecipient,
@@ -194,7 +194,7 @@ func TestIBCDexLimitOrdersMatching(t *testing.T) {
 func issueFT(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	issuer sdk.AccAddress,
 	initialAmount sdkmath.Int,
 	features ...assetfttypes.Feature,

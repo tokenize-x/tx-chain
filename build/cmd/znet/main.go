@@ -1,11 +1,11 @@
 package main
 
 import (
-	coreumbuild "github.com/CoreumFoundation/coreum/build/coreum"
-	"github.com/CoreumFoundation/crust/znet/infra"
-	"github.com/CoreumFoundation/crust/znet/pkg/znet"
+	"github.com/tokenize-x/crust/znet/infra"
+	"github.com/tokenize-x/crust/znet/pkg/znet"
+	txchainbuild "github.com/tokenize-x/tx-chain/build/tx-chain"
 )
 
 func main() {
-	znet.Main(infra.ConfigFactoryWithTXdUpgrades(coreumbuild.TXdUpgrades()))
+	znet.Main(infra.ConfigFactoryWithTXdUpgrades(txchainbuild.TXdUpgrades()))
 }

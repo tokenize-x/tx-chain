@@ -6,7 +6,7 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 
-	"github.com/CoreumFoundation/coreum/v6/pkg/store"
+	"github.com/tokenize-x/tx-chain/v6/pkg/store"
 )
 
 const (

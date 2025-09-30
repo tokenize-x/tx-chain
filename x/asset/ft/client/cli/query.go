@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
 // GetQueryCmd returns the cli query commands for the module.

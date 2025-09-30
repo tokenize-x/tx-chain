@@ -13,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/app"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	feemodeltypes "github.com/CoreumFoundation/coreum/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v6/app"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
 )
 
 // stringsFlag allows setting a value multiple times to collect a list, as in -I=val1 -I=val2.
@@ -38,7 +38,7 @@ func (m *stringsFlag) Set(val string) error {
 
 // Chains defines the all chains used for the tests.
 type Chains struct {
-	Coreum  integration.CoreumChain
+	TXChain integration.TXChain
 	Gaia    integration.Chain
 	Osmosis integration.Chain
 }
@@ -52,11 +52,11 @@ var (
 
 // flag variables.
 var (
-	coreumGRPCAddress string
-	coreumRPCAddress  string
+	txGRPCAddress string
+	txRPCAddress  string
 
-	coreumFundingMnemonic string
-	coreumStakerMnemonics stringsFlag
+	txFundingMnemonic string
+	txStakerMnemonics stringsFlag
 
 	gaiaGRPCAddress     string
 	gaiaRPCAddress      string
@@ -71,10 +71,10 @@ var (
 func init() {
 	flag.BoolVar(&runUnsafe, "run-unsafe", false, "run unsafe tests for example ones related to governance")
 
-	flag.StringVar(&coreumGRPCAddress, "coreum-grpc-address", "localhost:9090", "GRPC address of txd node started by znet")
-	flag.StringVar(&coreumRPCAddress, "coreum-rpc-address", "http://localhost:26657", "RPC address of txd node started by znet")
-	flag.StringVar(&coreumFundingMnemonic, "coreum-funding-mnemonic", "sad hobby filter tray ordinary gap half web cat hard call mystery describe member round trend friend beyond such clap frozen segment fan mistake", "Funding account mnemonic required by tests")
-	flag.Var(&coreumStakerMnemonics, "coreum-staker-mnemonic", "Staker account mnemonics required by tests, supports multiple")
+	flag.StringVar(&txGRPCAddress, "tx-grpc-address", "localhost:9090", "GRPC address of txd node started by znet")
+	flag.StringVar(&txRPCAddress, "tx-rpc-address", "http://localhost:26657", "RPC address of txd node started by znet")
+	flag.StringVar(&txFundingMnemonic, "tx-funding-mnemonic", "sad hobby filter tray ordinary gap half web cat hard call mystery describe member round trend friend beyond such clap frozen segment fan mistake", "Funding account mnemonic required by tests")
+	flag.Var(&txStakerMnemonics, "tx-staker-mnemonic", "Staker account mnemonics required by tests, supports multiple")
 	flag.StringVar(&gaiaGRPCAddress, "gaia-grpc-address", "localhost:9080", "GRPC address of gaia node started by znet")
 	flag.StringVar(&gaiaRPCAddress, "gaia-rpc-address", "http://localhost:26557", "RPC address of gaia node started by znet")
 	flag.StringVar(&gaiaFundingMnemonic, "gaia-funding-mnemonic", "sad hobby filter tray ordinary gap half web cat hard call mystery describe member round trend friend beyond such clap frozen segment fan mistake", "Funding account mnemonic required by tests")
@@ -93,8 +93,8 @@ func init() {
 	}
 
 	// set the default staker mnemonic used in the dev znet by default
-	if len(coreumStakerMnemonics) == 0 {
-		coreumStakerMnemonics = []string{
+	if len(txStakerMnemonics) == 0 {
+		txStakerMnemonics = []string{
 			"biology rigid design broccoli adult hood modify tissue swallow arctic option improve quiz cliff inject soup ozone suffer fantasy layer negative eagle leader priority",
 			"enemy fix tribe swift alcohol metal salad edge episode dry tired address bless cloth error useful define rough fold swift confirm century wasp acoustic",
 			"act electric demand cancel duck invest below once obvious estate interest solution drink mango reason already clean host limit stadium smoke census pattern express",
@@ -104,52 +104,52 @@ func init() {
 	queryCtx, queryCtxCancel := context.WithTimeout(ctx, integration.DefaultClientContextConfig().TimeoutConfig.RequestTimeout)
 	defer queryCtxCancel()
 
-	// ********** Coreum **********
+	// ********** TX-Chain **********
 
-	coreumGRPCClient, err := integration.DialGRPCClient(coreumGRPCAddress)
+	txGRPCClient, err := integration.DialGRPCClient(txGRPCAddress)
 	if err != nil {
 		panic(errors.WithStack(err))
 	}
 
-	coreumSettings := integration.QueryChainSettings(queryCtx, coreumGRPCClient)
+	txSettings := integration.QueryChainSettings(queryCtx, txGRPCClient)
 
-	coreumClientCtx := client.NewContext(integration.DefaultClientContextConfig()).
-		WithGRPCClient(coreumGRPCClient)
+	txClientCtx := client.NewContext(integration.DefaultClientContextConfig()).
+		WithGRPCClient(txGRPCClient)
 
-	coreumFeemodelParamsRes, err := feemodeltypes.
-		NewQueryClient(coreumClientCtx).
+	txFeemodelParamsRes, err := feemodeltypes.
+		NewQueryClient(txClientCtx).
 		Params(queryCtx, &feemodeltypes.QueryParamsRequest{})
 	if err != nil {
 		panic(errors.WithStack(err))
 	}
-	coreumSettings.GasPrice = coreumFeemodelParamsRes.Params.Model.InitialGasPrice
-	coreumSettings.CoinType = constant.CoinType
-	coreumSettings.RPCAddress = coreumRPCAddress
-	network, err := config.NetworkConfigByChainID(constant.ChainID(coreumSettings.ChainID))
+	txSettings.GasPrice = txFeemodelParamsRes.Params.Model.InitialGasPrice
+	txSettings.CoinType = constant.CoinType
+	txSettings.RPCAddress = txRPCAddress
+	network, err := config.NetworkConfigByChainID(constant.ChainID(txSettings.ChainID))
 	if err != nil {
 		panic(errors.WithStack(err))
 	}
 	app.ChosenNetwork = network
 	network.SetSDKConfig()
 
-	coreumRPCClient, err := sdkclient.NewClientFromNode(coreumRPCAddress)
+	txRPCClient, err := sdkclient.NewClientFromNode(txRPCAddress)
 	if err != nil {
 		panic(errors.WithStack(err))
 	}
 
-	chains.Coreum = integration.NewCoreumChain(integration.NewChain(
-		coreumGRPCClient,
-		coreumRPCClient,
-		coreumSettings,
-		coreumFundingMnemonic), coreumStakerMnemonics)
+	chains.TXChain = integration.NewTXChain(integration.NewChain(
+		txGRPCClient,
+		txRPCClient,
+		txSettings,
+		txFundingMnemonic), txStakerMnemonics)
 }
 
-// NewCoreumTestingContext returns the configured coreum chain and new context for the integration tests.
-func NewCoreumTestingContext(t *testing.T) (context.Context, integration.CoreumChain) {
+// NewTXChainTestingContext returns the configured tx-chain chain and new context for the integration tests.
+func NewTXChainTestingContext(t *testing.T) (context.Context, integration.TXChain) {
 	testCtx, testCtxCancel := context.WithCancel(ctx)
 	t.Cleanup(testCtxCancel)
 
-	return testCtx, chains.Coreum
+	return testCtx, chains.TXChain
 }
 
 // NewChainsTestingContext returns the configured chains and new context for the integration tests.

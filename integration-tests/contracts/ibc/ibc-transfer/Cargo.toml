@@ -1,7 +1,7 @@
 [package]
 name = "ibc-transfer"
 version = "0.1.0"
-authors = ["Coreum"]
+authors = ["tokenize-x"]
 edition = "2021"
 
 exclude = [

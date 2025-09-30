@@ -11,9 +11,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	assetnfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
-	"github.com/CoreumFoundation/coreum/v6/x/wasm/types"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/wasm/types"
 )
 
 // assetFTMsg represents asset ft module messages integrated with the wasm handler.
@@ -81,27 +81,27 @@ type nftMsg struct {
 	Send *nfttypes.MsgSend `json:"Send"`
 }
 
-// coreumMsg represents all supported custom messages integrated with the wasm handler.
+// txChainMsg represents all supported custom messages integrated with the wasm handler.
 //
 //nolint:tagliatelle // we keep the name same as consume
-type coreumMsg struct {
+type txChainMsg struct {
 	AssetFT  *assetFTMsg  `json:"AssetFT"`
 	AssetNFT *assetNFTMsg `json:"AssetNFT"`
 	NFT      *nftMsg      `json:"nft"`
 }
 
-// NewCoreumMsgHandler returns coreum handler that handles messages received from smart contracts.
+// NewTXChainMsgHandler returns tx-chain handler that handles messages received from smart contracts.
 // The in the input sender is the address of smart contract.
 // Deprecated: Supported for backward compatibility of legacy smart contracts only.
-func NewCoreumMsgHandler() *wasmkeeper.MessageEncoders {
+func NewTXChainMsgHandler() *wasmkeeper.MessageEncoders {
 	return &wasmkeeper.MessageEncoders{
 		Custom: func(sender sdk.AccAddress, msg json.RawMessage) ([]sdk.Msg, error) {
-			var coreumMsg coreumMsg
-			if err := json.Unmarshal(msg, &coreumMsg); err != nil {
+			var txChainMsg txChainMsg
+			if err := json.Unmarshal(msg, &txChainMsg); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
-			decodedMsg, err := decodeCoreumMessage(coreumMsg, sender)
+			decodedMsg, err := decodeTXChainMessage(txChainMsg, sender)
 			if err != nil {
 				return nil, err
 			}
@@ -121,15 +121,15 @@ func NewCoreumMsgHandler() *wasmkeeper.MessageEncoders {
 	}
 }
 
-func decodeCoreumMessage(coreumMessages coreumMsg, sender sdk.AccAddress) (sdk.Msg, error) {
-	if coreumMessages.AssetFT != nil {
-		return decodeAssetFTMessage(coreumMessages.AssetFT, sender.String())
+func decodeTXChainMessage(txChainMessages txChainMsg, sender sdk.AccAddress) (sdk.Msg, error) {
+	if txChainMessages.AssetFT != nil {
+		return decodeAssetFTMessage(txChainMessages.AssetFT, sender.String())
 	}
-	if coreumMessages.AssetNFT != nil {
-		return decodeAssetNFTMessage(coreumMessages.AssetNFT, sender.String())
+	if txChainMessages.AssetNFT != nil {
+		return decodeAssetNFTMessage(txChainMessages.AssetNFT, sender.String())
 	}
-	if coreumMessages.NFT != nil {
-		return decodeNFTMessage(coreumMessages.NFT, sender.String())
+	if txChainMessages.NFT != nil {
+		return decodeNFTMessage(txChainMessages.NFT, sender.String())
 	}
 
 	//nolint:nilnil // we are ok with this.

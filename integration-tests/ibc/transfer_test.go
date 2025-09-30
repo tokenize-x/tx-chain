@@ -9,6 +9,7 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -19,29 +20,28 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 )
 
-func TestIBCTransferFromCoreumToGaiaAndBack(t *testing.T) {
+func TestIBCTransferFromTXToGaiaAndBack(t *testing.T) {
 	t.Parallel()
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 	requireT := require.New(t)
-	coreumChain := chains.Coreum
+	txChain := chains.TXChain
 	gaiaChain := chains.Gaia
 
-	gaiaToCoreumChannelID := gaiaChain.AwaitForIBCChannelID(
-		ctx, t, ibctransfertypes.PortID, coreumChain.ChainContext,
+	gaiaToTXChannelID := gaiaChain.AwaitForIBCChannelID(
+		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
 	)
 
-	coreumSender := coreumChain.GenAccount()
+	txSender := txChain.GenAccount()
 	gaiaRecipient := gaiaChain.GenAccount()
 
-	sendToGaiaCoin := coreumChain.NewCoin(sdkmath.NewInt(1000))
-	coreumChain.FundAccountWithOptions(ctx, t, coreumSender, integration.BalancesOptions{
+	sendToGaiaCoin := txChain.NewCoin(sdkmath.NewInt(1000))
+	txChain.FundAccountWithOptions(ctx, t, txSender, integration.BalancesOptions{
 		Messages: []sdk.Msg{&ibctransfertypes.MsgTransfer{}},
 		Amount:   sendToGaiaCoin.Amount,
 	})
@@ -51,20 +51,20 @@ func TestIBCTransferFromCoreumToGaiaAndBack(t *testing.T) {
 		Amount:  gaiaChain.NewCoin(sdkmath.NewInt(1000000)), // coin for the fees
 	})
 
-	txRes, err := coreumChain.ExecuteIBCTransfer(
+	txRes, err := txChain.ExecuteIBCTransfer(
 		ctx,
 		t,
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-		coreumSender,
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+		txSender,
 		sendToGaiaCoin,
 		gaiaChain.ChainContext,
 		gaiaRecipient,
 	)
 	requireT.NoError(err)
-	requireT.EqualValues(txRes.GasUsed, coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{}))
+	requireT.EqualValues(txRes.GasUsed, txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{}))
 
 	expectedGaiaRecipientBalance := sdk.NewCoin(
-		ConvertToIBCDenom(gaiaToCoreumChannelID, sendToGaiaCoin.Denom),
+		ConvertToIBCDenom(gaiaToTXChannelID, sendToGaiaCoin.Denom),
 		sendToGaiaCoin.Amount,
 	)
 	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaRecipient, expectedGaiaRecipientBalance))
@@ -74,48 +74,48 @@ func TestIBCTransferFromCoreumToGaiaAndBack(t *testing.T) {
 		gaiaChain.TxFactoryAuto(),
 		gaiaRecipient,
 		expectedGaiaRecipientBalance,
-		coreumChain.ChainContext,
-		coreumSender,
+		txChain.ChainContext,
+		txSender,
 	)
 	requireT.NoError(err)
 
-	expectedCoreumSenderBalance := sdk.NewCoin(sendToGaiaCoin.Denom, expectedGaiaRecipientBalance.Amount)
-	requireT.NoError(coreumChain.AwaitForBalance(ctx, t, coreumSender, expectedCoreumSenderBalance))
+	expectedTxSenderBalance := sdk.NewCoin(sendToGaiaCoin.Denom, expectedGaiaRecipientBalance.Amount)
+	requireT.NoError(txChain.AwaitForBalance(ctx, t, txSender, expectedTxSenderBalance))
 }
 
-// TestIBCTransferFromGaiaToCoreumAndBack checks IBC transfer in the following order:
-// gaiaAccount1 [IBC]-> coreumToCoreumSender [bank.Send]-> coreumToGaiaSender [IBC]-> gaiaAccount2.
-func TestIBCTransferFromGaiaToCoreumAndBack(t *testing.T) {
+// TestIBCTransferFromGaiaToTxAndBack checks IBC transfer in the following order:
+// gaiaAccount1 [IBC]-> txToTxSender [bank.Send]-> txToGaiaSender [IBC]-> gaiaAccount2.
+func TestIBCTransferFromGaiaToTxAndBack(t *testing.T) {
 	t.Parallel()
 	requireT := require.New(t)
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 
-	coreumChain := chains.Coreum
+	txChain := chains.TXChain
 	gaiaChain := chains.Gaia
 
-	coreumBankClient := banktypes.NewQueryClient(coreumChain.ClientContext)
+	txBankClient := banktypes.NewQueryClient(txChain.ClientContext)
 
-	coreumToGaiaChannelID := coreumChain.AwaitForIBCChannelID(
+	txToGaiaChannelID := txChain.AwaitForIBCChannelID(
 		ctx, t, ibctransfertypes.PortID, gaiaChain.ChainContext,
 	)
-	sendToCoreumCoin := gaiaChain.NewCoin(sdkmath.NewInt(1000))
+	sendToTXCoin := gaiaChain.NewCoin(sdkmath.NewInt(1000))
 
 	// Generate accounts
 	gaiaAccount1 := gaiaChain.GenAccount()
 	gaiaAccount2 := gaiaChain.GenAccount()
-	coreumToCoreumSender := coreumChain.GenAccount()
-	coreumToGaiaSender := coreumChain.GenAccount()
+	txToTxSender := txChain.GenAccount()
+	txToGaiaSender := txChain.GenAccount()
 
 	// Fund accounts
-	coreumChain.FundAccountsWithOptions(ctx, t, []integration.AccWithBalancesOptions{
+	txChain.FundAccountsWithOptions(ctx, t, []integration.AccWithBalancesOptions{
 		{
-			Acc: coreumToCoreumSender,
+			Acc: txToTxSender,
 			Options: integration.BalancesOptions{
 				Messages: []sdk.Msg{&banktypes.MsgSend{}},
 			},
 		}, {
-			Acc: coreumToGaiaSender,
+			Acc: txToGaiaSender,
 			Options: integration.BalancesOptions{
 				Messages: []sdk.Msg{&ibctransfertypes.MsgTransfer{}},
 			},
@@ -124,67 +124,67 @@ func TestIBCTransferFromGaiaToCoreumAndBack(t *testing.T) {
 
 	gaiaChain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
 		Address: gaiaAccount1,
-		Amount:  sendToCoreumCoin.Add(gaiaChain.NewCoin(sdkmath.NewInt(1000000))), // coin to send + coin for the fee
+		Amount:  sendToTXCoin.Add(gaiaChain.NewCoin(sdkmath.NewInt(1000000))), // coin to send + coin for the fee
 	})
 
-	// Send from gaiaAccount to coreumToCoreumSender
+	// Send from gaiaAccount to txToTxSender
 	_, err := gaiaChain.ExecuteIBCTransfer(
 		ctx,
 		t,
 		gaiaChain.TxFactoryAuto(),
 		gaiaAccount1,
-		sendToCoreumCoin,
-		coreumChain.ChainContext,
-		coreumToCoreumSender,
+		sendToTXCoin,
+		txChain.ChainContext,
+		txToTxSender,
 	)
 	requireT.NoError(err)
 
-	expectedBalanceAtCoreum := sdk.NewCoin(
-		ConvertToIBCDenom(coreumToGaiaChannelID, sendToCoreumCoin.Denom),
-		sendToCoreumCoin.Amount,
+	expectedBalanceAtTx := sdk.NewCoin(
+		ConvertToIBCDenom(txToGaiaChannelID, sendToTXCoin.Denom),
+		sendToTXCoin.Amount,
 	)
-	requireT.NoError(coreumChain.AwaitForBalance(ctx, t, coreumToCoreumSender, expectedBalanceAtCoreum))
+	requireT.NoError(txChain.AwaitForBalance(ctx, t, txToTxSender, expectedBalanceAtTx))
 
 	// check that denom metadata is registered
-	denomMetadataRes, err := coreumBankClient.DenomMetadata(ctx, &banktypes.QueryDenomMetadataRequest{
-		Denom: expectedBalanceAtCoreum.Denom,
+	denomMetadataRes, err := txBankClient.DenomMetadata(ctx, &banktypes.QueryDenomMetadataRequest{
+		Denom: expectedBalanceAtTx.Denom,
 	})
 	requireT.NoError(err)
-	assert.Equal(t, expectedBalanceAtCoreum.Denom, denomMetadataRes.Metadata.Base)
+	assert.Equal(t, expectedBalanceAtTx.Denom, denomMetadataRes.Metadata.Base)
 
-	// Send from coreumToCoreumSender to coreumToGaiaSender
+	// Send from txToTxSender to txToGaiaSender
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: coreumToCoreumSender.String(),
-		ToAddress:   coreumToGaiaSender.String(),
-		Amount:      []sdk.Coin{expectedBalanceAtCoreum},
+		FromAddress: txToTxSender.String(),
+		ToAddress:   txToGaiaSender.String(),
+		Amount:      []sdk.Coin{expectedBalanceAtTx},
 	}
 	_, err = client.BroadcastTx(
 		ctx,
-		coreumChain.ClientContext.WithFromAddress(coreumToCoreumSender),
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(sendMsg)),
+		txChain.ClientContext.WithFromAddress(txToTxSender),
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(sendMsg)),
 		sendMsg,
 	)
 	requireT.NoError(err)
 
-	queryBalanceResponse, err := coreumBankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
-		Address: coreumToGaiaSender.String(),
-		Denom:   expectedBalanceAtCoreum.Denom,
+	queryBalanceResponse, err := txBankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: txToGaiaSender.String(),
+		Denom:   expectedBalanceAtTx.Denom,
 	})
 	requireT.NoError(err)
-	assert.Equal(t, expectedBalanceAtCoreum.Amount.String(), queryBalanceResponse.Balance.Amount.String())
+	assert.Equal(t, expectedBalanceAtTx.Amount.String(), queryBalanceResponse.Balance.Amount.String())
 
-	// Send from coreumToGaiaSender back to gaiaAccount
-	_, err = coreumChain.ExecuteIBCTransfer(
+	// Send from txToGaiaSender back to gaiaAccount
+	_, err = txChain.ExecuteIBCTransfer(
 		ctx,
 		t,
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-		coreumToGaiaSender,
-		expectedBalanceAtCoreum,
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+		txToGaiaSender,
+		expectedBalanceAtTx,
 		gaiaChain.ChainContext,
 		gaiaAccount2,
 	)
 	requireT.NoError(err)
-	expectedGaiaSenderBalance := sdk.NewCoin(sendToCoreumCoin.Denom, expectedBalanceAtCoreum.Amount)
+	expectedGaiaSenderBalance := sdk.NewCoin(sendToTXCoin.Denom, expectedBalanceAtTx.Amount)
 	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaAccount2, expectedGaiaSenderBalance))
 }
 
@@ -193,11 +193,11 @@ func TestTimedOutTransfer(t *testing.T) {
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 	requireT := require.New(t)
-	coreumChain := chains.Coreum
+	txChain := chains.TXChain
 	osmosisChain := chains.Osmosis
 
-	osmosisToCoreumChannelID := osmosisChain.AwaitForIBCChannelID(
-		ctx, t, ibctransfertypes.PortID, coreumChain.ChainContext,
+	osmosisToTXChannelID := osmosisChain.AwaitForIBCChannelID(
+		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
 	)
 
 	retryCtx, retryCancel := context.WithTimeout(ctx, 5*integration.AwaitStateTimeout)
@@ -209,20 +209,20 @@ func TestTimedOutTransfer(t *testing.T) {
 	// to find if IBC transfer completed successfully or timed out. If tokens were delivered to the recipient
 	// we must retry. Otherwise, if tokens were returned back to the sender, we might continue the test.
 	err := retry.Do(retryCtx, time.Millisecond, func() error {
-		coreumSender := coreumChain.GenAccount()
+		txSender := txChain.GenAccount()
 		osmosisRecipient := osmosisChain.GenAccount()
 
-		sendToOsmosisCoin := coreumChain.NewCoin(sdkmath.NewInt(1000))
-		coreumChain.FundAccountWithOptions(ctx, t, coreumSender, integration.BalancesOptions{
+		sendToOsmosisCoin := txChain.NewCoin(sdkmath.NewInt(1000))
+		txChain.FundAccountWithOptions(ctx, t, txSender, integration.BalancesOptions{
 			Messages: []sdk.Msg{&ibctransfertypes.MsgTransfer{}},
 			Amount:   sendToOsmosisCoin.Amount,
 		})
 
-		_, err := coreumChain.ExecuteTimingOutIBCTransfer(
+		_, err := txChain.ExecuteTimingOutIBCTransfer(
 			ctx,
 			t,
-			coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-			coreumSender,
+			txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+			txSender,
 			sendToOsmosisCoin,
 			osmosisChain.ChainContext,
 			osmosisRecipient,
@@ -243,7 +243,7 @@ func TestTimedOutTransfer(t *testing.T) {
 			// If this happens it means timeout occurred.
 
 			defer parallelCancel()
-			if err := coreumChain.AwaitForBalance(parallelCtx, t, coreumSender, sendToOsmosisCoin); err != nil {
+			if err := txChain.AwaitForBalance(parallelCtx, t, txSender, sendToOsmosisCoin); err != nil {
 				select {
 				case errCh <- retry.Retryable(err):
 				default:
@@ -260,7 +260,7 @@ func TestTimedOutTransfer(t *testing.T) {
 				parallelCtx,
 				t,
 				osmosisRecipient,
-				sdk.NewCoin(ConvertToIBCDenom(osmosisToCoreumChannelID, sendToOsmosisCoin.Denom), sendToOsmosisCoin.Amount),
+				sdk.NewCoin(ConvertToIBCDenom(osmosisToTXChannelID, sendToOsmosisCoin.Denom), sendToOsmosisCoin.Amount),
 			); err == nil {
 				select {
 				case errCh <- retry.Retryable(errors.New("timeout didn't happen")):
@@ -285,7 +285,7 @@ func TestTimedOutTransfer(t *testing.T) {
 		bankClient := banktypes.NewQueryClient(osmosisChain.ClientContext)
 		resp, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
 			Address: osmosisChain.MustConvertToBech32Address(osmosisRecipient),
-			Denom:   ConvertToIBCDenom(osmosisToCoreumChannelID, sendToOsmosisCoin.Denom),
+			Denom:   ConvertToIBCDenom(osmosisToTXChannelID, sendToOsmosisCoin.Denom),
 		})
 		requireT.NoError(err)
 		requireT.Equal("0", resp.Balance.Amount.String())
@@ -300,21 +300,21 @@ func TestRejectedTransfer(t *testing.T) {
 
 	ctx, chains := integrationtests.NewChainsTestingContext(t)
 	requireT := require.New(t)
-	coreumChain := chains.Coreum
+	txChain := chains.TXChain
 	gaiaChain := chains.Gaia
 
-	gaiaToCoreumChannelID := gaiaChain.AwaitForIBCChannelID(
-		ctx, t, ibctransfertypes.PortID, coreumChain.ChainContext,
+	gaiaToTXChannelID := gaiaChain.AwaitForIBCChannelID(
+		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
 	)
 
 	// Bank module rejects transfers targeting some module accounts. We use this feature to test that
 	// this type of IBC transfer is rejected by the receiving chain.
 	moduleAddress := authtypes.NewModuleAddress(icatypes.ModuleName)
-	coreumSender := coreumChain.GenAccount()
+	txSender := txChain.GenAccount()
 	gaiaRecipient := gaiaChain.GenAccount()
 
-	sendToGaiaCoin := coreumChain.NewCoin(sdkmath.NewInt(1000))
-	coreumChain.FundAccountWithOptions(ctx, t, coreumSender, integration.BalancesOptions{
+	sendToGaiaCoin := txChain.NewCoin(sdkmath.NewInt(1000))
+	txChain.FundAccountWithOptions(ctx, t, txSender, integration.BalancesOptions{
 		Messages: []sdk.Msg{&ibctransfertypes.MsgTransfer{}},
 		Amount:   sendToGaiaCoin.Amount,
 	})
@@ -323,22 +323,22 @@ func TestRejectedTransfer(t *testing.T) {
 		Amount:  gaiaChain.NewCoin(sdkmath.NewIntFromUint64(1000000)),
 	})
 
-	_, err := coreumChain.ExecuteIBCTransfer(
+	_, err := txChain.ExecuteIBCTransfer(
 		ctx,
 		t,
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-		coreumSender,
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+		txSender,
 		sendToGaiaCoin,
 		gaiaChain.ChainContext,
 		moduleAddress,
 	)
 	requireT.NoError(err)
 
-	// funds should be returned to coreum
-	requireT.NoError(coreumChain.AwaitForBalance(ctx, t, coreumSender, sendToGaiaCoin))
+	// funds should be returned to tx-chain
+	requireT.NoError(txChain.AwaitForBalance(ctx, t, txSender, sendToGaiaCoin))
 
 	// funds should not be received on gaia
-	ibcGaiaDenom := ConvertToIBCDenom(gaiaToCoreumChannelID, sendToGaiaCoin.Denom)
+	ibcGaiaDenom := ConvertToIBCDenom(gaiaToTXChannelID, sendToGaiaCoin.Denom)
 	bankClient := banktypes.NewQueryClient(gaiaChain.ClientContext)
 	resp, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
 		Address: gaiaChain.MustConvertToBech32Address(moduleAddress),
@@ -347,43 +347,43 @@ func TestRejectedTransfer(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Equal("0", resp.Balance.Amount.String())
 
-	// test that the reverse transfer from gaia to coreum is blocked too
+	// test that the reverse transfer from gaia to tx-chain is blocked too
 
-	coreumChain.FundAccountWithOptions(ctx, t, coreumSender, integration.BalancesOptions{
+	txChain.FundAccountWithOptions(ctx, t, txSender, integration.BalancesOptions{
 		Messages: []sdk.Msg{&ibctransfertypes.MsgTransfer{}},
 	})
 
-	sendToCoreumCoin := sdk.NewCoin(ibcGaiaDenom, sendToGaiaCoin.Amount)
-	_, err = coreumChain.ExecuteIBCTransfer(
+	sendToTXCoin := sdk.NewCoin(ibcGaiaDenom, sendToGaiaCoin.Amount)
+	_, err = txChain.ExecuteIBCTransfer(
 		ctx,
 		t,
-		coreumChain.TxFactory().WithGas(coreumChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
-		coreumSender,
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(&ibctransfertypes.MsgTransfer{})),
+		txSender,
 		sendToGaiaCoin,
 		gaiaChain.ChainContext,
 		gaiaRecipient,
 	)
 	requireT.NoError(err)
-	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaRecipient, sendToCoreumCoin))
+	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaRecipient, sendToTXCoin))
 
 	_, err = gaiaChain.ExecuteIBCTransfer(
 		ctx,
 		t,
 		gaiaChain.TxFactoryAuto(),
 		gaiaRecipient,
-		sendToCoreumCoin,
-		coreumChain.ChainContext,
+		sendToTXCoin,
+		txChain.ChainContext,
 		moduleAddress,
 	)
 	requireT.NoError(err)
 
 	// funds should be returned to gaia
-	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaRecipient, sendToCoreumCoin))
+	requireT.NoError(gaiaChain.AwaitForBalance(ctx, t, gaiaRecipient, sendToTXCoin))
 
-	// funds should not be received on coreum
-	bankClient = banktypes.NewQueryClient(coreumChain.ClientContext)
+	// funds should not be received on tx-chain
+	bankClient = banktypes.NewQueryClient(txChain.ClientContext)
 	resp, err = bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
-		Address: coreumChain.MustConvertToBech32Address(moduleAddress),
+		Address: txChain.MustConvertToBech32Address(moduleAddress),
 		Denom:   sendToGaiaCoin.Denom,
 	})
 	requireT.NoError(err)

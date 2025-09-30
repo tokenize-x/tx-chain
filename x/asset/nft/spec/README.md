@@ -1,6 +1,6 @@
 # x/asset/nft
 
-This document specifies `assetnft` module, which allows public users of the blockchain to create non-fungible tokens on the Coreum blockchain.
+This document specifies `assetnft` module, which allows public users of the blockchain to create non-fungible tokens on the TX blockchain.
 
 # Concepts
 This module provides transactions and queries which allows public users of the blockchain to issue non-fungible

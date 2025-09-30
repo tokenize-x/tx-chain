@@ -14,17 +14,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	feemodeltypes "github.com/CoreumFoundation/coreum/v6/x/feemodel/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
 )
 
 // TestFeeModelQueryingMinGasPrice check that it's possible to query current minimum gas price required by the network.
 func TestFeeModelQueryingMinGasPrice(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	feemodelClient := feemodeltypes.NewQueryClient(chain.ClientContext)
 	res, err := feemodelClient.MinGasPrice(ctx, &feemodeltypes.QueryMinGasPriceRequest{})
@@ -44,7 +44,7 @@ func TestFeeModelQueryingMinGasPrice(t *testing.T) {
 func TestFeeModelQueryingGasPriceRecommendation(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	feemodelClient := feemodeltypes.NewQueryClient(chain.ClientContext)
@@ -69,7 +69,7 @@ func TestFeeModelProposalParamChange(t *testing.T) {
 	// Since this test changes global fee config we can't run it in parallel with other tests.
 	// That's why t.Parallel() is not here.
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	assertT := assert.New(t)

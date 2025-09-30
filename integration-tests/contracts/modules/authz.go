@@ -3,10 +3,9 @@ package modules
 import (
 	"encoding/json"
 
+	"github.com/CoreumFoundation/coreum-tools/pkg/must"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/CoreumFoundation/coreum-tools/pkg/must"
 )
 
 // AuthZExecuteTransferRequest generates json with transfer execution request.

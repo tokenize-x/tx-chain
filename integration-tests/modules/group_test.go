@@ -14,17 +14,17 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
 // TestGroupCreationAndBankSend creates group & group policy and then sends funds from group policy account.
 func TestGroupCreationAndBankSend(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 	groupClient := group.NewQueryClient(chain.ClientContext)
 
@@ -177,7 +177,7 @@ func TestGroupCreationAndBankSend(t *testing.T) {
 func TestGroupForAssetFTIssuance(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 	groupClient := group.NewQueryClient(chain.ClientContext)
 
@@ -341,7 +341,7 @@ func TestGroupForAssetFTIssuance(t *testing.T) {
 func TestGroupAdministration(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 	groupClient := group.NewQueryClient(chain.ClientContext)
 
@@ -508,7 +508,7 @@ func TestGroupAdministration(t *testing.T) {
 func createGroupWithPolicy(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	admin sdk.AccAddress,
 	groupMembers []sdk.AccAddress,
 ) (*group.GroupInfo, *group.GroupPolicyInfo) {
@@ -572,7 +572,7 @@ func createGroupWithPolicy(
 func submitGroupProposal(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	proposer sdk.AccAddress,
 	submitProposalMsg *group.MsgSubmitProposal,
 ) *group.Proposal {

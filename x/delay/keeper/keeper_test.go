@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
-	"github.com/CoreumFoundation/coreum/v6/x/delay/types"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v6/x/delay/types"
 )
 
 var _ proto.Message = &dummyExecutionMessage{}

@@ -23,8 +23,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/app"
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v6/app"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 )
 
 var nodeAppDir, exportedGenesisPath string

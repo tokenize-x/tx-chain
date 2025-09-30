@@ -9,6 +9,7 @@ import (
 	"time"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -18,10 +19,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
-	appupgradev6 "github.com/CoreumFoundation/coreum/v6/app/upgrade/v6"
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
+	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 )
 
 // Proper value for upgradeDelayInBlocks depends on block time and gov voting period.
@@ -36,7 +36,7 @@ type upgradeTest interface {
 
 // TestUpgrade that after accepting upgrade proposal cosmovisor starts a new version of txd.
 func TestUpgrade(t *testing.T) {
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	tmQueryClient := cmtservice.NewServiceClient(chain.ClientContext)
@@ -72,7 +72,7 @@ func runUpgrade(
 	upgradeName string,
 	blocksToWait int64,
 ) {
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	requireT := require.New(t)
 	upgradeClient := upgradetypes.NewQueryClient(chain.ClientContext)

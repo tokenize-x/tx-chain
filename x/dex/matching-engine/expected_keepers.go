@@ -3,7 +3,7 @@ package matchingengine
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
 // OrderBookQueue is an interface which returns the next order with the best price.

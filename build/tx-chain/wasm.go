@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/CoreumFoundation/crust/build/rust"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/rust"
+	"github.com/tokenize-x/crust/build/types"
 )
 
 // Smart contract names.

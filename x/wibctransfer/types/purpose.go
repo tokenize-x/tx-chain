@@ -10,14 +10,14 @@ import (
 type Purpose string
 
 const (
-	// PurposeOut is used when IBC transfer from Coreum to peered chain is initialized by executing
+	// PurposeOut is used when IBC transfer from TX Blockchain to peered chain is initialized by executing
 	// ibctransfertypes.MsgTransfer message.
 	PurposeOut Purpose = "out"
-	// PurposeIn is used when incoming IBC transfer comes from peered chain to Coreum.
+	// PurposeIn is used when incoming IBC transfer comes from peered chain to TX Blockchain.
 	PurposeIn Purpose = "in"
-	// PurposeAck is used when outgoing IBC transfer from Coreum is acknowledged by the peered chain.
+	// PurposeAck is used when outgoing IBC transfer from TX Blockchain is acknowledged by the peered chain.
 	PurposeAck Purpose = "ack"
-	// PurposeTimeout is used when outgoing IBC transfer from Coreum times out.
+	// PurposeTimeout is used when outgoing IBC transfer from TX Blockchain times out.
 	PurposeTimeout Purpose = "timeout"
 )
 

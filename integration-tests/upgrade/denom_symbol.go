@@ -9,8 +9,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
 )
 
 type denomSymbol struct {
@@ -18,7 +18,7 @@ type denomSymbol struct {
 
 //nolint:dupl
 func (d *denomSymbol) Before(t *testing.T) {
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	client := banktypes.NewQueryClient(chain.ClientContext)
@@ -41,7 +41,7 @@ func (d *denomSymbol) Before(t *testing.T) {
 
 //nolint:dupl
 func (d *denomSymbol) After(t *testing.T) {
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	client := banktypes.NewQueryClient(chain.ClientContext)

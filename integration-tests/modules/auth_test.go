@@ -28,19 +28,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	moduleswasm "github.com/CoreumFoundation/coreum/v6/integration-tests/contracts/modules"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	"github.com/CoreumFoundation/coreum/v6/x/deterministicgas"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
 )
 
 // TestAuthFeeLimits verifies that invalid message gas won't be accepted.
 func TestAuthFeeLimits(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 
@@ -142,7 +142,7 @@ func TestAuthFeeLimits(t *testing.T) {
 func TestAuthMultisig(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 	recipient := chain.GenAccount()
 	amountToSendFromMultisigAccount := int64(1_000_000)
@@ -222,7 +222,7 @@ func TestAuthMultisig(t *testing.T) {
 func TestAuthUnexpectedSequenceNumber(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 
@@ -258,7 +258,7 @@ func TestAuthUnexpectedSequenceNumber(t *testing.T) {
 func TestUnorderedTransactions(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender := chain.GenAccount()
 
@@ -358,7 +358,7 @@ func TestUnorderedTransactions(t *testing.T) {
 
 func TestGasEstimation(t *testing.T) {
 	t.Parallel()
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	admin := chain.GenAccount()
 	singlesigAddress := chain.GenAccount()
@@ -563,7 +563,7 @@ func TestAuthSignModeDirectAux(t *testing.T) {
 	t.Parallel()
 	requireT := require.New(t)
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	// Tipper does not pay any tips yet because TipDecorator is not integrated yet (it is still in beta).
 	tipper := chain.GenAccount()
@@ -681,7 +681,7 @@ func TestTxWithMultipleSignatures(t *testing.T) {
 	t.Parallel()
 	requireT := require.New(t)
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	sender1 := chain.GenAccount()
 	sender2 := chain.GenAccount()
@@ -759,7 +759,7 @@ func TestTxWithMultipleSignatures(t *testing.T) {
 func signTxWithMultipleSignatures(
 	ctx context.Context,
 	t *testing.T,
-	chain integration.CoreumChain,
+	chain integration.TXChain,
 	msgs []sdk.Msg,
 	signers []sdk.AccAddress,
 ) sdk.Tx {

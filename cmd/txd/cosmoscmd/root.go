@@ -43,9 +43,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/CoreumFoundation/coreum/v6/app"
-	coreumclient "github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config"
+	"github.com/tokenize-x/tx-chain/v6/app"
+	txchainclient "github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 )
 
 const ledgerAppName = "Coreum"
@@ -76,7 +76,7 @@ func NewRootCmd() *cobra.Command {
 
 	rootCmd := &cobra.Command{
 		Use:   app.Name + "d",
-		Short: "Coreum App",
+		Short: "TX App",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
@@ -426,12 +426,12 @@ func installAwaitBroadcastModeWrapper(cmd *cobra.Command) {
 			}
 
 			// Once we read tx hash from the output produced by cosmos sdk we may await the transaction.
-			awaitClientCtx := coreumclient.NewContextFromCosmosContext(coreumclient.DefaultContextConfig(), clientCtx).
+			awaitClientCtx := txchainclient.NewContextFromCosmosContext(txchainclient.DefaultContextConfig(), clientCtx).
 				WithGRPCClient(clientCtx.GRPCClient).WithClient(clientCtx.Client)
 			ctx, cancel := context.WithTimeout(cmd.Context(), 10*time.Second)
 			defer cancel()
 
-			res, err := coreumclient.AwaitTx(ctx, awaitClientCtx, writer.txRes.TxHash)
+			res, err := txchainclient.AwaitTx(ctx, awaitClientCtx, writer.txRes.TxHash)
 			if err != nil {
 				return err
 			}
@@ -471,7 +471,7 @@ func appExport(
 	appOpts servertypes.AppOptions,
 	modulesToExport []string,
 ) (servertypes.ExportedApp, error) {
-	var coreumApp *app.App
+	var txApp *app.App
 
 	// this check is necessary as we use the flag in x/upgrade.
 	// we can exit more gracefully by checking the flag here.
@@ -490,16 +490,16 @@ func appExport(
 	appOpts = viperAppOpts
 
 	if height != -1 {
-		coreumApp = app.New(logger, db, traceStore, false, appOpts)
+		txApp = app.New(logger, db, traceStore, false, appOpts)
 
-		if err := coreumApp.LoadHeight(height); err != nil {
+		if err := txApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		coreumApp = app.New(logger, db, traceStore, true, appOpts)
+		txApp = app.New(logger, db, traceStore, true, appOpts)
 	}
 
-	return coreumApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+	return txApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
 }
 
 func tempDir() string {

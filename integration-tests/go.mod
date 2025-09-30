@@ -1,4 +1,4 @@
-module github.com/CoreumFoundation/coreum/v6/integration-tests
+module github.com/tokenize-x/tx-chain/v6/integration-tests
 
 go 1.24
 
@@ -7,10 +7,10 @@ toolchain go1.24.2
 replace (
 	// cosmos keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
-	github.com/CoreumFoundation/coreum/v6 => ../
 	// https://github.com/cosmos/cosmos-sdk/issues/14949
 	// pin the version of goleveldb to v1.0.1-0.20210819022825-2ae1ddf74ef7 required by SDK v47 upgrade guide.
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+	github.com/tokenize-x/tx-chain/v6 => ../
 )
 
 require (
@@ -20,7 +20,6 @@ require (
 	cosmossdk.io/x/nft v0.1.1
 	cosmossdk.io/x/upgrade v0.2.0
 	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a
-	github.com/CoreumFoundation/coreum/v6 v6.0.0-20241002100003-2dcad94c2fbc
 	github.com/CosmWasm/wasmd v0.60.1
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-sdk v0.53.4
@@ -32,6 +31,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.10.0
+	github.com/tokenize-x/tx-chain/v6 v6.0.0-20241002100003-2dcad94c2fbc
 )
 
 require (

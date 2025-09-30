@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"context"
@@ -10,13 +10,13 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
-	"github.com/CoreumFoundation/crust/build/golang"
-	"github.com/CoreumFoundation/crust/build/types"
-	"github.com/CoreumFoundation/crust/znet/infra"
-	"github.com/CoreumFoundation/crust/znet/infra/apps"
-	"github.com/CoreumFoundation/crust/znet/infra/apps/txd"
-	"github.com/CoreumFoundation/crust/znet/pkg/znet"
+	"github.com/tokenize-x/crust/build/golang"
+	"github.com/tokenize-x/crust/build/types"
+	"github.com/tokenize-x/crust/znet/infra"
+	"github.com/tokenize-x/crust/znet/infra/apps"
+	"github.com/tokenize-x/crust/znet/infra/apps/txd"
+	"github.com/tokenize-x/crust/znet/pkg/znet"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 )
 
 // Test names.
@@ -29,14 +29,14 @@ const (
 	TestExport = "export"
 )
 
-// Test run unit tests in coreum repo.
+// Test run unit tests in tx-chain repo.
 func Test(ctx context.Context, deps types.DepsFunc) error {
 	deps(CompileAllSmartContracts)
 
 	return golang.Test(ctx, deps)
 }
 
-// RunAllIntegrationTests runs all the coreum integration tests.
+// RunAllIntegrationTests runs all the tx-chain integration tests.
 func RunAllIntegrationTests(runUnsafe bool) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		deps(
@@ -104,7 +104,7 @@ func RunIntegrationTestsUpgrade(runUnsafe bool) types.CommandFunc {
 	}
 }
 
-// TestFuzz run fuzz tests in coreum repo.
+// TestFuzz run fuzz tests in tx-chain repo.
 func TestFuzz(ctx context.Context, deps types.DepsFunc) error {
 	deps(CompileAllSmartContracts)
 

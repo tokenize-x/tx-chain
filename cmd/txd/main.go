@@ -7,11 +7,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"github.com/CoreumFoundation/coreum/v6/app"
-	"github.com/CoreumFoundation/coreum/v6/cmd/txd/cosmoscmd"
+	"github.com/tokenize-x/tx-chain/v6/app"
+	"github.com/tokenize-x/tx-chain/v6/cmd/txd/cosmoscmd"
 )
 
-const coreumEnvPrefix = "TXD"
+const txChainEnvPrefix = "TXD"
 
 func main() {
 	network, err := cosmoscmd.PreProcessFlags()
@@ -25,7 +25,7 @@ func main() {
 	rootCmd := cosmoscmd.NewRootCmd()
 	cosmoscmd.OverwriteDefaultChainIDFlags(rootCmd)
 	rootCmd.PersistentFlags().String(flags.FlagChainID, string(app.DefaultChainID), "The network chain ID")
-	if err := svrcmd.Execute(rootCmd, coreumEnvPrefix, app.DefaultNodeHome); err != nil {
+	if err := svrcmd.Execute(rootCmd, txChainEnvPrefix, app.DefaultNodeHome); err != nil {
 		//nolint:errcheck // we are already exiting the app so we don't check error.
 		fmt.Fprintln(rootCmd.OutOrStderr(), err)
 		os.Exit(1)

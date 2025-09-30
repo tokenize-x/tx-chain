@@ -1,6 +1,6 @@
-package coreum
+package txchain
 
-import "github.com/CoreumFoundation/coreum/build/tools"
+import "github.com/tokenize-x/tx-chain/build/tools"
 
 // TXdUpgrades returns the mapping from upgrade name to the upgraded version.
 func TXdUpgrades() map[string]string {

@@ -17,10 +17,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
-	testcontracts "github.com/CoreumFoundation/coreum/v6/x/asset/ft/keeper/test-contracts"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	wibctransfertypes "github.com/CoreumFoundation/coreum/v6/x/wibctransfer/types"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	testcontracts "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper/test-contracts"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	wibctransfertypes "github.com/tokenize-x/tx-chain/v6/x/wibctransfer/types"
 )
 
 var (

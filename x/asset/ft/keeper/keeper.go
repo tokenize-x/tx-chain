@@ -21,10 +21,10 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	"github.com/CoreumFoundation/coreum/v6/x/wasm"
-	cwasmtypes "github.com/CoreumFoundation/coreum/v6/x/wasm/types"
-	wibctransfertypes "github.com/CoreumFoundation/coreum/v6/x/wibctransfer/types"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/wasm"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
+	wibctransfertypes "github.com/tokenize-x/tx-chain/v6/x/wibctransfer/types"
 )
 
 // ExtensionInstantiateMsg is the message passed to the extension cosmwasm contract.

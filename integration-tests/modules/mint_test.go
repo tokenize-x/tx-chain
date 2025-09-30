@@ -9,7 +9,7 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 )
 
 // TestMintQueryInflation tests that querying inflation works.
@@ -18,7 +18,7 @@ func TestMintQueryInflation(t *testing.T) {
 
 	requireT := require.New(t)
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	mintClient := minttypes.NewQueryClient(chain.ClientContext)
 	resp, err := mintClient.Inflation(ctx, &minttypes.QueryInflationRequest{})

@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/CoreumFoundation/coreum-tools/pkg/must"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -15,11 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/must"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config"
-	"github.com/CoreumFoundation/coreum/v6/x/feemodel"
-	"github.com/CoreumFoundation/coreum/v6/x/feemodel/keeper"
-	"github.com/CoreumFoundation/coreum/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config"
+	"github.com/tokenize-x/tx-chain/v6/x/feemodel"
+	"github.com/tokenize-x/tx-chain/v6/x/feemodel/keeper"
+	"github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
 )
 
 func setup() (sdk.Context, keeper.Keeper) {

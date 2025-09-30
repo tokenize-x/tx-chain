@@ -19,11 +19,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/CoreumFoundation/coreum/v6/testutil/simapp"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	assetnfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
-	"github.com/CoreumFoundation/coreum/v6/x/deterministicgas"
-	"github.com/CoreumFoundation/coreum/v6/x/deterministicgas/types"
+	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
+	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
 )
 
 // To access private variable from github.com/cosmos/gogoproto we link it to local variable.

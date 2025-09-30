@@ -8,14 +8,14 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 )
 
 type mint struct {
 }
 
 func (m *mint) Before(t *testing.T) {
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	client := minttypes.NewQueryClient(chain.ClientContext)
@@ -34,7 +34,7 @@ func (m *mint) Before(t *testing.T) {
 }
 
 func (m *mint) After(t *testing.T) {
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	client := minttypes.NewQueryClient(chain.ClientContext)

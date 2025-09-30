@@ -15,8 +15,8 @@ import (
 	gogoproto "github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	assetnfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
 )
 
 // assetFTQuery represents asset ft module queries integrated with the wasm handler.
@@ -144,29 +144,29 @@ type nftQuery struct {
 	Classes *nfttypes.QueryClassesRequest `json:"Classes"`
 }
 
-// coreumQuery represents all coreum module queries integrated with the wasm handler.
+// txChainQuery represents all tx-chain module queries integrated with the wasm handler.
 //
 //nolint:tagliatelle // we keep the name same as consume
-type coreumQuery struct {
+type txChainQuery struct {
 	AssetFT  *assetFTQuery  `json:"AssetFT"`
 	AssetNFT *assetNFTQuery `json:"AssetNFT"`
 	NFT      *nftQuery      `json:"nft"`
 }
 
-// NewCoreumQueryHandler returns the coreum handler which handles queries from smart contracts.
-func NewCoreumQueryHandler(
+// NewTXChainQueryHandler returns the tx-chain handler which handles queries from smart contracts.
+func NewTXChainQueryHandler(
 	assetFTQueryServer assetfttypes.QueryServer, assetNFTQueryServer assetnfttypes.QueryServer,
 	nftQueryServer nfttypes.QueryServer, gRPCQueryRouter *baseapp.GRPCQueryRouter, codec codec.Codec,
 ) *wasmkeeper.QueryPlugins {
 	return &wasmkeeper.QueryPlugins{
 		Grpc: NewGRPCQuerier(gRPCQueryRouter, codec).Query,
 		Custom: func(ctx sdk.Context, query json.RawMessage) ([]byte, error) {
-			var coreumQuery coreumQuery
-			if err := json.Unmarshal(query, &coreumQuery); err != nil {
+			var txChainQuery txChainQuery
+			if err := json.Unmarshal(query, &txChainQuery); err != nil {
 				return nil, errors.WithStack(err)
 			}
 
-			return processCoreumQuery(ctx, coreumQuery, assetFTQueryServer, assetNFTQueryServer, nftQueryServer)
+			return processTXChainQuery(ctx, txChainQuery, assetFTQueryServer, assetNFTQueryServer, nftQueryServer)
 		},
 	}
 }
@@ -184,9 +184,9 @@ func convertStringToDataBytes(dataString string) (*codectypes.Any, error) {
 }
 
 // Deprecated: Supported for backward compatibility of legacy smart contracts only.
-func processCoreumQuery(
+func processTXChainQuery(
 	ctx sdk.Context,
-	queries coreumQuery,
+	queries txChainQuery,
 	assetFTQueryServer assetfttypes.QueryServer,
 	assetNFTQueryServer assetnfttypes.QueryServer,
 	nftQueryServer nfttypes.QueryServer,

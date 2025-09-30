@@ -1,4 +1,4 @@
-package coreum
+package txchain
 
 import (
 	"bytes"
@@ -10,15 +10,15 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/pkg/errors"
-
 	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/CoreumFoundation/coreum-tools/pkg/must"
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/crust/build/git"
-	"github.com/CoreumFoundation/crust/build/golang"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/pkg/errors"
+
+	"github.com/tokenize-x/crust/build/git"
+	"github.com/tokenize-x/crust/build/golang"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
+	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 )
 
 //go:embed proto-breaking.tmpl.json
@@ -27,7 +27,7 @@ var configBreakingTmpl string
 
 //nolint:unused
 func breakingProto(ctx context.Context, deps types.DepsFunc) error {
-	deps(golang.Tidy, coreumtools.EnsureProtoc, coreumtools.EnsureProtocGenBufBreaking)
+	deps(golang.Tidy, txchaintools.EnsureProtoc, txchaintools.EnsureProtocGenBufBreaking)
 
 	masterDir, err := os.MkdirTemp("", "coreum-master-*")
 	if err != nil {

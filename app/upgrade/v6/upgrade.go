@@ -8,8 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 
-	"github.com/CoreumFoundation/coreum/v6/app/upgrade"
-	wbankkeeper "github.com/CoreumFoundation/coreum/v6/x/wbank/keeper"
+	"github.com/tokenize-x/tx-chain/v6/app/upgrade"
+	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
 )
 
 // Name defines the upgrade name.

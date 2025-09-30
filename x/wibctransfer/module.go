@@ -8,7 +8,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 
-	"github.com/CoreumFoundation/coreum/v6/x/wibctransfer/keeper"
+	"github.com/tokenize-x/tx-chain/v6/x/wibctransfer/keeper"
 )
 
 // AppModuleBasic defines the basic application module used by the wrapped IBC transfer module.

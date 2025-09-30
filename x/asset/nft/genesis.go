@@ -4,8 +4,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/CoreumFoundation/coreum/v6/x/asset/nft/keeper"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/keeper"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

@@ -18,11 +18,11 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
-	coreumclitestutil "github.com/CoreumFoundation/coreum/v6/testutil/cli"
-	"github.com/CoreumFoundation/coreum/v6/testutil/network"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/nft/client/cli"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v6/testutil/network"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/client/cli"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
 )
 
 func TestQueryClassAndNFT(t *testing.T) {
@@ -47,7 +47,7 @@ func TestQueryClassAndNFT(t *testing.T) {
 	)
 
 	var classRes types.QueryClassResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClass(), []string{classID}, &classRes)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClass(), []string{classID}, &classRes)
 
 	expectedClass := types.Class{
 		Id:          classID,
@@ -72,7 +72,7 @@ func TestQueryClassAndNFT(t *testing.T) {
 
 	// classes
 	var classesRes types.QueryClassesResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClasses(),
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryClasses(),
 		[]string{"--" + cli.IssuerFlag, testNetwork.Validators[0].Address.String(), "--output", "json"},
 		&classesRes)
 	requireT.Equal(expectedClass, classesRes.Classes[0])
@@ -102,7 +102,7 @@ func TestQueryClassAndNFT(t *testing.T) {
 	}
 
 	var nftRes nfttypes.QueryNFTResponse
-	coreumclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "nft", classID, nftID}, &nftRes)
+	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{nfttypes.ModuleName, "nft", classID, nftID}, &nftRes)
 	gotNft := *nftRes.Nft
 	var dataBytes types.DataBytes
 	decodeAnyDataFromAmino(t, ctx, gotNft.Data, &dataBytes)
@@ -121,7 +121,7 @@ func TestCmdQueryParams(t *testing.T) {
 	ctx := testNetwork.Validators[0].ClientCtx
 
 	var resp types.QueryParamsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
 	expectedMintFee := sdk.Coin{Denom: constant.DenomDev, Amount: sdkmath.NewInt(0)}
 	requireT.Equal(expectedMintFee, resp.Params.MintFee)
 }
@@ -143,7 +143,7 @@ func mint(
 		fmt.Sprintf("--%s=%s", cli.DataFileFlag, dataFile),
 	}
 	args = append(args, txValidator1Args(testNetwork)...)
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxMint(), args)
 	require.NoError(t, err)
 }
 
@@ -177,7 +177,7 @@ func issueClass(
 	if royaltyRate != "" {
 		args = append(args, "--"+cli.RoyaltyRateFlag, royaltyRate)
 	}
-	_, err := coreumclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxIssueClass(), args)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxIssueClass(), args)
 	require.NoError(t, err)
 
 	return types.BuildClassID(symbol, validator.Address)

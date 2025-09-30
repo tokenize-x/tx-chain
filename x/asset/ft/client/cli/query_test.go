@@ -8,11 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
-	coreumclitestutil "github.com/CoreumFoundation/coreum/v6/testutil/cli"
-	"github.com/CoreumFoundation/coreum/v6/testutil/network"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/client/cli"
-	"github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v6/testutil/network"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/client/cli"
+	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
 func TestQueryTokens(t *testing.T) {
@@ -40,7 +40,7 @@ func TestQueryTokens(t *testing.T) {
 	denom := issue(requireT, ctx, token, initialAmount, nil, testNetwork)
 
 	var resp types.QueryTokensResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryTokens(),
@@ -77,7 +77,7 @@ func TestQueryToken(t *testing.T) {
 	denom := issue(requireT, ctx, token, initialAmount, nil, testNetwork)
 
 	var resp types.QueryTokenResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryToken(), []string{denom}, &resp)
 
 	expectedToken := token
 	expectedToken.Denom = denom
@@ -88,7 +88,7 @@ func TestQueryToken(t *testing.T) {
 
 	// query balance
 	var respBalance types.QueryBalanceResponse
-	coreumclitestutil.ExecQueryCmd(
+	txchainclitestutil.ExecQueryCmd(
 		t,
 		ctx,
 		cli.CmdQueryBalance(),
@@ -116,7 +116,7 @@ func TestCmdTokenUpgradeStatuses(t *testing.T) {
 	denom := issue(requireT, ctx, token, initialAmount, nil, testNetwork)
 
 	var statusesRes types.QueryTokenUpgradeStatusesResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdTokenUpgradeStatuses(), []string{denom}, &statusesRes)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdTokenUpgradeStatuses(), []string{denom}, &statusesRes)
 	// we can't check non-empty values
 	requireT.Nil(statusesRes.Statuses.V1)
 }
@@ -129,7 +129,7 @@ func TestQueryParams(t *testing.T) {
 	ctx := testNetwork.Validators[0].ClientCtx
 
 	var resp types.QueryParamsResponse
-	coreumclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
+	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryParams(), []string{}, &resp)
 	expectedIssueFee := sdk.Coin{Denom: constant.DenomDev, Amount: sdkmath.NewInt(10_000_000)}
 	requireT.Equal(expectedIssueFee, resp.Params.IssueFee)
 }

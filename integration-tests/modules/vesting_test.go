@@ -15,11 +15,11 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/CoreumFoundation/coreum/v6/integration-tests"
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	"github.com/CoreumFoundation/coreum/v6/testutil/integration"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	customparamstypes "github.com/CoreumFoundation/coreum/v6/x/customparams/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
 )
 
 // TestContinuousAndDelayedVestingAccountCreationAndBankSend tests continuous and delayed vesting account can be
@@ -27,7 +27,7 @@ import (
 func TestContinuousAndDelayedVestingAccountCreationAndBankSend(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	creator := chain.GenAccount()
 	vestingAcc := chain.GenAccount()
@@ -125,7 +125,7 @@ func TestContinuousAndDelayedVestingAccountCreationAndBankSend(t *testing.T) {
 func TestPeriodicVestingAccountCreationAndBankSend(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	creator := chain.GenAccount()
 	vestingAcc := chain.GenAccount()
@@ -229,7 +229,7 @@ func TestPeriodicVestingAccountCreationAndBankSend(t *testing.T) {
 func TestPermanentLockedAccountCreationAndBankSend(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	creator := chain.GenAccount()
 	vestingAcc := chain.GenAccount()
@@ -301,7 +301,7 @@ func TestPermanentLockedAccountCreationAndBankSend(t *testing.T) {
 func TestVestingAccountStaking(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	creator := chain.GenAccount()
 	vestingAcc := chain.GenAccount()
@@ -388,7 +388,7 @@ func TestVestingAccountStaking(t *testing.T) {
 func TestVestingAccountWithFTInteraction(t *testing.T) {
 	t.Parallel()
 
-	ctx, chain := integrationtests.NewCoreumTestingContext(t)
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 
 	issuer := chain.GenAccount()
 	vestingAcc := chain.GenAccount()

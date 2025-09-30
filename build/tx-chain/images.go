@@ -1,17 +1,17 @@
-package coreum
+package txchain
 
 import (
 	"context"
 	"fmt"
 	"path/filepath"
 
-	"github.com/CoreumFoundation/coreum/build/coreum/image"
-	coreumtools "github.com/CoreumFoundation/coreum/build/tools"
-	"github.com/CoreumFoundation/coreum/v6/pkg/config/constant"
-	"github.com/CoreumFoundation/crust/build/config"
-	"github.com/CoreumFoundation/crust/build/docker"
-	crusttools "github.com/CoreumFoundation/crust/build/tools"
-	"github.com/CoreumFoundation/crust/build/types"
+	"github.com/tokenize-x/crust/build/config"
+	"github.com/tokenize-x/crust/build/docker"
+	crusttools "github.com/tokenize-x/crust/build/tools"
+	"github.com/tokenize-x/crust/build/types"
+	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-chain/build/tx-chain/image"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
 )
 
 type imageConfig struct {
@@ -68,7 +68,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 // ensureReleasedBinaries ensures that all previous cored versions are installed.
 // TODO (v7): Rename all cored to txd.
 func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
-	const binaryTool = coreumtools.CoredV500
+	const binaryTool = txchaintools.CoredV500
 	if err := crusttools.Ensure(ctx, binaryTool, crusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}

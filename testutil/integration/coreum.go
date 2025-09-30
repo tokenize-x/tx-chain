@@ -13,24 +13,24 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/CoreumFoundation/coreum/v6/pkg/client"
-	assetfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/ft/types"
-	assetnfttypes "github.com/CoreumFoundation/coreum/v6/x/asset/nft/types"
-	"github.com/CoreumFoundation/coreum/v6/x/deterministicgas"
-	dextypes "github.com/CoreumFoundation/coreum/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
+	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
 )
 
-// CoreumChain is configured coreum chain.
-type CoreumChain struct {
+// TXChain is configured tx-chain chain.
+type TXChain struct {
 	Chain
 	Governance             Governance
 	DeterministicGasConfig deterministicgas.Config
 }
 
-// NewCoreumChain returns a new instance of the CoreumChain.
-func NewCoreumChain(chain Chain, stakerMnemonics []string) CoreumChain {
+// NewTXChain returns a new instance of the TXChain.
+func NewTXChain(chain Chain, stakerMnemonics []string) TXChain {
 	gov := NewGovernance(chain.ChainContext, stakerMnemonics, chain.Faucet)
-	return CoreumChain{
+	return TXChain{
 		Chain:                  chain,
 		Governance:             gov,
 		DeterministicGasConfig: deterministicgas.DefaultConfig(),
@@ -53,7 +53,7 @@ type AccWithBalancesOptions struct {
 
 // GasLimitByMsgs calculates sum of gas limits required for message types passed.
 // It panics if unsupported message type specified.
-func (c CoreumChain) GasLimitByMsgs(msgs ...sdk.Msg) uint64 {
+func (c TXChain) GasLimitByMsgs(msgs ...sdk.Msg) uint64 {
 	var totalGasRequired uint64
 	for _, msg := range msgs {
 		msgGas, exists := c.DeterministicGasConfig.GasRequiredByMessage(msg)
@@ -68,7 +68,7 @@ func (c CoreumChain) GasLimitByMsgs(msgs ...sdk.Msg) uint64 {
 
 // GasLimitForMultiMsgTx calculates sum of gas limits required for message types passed and includes the FixedGas once.
 // It panics if unsupported message type specified.
-func (c CoreumChain) GasLimitForMultiMsgTx(msgs ...sdk.Msg) uint64 {
+func (c TXChain) GasLimitForMultiMsgTx(msgs ...sdk.Msg) uint64 {
 	var totalGasRequired uint64
 	for _, msg := range msgs {
 		msgGas, exists := c.DeterministicGasConfig.GasRequiredByMessage(msg)
@@ -82,7 +82,7 @@ func (c CoreumChain) GasLimitForMultiMsgTx(msgs ...sdk.Msg) uint64 {
 }
 
 // ComputeNeededBalanceFromOptions computes the required balance based on the input options.
-func (c CoreumChain) ComputeNeededBalanceFromOptions(options BalancesOptions) sdkmath.Int {
+func (c TXChain) ComputeNeededBalanceFromOptions(options BalancesOptions) sdkmath.Int {
 	if options.GasPrice.IsNil() {
 		options.GasPrice = c.ChainSettings.GasPrice
 	}
@@ -112,7 +112,7 @@ func (c CoreumChain) ComputeNeededBalanceFromOptions(options BalancesOptions) sd
 }
 
 // FundAccountWithOptions computes the needed balances and fund account with it.
-func (c CoreumChain) FundAccountWithOptions(
+func (c TXChain) FundAccountWithOptions(
 	ctx context.Context,
 	t *testing.T,
 	address sdk.AccAddress,
@@ -128,7 +128,7 @@ func (c CoreumChain) FundAccountWithOptions(
 }
 
 // FundAccountsWithOptions computes the needed balances and fund accounts with it.
-func (c CoreumChain) FundAccountsWithOptions(
+func (c TXChain) FundAccountsWithOptions(
 	ctx context.Context,
 	t *testing.T,
 	accWithBalancesOptions []AccWithBalancesOptions,
@@ -149,7 +149,7 @@ func (c CoreumChain) FundAccountsWithOptions(
 
 // CreateValidator creates a new validator on the chain and returns the staker addresses,
 // validator addresses and callback function to deactivate it.
-func (c CoreumChain) CreateValidator(
+func (c TXChain) CreateValidator(
 	ctx context.Context,
 	t *testing.T,
 	stakingAmount,
@@ -231,7 +231,7 @@ func (c CoreumChain) CreateValidator(
 }
 
 // QueryAssetFTParams queries for asset/ft module params and returns them.
-func (c CoreumChain) QueryAssetFTParams(ctx context.Context, t *testing.T) assetfttypes.Params {
+func (c TXChain) QueryAssetFTParams(ctx context.Context, t *testing.T) assetfttypes.Params {
 	t.Helper()
 
 	queryClient := assetfttypes.NewQueryClient(c.ClientContext)
@@ -242,7 +242,7 @@ func (c CoreumChain) QueryAssetFTParams(ctx context.Context, t *testing.T) asset
 }
 
 // QueryAssetNFTParams queries for asset/nft module params and returns them.
-func (c CoreumChain) QueryAssetNFTParams(ctx context.Context, t *testing.T) assetnfttypes.Params {
+func (c TXChain) QueryAssetNFTParams(ctx context.Context, t *testing.T) assetnfttypes.Params {
 	t.Helper()
 
 	queryClient := assetnfttypes.NewQueryClient(c.ClientContext)
@@ -253,7 +253,7 @@ func (c CoreumChain) QueryAssetNFTParams(ctx context.Context, t *testing.T) asse
 }
 
 // QueryDEXParams queries for dex module params and returns them.
-func (c CoreumChain) QueryDEXParams(ctx context.Context, t *testing.T) dextypes.Params {
+func (c TXChain) QueryDEXParams(ctx context.Context, t *testing.T) dextypes.Params {
 	t.Helper()
 
 	queryClient := dextypes.NewQueryClient(c.ClientContext)
