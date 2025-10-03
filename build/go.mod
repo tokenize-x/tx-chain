@@ -20,8 +20,12 @@ replace (
 	// Fix upstream GHSA-h395-qcrw-5vmq and GHSA-3vp4-m3rf-835h vulnerabilities.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
+	// replace protoc-gen-validate package that was moved to envoyproxy
+	github.com/lyft/protoc-gen-validate => github.com/envoyproxy/protoc-gen-validate v0.10.1
 	// replace broken goleveldb
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+	// replace unknow revision of nhooyr.io/websocket v1.8.6
+	nhooyr.io/websocket => nhooyr.io/websocket v1.8.17
 )
 
 require (
@@ -29,15 +33,9 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
-	github.com/tokenize-x/crust v0.0.0-20250517130213-2f1a1d58aebc
-	github.com/tokenize-x/crust/znet v0.0.0-20250517130213-2f1a1d58aebc
-	github.com/tokenize-x/tx-chain/v6 v6.0.0-20250421142245-52bdcb2a0560
-)
-
-replace (
-	// Use private crust fork to avoid using the public one.
-	github.com/tokenize-x/crust => github.com/CoreumFoundation/crust-private v0.0.0-20250919142459-d3c464c5e5bb
-	github.com/tokenize-x/crust/znet => github.com/CoreumFoundation/crust-private/znet v0.0.0-20250919142459-d3c464c5e5bb
+	github.com/tokenize-x/crust v0.0.0-20251001151450-900e3a272928
+	github.com/tokenize-x/crust/znet v0.0.0-20251001151450-900e3a272928
+	github.com/tokenize-x/tx-chain/v6 v6.0.0-20250930140845-bb230c098c91
 )
 
 require (

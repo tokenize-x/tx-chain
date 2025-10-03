@@ -1,9 +1,9 @@
 name: ci
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -16,15 +16,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ci_step: [
-          "lint",
-          "test",
-          "test-fuzz",
-          "integration tests tx-core-modules",
-          "integration tests tx-core-stress",
-          "integration tests tx-core-ibc",
-          "integration tests tx-core-upgrade-v5.0.0",
-        ]
+        ci_step:
+          [
+            "lint",
+            "test",
+            "test-fuzz",
+            "integration tests tx-core-modules",
+            "integration tests tx-core-stress",
+            "integration tests tx-core-ibc",
+            "integration tests tx-core-upgrade-v5.0.0",
+          ]
         include:
           - ci_step: "lint"
             command: make lint
@@ -85,13 +86,20 @@ jobs:
           path: |
             ~/.cache/crust
           key: ${{ runner.os }}-crust-${{ hashFiles('build/go.sum') }}
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CRUST_PRIVATE_KEY }}
+      - name: Setup access to crust
+        run: |
+          export GOPRIVATE=github.com/tokenize-x/*,git@crust-private:tokenize-x
+          export GONOSUMDB=github.com/tokenize-x
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          echo -e "${{ secrets.CRUST_PRIVATE_KEY }}" > ~/.ssh/crust-deploy-key
+          chmod 600 ~/.ssh/crust-deploy-key
+          echo -e "Host crust-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/crust-deploy-key\n    IdentitiesOnly yes" >> ~/.ssh/config
+          echo -e "[url \"git@crust-private:tokenize-x/crust\"]\n        insteadOf = \"https://github.com/tokenize-x/crust\"" > ~/.gitconfig
       - name: Make builder
         run: |
-          # TODO: Remove this once we have a public crust repo in tokenize-x organization
-          export GOPRIVATE=github.com/CoreumFoundation/crust-private,github.com/tokenize-x/crust-private
-          export GONOSUMDB=github.com/CoreumFoundation,github.com/tokenize-x
-          echo -e "machine github.com\nlogin ${{ secrets.CRUST_PRIVATE_PAT_USR }}\npassword ${{ secrets.CRUST_PRIVATE_PAT }}" > ~/.netrc
-          echo -e "[url \"https://${{ secrets.CRUST_PRIVATE_PAT_USR }}:${{ secrets.CRUST_PRIVATE_PAT }}@github.com/CoreumFoundation/crust-private\"]\n        insteadOf = \"https://github.com/CoreumFoundation/crust-private\"" > ~/.gitconfig
           ${{ github.workspace }}/bin/tx-chain-builder build/me
       - name: Retrieve go version
         id: goversion
