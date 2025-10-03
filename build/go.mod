@@ -24,6 +24,8 @@ replace (
 	github.com/lyft/protoc-gen-validate => github.com/envoyproxy/protoc-gen-validate v0.10.1
 	// replace broken goleveldb
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+	github.com/tokenize-x/crust => github.com/tokenize-x/tx-crust v0.0.0-20251001151450-900e3a272928
+	github.com/tokenize-x/crust/znet => github.com/tokenize-x/tx-crust/znet v0.0.0-20251001151450-900e3a272928
 	// replace unknow revision of nhooyr.io/websocket v1.8.6
 	nhooyr.io/websocket => nhooyr.io/websocket v1.8.17
 )
