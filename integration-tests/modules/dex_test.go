@@ -10,7 +10,6 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -34,6 +33,7 @@ import (
 	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
 	testcontracts "github.com/tokenize-x/tx-chain/v6/x/dex/keeper/test-contracts"
 	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 // TestLimitOrdersMatching tests the dex modules ability to place get and match limit orders.

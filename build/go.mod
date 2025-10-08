@@ -24,20 +24,23 @@ replace (
 	github.com/lyft/protoc-gen-validate => github.com/envoyproxy/protoc-gen-validate v0.10.1
 	// replace broken goleveldb
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-	github.com/tokenize-x/crust => github.com/tokenize-x/tx-crust v0.0.0-20251001151450-900e3a272928
-	github.com/tokenize-x/crust/znet => github.com/tokenize-x/tx-crust/znet v0.0.0-20251001151450-900e3a272928
 	// replace unknow revision of nhooyr.io/websocket v1.8.6
 	nhooyr.io/websocket => nhooyr.io/websocket v1.8.17
 )
 
+replace (
+	github.com/tokenize-x/crust => github.com/tokenize-x/tx-crust v0.0.0-20251008134921-0f5151bf8892
+	github.com/tokenize-x/crust/znet => github.com/tokenize-x/tx-crust/znet v0.0.0-20251008134921-0f5151bf8892
+)
+
 require (
-	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
-	github.com/tokenize-x/crust v0.0.0-20251001151450-900e3a272928
-	github.com/tokenize-x/crust/znet v0.0.0-20251001151450-900e3a272928
-	github.com/tokenize-x/tx-chain/v6 v6.0.0-20250930140845-bb230c098c91
+	github.com/tokenize-x/crust v0.0.0-20251008134921-0f5151bf8892
+	github.com/tokenize-x/crust/znet v0.0.0-20251008134921-0f5151bf8892
+	github.com/tokenize-x/tx-chain/v6 v6.0.0-20251008070942-1a6bf2112978
+	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 
 require (

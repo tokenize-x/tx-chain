@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
-	"github.com/CoreumFoundation/coreum-tools/pkg/must"
 	"github.com/pkg/errors"
 
 	"github.com/tokenize-x/crust/build/git"
@@ -19,6 +17,8 @@ import (
 	crusttools "github.com/tokenize-x/crust/build/tools"
 	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-tools/pkg/libexec"
+	"github.com/tokenize-x/tx-tools/pkg/must"
 )
 
 //go:embed proto-breaking.tmpl.json

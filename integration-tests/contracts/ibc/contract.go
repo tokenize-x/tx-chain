@@ -6,7 +6,7 @@ import (
 	_ "embed"
 	"encoding/json"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/must"
+	"github.com/tokenize-x/tx-tools/pkg/must"
 )
 
 // Smart contracts bytecode.

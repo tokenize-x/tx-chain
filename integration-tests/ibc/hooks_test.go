@@ -11,7 +11,6 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/keeper"
@@ -22,6 +21,7 @@ import (
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	ibcwasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/ibc"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 // TestIBCHooksCounterWASMCall tests ibc-hooks integration by deploying the ibc-hooks-counter WASM contract

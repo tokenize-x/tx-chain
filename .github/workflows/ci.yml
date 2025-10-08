@@ -88,16 +88,25 @@ jobs:
           key: ${{ runner.os }}-crust-${{ hashFiles('build/go.sum') }}
       - uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.CRUST_PRIVATE_KEY }}
+          ssh-private-key: |
+            ${{ secrets.TX_CRUST_PRIVATE_KEY }}
+            ${{ secrets.TX_TOOLS_PRIVATE_KEY }}
+          
       - name: Setup access to crust
         run: |
-          export GOPRIVATE=github.com/tokenize-x/*,git@crust-private:tokenize-x
-          export GONOSUMDB=github.com/tokenize-x
+          export GOPRIVATE=github.com/tokenize-x GONOSUMDB=github.com/tokenize-x
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-          echo -e "${{ secrets.CRUST_PRIVATE_KEY }}" > ~/.ssh/crust-deploy-key
-          chmod 600 ~/.ssh/crust-deploy-key
-          echo -e "Host crust-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/crust-deploy-key\n    IdentitiesOnly yes" >> ~/.ssh/config
-          echo -e "[url \"git@crust-private:tokenize-x/tx-crust\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-crust\"" > ~/.gitconfig
+          echo -e "${{ secrets.TX_CRUST_PRIVATE_KEY }}" > ~/.ssh/tx-crust-deploy-key
+          echo -e "${{ secrets.TX_TOOLS_PRIVATE_KEY }}" > ~/.ssh/tx-tools-deploy-key
+          chmod 600 ~/.ssh/tx-crust-deploy-key ~/.ssh/tx-tools-deploy-key
+          {
+            echo -e "Host tx-crust-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-crust-deploy-key\n    IdentitiesOnly yes"
+            echo -e "Host tx-tools-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-tools-deploy-key\n    IdentitiesOnly yes"
+          } > ~/.ssh/config
+          {
+            echo -e "[url \"git@tx-crust-private:tokenize-x/tx-crust\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-crust\""
+            echo -e "[url \"git@tx-tools-private:tokenize-x/tx-tools\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-tools\""
+          } > ~/.gitconfig
       - name: Make builder
         run: |
           ${{ github.workspace }}/bin/tx-chain-builder build/me

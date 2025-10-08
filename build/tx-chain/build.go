@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/pkg/errors"
 
 	"github.com/tokenize-x/crust/build/config"
@@ -19,6 +18,7 @@ import (
 	crusttools "github.com/tokenize-x/crust/build/tools"
 	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
 const (

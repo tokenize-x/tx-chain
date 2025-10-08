@@ -12,7 +12,6 @@ import (
 	"unsafe"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -25,6 +24,7 @@ import (
 	ibcwasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/ibc"
 	"github.com/tokenize-x/tx-chain/v6/testutil/event"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 type ibcTimeoutBlock struct {
