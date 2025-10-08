@@ -101,9 +101,9 @@ jobs:
           echo -e "${{ secrets.TX_TOOLS_PRIVATE_KEY }}" > ~/.ssh/tx-tools-deploy-key
           chmod 600 ~/.ssh/tx-crust-deploy-key
           chmod 600 ~/.ssh/tx-tools-deploy-key
-          echo -e "Host tx-crust-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-crust-deploy-key\n    IdentitiesOnly yes" >> ~/.ssh/config
+          echo -e "Host tx-crust-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-crust-deploy-key\n    IdentitiesOnly yes" > ~/.ssh/config
           echo -e "Host tx-tools-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-tools-deploy-key\n    IdentitiesOnly yes" >> ~/.ssh/config
-          echo -e "[url \"git@tx-crust-private:tokenize-x/tx-crust\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-crust\"" >> ~/.gitconfig
+          echo -e "[url \"git@tx-crust-private:tokenize-x/tx-crust\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-crust\"" > ~/.gitconfig
           echo -e "[url \"git@tx-tools-private:tokenize-x/tx-tools\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-tools\"" >> ~/.gitconfig
       - name: Make builder
         run: |
