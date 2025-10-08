@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	sdkerrors "cosmossdk.io/errors"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	"github.com/cometbft/cometbft/mempool"
 	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -27,6 +26,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pkg/errors"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
 )

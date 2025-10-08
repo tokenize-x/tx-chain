@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 const (

@@ -19,7 +19,6 @@ require (
 	cosmossdk.io/x/feegrant v0.1.1
 	cosmossdk.io/x/nft v0.1.1
 	cosmossdk.io/x/upgrade v0.2.0
-	github.com/CoreumFoundation/coreum-tools v0.4.1-0.20241202115740-dbc6962a4d0a
 	github.com/CosmWasm/wasmd v0.60.1
 	github.com/cometbft/cometbft v0.38.17
 	github.com/cosmos/cosmos-sdk v0.53.4
@@ -32,6 +31,7 @@ require (
 	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tokenize-x/tx-chain/v6 v6.0.0-20241002100003-2dcad94c2fbc
+	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 
 require (

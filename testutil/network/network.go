@@ -11,7 +11,6 @@ import (
 	"cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"
 	pruningtypes "cosmossdk.io/store/pruning/types"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	tmrand "github.com/cometbft/cometbft/libs/rand"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -25,6 +24,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	"github.com/tokenize-x/tx-chain/v6/app"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -24,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"

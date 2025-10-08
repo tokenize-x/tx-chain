@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
-	"github.com/CoreumFoundation/coreum-tools/pkg/must"
 	"github.com/pkg/errors"
+	"github.com/tokenize-x/tx-tools/pkg/libexec"
+	"github.com/tokenize-x/tx-tools/pkg/must"
 
 	"github.com/tokenize-x/crust/build/git"
 	"github.com/tokenize-x/crust/build/golang"

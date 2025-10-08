@@ -9,7 +9,6 @@ import (
 	"time"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -18,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"

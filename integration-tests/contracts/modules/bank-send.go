@@ -3,8 +3,8 @@ package modules
 import (
 	"encoding/json"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/must"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tokenize-x/tx-tools/pkg/must"
 )
 
 // BankSendWithdrawPayload generates json containing withdraw payload.

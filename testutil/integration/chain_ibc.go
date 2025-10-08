@@ -10,7 +10,6 @@ import (
 	"time"
 
 	sdkerrors "cosmossdk.io/errors"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -25,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 )

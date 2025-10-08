@@ -8,7 +8,6 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/CoreumFoundation/coreum-tools/pkg/retry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -18,6 +17,7 @@ import (
 	"github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"

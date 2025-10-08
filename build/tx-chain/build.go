@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/libexec"
 	"github.com/pkg/errors"
+	"github.com/tokenize-x/tx-tools/pkg/libexec"
 
 	"github.com/tokenize-x/crust/build/config"
 	"github.com/tokenize-x/crust/build/docker"

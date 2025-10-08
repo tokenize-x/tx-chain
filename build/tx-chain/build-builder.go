@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/CoreumFoundation/coreum-tools/pkg/must"
+	"github.com/tokenize-x/tx-tools/pkg/must"
 
 	"github.com/tokenize-x/crust/build/golang"
 	"github.com/tokenize-x/crust/build/tools"
