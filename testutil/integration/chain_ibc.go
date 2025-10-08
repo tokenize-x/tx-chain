@@ -24,9 +24,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 // ExecuteIBCTransfer executes IBC transfer transaction.

@@ -20,12 +20,12 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 func TestIBCFailsIfNotEnabled(t *testing.T) {

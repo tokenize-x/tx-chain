@@ -14,12 +14,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/must"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 	"github.com/tokenize-x/tx-chain/v6/x/feemodel"
 	"github.com/tokenize-x/tx-chain/v6/x/feemodel/keeper"
 	"github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-tools/pkg/must"
 )
 
 func setup() (sdk.Context, keeper.Keeper) {

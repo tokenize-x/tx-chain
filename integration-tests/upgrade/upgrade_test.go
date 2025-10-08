@@ -17,11 +17,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 // Proper value for upgradeDelayInBlocks depends on block time and gov voting period.

@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/tokenize-x/tx-tools/pkg/libexec"
 
 	"github.com/tokenize-x/crust/build/golang"
 	crusttools "github.com/tokenize-x/crust/build/tools"
 	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
 // generateProtoDocs collects cosmos-sdk, cosmwasm and tendermint proto files from coreum go.mod,

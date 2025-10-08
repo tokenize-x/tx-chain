@@ -19,13 +19,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 	testcontracts "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper/test-contracts"
 	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 func TestExtensionIBCFailsWithIBCProhibitedAmount(t *testing.T) {

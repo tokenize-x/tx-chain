@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/tokenize-x/tx-tools/pkg/must"
 )
 

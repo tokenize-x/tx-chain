@@ -26,9 +26,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pkg/errors"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 // Factory is a re-export of the cosmos sdk tx.Factory type, to make usage of this package more convenient.

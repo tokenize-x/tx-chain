@@ -24,11 +24,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	"github.com/tokenize-x/tx-chain/v6/app"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 type (

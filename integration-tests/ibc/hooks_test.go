@@ -17,11 +17,11 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	ibcwasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/ibc"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 // TestIBCHooksCounterWASMCall tests ibc-hooks integration by deploying the ibc-hooks-counter WASM contract

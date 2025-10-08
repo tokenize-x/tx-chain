@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/tokenize-x/tx-tools/pkg/libexec"
 
 	"github.com/tokenize-x/crust/build/config"
 	"github.com/tokenize-x/crust/build/docker"
@@ -19,6 +18,7 @@ import (
 	crusttools "github.com/tokenize-x/crust/build/tools"
 	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
 const (

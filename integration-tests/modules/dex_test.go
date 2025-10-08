@@ -23,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
@@ -34,6 +33,7 @@ import (
 	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
 	testcontracts "github.com/tokenize-x/tx-chain/v6/x/dex/keeper/test-contracts"
 	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 // TestLimitOrdersMatching tests the dex modules ability to place get and match limit orders.

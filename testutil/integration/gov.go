@@ -12,10 +12,10 @@ import (
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 	"github.com/tokenize-x/tx-chain/v6/testutil/event"
+	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 const (
