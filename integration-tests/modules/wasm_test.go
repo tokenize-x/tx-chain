@@ -89,22 +89,6 @@ type issueFTRequest struct {
 	DEXSettings        *ftDEXSettings                       `json:"dex_settings"`
 }
 
-// fungible token wasm models
-//
-//nolint:tagliatelle
-type issueFTLegacyRequest struct {
-	Symbol             string                 `json:"symbol"`
-	Subunit            string                 `json:"subunit"`
-	Precision          uint32                 `json:"precision"`
-	InitialAmount      string                 `json:"initial_amount"`
-	Description        string                 `json:"description"`
-	Features           []assetfttypes.Feature `json:"features"`
-	BurnRate           string                 `json:"burn_rate"`
-	SendCommissionRate string                 `json:"send_commission_rate"`
-	URI                string                 `json:"uri"`
-	URIHash            string                 `json:"uri_hash"`
-}
-
 type amountBodyFTRequest struct {
 	Amount string `json:"amount"`
 }
@@ -117,10 +101,6 @@ type amountRecipientBodyFTRequest struct {
 type accountAmountBodyFTRequest struct {
 	Account string `json:"account"`
 	Amount  string `json:"amount"`
-}
-
-type issuerBodyFTRequest struct {
-	Issuer string `json:"issuer"`
 }
 
 type accountBodyFTRequest struct {
@@ -198,15 +178,6 @@ const (
 	ftMethodClawback            ftMethod = "clawback"
 	ftMethodTransferAdmin       ftMethod = "transfer_admin"
 	ftMethodClearAdmin          ftMethod = "clear_admin"
-	// query.
-	ftMethodParams              ftMethod = "params"
-	ftMethodTokens              ftMethod = "tokens"
-	ftMethodToken               ftMethod = "token"
-	ftMethodBalance             ftMethod = "balance"
-	ftMethodFrozenBalance       ftMethod = "frozen_balance"
-	ftMethodWhitelistedBalance  ftMethod = "whitelisted_balance"
-	ftMethodFrozenBalances      ftMethod = "frozen_balances"
-	ftMethodWhitelistedBalances ftMethod = "whitelisted_balances"
 )
 
 type dexMethod string
