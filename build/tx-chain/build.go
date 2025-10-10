@@ -142,7 +142,8 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildOsmosisDockerImage builds docker image of the osmosis.
 func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := txcrusttools.Ensure(ctx, txchaintools.Osmosis, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
+	if err := txcrusttools.Ensure(ctx,
+		txchaintools.Osmosis, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}
 
