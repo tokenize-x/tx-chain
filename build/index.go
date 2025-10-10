@@ -3,17 +3,17 @@ package build
 import (
 	"context"
 
-	"github.com/tokenize-x/crust/build/crust"
-	"github.com/tokenize-x/crust/build/golang"
-	"github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
 	txchain "github.com/tokenize-x/tx-chain/build/tx-chain"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	"github.com/tokenize-x/tx-crust/build/tools"
+	txcrust "github.com/tokenize-x/tx-crust/build/tx-crust"
+	"github.com/tokenize-x/tx-crust/build/types"
 )
 
 // Commands is a definition of commands available in build system.
 var Commands = map[string]types.Command{
 	"build/me":   {Fn: txchain.BuildBuilder, Description: "Builds the builder"},
-	"build/znet": {Fn: crust.BuildZNet, Description: "Builds znet binary"},
+	"build/znet": {Fn: txcrust.BuildZNet, Description: "Builds znet binary"},
 	"build": {Fn: func(ctx context.Context, deps types.DepsFunc) error {
 		deps(
 			txchain.BuildTXd,

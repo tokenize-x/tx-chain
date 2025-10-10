@@ -10,13 +10,13 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/tokenize-x/crust/build/golang"
-	"github.com/tokenize-x/crust/build/types"
-	"github.com/tokenize-x/crust/znet/infra"
-	"github.com/tokenize-x/crust/znet/infra/apps"
-	"github.com/tokenize-x/crust/znet/infra/apps/txd"
-	"github.com/tokenize-x/crust/znet/pkg/znet"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	"github.com/tokenize-x/tx-crust/build/types"
+	"github.com/tokenize-x/tx-crust/znet/infra"
+	"github.com/tokenize-x/tx-crust/znet/infra/apps"
+	"github.com/tokenize-x/tx-crust/znet/infra/apps/txd"
+	"github.com/tokenize-x/tx-crust/znet/pkg/znet"
 )
 
 // Test names.

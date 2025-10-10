@@ -12,10 +12,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/crust/build/golang"
-	crusttools "github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
+	"github.com/tokenize-x/tx-crust/build/types"
 	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
@@ -61,8 +61,8 @@ func executeGoProtocCommand(ctx context.Context, deps types.DepsFunc, includeDir
 	args := []string{
 		"--gocosmos_out=plugins=interfacetype+grpc,Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:.",
 		"--grpc-gateway_out=logtostderr=true:.",
-		"--plugin=" + crusttools.Path("bin/protoc-gen-gocosmos", crusttools.TargetPlatformLocal),
-		"--plugin=" + crusttools.Path("bin/protoc-gen-grpc-gateway", crusttools.TargetPlatformLocal),
+		"--plugin=" + txcrusttools.Path("bin/protoc-gen-gocosmos", txcrusttools.TargetPlatformLocal),
+		"--plugin=" + txcrusttools.Path("bin/protoc-gen-grpc-gateway", txcrusttools.TargetPlatformLocal),
 	}
 
 	for _, path := range includeDirs {
@@ -85,7 +85,7 @@ func executeGoProtocCommand(ctx context.Context, deps types.DepsFunc, includeDir
 	for _, files := range packages {
 		args := append([]string{}, args...)
 		args = append(args, files...)
-		cmd := exec.Command(crusttools.Path("bin/protoc", crusttools.TargetPlatformLocal), args...)
+		cmd := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 		cmd.Dir = outDir
 		if err := libexec.Exec(ctx, cmd); err != nil {
 			return err

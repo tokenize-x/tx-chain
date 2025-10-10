@@ -59,7 +59,7 @@ To stop and purge the testing environment run:
 $ make znet-remove
 ```
 
-To get all the details on how `znet` tool might be used, go to the <!-- markdown-link-check-disable -->[crust repository](https://github.com/tokenize-x/tx-chain)<!-- markdown-link-check-enable -->.
+To get all the details on how `znet` tool might be used, go to the <!-- markdown-link-check-disable -->[tx-crust repository](https://github.com/tokenize-x/tx-crust)<!-- markdown-link-check-enable -->.
 
 ### Interact with the local chain
 

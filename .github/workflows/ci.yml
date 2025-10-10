@@ -80,12 +80,12 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-      - name: Setup crust cache
+      - name: Setup tx-crust cache
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/crust
-          key: ${{ runner.os }}-crust-${{ hashFiles('build/go.sum') }}
+            ~/.cache/tx-crust
+          key: ${{ runner.os }}-tx-crust-${{ hashFiles('build/go.sum') }}
       - uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: |
@@ -134,7 +134,7 @@ jobs:
             ${{ github.workspace }}/integration-tests/contracts/**/artifacts/*
             ${{ github.workspace }}/x/asset/ft/keeper/test-contracts/**/artifacts/*
             ${{ github.workspace }}/x/dex/keeper/test-contracts/**/artifacts/*
-            ~/.cache/crust/wasm/code-hashes.json
+            ~/.cache/tx-crust/wasm/code-hashes.json
           key: ${{ runner.os }}-cache-smart-contracts-${{ hashFiles('**/*.rs', '**/Cargo.toml', '**/Cargo.lock') }}
         if: ${{ matrix.wasm-cache }}
       - name: Run ${{ matrix.ci_step }}

@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/crust/build/rust"
-	"github.com/tokenize-x/crust/build/types"
+	"github.com/tokenize-x/tx-crust/build/rust"
+	"github.com/tokenize-x/tx-crust/build/types"
 )
 
 // Smart contract names.

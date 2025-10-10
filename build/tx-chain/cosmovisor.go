@@ -4,18 +4,18 @@ import (
 	"context"
 	"path/filepath"
 
-	crusttools "github.com/tokenize-x/crust/build/tools"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
 )
 
 func ensureCosmovisorWithInstalledBinary(
-	ctx context.Context, platform crusttools.TargetPlatform, binaryName string,
+	ctx context.Context, platform txcrusttools.TargetPlatform, binaryName string,
 ) error {
-	if err := crusttools.Ensure(ctx, txchaintools.Cosmovisor, platform); err != nil {
+	if err := txcrusttools.Ensure(ctx, txchaintools.Cosmovisor, platform); err != nil {
 		return err
 	}
 
-	return crusttools.CopyToolBinaries(txchaintools.Cosmovisor,
+	return txcrusttools.CopyToolBinaries(txchaintools.Cosmovisor,
 		platform,
 		filepath.Join("bin", ".cache", binaryName, platform.String()),
 		cosmovisorBinaryPath)

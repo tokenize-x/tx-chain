@@ -9,10 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/crust/build/golang"
-	crusttools "github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
+	"github.com/tokenize-x/tx-crust/build/types"
 	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
@@ -51,7 +51,7 @@ func executeProtocCommand(ctx context.Context, deps types.DepsFunc, includeDirs,
 
 	args := []string{
 		"--doc_out=docs",
-		"--plugin=" + crusttools.Path("bin/protoc-gen-doc", crusttools.TargetPlatformLocal),
+		"--plugin=" + txcrusttools.Path("bin/protoc-gen-doc", txcrusttools.TargetPlatformLocal),
 		"--doc_opt=docs/api.tmpl.md,api.md",
 	}
 
@@ -65,7 +65,7 @@ func executeProtocCommand(ctx context.Context, deps types.DepsFunc, includeDirs,
 	}
 	args = append(args, allProtoFiles...)
 
-	cmd := exec.Command(crusttools.Path("bin/protoc", crusttools.TargetPlatformLocal), args...)
+	cmd := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 	cmd.Dir = repoPath
 
 	return libexec.Exec(ctx, cmd)

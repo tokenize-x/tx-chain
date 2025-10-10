@@ -158,7 +158,7 @@ func TestExpeditedGovProposalWithDepositAndWeightedVotes(t *testing.T) {
 	govParams, err := gov.QueryGovParams(ctx)
 	requireT.NoError(err)
 
-	// It is hardcoded from crust infra/apps/profiles.go and infra/apps/txd/config.go
+	// It is hardcoded from tx-crust infra/apps/profiles.go and infra/apps/txd/config.go
 	// remember to change these values if they are changed there
 	unexpectedParams := govParams.ExpeditedVotingPeriod != lo.ToPtr(15*time.Second) ||
 		len(govParams.ExpeditedMinDeposit) == 0 ||

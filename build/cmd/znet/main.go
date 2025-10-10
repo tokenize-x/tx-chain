@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/tokenize-x/crust/znet/infra"
-	"github.com/tokenize-x/crust/znet/pkg/znet"
 	txchainbuild "github.com/tokenize-x/tx-chain/build/tx-chain"
+	"github.com/tokenize-x/tx-crust/znet/infra"
+	"github.com/tokenize-x/tx-crust/znet/pkg/znet"
 )
 
 func main() {
