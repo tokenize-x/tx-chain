@@ -1,13 +1,13 @@
 [workspace]
 members = [
-    "authz-nft-trade",
-    "authz-stargate",
-    "authz-transfer",
-    "bank-send",
-    "dex",
-    "ft",
-    "nft",
-    "simple-state",
+  "authz-nft-trade",
+  "authz-stargate",
+  "authz-transfer",
+  "bank-send",
+  "dex",
+  "ft",
+  "nft",
+  "simple-state",
 ]
 resolver = "2"
 
@@ -36,7 +36,7 @@ cw-storage-plus = "2.0.0"
 cw2 = "2.0.0"
 thiserror = "1.0.59"
 schemars = "0.8.10"
-coreum-wasm-sdk = "1.2.0"
+tx-wasm-sdk = { git = "https://github.com/tokenize-x/tx-wasm-sdk.git", rev = "c29f14ed02c068689f6dab00ca9534602257b9f7" }
 cw-utils = "2.0.0"
 cw-ownable = "2.1.0"
 prost = "0.12.6"

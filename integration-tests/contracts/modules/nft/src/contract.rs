@@ -1,5 +1,18 @@
-use coreum_wasm_sdk::shim;
-use coreum_wasm_sdk::types::coreum::asset::nft::v1::{
+use cosmwasm_std::{
+    entry_point, to_json_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult,
+};
+use cw2::set_contract_version;
+use cw_ownable::{assert_owner, initialize_owner};
+use tx_wasm_sdk::shim;
+use tx_wasm_sdk::types::cosmos::base::query::v1beta1::PageRequest;
+use tx_wasm_sdk::types::cosmos::nft::v1beta1::MsgSend;
+use tx_wasm_sdk::types::cosmos::nft::v1beta1::{
+    self, QueryBalanceRequest, QueryBalanceResponse, QueryNfTsRequest, QueryNfTsResponse,
+    QueryNftRequest, QueryNftResponse, QueryOwnerRequest, QueryOwnerResponse, QuerySupplyRequest,
+    QuerySupplyResponse,
+};
+use tx_wasm_sdk::types::tx::asset::nft::v1::{
     self, DataBytes, DataDynamic, DataDynamicIndexedItem, DataDynamicItem, DataEditor,
     MsgAddToClassWhitelist, MsgAddToWhitelist, MsgBurn, MsgClassFreeze, MsgClassUnfreeze,
     MsgFreeze, MsgIssueClass, MsgMint, MsgRemoveFromClassWhitelist, MsgRemoveFromWhitelist,
@@ -11,19 +24,6 @@ use coreum_wasm_sdk::types::coreum::asset::nft::v1::{
     QueryWhitelistedAccountsForNftRequest, QueryWhitelistedAccountsForNftResponse,
     QueryWhitelistedRequest, QueryWhitelistedResponse,
 };
-use coreum_wasm_sdk::types::cosmos::nft::v1beta1::{
-    self, QueryBalanceRequest, QueryBalanceResponse, QueryNfTsRequest, QueryNfTsResponse,
-    QueryNftRequest, QueryNftResponse, QueryOwnerRequest, QueryOwnerResponse, QuerySupplyRequest,
-    QuerySupplyResponse,
-};
-use coreum_wasm_sdk::types::cosmos::base::query::v1beta1::PageRequest;
-use coreum_wasm_sdk::types::cosmos::nft::v1beta1::MsgSend;
-use cosmwasm_std::{
-    entry_point, to_json_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult,
-};
-use cw2::set_contract_version;
-use cw_ownable::{assert_owner, initialize_owner};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};

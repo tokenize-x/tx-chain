@@ -1,8 +1,7 @@
-use coreum_wasm_sdk::deprecated::core::CoreumResult;
-use coreum_wasm_sdk::shim;
-use coreum_wasm_sdk::types::cosmos::authz::v1beta1::MsgExec;
-use coreum_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend;
-use coreum_wasm_sdk::types::cosmos::base::v1beta1::Coin;
+use tx_wasm_sdk::shim;
+use tx_wasm_sdk::types::cosmos::authz::v1beta1::MsgExec;
+use tx_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend;
+use tx_wasm_sdk::types::cosmos::base::v1beta1::Coin;
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -39,7 +38,7 @@ pub fn execute(
     env: Env,
     _info: MessageInfo,
     msg: ExecuteMsg,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Transfer {
             address,
@@ -55,7 +54,7 @@ fn execute_transfer(
     address: String,
     amount: Uint128,
     denom: String,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     deps.api.addr_validate(address.as_ref())?;
     let granter = GRANTER.load(deps.storage)?;
 

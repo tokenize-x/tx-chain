@@ -1,9 +1,8 @@
-use coreum_wasm_sdk::deprecated::core::CoreumResult;
-use coreum_wasm_sdk::shim;
-use coreum_wasm_sdk::types::cosmos::authz::v1beta1::MsgExec;
-use coreum_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend as BankMsg;
-use coreum_wasm_sdk::types::cosmos::base::v1beta1::Coin;
-use coreum_wasm_sdk::types::cosmos::nft::v1beta1::MsgSend;
+use tx_wasm_sdk::shim;
+use tx_wasm_sdk::types::cosmos::authz::v1beta1::MsgExec;
+use tx_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend as BankMsg;
+use tx_wasm_sdk::types::cosmos::base::v1beta1::Coin;
+use tx_wasm_sdk::types::cosmos::nft::v1beta1::MsgSend;
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -38,7 +37,7 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::OfferNft {
             class_id,
@@ -68,7 +67,7 @@ fn offer_nft(
     class_id: String,
     id: String,
     price: Coin,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     let nft_send = MsgSend {
         class_id: class_id.clone(),
         id: id.clone(),
@@ -105,7 +104,7 @@ fn accept_offer(
     info: MessageInfo,
     class_id: String,
     id: String,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     let offer = NFT_OFFERS.load(deps.storage, (class_id.clone(), id.clone()))?;
 
     let coin = one_coin(&info)?;

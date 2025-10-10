@@ -3,8 +3,8 @@ use cosmwasm_std::{CosmosMsg, Uint128};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use cw_ownable::{assert_owner, initialize_owner};
-use coreum_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend;
-use coreum_wasm_sdk::types::cosmos::base::v1beta1::Coin;
+use tx_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend;
+use tx_wasm_sdk::types::cosmos::base::v1beta1::Coin;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg};
@@ -41,7 +41,7 @@ pub fn instantiate(
                 Ok(msg) => Ok(Response::new()
                     .add_attribute("method", "instantiate")
                     .add_attribute("owner", info.sender)
-                    .add_message(CosmosMsg::Any(msg)))
+                    .add_message(CosmosMsg::Any(msg))),
             }
         }
     }
@@ -73,24 +73,15 @@ pub fn try_withdraw(
 ) -> Result<Response, ContractError> {
     let recipient_addr = deps.api.addr_validate(&recipient)?;
 
-    let msg_res = prepare_withdraw(
-        deps,
-        env,
-        info,
-        denom,
-        amount,
-        recipient,
-    );
+    let msg_res = prepare_withdraw(deps, env, info, denom, amount, recipient);
 
     match msg_res {
         Err(e) => Err(e),
-        Ok(msg) => {
-            Ok(Response::new()
-                .add_attribute("method", "try_withdraw")
-                .add_attribute("to", recipient_addr)
-                .add_attribute("amount", amount)
-                .add_message(CosmosMsg::Any(msg)))
-        }
+        Ok(msg) => Ok(Response::new()
+            .add_attribute("method", "try_withdraw")
+            .add_attribute("to", recipient_addr)
+            .add_attribute("amount", amount)
+            .add_message(CosmosMsg::Any(msg))),
     }
 }
 

@@ -705,8 +705,10 @@ func New(
 			app.BankKeeper,
 			appCodec,
 			&app.TransferKeeper,
+			// TODO (v7): Remove legacy message handler.
 			wasmcustomhandler.NewTXChainMsgHandler(),
 		))),
+		// TODO (v7): Remove legacy custom query handler, keep only GRPC queries.
 		wasmkeeper.WithQueryPlugins(wasmcustomhandler.NewTXChainQueryHandler(
 			assetftkeeper.NewQueryService(app.AssetFTKeeper, app.BankKeeper),
 			assetnftkeeper.NewQueryService(app.AssetNFTKeeper),

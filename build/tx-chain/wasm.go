@@ -14,7 +14,6 @@ import (
 // Smart contract names.
 const (
 	WasmModulesDir        = repoPath + "/integration-tests/contracts/modules"
-	WasmLegacyModulesDir  = repoPath + "/integration-tests/contracts/legacy-modules"
 	WasmIBCDir            = repoPath + "/integration-tests/contracts/ibc"
 	WasmAssetExtensionDir = repoPath + "/x/asset/ft/keeper/test-contracts"
 	WasmDexDir            = repoPath + "/x/dex/keeper/test-contracts"
@@ -23,11 +22,6 @@ const (
 // CompileModulesSmartContracts compiles modules smart contracts.
 func CompileModulesSmartContracts(ctx context.Context, deps types.DepsFunc) error {
 	return compileWasmDir(WasmModulesDir, deps)
-}
-
-// CompileLegacyModulesSmartContracts compiles legacy modules smart contracts.
-func CompileLegacyModulesSmartContracts(ctx context.Context, deps types.DepsFunc) error {
-	return compileWasmDir(WasmLegacyModulesDir, deps)
 }
 
 // CompileIBCSmartContracts compiles ibc smart contracts.
@@ -49,7 +43,6 @@ func CompileDEXSmartContracts(ctx context.Context, deps types.DepsFunc) error {
 func CompileAllSmartContracts(ctx context.Context, deps types.DepsFunc) error {
 	allWasmDirectories := []string{
 		WasmModulesDir,
-		WasmLegacyModulesDir,
 		WasmIBCDir,
 		WasmAssetExtensionDir,
 		WasmDexDir,

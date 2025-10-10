@@ -154,6 +154,7 @@ type txChainQuery struct {
 }
 
 // NewTXChainQueryHandler returns the tx-chain handler which handles queries from smart contracts.
+// TODO (v7): Remove the Custom query handler (processTXChainQuery) - it's deprecated for backward compatibility only.
 func NewTXChainQueryHandler(
 	assetFTQueryServer assetfttypes.QueryServer, assetNFTQueryServer assetnfttypes.QueryServer,
 	nftQueryServer nfttypes.QueryServer, gRPCQueryRouter *baseapp.GRPCQueryRouter, codec codec.Codec,
@@ -184,6 +185,7 @@ func convertStringToDataBytes(dataString string) (*codectypes.Any, error) {
 }
 
 // Deprecated: Supported for backward compatibility of legacy smart contracts only.
+// TODO (v7): Remove this function and all related legacy query processing functions.
 func processTXChainQuery(
 	ctx sdk.Context,
 	queries txChainQuery,

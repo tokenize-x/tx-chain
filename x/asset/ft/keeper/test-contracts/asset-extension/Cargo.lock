@@ -151,7 +151,6 @@ dependencies = [
 name = "asset-extension"
 version = "0.1.0"
 dependencies = [
- "coreum-wasm-sdk",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-storage-plus",
@@ -160,6 +159,7 @@ dependencies = [
  "serde",
  "serde-cw-value",
  "thiserror",
+ "tx-wasm-sdk",
 ]
 
 [[package]]
@@ -233,36 +233,6 @@ name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
-
-[[package]]
-name = "coreum-std-derive"
-version = "0.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fee3df604ec822e6a66c0279f2d8840da010f8e07503423ba413baac03c830f"
-dependencies = [
- "itertools 0.10.5",
- "proc-macro2",
- "prost 0.12.6",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "coreum-wasm-sdk"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c4fbd66984ad36b7c2b2a0f82d4f818517671776600faf8696946ae0e842320"
-dependencies = [
- "chrono",
- "coreum-std-derive",
- "cosmwasm-schema",
- "cosmwasm-std",
- "prost 0.12.6",
- "prost-types",
- "schemars",
- "serde",
- "serde-cw-value",
-]
 
 [[package]]
 name = "cosmwasm-core"
@@ -1106,6 +1076,34 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.79",
+]
+
+[[package]]
+name = "tx-std-derive"
+version = "0.20.1"
+source = "git+https://github.com/tokenize-x/tx-std-derive?rev=cd5b47afb760d03be6a28d9ce50cb93da78774da#cd5b47afb760d03be6a28d9ce50cb93da78774da"
+dependencies = [
+ "itertools 0.10.5",
+ "proc-macro2",
+ "prost 0.12.6",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "tx-wasm-sdk"
+version = "1.2.1"
+source = "git+https://github.com/tokenize-x/tx-wasm-sdk.git?rev=c29f14ed02c068689f6dab00ca9534602257b9f7#c29f14ed02c068689f6dab00ca9534602257b9f7"
+dependencies = [
+ "chrono",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "prost 0.12.6",
+ "prost-types",
+ "schemars",
+ "serde",
+ "serde-cw-value",
+ "tx-std-derive",
 ]
 
 [[package]]

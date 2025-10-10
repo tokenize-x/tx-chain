@@ -1,7 +1,7 @@
-use coreum_wasm_sdk::types::coreum::asset::ft::v1::{DexSettings, ExtensionIssueSettings};
-use coreum_wasm_sdk::types::coreum::dex::v1::MsgPlaceOrder;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Uint128;
+use tx_wasm_sdk::types::tx::asset::ft::v1::{DexSettings, ExtensionIssueSettings};
+use tx_wasm_sdk::types::tx::dex::v1::MsgPlaceOrder;
 
 #[cw_serde]
 pub struct InstantiateMsg {

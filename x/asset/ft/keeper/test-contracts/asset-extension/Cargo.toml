@@ -4,10 +4,7 @@ version = "0.1.0"
 authors = ["tokenize-x"]
 edition = "2021"
 
-exclude = [
-  "simple_state.wasm",
-  "checksums.txt",
-]
+exclude = ["simple_state.wasm", "checksums.txt"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -31,7 +28,7 @@ cosmwasm-std = { version = "2.1.4", features = ["cosmwasm_2_0"] }
 cw2 = "2.0.0"
 thiserror = "1.0.59"
 cosmwasm-schema = "2.1.4"
-coreum-wasm-sdk = "1.2.0"
+tx-wasm-sdk = { git = "https://github.com/tokenize-x/tx-wasm-sdk.git", rev = "c29f14ed02c068689f6dab00ca9534602257b9f7" }
 cw-storage-plus = "2.0.0"
 prost = "0.11.9"
 serde = { version = "1.0.203", default-features = false, features = ["derive"] }

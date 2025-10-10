@@ -1,5 +1,3 @@
-use coreum_wasm_sdk::deprecated::core::CoreumResult;
-
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{AnyMsg, Binary, CosmosMsg, DepsMut, Env, MessageInfo, Response};
@@ -31,13 +29,13 @@ pub fn execute(
     _env: Env,
     _info: MessageInfo,
     msg: ExecuteMsg,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Stargate { type_url, value } => execute_stargate_message(type_url, value),
     }
 }
 
-fn execute_stargate_message(type_url: String, value: Binary) -> CoreumResult<ContractError> {
+fn execute_stargate_message(type_url: String, value: Binary) -> Result<Response, ContractError> {
     let msg = CosmosMsg::Any(AnyMsg { type_url, value });
 
     Ok(Response::new()

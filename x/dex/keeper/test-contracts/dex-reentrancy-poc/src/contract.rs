@@ -1,4 +1,4 @@
-use coreum_wasm_sdk::types::coreum::dex::v1::{MsgPlaceOrder, OrderType, Side, TimeInForce};
+use tx_wasm_sdk::types::tx::dex::v1::{MsgPlaceOrder, OrderType, Side, TimeInForce};
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -6,12 +6,12 @@ use crate::msg::{
     TransferContext,
 };
 use crate::state::{DENOM, EXTRA_DATA};
-use coreum_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend;
-use coreum_wasm_sdk::types::cosmos::base::v1beta1::Coin;
 use cosmwasm_std::{entry_point, to_json_binary, CosmosMsg};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
 use cw2::set_contract_version;
 use std::string::ToString;
+use tx_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend;
+use tx_wasm_sdk::types::cosmos::base::v1beta1::Coin;
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -121,7 +121,7 @@ pub fn sudo_extension_place_order(
         let order = MsgPlaceOrder {
             sender: env.contract.address.to_string(),
             r#type: OrderType::Limit as i32,
-            id: "hackid1".to_string().into(),
+            id: "hackid1".to_string(),
             base_denom: order.base_denom,
             quote_denom: order.quote_denom,
             price: order.price.unwrap(),

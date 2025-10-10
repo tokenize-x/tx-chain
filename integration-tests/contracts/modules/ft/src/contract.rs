@@ -1,4 +1,11 @@
-use coreum_wasm_sdk::types::coreum::asset::ft::v1::{
+use cosmwasm_std::{
+    entry_point, to_json_binary, to_json_vec, Binary, CosmosMsg, Deps, StdResult, Uint128,
+};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
+use cw2::set_contract_version;
+use cw_ownable::{assert_owner, initialize_owner};
+use tx_wasm_sdk::types::cosmos::base::{query::v1beta1::PageRequest, v1beta1::Coin};
+use tx_wasm_sdk::types::tx::asset::ft::v1::{
     ExtensionIssueSettings, MsgBurn, MsgClawback, MsgClearAdmin, MsgFreeze, MsgGloballyFreeze,
     MsgGloballyUnfreeze, MsgIssue, MsgMint, MsgSetFrozen, MsgSetWhitelistedLimit, MsgTransferAdmin,
     MsgUnfreeze, QueryBalanceRequest, QueryBalanceResponse, QueryFrozenBalanceRequest,
@@ -8,13 +15,6 @@ use coreum_wasm_sdk::types::coreum::asset::ft::v1::{
     QueryWhitelistedBalanceResponse, QueryWhitelistedBalancesRequest,
     QueryWhitelistedBalancesResponse,
 };
-use coreum_wasm_sdk::types::cosmos::base::{query::v1beta1::PageRequest, v1beta1::Coin};
-use cosmwasm_std::{
-    entry_point, to_json_binary, to_json_vec, Binary, CosmosMsg, Deps, StdResult, Uint128,
-};
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use cw2::set_contract_version;
-use cw_ownable::{assert_owner, initialize_owner};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
