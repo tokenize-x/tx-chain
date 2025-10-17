@@ -3,8 +3,8 @@ package tools
 import (
 	"context"
 
-	"github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
+	"github.com/tokenize-x/tx-crust/build/tools"
+	"github.com/tokenize-x/tx-crust/build/types"
 )
 
 const (
@@ -405,7 +405,7 @@ func EnsureProtocGenBufBreaking(ctx context.Context, deps types.DepsFunc) error 
 	return tools.Ensure(ctx, ProtocGenBufBreaking, tools.TargetPlatformLocal)
 }
 
-// EnsureBinary installs gaiad binary to crust cache.
+// EnsureBinary installs gaiad binary to tx-crust cache.
 func EnsureBinary(ctx context.Context, deps types.DepsFunc) error {
 	return tools.Ensure(ctx, Gaia, tools.TargetPlatformLocal)
 }

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/tokenize-x/crust/build"
-	"github.com/tokenize-x/crust/build/tools"
 	selfBuild "github.com/tokenize-x/tx-chain/build"
 	selfTools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-crust/build"
+	"github.com/tokenize-x/tx-crust/build/tools"
 )
 
 func init() {

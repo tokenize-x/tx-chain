@@ -12,11 +12,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/crust/build/git"
-	"github.com/tokenize-x/crust/build/golang"
-	crusttools "github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-crust/build/git"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
+	"github.com/tokenize-x/tx-crust/build/types"
 	"github.com/tokenize-x/tx-tools/pkg/libexec"
 	"github.com/tokenize-x/tx-tools/pkg/must"
 )
@@ -35,7 +35,7 @@ func breakingProto(ctx context.Context, deps types.DepsFunc) error {
 	}
 	defer os.RemoveAll(masterDir) //nolint:errcheck // error doesn't matter
 
-	if err := git.CloneLocalBranch(ctx, masterDir, repoPath, "crust/proto-breaking", "master"); err != nil {
+	if err := git.CloneLocalBranch(ctx, masterDir, repoPath, "tx-crust/proto-breaking", "master"); err != nil {
 		return err
 	}
 	if err := golang.DownloadDependencies(ctx, deps, masterDir); err != nil {
@@ -63,7 +63,7 @@ func breakingProto(ctx context.Context, deps types.DepsFunc) error {
 		return errors.WithStack(err)
 	}
 
-	cmdImage := exec.Command(crusttools.Path("bin/protoc", crusttools.TargetPlatformLocal),
+	cmdImage := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal),
 		append(
 			append([]string{"--include_imports", "--include_source_info", "-o", imageFile}, masterIncludeArgs...),
 			masterProtoFiles...)...)
@@ -102,11 +102,11 @@ func breakingProto(ctx context.Context, deps types.DepsFunc) error {
 	args := []string{
 		"--buf-breaking_out=.",
 		fmt.Sprintf("--buf-breaking_opt=%s", configBuf),
-		"--plugin=" + crusttools.Path("bin/protoc-gen-buf-breaking", crusttools.TargetPlatformLocal),
+		"--plugin=" + txcrusttools.Path("bin/protoc-gen-buf-breaking", txcrusttools.TargetPlatformLocal),
 	}
 
 	args = append(args, includeArgs...)
 	args = append(args, masterProtoFiles...)
-	cmdBreaking := exec.Command(crusttools.Path("bin/protoc", crusttools.TargetPlatformLocal), args...)
+	cmdBreaking := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 	return libexec.Exec(ctx, cmdBreaking)
 }

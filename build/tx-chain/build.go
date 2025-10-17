@@ -9,15 +9,15 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/crust/build/config"
-	"github.com/tokenize-x/crust/build/docker"
-	dockerbasic "github.com/tokenize-x/crust/build/docker/basic"
-	"github.com/tokenize-x/crust/build/git"
-	"github.com/tokenize-x/crust/build/golang"
-	"github.com/tokenize-x/crust/build/lint"
-	crusttools "github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-crust/build/config"
+	"github.com/tokenize-x/tx-crust/build/docker"
+	dockerbasic "github.com/tokenize-x/tx-crust/build/docker/basic"
+	"github.com/tokenize-x/tx-crust/build/git"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	"github.com/tokenize-x/tx-crust/build/lint"
+	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
+	"github.com/tokenize-x/tx-crust/build/types"
 	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
@@ -55,7 +55,7 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	return golang.Build(ctx, deps, golang.BinaryBuildConfig{
-		TargetPlatform: crusttools.TargetPlatformLocal,
+		TargetPlatform: txcrusttools.TargetPlatformLocal,
 		PackagePath:    "cmd/txd",
 		BinOutputPath:  binaryPath,
 		CGOEnabled:     true,
@@ -66,21 +66,21 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildTXdInDocker builds txd in docker.
 func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
-	return buildTXdInDocker(ctx, deps, crusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag})
+	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag})
 }
 
 // BuildGaiaDockerImage builds docker image of the gaia.
 func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := crusttools.Ensure(ctx, txchaintools.Gaia, crusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
+	if err := txcrusttools.Ensure(ctx, txchaintools.Gaia, txcrusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
 		return err
 	}
 
 	gaiaLocalPath := filepath.Join(
-		"bin", ".cache", gaiaBinaryName, crusttools.TargetPlatformLinuxAMD64InDocker.String(),
+		"bin", ".cache", gaiaBinaryName, txcrusttools.TargetPlatformLinuxAMD64InDocker.String(),
 	)
-	if err := crusttools.CopyToolBinaries(
+	if err := txcrusttools.CopyToolBinaries(
 		txchaintools.Gaia,
-		crusttools.TargetPlatformLinuxAMD64InDocker,
+		txcrusttools.TargetPlatformLinuxAMD64InDocker,
 		gaiaLocalPath,
 		gaiaBinaryPath,
 	); err != nil {
@@ -98,7 +98,7 @@ func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	return docker.BuildImage(ctx, docker.BuildImageConfig{
 		ContextDir:      gaiaLocalPath,
 		ImageName:       gaiaBinaryName,
-		TargetPlatforms: []crusttools.TargetPlatform{crusttools.TargetPlatformLinuxAMD64InDocker},
+		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxAMD64InDocker},
 		Dockerfile:      dockerfile,
 		Versions:        []string{config.ZNetVersion},
 	})
@@ -106,16 +106,16 @@ func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildHermesDockerImage builds docker image of the ibc relayer.
 func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := crusttools.Ensure(ctx, txchaintools.Hermes, crusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
+	if err := txcrusttools.Ensure(ctx, txchaintools.Hermes, txcrusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
 		return err
 	}
 
 	hermesLocalPath := filepath.Join(
-		"bin", ".cache", hermesBinaryName, crusttools.TargetPlatformLinuxAMD64InDocker.String(),
+		"bin", ".cache", hermesBinaryName, txcrusttools.TargetPlatformLinuxAMD64InDocker.String(),
 	)
-	if err := crusttools.CopyToolBinaries(
+	if err := txcrusttools.CopyToolBinaries(
 		txchaintools.Hermes,
-		crusttools.TargetPlatformLinuxAMD64InDocker,
+		txcrusttools.TargetPlatformLinuxAMD64InDocker,
 		hermesLocalPath,
 		hermesBinaryPath,
 	); err != nil {
@@ -134,7 +134,7 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	return docker.BuildImage(ctx, docker.BuildImageConfig{
 		ContextDir:      hermesLocalPath,
 		ImageName:       hermesBinaryName,
-		TargetPlatforms: []crusttools.TargetPlatform{crusttools.TargetPlatformLinuxAMD64InDocker},
+		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxAMD64InDocker},
 		Dockerfile:      dockerfile,
 		Versions:        []string{config.ZNetVersion},
 	})
@@ -142,16 +142,17 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildOsmosisDockerImage builds docker image of the osmosis.
 func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := crusttools.Ensure(ctx, txchaintools.Osmosis, crusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
+	if err := txcrusttools.Ensure(ctx,
+		txchaintools.Osmosis, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}
 
 	binaryLocalPath := filepath.Join(
-		"bin", ".cache", osmosisBinaryName, crusttools.TargetPlatformLinuxLocalArchInDocker.String(),
+		"bin", ".cache", osmosisBinaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(),
 	)
-	if err := crusttools.CopyToolBinaries(
+	if err := txcrusttools.CopyToolBinaries(
 		txchaintools.Osmosis,
-		crusttools.TargetPlatformLinuxLocalArchInDocker,
+		txcrusttools.TargetPlatformLinuxLocalArchInDocker,
 		binaryLocalPath,
 		osmosisBinaryPath,
 	); err != nil {
@@ -177,10 +178,10 @@ func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
 func buildTXdInDocker(
 	ctx context.Context,
 	deps types.DepsFunc,
-	targetPlatform crusttools.TargetPlatform,
+	targetPlatform txcrusttools.TargetPlatform,
 	extraFlags []string,
 ) error {
-	if err := crusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
+	if err := txcrusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
 		return err
 	}
 
@@ -190,9 +191,9 @@ func buildTXdInDocker(
 	envs := make([]string, 0)
 	dockerVolumes := make([]string, 0)
 	switch targetPlatform.OS {
-	case crusttools.OSLinux:
+	case txcrusttools.OSLinux:
 		// use cc not installed on the image we use for the build
-		if err := crusttools.Ensure(ctx, txchaintools.MuslCC, targetPlatform); err != nil {
+		if err := txcrusttools.Ensure(ctx, txchaintools.MuslCC, targetPlatform); err != nil {
 			return err
 		}
 		buildTags = append(buildTags, "muslc")
@@ -207,19 +208,19 @@ func buildTXdInDocker(
 			wasmCCLibRelativeLibPath string
 		)
 		switch targetPlatform {
-		case crusttools.TargetPlatformLinuxAMD64InDocker:
+		case txcrusttools.TargetPlatformLinuxAMD64InDocker:
 			hostCCDirPath = filepath.Dir(
-				filepath.Dir(crusttools.Path("bin/x86_64-linux-musl-gcc", targetPlatform)),
+				filepath.Dir(txcrusttools.Path("bin/x86_64-linux-musl-gcc", targetPlatform)),
 			)
 			ccRelativePath = "/bin/x86_64-linux-musl-gcc"
-			wasmHostDirPath = crusttools.Path("lib/libwasmvm_muslc.x86_64.a", targetPlatform)
+			wasmHostDirPath = txcrusttools.Path("lib/libwasmvm_muslc.x86_64.a", targetPlatform)
 			wasmCCLibRelativeLibPath = "/x86_64-linux-musl/lib/libwasmvm_muslc.x86_64.a"
-		case crusttools.TargetPlatformLinuxARM64InDocker:
+		case txcrusttools.TargetPlatformLinuxARM64InDocker:
 			hostCCDirPath = filepath.Dir(
-				filepath.Dir(crusttools.Path("bin/aarch64-linux-musl-gcc", targetPlatform)),
+				filepath.Dir(txcrusttools.Path("bin/aarch64-linux-musl-gcc", targetPlatform)),
 			)
 			ccRelativePath = "/bin/aarch64-linux-musl-gcc"
-			wasmHostDirPath = crusttools.Path("lib/libwasmvm_muslc.aarch64.a", targetPlatform)
+			wasmHostDirPath = txcrusttools.Path("lib/libwasmvm_muslc.aarch64.a", targetPlatform)
 			wasmCCLibRelativeLibPath = "/aarch64-linux-musl/lib/libwasmvm_muslc.aarch64.a"
 		default:
 			return errors.Errorf("building is not possible for platform %s", targetPlatform)
@@ -232,17 +233,17 @@ func buildTXdInDocker(
 			fmt.Sprintf("%s:%s", wasmHostDirPath, fmt.Sprintf("%s%s", ccDockerDir, wasmCCLibRelativeLibPath)),
 		)
 		cc = fmt.Sprintf("%s%s", ccDockerDir, ccRelativePath)
-	case crusttools.OSDarwin:
+	case txcrusttools.OSDarwin:
 		buildTags = append(buildTags, "static_wasm")
 		switch targetPlatform {
-		case crusttools.TargetPlatformDarwinAMD64InDocker:
+		case txcrusttools.TargetPlatformDarwinAMD64InDocker:
 			cc = "o64-clang"
-		case crusttools.TargetPlatformDarwinARM64InDocker:
+		case txcrusttools.TargetPlatformDarwinARM64InDocker:
 			cc = "oa64-clang"
 		default:
 			return errors.Errorf("building is not possible for platform %s", targetPlatform)
 		}
-		wasmHostDirPath := crusttools.Path("lib/libwasmvmstatic_darwin.a", targetPlatform)
+		wasmHostDirPath := txcrusttools.Path("lib/libwasmvmstatic_darwin.a", targetPlatform)
 		dockerVolumes = append(dockerVolumes, fmt.Sprintf("%s:%s", wasmHostDirPath, "/lib/libwasmvmstatic_darwin.a"))
 		envs = append(envs, "CGO_LDFLAGS=-L/lib")
 	default:
@@ -318,7 +319,7 @@ func txdVersionLDFlags(ctx context.Context, buildTags []string) ([]string, error
 func formatProto(ctx context.Context, deps types.DepsFunc) error {
 	deps(txchaintools.EnsureBuf)
 
-	cmd := exec.Command(crusttools.Path("bin/buf", crusttools.TargetPlatformLocal), "format", "-w")
+	cmd := exec.Command(txcrusttools.Path("bin/buf", txcrusttools.TargetPlatformLocal), "format", "-w")
 	cmd.Dir = filepath.Join(repoPath, "proto", "coreum")
 	return libexec.Exec(ctx, cmd)
 }

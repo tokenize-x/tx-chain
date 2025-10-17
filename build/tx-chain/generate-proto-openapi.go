@@ -12,10 +12,10 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/crust/build/golang"
-	crusttools "github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
 	txbuildtools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
+	"github.com/tokenize-x/tx-crust/build/types"
 	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
@@ -98,7 +98,7 @@ func executeOpenAPIProtocCommand(ctx context.Context, deps types.DepsFunc, inclu
 
 	args := []string{
 		"--openapiv2_out=logtostderr=true,allow_merge=true,json_names_for_fields=false,fqn_for_openapi_name=true,simple_operation_ids=true,Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:.", //nolint:lll // breaking down this string will make it more complicated.
-		"--plugin=" + crusttools.Path("bin/protoc-gen-openapiv2", crusttools.TargetPlatformLocal),
+		"--plugin=" + txcrusttools.Path("bin/protoc-gen-openapiv2", txcrusttools.TargetPlatformLocal),
 	}
 
 	for _, path := range includeDirs {
@@ -137,7 +137,7 @@ func executeOpenAPIProtocCommand(ctx context.Context, deps types.DepsFunc, inclu
 			}
 			args := append([]string{}, args...)
 			args = append(args, pf)
-			cmd := exec.Command(crusttools.Path("bin/protoc", crusttools.TargetPlatformLocal), args...)
+			cmd := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 			cmd.Dir = dir
 			if err := libexec.Exec(ctx, cmd); err != nil {
 				return err

@@ -9,10 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/crust/build/golang"
-	crusttools "github.com/tokenize-x/crust/build/tools"
-	"github.com/tokenize-x/crust/build/types"
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
+	"github.com/tokenize-x/tx-crust/build/golang"
+	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
+	"github.com/tokenize-x/tx-crust/build/types"
 	"github.com/tokenize-x/tx-tools/pkg/libexec"
 )
 
@@ -52,7 +52,7 @@ func executeLintProtocCommand(ctx context.Context, deps types.DepsFunc, includeD
 	args := []string{
 		"--buf-lint_out=.",
 		fmt.Sprintf("--buf-lint_opt=%s", configLint),
-		"--plugin=" + crusttools.Path("bin/protoc-gen-buf-lint", crusttools.TargetPlatformLocal),
+		"--plugin=" + txcrusttools.Path("bin/protoc-gen-buf-lint", txcrusttools.TargetPlatformLocal),
 	}
 
 	for _, path := range includeDirs {
@@ -75,7 +75,7 @@ func executeLintProtocCommand(ctx context.Context, deps types.DepsFunc, includeD
 	for _, files := range packages {
 		args := append([]string{}, args...)
 		args = append(args, files...)
-		cmd := exec.Command(crusttools.Path("bin/protoc", crusttools.TargetPlatformLocal), args...)
+		cmd := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 		if err := libexec.Exec(ctx, cmd); err != nil {
 			return err
 		}

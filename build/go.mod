@@ -28,18 +28,13 @@ replace (
 	nhooyr.io/websocket => nhooyr.io/websocket v1.8.17
 )
 
-replace (
-	github.com/tokenize-x/crust => github.com/tokenize-x/tx-crust v0.0.0-20251008134921-0f5151bf8892
-	github.com/tokenize-x/crust/znet => github.com/tokenize-x/tx-crust/znet v0.0.0-20251008134921-0f5151bf8892
-)
-
 require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
-	github.com/tokenize-x/crust v0.0.0-20251008134921-0f5151bf8892
-	github.com/tokenize-x/crust/znet v0.0.0-20251008134921-0f5151bf8892
-	github.com/tokenize-x/tx-chain/v6 v6.0.0-20251008070942-1a6bf2112978
+	github.com/tokenize-x/tx-chain/v6 v6.0.0-20251008161952-cdb7ab3aef61
+	github.com/tokenize-x/tx-crust v0.0.0-20251016093536-e7c4d5c086e9
+	github.com/tokenize-x/tx-crust/znet v0.0.0-20251016093536-e7c4d5c086e9
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 

@@ -3,7 +3,7 @@
 After every upgrade of Cosmos SDK (or whenever we decide) we should verify that our deterministic gas estimations for messages are correct.
 
 To do it:
-1. Modify crust to deploy `explorer` and `monitoring` profiles when integration tests are started
+1. Modify tx-crust to deploy `explorer` and `monitoring` profiles when integration tests are started
 2. Run integration tests
 3. Go to our Grafana dashboard in `znet`
 4. Take values for deterministic gas factors reported there
