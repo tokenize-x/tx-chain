@@ -102,7 +102,6 @@ func NewAppModule(keeper keeper.Keeper) AppModule {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServer(am.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryService(am.keeper))
-
 }
 
 // Name returns the fee module's name.

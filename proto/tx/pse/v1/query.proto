@@ -3,7 +3,6 @@ package tx.pse.v1;
 
 
 import "cosmos/query/v1/query.proto";
-import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";

@@ -4,7 +4,6 @@ package tx.pse.v1;
 import "cosmos/msg/v1/msg.proto";
 import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
-import "gogoproto/gogo.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
