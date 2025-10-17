@@ -1,5 +1,8 @@
-use coreum_wasm_sdk::types::coreum::asset::ft::v1::{MsgIssue, MsgUpdateDexUnifiedRefAmount, MsgUpdateDexWhitelistedDenoms, QueryBalanceRequest, QueryBalanceResponse, QueryDexSettingsRequest, QueryDexSettingsResponse};
-use coreum_wasm_sdk::types::coreum::dex::v1::{
+use tx_wasm_sdk::types::tx::asset::ft::v1::{
+    MsgIssue, MsgUpdateDexUnifiedRefAmount, MsgUpdateDexWhitelistedDenoms, QueryBalanceRequest,
+    QueryBalanceResponse, QueryDexSettingsRequest, QueryDexSettingsResponse,
+};
+use tx_wasm_sdk::types::tx::dex::v1::{
     MsgCancelOrder, MsgCancelOrdersByDenom, MsgPlaceOrder, OrderType,
     QueryAccountDenomOrdersCountRequest, QueryAccountDenomOrdersCountResponse,
     QueryOrderBookOrdersRequest, QueryOrderBookOrdersResponse, QueryOrderBooksRequest,
@@ -7,11 +10,11 @@ use coreum_wasm_sdk::types::coreum::dex::v1::{
     QueryOrdersResponse, QueryParamsRequest, QueryParamsResponse, Side, TimeInForce,
 };
 
-use coreum_wasm_sdk::types::cosmos::base::query::v1beta1::PageRequest;
 use cosmwasm_std::{entry_point, to_json_binary, Binary, CosmosMsg, Deps, StdError, StdResult};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use cw_ownable::initialize_owner;
+use tx_wasm_sdk::types::cosmos::base::query::v1beta1::PageRequest;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -93,7 +96,7 @@ fn place_order(env: Env, order: MsgPlaceOrder) -> Result<Response, ContractError
         price: order.price.clone(),
         quantity: order.quantity.clone(),
         side: order.side,
-        good_til: order.good_til.clone(),
+        good_til: order.good_til,
         time_in_force: order.time_in_force,
     };
 
@@ -235,9 +238,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::AccountDenomOrdersCount { account, denom } => {
             to_json_binary(&query_account_denom_orders_count(deps, account, denom)?)
         }
-        QueryMsg::DEXSettings { denom } => {
-            to_json_binary(&query_dex_settings(deps, denom)?)
-        }
+        QueryMsg::DEXSettings { denom } => to_json_binary(&query_dex_settings(deps, denom)?),
         QueryMsg::Balance { account, denom } => {
             to_json_binary(&query_balance(deps, account, denom)?)
         }
@@ -363,19 +364,12 @@ fn query_account_denom_orders_count(
     request.query(&deps.querier)
 }
 
-fn query_dex_settings(
-    deps: Deps,
-    denom: String,
-) -> StdResult<QueryDexSettingsResponse> {
+fn query_dex_settings(deps: Deps, denom: String) -> StdResult<QueryDexSettingsResponse> {
     let request = QueryDexSettingsRequest { denom };
     request.query(&deps.querier)
 }
 
-fn query_balance(
-    deps: Deps,
-    account: String,
-    denom: String,
-) -> StdResult<QueryBalanceResponse> {
+fn query_balance(deps: Deps, account: String, denom: String) -> StdResult<QueryBalanceResponse> {
     let request = QueryBalanceRequest { account, denom };
     request.query(&deps.querier)
 }

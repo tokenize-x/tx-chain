@@ -18,6 +18,6 @@ cosmwasm-std.workspace = true
 cw2.workspace = true
 cw-storage-plus.workspace = true
 cosmwasm-schema.workspace = true
-coreum-wasm-sdk.workspace = true
+tx-wasm-sdk.workspace = true
 cw-utils.workspace = true
 prost.workspace = true

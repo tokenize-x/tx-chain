@@ -1,6 +1,6 @@
-use coreum_wasm_sdk::types::coreum::asset::ft::v1::DexSettings;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Coin, Uint128};
+use tx_wasm_sdk::types::tx::asset::ft::v1::DexSettings;
 
 #[cw_serde]
 pub struct InstantiateMsg {

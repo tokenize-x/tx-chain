@@ -4,20 +4,17 @@ use crate::msg::{
     TransferContext,
 };
 use crate::state::{DENOM, EXTRA_DATA};
-use coreum_wasm_sdk::deprecated::core::{CoreumMsg, CoreumResult};
-use coreum_wasm_sdk::types::coreum::asset::ft::v1::{
-    MsgBurn, MsgMint, QueryTokenRequest, QueryTokenResponse, Token,
-};
-use coreum_wasm_sdk::types::cosmos::bank::v1beta1::{
-    MsgSend,
-};
-use coreum_wasm_sdk::types::cosmos::base::v1beta1::Coin;
+use cosmwasm_schema::schemars::_serde_json::to_string;
 use cosmwasm_std::{entry_point, to_json_binary, CosmosMsg, StdError};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
 use cw2::set_contract_version;
 use std::ops::Div;
 use std::string::ToString;
-use cosmwasm_schema::schemars::_serde_json::to_string;
+use tx_wasm_sdk::types::cosmos::bank::v1beta1::MsgSend;
+use tx_wasm_sdk::types::cosmos::base::v1beta1::Coin;
+use tx_wasm_sdk::types::tx::asset::ft::v1::{
+    MsgBurn, MsgMint, QueryTokenRequest, QueryTokenResponse, Token,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -40,7 +37,7 @@ pub fn instantiate(
     _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     DENOM.save(deps.storage, &msg.denom)?;
@@ -60,12 +57,12 @@ pub fn execute(
     _env: Env,
     _info: MessageInfo,
     msg: ExecuteMsg,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     match msg {}
 }
 
 #[entry_point]
-pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> CoreumResult<ContractError> {
+pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractError> {
     match msg {
         SudoMsg::ExtensionTransfer {
             sender,
@@ -101,7 +98,7 @@ pub fn sudo_extension_transfer(
     commission_amount: Uint128,
     burn_amount: Uint128,
     context: TransferContext,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     if amount.is_zero() {
         return Err(ContractError::InvalidAmountError {});
     }
@@ -148,7 +145,7 @@ pub fn sudo_extension_transfer(
             denom: token.denom.to_string(),
             amount: amount.to_string(),
         }]
-            .to_vec(),
+        .to_vec(),
     };
 
     let mut response = rsp.add_message(CosmosMsg::Any(transfer_msg.to_any()));
@@ -182,7 +179,7 @@ pub fn sudo_extension_place_order(
     order: DEXOrder,
     spent: Coin,
     received: Coin,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     if order.id.ends_with(ID_DEX_ORDER_SUFFIX_TRIGGER)
         || spent.amount == AMOUNT_DEX_EXPECT_TO_SPEND_TRIGGER.to_string()
         || received.amount == AMOUNT_DEX_EXPECT_TO_RECEIVE_TRIGGER.to_string()
@@ -190,14 +187,15 @@ pub fn sudo_extension_place_order(
         return Err(ContractError::DEXOrderPlacementError {});
     }
 
-    let order_data = to_string(&order).
-        map_err(|_| ContractError::Std(StdError::generic_err("failed to serialize order to json string")))?;
+    let order_data = to_string(&order).map_err(|_| {
+        ContractError::Std(StdError::generic_err(
+            "failed to serialize order to json string",
+        ))
+    })?;
 
-    Ok(
-        Response::new()
-            .add_attribute("method", "extension_place_order")
-            .add_attribute("order_data", order_data)
-    )
+    Ok(Response::new()
+        .add_attribute("method", "extension_place_order")
+        .add_attribute("order_data", order_data))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -213,7 +211,11 @@ fn query_issuance_msg(deps: Deps) -> StdResult<Binary> {
     to_json_binary(&resp)
 }
 
-fn assert_burning(contract: &str, amount: Uint128, token: &Token) -> CoreumResult<ContractError> {
+fn assert_burning(
+    contract: &str,
+    amount: Uint128,
+    token: &Token,
+) -> Result<Response, ContractError> {
     let burn_message = MsgBurn {
         sender: contract.to_string(),
         coin: Some(Coin {
@@ -233,7 +235,7 @@ fn assert_minting(
     recipient: &str,
     amount: Uint128,
     token: &Token,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     let mint_message = MsgMint {
         sender: contract.to_string(),
         coin: Some(Coin {
@@ -250,7 +252,7 @@ fn assert_minting(
             denom: token.denom.to_string(),
             amount: amount.to_string(),
         }]
-            .to_vec(),
+        .to_vec(),
     };
 
     Ok(Response::new()
@@ -295,12 +297,12 @@ fn assert_ibc(
 
 fn assert_send_commission_rate(
     contract: &str,
-    response: Response<CoreumMsg>,
+    response: Response,
     sender: &str,
     amount: Uint128,
     token: &Token,
     commission_amount: Uint128,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     if amount == AMOUNT_IGNORE_SEND_COMMISSION_RATE_TRIGGER {
         let refund_commission_msg = MsgSend {
             from_address: contract.to_string(),
@@ -309,7 +311,7 @@ fn assert_send_commission_rate(
                 denom: token.denom.to_string(),
                 amount: commission_amount.to_string(),
             }]
-                .to_vec(),
+            .to_vec(),
         };
 
         return Ok(response
@@ -332,7 +334,7 @@ fn assert_send_commission_rate(
                 denom: token.denom.to_string(),
                 amount: admin_commission_amount.to_string(),
             }]
-                .to_vec(),
+            .to_vec(),
         };
 
         return Ok(response
@@ -349,12 +351,12 @@ fn assert_send_commission_rate(
 
 fn assert_burn_rate(
     contract: &str,
-    response: Response<CoreumMsg>,
+    response: Response,
     sender: &str,
     amount: Uint128,
     token: &Token,
     burn_amount: Uint128,
-) -> CoreumResult<ContractError> {
+) -> Result<Response, ContractError> {
     if amount == AMOUNT_IGNORE_BURN_RATE_TRIGGER {
         let refund_burn_rate_msg = MsgSend {
             from_address: contract.to_string(),
@@ -363,7 +365,7 @@ fn assert_burn_rate(
                 denom: token.denom.to_string(),
                 amount: burn_amount.to_string(),
             }]
-                .to_vec(),
+            .to_vec(),
         };
 
         return Ok(response

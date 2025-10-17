@@ -21,6 +21,6 @@ cw-storage-plus.workspace = true
 cw2.workspace = true
 thiserror.workspace = true
 schemars.workspace = true
-coreum-wasm-sdk.workspace = true
+tx-wasm-sdk.workspace = true
 cosmwasm-schema.workspace = true
 cw-ownable.workspace = true

@@ -93,6 +93,7 @@ type txChainMsg struct {
 // NewTXChainMsgHandler returns tx-chain handler that handles messages received from smart contracts.
 // The in the input sender is the address of smart contract.
 // Deprecated: Supported for backward compatibility of legacy smart contracts only.
+// TODO (v7): Remove this legacy handler.
 func NewTXChainMsgHandler() *wasmkeeper.MessageEncoders {
 	return &wasmkeeper.MessageEncoders{
 		Custom: func(sender sdk.AccAddress, msg json.RawMessage) ([]sdk.Msg, error) {

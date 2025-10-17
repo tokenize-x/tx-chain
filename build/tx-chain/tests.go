@@ -51,7 +51,7 @@ func RunAllIntegrationTests(runUnsafe bool) types.CommandFunc {
 // RunIntegrationTestsModules returns function running modules integration tests.
 func RunIntegrationTestsModules(runUnsafe bool) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
-		deps(CompileModulesSmartContracts, CompileLegacyModulesSmartContracts, CompileAssetExtensionSmartContracts,
+		deps(CompileModulesSmartContracts, CompileAssetExtensionSmartContracts,
 			CompileDEXSmartContracts, BuildTXdLocally, BuildTXdDockerImage)
 
 		znetConfig := defaultZNetConfig()
@@ -93,7 +93,7 @@ func RunIntegrationTestsIBC(runUnsafe bool) types.CommandFunc {
 func RunIntegrationTestsUpgrade(runUnsafe bool) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		deps(CompileIBCSmartContracts, CompileAssetExtensionSmartContracts, CompileDEXSmartContracts,
-			CompileModulesSmartContracts, CompileLegacyModulesSmartContracts, BuildTXdLocally, BuildTXdDockerImage,
+			CompileModulesSmartContracts, BuildTXdLocally, BuildTXdDockerImage,
 			BuildGaiaDockerImage, BuildOsmosisDockerImage, BuildHermesDockerImage)
 
 		znetConfig := defaultZNetConfig()
