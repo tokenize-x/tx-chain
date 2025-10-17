@@ -156,6 +156,9 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/feemodel"
 	feemodelkeeper "github.com/tokenize-x/tx-chain/v6/x/feemodel/keeper"
 	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v6/x/pse"
+	psekeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
+	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 	wasmcustomhandler "github.com/tokenize-x/tx-chain/v6/x/wasm/handler"
 	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
 	"github.com/tokenize-x/tx-chain/v6/x/wbank"
@@ -265,6 +268,7 @@ type App struct {
 	CustomParamsKeeper customparamskeeper.Keeper
 	DelayKeeper        delaykeeper.Keeper
 	DEXKeeper          dexkeeper.Keeper
+	PSEKeeper          psekeeper.Keeper
 
 	// ModuleManager is the module manager
 	ModuleManager      *module.Manager
@@ -805,6 +809,12 @@ func New(
 		panic(err)
 	}
 
+	app.PSEKeeper = psekeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[psetypes.StoreKey]),
+		appCodec,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	/****  Module Options ****/
 
 	assetFTModule := assetft.NewAppModule(
@@ -887,6 +897,7 @@ func New(
 		customParamsModule,
 		delayModule,
 		dex.NewAppModule(appCodec, app.DEXKeeper, app.AccountKeeper),
+		pse.NewAppModule(app.PSEKeeper),
 
 		// IBC modules
 		ibc.NewAppModule(app.IBCKeeper),
@@ -953,6 +964,7 @@ func New(
 		nft.ModuleName,
 		delaytypes.ModuleName,
 		dextypes.ModuleName,
+		psetypes.ModuleName,
 		// should be last
 		genutiltypes.ModuleName,
 	)
@@ -986,6 +998,7 @@ func New(
 		nft.ModuleName,
 		delaytypes.ModuleName,
 		dextypes.ModuleName,
+		psetypes.ModuleName,
 		// should be last
 		genutiltypes.ModuleName,
 	)
@@ -1026,6 +1039,7 @@ func New(
 		delaytypes.ModuleName,
 		// dex depends on auth(account) module
 		dextypes.ModuleName,
+		psetypes.ModuleName,
 		// should be last
 		genutiltypes.ModuleName,
 	}

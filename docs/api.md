@@ -270,6 +270,21 @@
   
     - [Msg](#coreum.feemodel.v1.Msg)
   
+- [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
+    - [GenesisState](#tx.pse.v1.GenesisState)
+  
+- [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
+    - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
+    - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
+  
+    - [Query](#tx.pse.v1.Query)
+  
+- [tx/pse/v1/tx.proto](#tx/pse/v1/tx.proto)
+    - [EmptyResponse](#tx.pse.v1.EmptyResponse)
+    - [MsgUpdateParams](#tx.pse.v1.MsgUpdateParams)
+  
+    - [Msg](#tx.pse.v1.Msg)
+  
 - [amino/amino.proto](#amino/amino.proto)
     - [File-level Extensions](#amino/amino.proto-extensions)
     - [File-level Extensions](#amino/amino.proto-extensions)
@@ -5673,6 +5688,149 @@ Msg defines the Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `UpdateParams` | [MsgUpdateParams](#coreum.feemodel.v1.MsgUpdateParams) | [EmptyResponse](#coreum.feemodel.v1.EmptyResponse) | `UpdateParams is a governance operation which allows fee models params to be modified. NOTE: All parmas must be provided.` |  |
+
+ <!-- end services -->
+
+
+
+<a name="tx/pse/v1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tx/pse/v1/genesis.proto
+
+
+
+<a name="tx.pse.v1.GenesisState"></a>
+
+### GenesisState
+
+```
+GenesisState defines the module's genesis state.
+```
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tx/pse/v1/query.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tx/pse/v1/query.proto
+
+
+
+<a name="tx.pse.v1.QueryParamsRequest"></a>
+
+### QueryParamsRequest
+
+```
+QueryParamsRequest defines the request type for querying moduleparameters.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryParamsResponse"></a>
+
+### QueryParamsResponse
+
+```
+QueryParamsResponse defines the response type for querying module parameters.
+```
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="tx.pse.v1.Query"></a>
+
+### Query
+
+```
+Query defines the gRPC querier service.
+```
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
+
+ <!-- end services -->
+
+
+
+<a name="tx/pse/v1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tx/pse/v1/tx.proto
+
+
+
+<a name="tx.pse.v1.EmptyResponse"></a>
+
+### EmptyResponse
+
+
+
+
+
+
+
+<a name="tx.pse.v1.MsgUpdateParams"></a>
+
+### MsgUpdateParams
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |    |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="tx.pse.v1.Msg"></a>
+
+### Msg
+
+```
+Msg defines the Msg service.
+```
+
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `UpdateParams` | [MsgUpdateParams](#tx.pse.v1.MsgUpdateParams) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateParams is a governance operation which allows params to be modified. NOTE: All params must be provided.` |  |
 
  <!-- end services -->
 

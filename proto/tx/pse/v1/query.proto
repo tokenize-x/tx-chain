@@ -1,0 +1,25 @@
+syntax = "proto3";
+package tx.pse.v1;
+
+
+import "cosmos/query/v1/query.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+
+// Query defines the gRPC querier service.
+service Query {
+    
+  // Params queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/tx/pse/v1/params";
+  }
+}
+
+// QueryParamsRequest defines the request type for querying moduleparameters.
+message QueryParamsRequest {}
+
+// QueryParamsResponse defines the response type for querying module parameters.
+message QueryParamsResponse {}
