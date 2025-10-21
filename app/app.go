@@ -334,6 +334,7 @@ func New(
 		ibctransfertypes.StoreKey, packetforwardtypes.StoreKey,
 		icahosttypes.StoreKey, icacontrollertypes.StoreKey, delaytypes.StoreKey,
 		customparamstypes.StoreKey, group.StoreKey, dextypes.StoreKey,
+		psetypes.StoreKey,
 	)
 	tkeys := storetypes.NewTransientStoreKeys(paramstypes.TStoreKey, feemodeltypes.TransientStoreKey)
 
