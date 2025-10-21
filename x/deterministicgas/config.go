@@ -40,6 +40,7 @@ import (
 	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
 	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
 	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
 // These constants define gas for messages which have custom calculation logic.
@@ -232,6 +233,9 @@ func DefaultConfig() Config {
 			&dextypes.MsgUpdateParams{},
 			&dextypes.MsgPlaceOrder{},
 			&dextypes.MsgCancelOrdersByDenom{},
+
+			// pse
+			&psetypes.MsgUpdateParams{},
 
 			// distribution
 			&distributiontypes.MsgUpdateParams{},       // This is non-deterministic because all the gov proposals are non-deterministic anyway

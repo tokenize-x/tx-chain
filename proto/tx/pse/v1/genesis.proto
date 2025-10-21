@@ -1,0 +1,8 @@
+syntax = "proto3";
+package tx.pse.v1;
+
+option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+
+// GenesisState defines the module's genesis state.
+message GenesisState {
+}

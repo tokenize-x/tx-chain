@@ -9,6 +9,7 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 
 	"github.com/tokenize-x/tx-chain/v6/app/upgrade"
+	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
 )
 
@@ -25,7 +26,9 @@ func New(
 	return upgrade.Upgrade{
 		Name: Name,
 		StoreUpgrades: store.StoreUpgrades{
-			Added: []string{},
+			Added: []string{
+				psetypes.StoreKey,
+			},
 			Deleted: []string{
 				"feeibc",
 				"crisis",
