@@ -279,6 +279,9 @@
   
     - [Query](#tx.pse.v1.Query)
   
+- [tx/pse/v1/staking.proto](#tx/pse/v1/staking.proto)
+    - [DelegationTimeEntry](#tx.pse.v1.DelegationTimeEntry)
+  
 - [tx/pse/v1/tx.proto](#tx/pse/v1/tx.proto)
     - [EmptyResponse](#tx.pse.v1.EmptyResponse)
     - [MsgUpdateParams](#tx.pse.v1.MsgUpdateParams)
@@ -5776,6 +5779,38 @@ Query defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
+
+ <!-- end services -->
+
+
+
+<a name="tx/pse/v1/staking.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tx/pse/v1/staking.proto
+
+
+
+<a name="tx.pse.v1.DelegationTimeEntry"></a>
+
+### DelegationTimeEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `shares` | [string](#string) |  |  `shares define the delegation shares received.`  |
+| `last_changed_unix_sec` | [int64](#int64) |  |  `last block timestamp where the delegators balance changed.`  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 
