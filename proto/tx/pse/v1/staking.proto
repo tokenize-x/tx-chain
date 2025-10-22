@@ -12,7 +12,7 @@ message DelegationTimeEntry {
   option (gogoproto.goproto_getters) = false;
   
   // shares define the delegation shares received.
-  string shares = 3 [
+  string shares = 1 [
     (cosmos_proto.scalar)  = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable)   = false
