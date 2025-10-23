@@ -32,24 +32,23 @@ var (
 	_ appmodule.AppModule     = AppModule{}
 )
 
-// AppModuleBasic defines the basic application module used by the fee module.
+// AppModuleBasic defines the basic application module used by the module.
 type AppModuleBasic struct{}
 
-// Name returns the fee module's name.
+// Name returns the module's name.
 func (AppModuleBasic) Name() string { return types.ModuleName }
 
-// RegisterLegacyAminoCodec registers the fee module's types on the LegacyAmino codec.
+// RegisterLegacyAminoCodec registers the module's types on the LegacyAmino codec.
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	// types.RegisterLegacyAminoCodec(cdc)
+	types.RegisterLegacyAminoCodec(cdc)
 }
 
-// DefaultGenesis returns default genesis state as raw bytes for the fee
-// module.
+// DefaultGenesis returns default genesis state as raw bytes for the module.
 func (amb AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(types.DefaultGenesisState())
 }
 
-// ValidateGenesis performs genesis state validation for the fee module.
+// ValidateGenesis performs genesis state validation for the module.
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
 	var genesis types.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genesis); err != nil {
@@ -58,10 +57,10 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 	return genesis.Validate()
 }
 
-// RegisterRESTRoutes registers the REST routes for the fee module.
+// RegisterRESTRoutes registers the REST routes for the module.
 func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {}
 
-// RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the fee module.
+// RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
 	err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))
 	if err != nil {
@@ -69,22 +68,22 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 	}
 }
 
-// GetTxCmd returns the root tx command for the fee module.
+// GetTxCmd returns the root tx command for the module.
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
 	return nil
 }
 
-// GetQueryCmd returns no root query command for the fee module.
+// GetQueryCmd returns no root query command for the module.
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 	return cli.GetQueryCmd()
 }
 
-// RegisterInterfaces registers interfaces and implementations of the fee module.
+// RegisterInterfaces registers interfaces and implementations of the module.
 func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	types.RegisterInterfaces(registry)
 }
 
-// AppModule implements an application module for the fee module.
+// AppModule implements an application module for the module.
 type AppModule struct {
 	AppModuleBasic
 
@@ -104,16 +103,16 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQueryService(am.keeper))
 }
 
-// Name returns the fee module's name.
+// Name returns the module's name.
 func (AppModule) Name() string { return types.ModuleName }
 
-// InitGenesis performs genesis initialization for the fee module. It returns
+// InitGenesis performs genesis initialization for the module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
 
 }
 
-// ExportGenesis returns the exported genesis state as raw bytes for the fee
+// ExportGenesis returns the exported genesis state as raw bytes for the module.
 // module.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(&types.GenesisState{})
@@ -128,7 +127,7 @@ func (am AppModule) IsOnePerModuleType() {}
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return 1 }
 
-// EndBlock returns the end blocker for the fee module. It returns no validator
+// EndBlock returns the end blocker for the module. It returns no validator
 // updates.
 func (am AppModule) EndBlock(c context.Context) error {
 	return nil
@@ -136,7 +135,7 @@ func (am AppModule) EndBlock(c context.Context) error {
 
 // AppModuleSimulation functions
 
-// GenerateGenesisState creates a randomized GenState of the fee module.
+// GenerateGenesisState creates a randomized GenState of the module.
 func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(types.DefaultGenesisState())
 }
@@ -144,7 +143,7 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 // RegisterStoreDecoder registers a decoder for supply module's types.
 func (am AppModule) RegisterStoreDecoder(_ simtypes.StoreDecoderRegistry) {}
 
-// WeightedOperations returns the all the gov module operations with their respective weights.
+// WeightedOperations returns the all the module operations with their respective weights.
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	return nil
 }

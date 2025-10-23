@@ -6,7 +6,7 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-// QueryService serves grpc requests for fee model.
+// QueryService serves grpc requests for the module.
 type QueryService struct {
 	keeper Keeper
 }

@@ -12,13 +12,13 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-// GetQueryCmd returns the parent command for all x/feemodel CLI query commands. The
+// GetQueryCmd returns the parent command for all CLI query commands. The
 // provided clientCtx should have, at a minimum, a verifier, Tendermint RPC client,
 // and marshaler set.
 func GetQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
-		Short:                      "Querying commands for the feemodel module",
+		Short:                      "Querying commands for the pse module",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
