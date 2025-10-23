@@ -10,7 +10,7 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-// Keeper is a fee model keeper.
+// Keeper of the module.
 type Keeper struct {
 	storeService sdkstore.KVStoreService
 	cdc          codec.BinaryCodec
@@ -22,7 +22,7 @@ type Keeper struct {
 	AccountScore          collections.Map[sdk.AccAddress, sdkmath.Int]
 }
 
-// NewKeeper returns a new keeper object providing storage options required by fee model.
+// NewKeeper returns a new keeper object providing storage options required by the module.
 func NewKeeper(
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
