@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"context"
+
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -9,7 +11,7 @@ import (
 
 // SetDelegationTimeEntry saves DelegationTimeEntry into storages.
 func (k Keeper) SetDelegationTimeEntry(
-	ctx sdk.Context,
+	ctx context.Context,
 	valAddr sdk.ValAddress,
 	delAddr sdk.AccAddress,
 	entry types.DelegationTimeEntry,
@@ -20,7 +22,7 @@ func (k Keeper) SetDelegationTimeEntry(
 
 // GetDelegationTimeEntry retrieves DelegationTimeEntry from storages.
 func (k Keeper) GetDelegationTimeEntry(
-	ctx sdk.Context,
+	ctx context.Context,
 	valAddr sdk.ValAddress,
 	delAddr sdk.AccAddress,
 ) (types.DelegationTimeEntry, error) {

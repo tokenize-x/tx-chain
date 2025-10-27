@@ -12,9 +12,10 @@ import (
 
 // Keeper of the module.
 type Keeper struct {
-	storeService sdkstore.KVStoreService
-	cdc          codec.BinaryCodec
-	authority    string
+	storeService  sdkstore.KVStoreService
+	cdc           codec.BinaryCodec
+	authority     string
+	stakingKeeper types.StakingKeeper
 
 	// collections
 	Schema                collections.Schema
@@ -27,12 +28,14 @@ func NewKeeper(
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
 	authority string,
+	stakingKeeper types.StakingKeeper,
 ) Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
 	k := Keeper{
-		storeService: storeService,
-		cdc:          cdc,
-		authority:    authority,
+		storeService:  storeService,
+		cdc:           cdc,
+		authority:     authority,
+		stakingKeeper: stakingKeeper,
 
 		DelegationTimeEntries: collections.NewMap(
 			sb,
