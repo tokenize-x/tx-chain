@@ -25,6 +25,7 @@ import (
 
 	"github.com/tokenize-x/tx-chain/v6/app"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
 var nodeAppDir, exportedGenesisPath string
@@ -56,6 +57,10 @@ var ignoredPrefixes = map[string][][]byte{
 	},
 	authzkeeper.StoreKey: {
 		authzkeeper.GrantQueuePrefix,
+	},
+	psetypes.StoreKey: {
+		psetypes.StakingTimeKey,
+		psetypes.AccountScoreKey,
 	},
 }
 
