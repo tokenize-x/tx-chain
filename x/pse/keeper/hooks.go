@@ -19,7 +19,7 @@ type Hooks struct {
 
 var _ stakingtypes.StakingHooks = Hooks{}
 
-// Hooks Create new distribution hooks.
+// Hooks Create new staking hooks.
 func (k Keeper) Hooks() Hooks {
 	return Hooks{k}
 }
@@ -47,17 +47,17 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
-	oldScore, err := h.k.AccountScore.Get(ctx, delAddr)
+	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
-		oldScore = sdkmath.NewInt(0)
+		lastScore = sdkmath.NewInt(0)
 	} else if err != nil {
 		return err
 	}
 
 	oldDelegatedTokens := val.TokensFromShares(delegationTimeEntry.Shares).TruncateInt()
 	delegationDuration := blockTimeUnixSeconds - delegationTimeEntry.LastChangedUnixSec
-	addedScore := oldDelegatedTokens.MulRaw(delegationDuration)
-	newScore := oldScore.Add(addedScore)
+	delegationScore := oldDelegatedTokens.MulRaw(delegationDuration)
+	newScore := lastScore.Add(delegationScore)
 
 	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
 		LastChangedUnixSec: blockTimeUnixSeconds,
@@ -66,11 +66,24 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
-	return h.k.AccountScore.Set(ctx, delAddr, newScore)
+	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
 }
 
 // BeforeDelegationRemoved implements the staking hooks interface.
 func (h Hooks) BeforeDelegationRemoved(_ context.Context, _ sdk.AccAddress, _ sdk.ValAddress) error {
+	return nil
+}
+
+// BeforeValidatorSlashed implements the staking hooks interface.
+// TODO: we need to handle validator slashing for a more accurate score calculation.
+// example:
+// lets assume a validator is slashed at the middle of a given period which splits the period into two parts,
+// given following:
+// before slashing: 10 ucore
+// after slashing: 9 ucore
+// we calculate score as 9ucore * period (not completely accurate)
+// more accurate formula should be 10ucore * period_1 + 9ucore * period_2.
+func (h Hooks) BeforeValidatorSlashed(ctx context.Context, valAddr sdk.ValAddress, fraction sdkmath.LegacyDec) error {
 	return nil
 }
 
@@ -95,11 +108,6 @@ func (h Hooks) BeforeDelegationCreated(ctx context.Context, delAddr sdk.AccAddre
 func (h Hooks) BeforeDelegationSharesModified(
 	ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress,
 ) error {
-	return nil
-}
-
-// BeforeValidatorSlashed implements the staking hooks interface.
-func (h Hooks) BeforeValidatorSlashed(ctx context.Context, valAddr sdk.ValAddress, fraction sdkmath.LegacyDec) error {
 	return nil
 }
 

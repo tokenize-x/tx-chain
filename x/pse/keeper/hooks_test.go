@@ -57,7 +57,7 @@ func TestKeeper_Hooks_AfterDelegationModified(t *testing.T) {
 		sdk.NewInt64Coin(sdk.DefaultBondDenom, 9),
 	))
 
-	score, err := pseKeeper.AccountScore.Get(ctx, delAddr)
+	score, err := pseKeeper.AccountScoreSnapshot.Get(ctx, delAddr)
 	requireT.NoError(err)
 	requireT.Equal(sdkmath.NewInt(11*8), score)
 }

@@ -20,7 +20,7 @@ type Keeper struct {
 	// collections
 	Schema                collections.Schema
 	DelegationTimeEntries collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
-	AccountScore          collections.Map[sdk.AccAddress, sdkmath.Int]
+	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -44,7 +44,7 @@ func NewKeeper(
 			collections.PairKeyCodec(sdk.ValAddressKey, sdk.AccAddressKey),
 			codec.CollValue[types.DelegationTimeEntry](cdc),
 		),
-		AccountScore: collections.NewMap(
+		AccountScoreSnapshot: collections.NewMap(
 			sb,
 			types.AccountScoreKey,
 			"account_score",
