@@ -65,6 +65,33 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
 }
 
+// BeforeDelegationRemoved implements the staking hooks interface.
+func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
+	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, valAddr, delAddr)
+	if err != nil {
+		return err
+	}
+
+	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastScore = sdkmath.NewInt(0)
+	} else if err != nil {
+		return err
+	}
+
+	addedScore, err := calculateAddedScore(ctx, h.k, valAddr, delegationTimeEntry)
+	if err != nil {
+		return err
+	}
+	newScore := lastScore.Add(addedScore)
+
+	if err := h.k.RemoveDelegationTimeEntry(ctx, valAddr, delAddr); err != nil {
+		return err
+	}
+
+	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
+}
+
 func calculateAddedScore(
 	ctx context.Context,
 	keeper Keeper,
@@ -81,38 +108,6 @@ func calculateAddedScore(
 	previousDelegatedTokens := val.TokensFromShares(delegationTimeEntry.Shares).TruncateInt()
 	delegationScore := previousDelegatedTokens.MulRaw(delegationDuration)
 	return delegationScore, nil
-}
-
-// BeforeDelegationRemoved implements the staking hooks interface.
-func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
-	val, err := h.k.stakingKeeper.GetValidator(ctx, valAddr)
-	if err != nil {
-		return err
-	}
-
-	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
-	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, valAddr, delAddr)
-	if err != nil {
-		return err
-	}
-
-	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
-	if errors.Is(err, collections.ErrNotFound) {
-		lastScore = sdkmath.NewInt(0)
-	} else if err != nil {
-		return err
-	}
-
-	oldDelegatedTokens := val.TokensFromShares(delegationTimeEntry.Shares).TruncateInt()
-	delegationDuration := blockTimeUnixSeconds - delegationTimeEntry.LastChangedUnixSec
-	addedScore := oldDelegatedTokens.MulRaw(delegationDuration)
-	newScore := lastScore.Add(addedScore)
-
-	if err := h.k.RemoveDelegationTimeEntry(ctx, valAddr, delAddr); err != nil {
-		return err
-	}
-
-	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
 }
 
 // BeforeValidatorSlashed implements the staking hooks interface.
