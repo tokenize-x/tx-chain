@@ -181,7 +181,7 @@ func TestKeeper_Hooks(t *testing.T) {
 			}
 
 			// add validators.
-			for i := 0; i < 4; i++ {
+			for range 4 {
 				validatorOperator, _ := testApp.GenAccount(ctx)
 				requireT.NoError(testApp.FundAccount(
 					ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000)))),
@@ -197,7 +197,7 @@ func TestKeeper_Hooks(t *testing.T) {
 			}
 
 			// add delegators.
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				delegator, _ := testApp.GenAccount(ctx)
 				requireT.NoError(testApp.FundAccount(
 					ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
