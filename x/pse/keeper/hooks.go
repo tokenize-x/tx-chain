@@ -49,11 +49,11 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
-	delegationScore, err := calculateAddedScore(ctx, h.k, valAddr, delegationTimeEntry)
+	addedScore, err := calculateAddedScore(ctx, h.k, valAddr, delegationTimeEntry)
 	if err != nil {
 		return err
 	}
-	newScore := lastScore.Add(delegationScore)
+	newScore := lastScore.Add(addedScore)
 
 	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
 		LastChangedUnixSec: blockTimeUnixSeconds,

@@ -166,6 +166,24 @@ func TestKeeper_Hooks(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "new delegation with time rounding up",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { waitAction(r, time.Second*8+time.Millisecond) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 9) },
+				func(r *runEnv) { assertScoreAction(r, r.delegators[0], sdkmath.NewInt(11*8)) },
+			},
+		},
+		{
+			name: "new delegation with time rounding down",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { waitAction(r, time.Second*8-time.Millisecond) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 9) },
+				func(r *runEnv) { assertScoreAction(r, r.delegators[0], sdkmath.NewInt(11*7)) },
+			},
+		},
 	}
 
 	for _, tc := range cases {
