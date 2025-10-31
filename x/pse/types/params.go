@@ -16,11 +16,7 @@ func DefaultParams() Params {
 // ValidateBasic performs basic validation on pse module parameters.
 func (p Params) ValidateBasic() error {
 	// Validate excluded addresses
-	if err := validateExcludedAddresses(p.ExcludedAddresses); err != nil {
-		return err
-	}
-
-	return nil
+	return validateExcludedAddresses(p.ExcludedAddresses)
 }
 
 func validateExcludedAddresses(addresses []string) error {

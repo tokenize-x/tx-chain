@@ -21,8 +21,17 @@ func NewMsgServer(keeper Keeper) MsgServer {
 }
 
 // UpdateExcludedAddresses is a governance operation that updates excluded addresses.
-func (ms MsgServer) UpdateExcludedAddresses(goCtx context.Context, req *types.MsgUpdateExcludedAddresses) (*types.EmptyResponse, error) {
-	if err := ms.keeper.UpdateExcludedAddresses(goCtx, req.Authority, req.AddressesToAdd, req.AddressesToRemove); err != nil {
+func (ms MsgServer) UpdateExcludedAddresses(
+	goCtx context.Context,
+	req *types.MsgUpdateExcludedAddresses,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.UpdateExcludedAddresses(
+		goCtx,
+		req.Authority,
+		req.AddressesToAdd,
+		req.AddressesToRemove,
+	)
+	if err != nil {
 		return nil, err
 	}
 	return &types.EmptyResponse{}, nil

@@ -28,7 +28,11 @@ func (k Keeper) SetParams(ctx context.Context, params types.Params) error {
 }
 
 // UpdateExcludedAddresses updates the excluded addresses list in params via governance.
-func (k Keeper) UpdateExcludedAddresses(ctx context.Context, authority string, addressesToAdd, addressesToRemove []string) error {
+func (k Keeper) UpdateExcludedAddresses(
+	ctx context.Context,
+	authority string,
+	addressesToAdd, addressesToRemove []string,
+) error {
 	if k.authority != authority {
 		return errors.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
