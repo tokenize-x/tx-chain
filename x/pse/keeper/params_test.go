@@ -59,6 +59,15 @@ func TestGetSetParams(t *testing.T) {
 }
 
 func TestUpdateExcludedAddresses(t *testing.T) {
+	requireT := require.New(t)
+	assertT := assert.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	// Use correct authority unless test specifies otherwise
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
@@ -153,15 +162,6 @@ func TestUpdateExcludedAddresses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			requireT := require.New(t)
-			assertT := assert.New(t)
-
-			testApp := simapp.New()
-			ctx := testApp.NewContext(false)
-			pseKeeper := testApp.PSEKeeper
-
-			// Use correct authority unless test specifies otherwise
-			authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 			if tc.authority != "" {
 				authority = tc.authority
 			}
