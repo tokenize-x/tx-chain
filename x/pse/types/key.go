@@ -12,6 +12,7 @@ const (
 
 // KVStore keys.
 var (
-	StakingTimeKey  = collections.NewPrefix(0)
-	AccountScoreKey = collections.NewPrefix(1)
+	ParamsKey       = collections.NewPrefix(0)
+	StakingTimeKey  = collections.NewPrefix(1)
+	AccountScoreKey = collections.NewPrefix(2)
 )

@@ -273,6 +273,9 @@
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [GenesisState](#tx.pse.v1.GenesisState)
   
+- [tx/pse/v1/params.proto](#tx/pse/v1/params.proto)
+    - [Params](#tx.pse.v1.Params)
+  
 - [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
@@ -284,7 +287,7 @@
   
 - [tx/pse/v1/tx.proto](#tx/pse/v1/tx.proto)
     - [EmptyResponse](#tx.pse.v1.EmptyResponse)
-    - [MsgUpdateParams](#tx.pse.v1.MsgUpdateParams)
+    - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
   
     - [Msg](#tx.pse.v1.Msg)
   
@@ -5713,6 +5716,46 @@ GenesisState defines the module's genesis state.
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#tx.pse.v1.Params) |  |  `params contains all gov-manageable parameters including distribution schedule.`  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tx/pse/v1/params.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tx/pse/v1/params.proto
+
+
+
+<a name="tx.pse.v1.Params"></a>
+
+### Params
+
+```
+Params store gov manageable parameters.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes module accounts and other addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
+
+
 
 
 
@@ -5755,6 +5798,11 @@ QueryParamsRequest defines the request type for querying moduleparameters.
 QueryParamsResponse defines the response type for querying module parameters.
 ```
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `params` | [Params](#tx.pse.v1.Params) |  |  `params holds all the parameters of this module.`  |
 
 
 
@@ -5833,15 +5881,17 @@ Query defines the gRPC querier service.
 
 
 
-<a name="tx.pse.v1.MsgUpdateParams"></a>
+<a name="tx.pse.v1.MsgUpdateExcludedAddresses"></a>
 
-### MsgUpdateParams
+### MsgUpdateExcludedAddresses
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `authority` | [string](#string) |  |    |
+| `addresses_to_add` | [string](#string) | repeated |  `addresses_to_add is the list of addresses to add to the excluded addresses list.`  |
+| `addresses_to_remove` | [string](#string) | repeated |  `addresses_to_remove is the list of addresses to remove from the excluded addresses list.`  |
 
 
 
@@ -5865,7 +5915,7 @@ Msg defines the Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `UpdateParams` | [MsgUpdateParams](#tx.pse.v1.MsgUpdateParams) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateParams is a governance operation which allows params to be modified. NOTE: All params must be provided.` |  |
+| `UpdateExcludedAddresses` | [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateExcludedAddresses is a governance operation to update the list of excluded addresses.` |  |
 
  <!-- end services -->
 
