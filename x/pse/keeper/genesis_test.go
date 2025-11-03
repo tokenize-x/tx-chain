@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )

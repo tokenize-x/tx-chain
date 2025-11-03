@@ -113,7 +113,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 	cdc.MustUnmarshalJSON(data, &genesis)
 
 	if err := am.keeper.InitGenesis(ctx, genesis); err != nil {
-		panic(errors.Wrapf(types.ErrInitGenesis, "failed to initialize %s genesis state: %w", types.ModuleName, err))
+		panic(errors.Wrapf(types.ErrInitGenesis, "failed to initialize %s genesis state: %s", types.ModuleName, err))
 	}
 }
 
@@ -121,7 +121,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	genState, err := am.keeper.ExportGenesis(ctx)
 	if err != nil {
-		panic(errors.Wrapf(types.ErrExportGenesis, "failed to export %s genesis state: %w", types.ModuleName, err))
+		panic(errors.Wrapf(types.ErrExportGenesis, "failed to export %s genesis state: %s", types.ModuleName, err))
 	}
 	return cdc.MustMarshalJSON(genState)
 }
