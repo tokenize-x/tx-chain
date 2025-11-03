@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
@@ -43,15 +42,24 @@ func (k Keeper) UpdateExcludedAddresses(
 		return err
 	}
 
-	// Remove addresses first
+	addressesToRemoveSet := make(map[string]struct{}, len(addressesToRemove))
+	for _, addr := range addressesToRemove {
+		addressesToRemoveSet[addr] = struct{}{}
+	}
 	params.ExcludedAddresses = lo.Filter(params.ExcludedAddresses, func(addr string, _ int) bool {
-		return !slices.Contains(addressesToRemove, addr)
+		_, found := addressesToRemoveSet[addr]
+		return !found
 	})
 
-	// Add new addresses only if they don't already exist
+	excludedAddrMap := make(map[string]struct{}, len(params.ExcludedAddresses))
+	for _, addr := range params.ExcludedAddresses {
+		excludedAddrMap[addr] = struct{}{}
+	}
 	toActuallyAdd := lo.Filter(addressesToAdd, func(addr string, _ int) bool {
-		return !slices.Contains(params.ExcludedAddresses, addr)
+		_, exists := excludedAddrMap[addr]
+		return !exists
 	})
+
 	params.ExcludedAddresses = append(params.ExcludedAddresses, toActuallyAdd...)
 
 	return k.SetParams(ctx, params)
