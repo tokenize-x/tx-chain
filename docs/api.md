@@ -5753,7 +5753,7 @@ Params store gov manageable parameters.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes module accounts and other addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
+| `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
 
 
 

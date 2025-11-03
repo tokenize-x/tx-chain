@@ -27,7 +27,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // Params store gov manageable parameters.
 type Params struct {
 	// excluded_addresses is a list of addresses excluded from PSE distribution.
-	// This list includes module accounts and other addresses that should not receive PSE rewards.
+	// This list includes account addresses that should not receive PSE rewards.
 	// Can be modified via governance proposals.
 	ExcludedAddresses []string `protobuf:"bytes,2,rep,name=excluded_addresses,json=excludedAddresses,proto3" json:"excluded_addresses,omitempty" yaml:"excluded_addresses"`
 }
