@@ -15,67 +15,296 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 )
 
-func TestKeeper_Hooks_AfterDelegationModified(t *testing.T) {
-	requireT := require.New(t)
+func TestKeeper_Hooks(t *testing.T) {
+	cases := []struct {
+		name    string
+		actions []func(*runEnv)
+	}{
+		{
+			name: "new delegation added, single validator",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 9) },
+				func(r *runEnv) { assertScoreAction(r, r.delegators[0], sdkmath.NewInt(11*8)) },
+			},
+		},
+		{
+			name: "new delegation added multiple times",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 12) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 9) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 13) },
+				func(r *runEnv) { waitAction(r, time.Second*5) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(12*8+9*8+(11+12)*5+(9+13)*5))
+				},
+			},
+		},
+		{
+			name: "delegation reduced",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 12) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 9) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[0], 7) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[1], 5) },
+				func(r *runEnv) { waitAction(r, time.Second*5) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(12*8+9*8+(12-7)*5+(9-5)*5))
+				},
+			},
+		},
+		{
+			name: "delegation removed",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 12) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 9) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[0], 12) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[1], 9) },
+				func(r *runEnv) { waitAction(r, time.Second*5) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(12*8+9*8))
+				},
+			},
+		},
+		{
+			name: "new delegation after delegation removed",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 12) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 9) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[0], 12) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[1], 9) },
+				func(r *runEnv) { waitAction(r, time.Second*5) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 9) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 14) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(12*8+9*8)) // = 168
+				},
+				func(r *runEnv) { waitAction(r, time.Second*7) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(12*8+9*8+9*7+14*7))
+				},
+			},
+		},
+		{
+			name: "full redelegation",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 17) },
+				func(r *runEnv) { waitAction(r, time.Second*7) },
+				func(r *runEnv) { redelegateAction(r, r.delegators[0], r.validators[0], r.validators[2], 11) },
+				func(r *runEnv) { redelegateAction(r, r.delegators[0], r.validators[1], r.validators[3], 17) },
+				func(r *runEnv) { waitAction(r, time.Second*5) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[2], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[3], 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(11*7+17*7+11*5+17*5))
+				},
+			},
+		},
+		{
+			name: "partial redelegation",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 17) },
+				func(r *runEnv) { waitAction(r, time.Second*7) },
+				func(r *runEnv) { redelegateAction(r, r.delegators[0], r.validators[0], r.validators[2], 5) },
+				func(r *runEnv) { redelegateAction(r, r.delegators[0], r.validators[1], r.validators[3], 9) },
+				func(r *runEnv) { waitAction(r, time.Second*5) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[2], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[3], 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(11*7+17*7+11*5+17*5))
+				},
+			},
+		},
+		{
+			name: "cancel unbonding delegation",
+			actions: []func(*runEnv){
+				func(r *runEnv) { waitAction(r, time.Second) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 12) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 9) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[0], 10) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[1], 7) },
+				func(r *runEnv) { waitAction(r, time.Second*5) },
+				func(r *runEnv) { cancelUnbondingDelegationAction(r, r.delegators[0], r.validators[0], 5, 1) },
+				func(r *runEnv) { cancelUnbondingDelegationAction(r, r.delegators[0], r.validators[1], 6, 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt((12-10)*5+(9-7)*5)) // = 20
+				},
+				func(r *runEnv) { waitAction(r, time.Second*6) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1) },
+				func(r *runEnv) {
+					assertScoreAction(r, r.delegators[0],
+						sdkmath.NewInt(20+7*6+8*6))
+				},
+			},
+		},
+		{
+			name: "new delegation with time rounding up",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { waitAction(r, time.Second*8+time.Millisecond) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 9) },
+				func(r *runEnv) { assertScoreAction(r, r.delegators[0], sdkmath.NewInt(11*8)) },
+			},
+		},
+		{
+			name: "new delegation with time rounding down",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 11) },
+				func(r *runEnv) { waitAction(r, time.Second*8-time.Millisecond) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 9) },
+				func(r *runEnv) { assertScoreAction(r, r.delegators[0], sdkmath.NewInt(11*7)) },
+			},
+		},
+	}
 
-	testApp := simapp.New()
-	ctx := testApp.NewContext(false)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			requireT := require.New(t)
 
-	pseKeeper := testApp.PSEKeeper
+			testApp := simapp.New()
+			ctx := testApp.NewContext(false)
+			runContext := &runEnv{
+				testApp:  testApp,
+				ctx:      ctx,
+				requireT: requireT,
+			}
 
-	// create accounts and fund them.
-	delAddr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
-	validatorOperator, _ := testApp.GenAccount(ctx)
-	requireT.NoError(
-		testApp.FundAccount(ctx, delAddr, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(100)))),
-	)
-	requireT.NoError(testApp.FundAccount(
-		ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(100)))),
-	)
+			// add validators.
+			for range 4 {
+				validatorOperator, _ := testApp.GenAccount(ctx)
+				requireT.NoError(testApp.FundAccount(
+					ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000)))),
+				)
+				validator, err := addValidator(
+					ctx, testApp, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10),
+				)
+				requireT.NoError(err)
+				runContext.validators = append(
+					runContext.validators,
+					sdk.MustValAddressFromBech32(validator.GetOperator()),
+				)
+			}
 
-	// create validator.
-	validator, err := addValidator(ctx, testApp, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
-	requireT.NoError(err)
-	ctx, _, err = testApp.BeginNextBlockAtTime(ctx.BlockTime().Add(time.Second * 10))
-	requireT.NoError(err)
+			// add delegators.
+			for range 3 {
+				delegator, _ := testApp.GenAccount(ctx)
+				requireT.NoError(testApp.FundAccount(
+					ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+				))
+				runContext.delegators = append(runContext.delegators, delegator)
+			}
 
-	// delegate twice within 8 seconds. the second delegation should increase the score.
-	requireT.NoError(sendDelegateMsg(
-		ctx,
-		testApp,
-		delAddr,
-		sdk.MustValAddressFromBech32(validator.GetOperator()),
-		sdk.NewInt64Coin(sdk.DefaultBondDenom, 11),
-	))
-	ctx, _, err = testApp.BeginNextBlockAtTime(ctx.BlockTime().Add(time.Second * 8))
-	requireT.NoError(err)
-	requireT.NoError(sendDelegateMsg(
-		ctx,
-		testApp,
-		delAddr,
-		sdk.MustValAddressFromBech32(validator.GetOperator()),
-		sdk.NewInt64Coin(sdk.DefaultBondDenom, 9),
-	))
-
-	score, err := pseKeeper.AccountScoreSnapshot.Get(ctx, delAddr)
-	requireT.NoError(err)
-	requireT.Equal(sdkmath.NewInt(11*8), score)
+			// run actions.
+			for _, action := range tc.actions {
+				action(runContext)
+			}
+		})
+	}
 }
 
-func sendDelegateMsg(
-	ctx sdk.Context,
-	testApp *simapp.App,
-	delAddr sdk.AccAddress,
-	valAddr sdk.ValAddress,
-	amount sdk.Coin,
-) error {
+type runEnv struct {
+	testApp    *simapp.App
+	ctx        sdk.Context
+	delegators []sdk.AccAddress
+	validators []sdk.ValAddress
+	requireT   *require.Assertions
+}
+
+func assertScoreAction(r *runEnv, delAddr sdk.AccAddress, expectedScore sdkmath.Int) {
+	score, err := r.testApp.PSEKeeper.AccountScoreSnapshot.Get(
+		r.ctx, delAddr,
+	)
+	r.requireT.NoError(err)
+	r.requireT.Equal(expectedScore, score)
+}
+
+func delegateAction(r *runEnv, delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount int64) {
 	msg := &stakingtypes.MsgDelegate{
 		DelegatorAddress: delAddr.String(),
 		ValidatorAddress: valAddr.String(),
-		Amount:           amount,
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, amount),
 	}
-	_, err := stakingkeeper.NewMsgServerImpl(testApp.StakingKeeper).Delegate(ctx, msg)
-	return err
+	_, err := stakingkeeper.NewMsgServerImpl(r.testApp.StakingKeeper).Delegate(r.ctx, msg)
+	r.requireT.NoError(err)
+}
+
+func undelegateAction(r *runEnv, delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount int64) {
+	msg := &stakingtypes.MsgUndelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, amount),
+	}
+	_, err := stakingkeeper.NewMsgServerImpl(r.testApp.StakingKeeper).Undelegate(r.ctx, msg)
+	r.requireT.NoError(err)
+}
+
+func cancelUnbondingDelegationAction(
+	r *runEnv,
+	delAddr sdk.AccAddress,
+	valAddr sdk.ValAddress,
+	amount int64,
+	creationHeight int64,
+) {
+	msg := &stakingtypes.MsgCancelUnbondingDelegation{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, amount),
+		CreationHeight:   creationHeight,
+	}
+	_, err := stakingkeeper.NewMsgServerImpl(r.testApp.StakingKeeper).CancelUnbondingDelegation(r.ctx, msg)
+	r.requireT.NoError(err)
+}
+
+func redelegateAction(
+	r *runEnv,
+	delAddr sdk.AccAddress,
+	oldValAddr sdk.ValAddress,
+	newValAddr sdk.ValAddress,
+	amount int64,
+) {
+	msg := &stakingtypes.MsgBeginRedelegate{
+		DelegatorAddress:    delAddr.String(),
+		ValidatorSrcAddress: oldValAddr.String(),
+		ValidatorDstAddress: newValAddr.String(),
+		Amount:              sdk.NewInt64Coin(sdk.DefaultBondDenom, amount),
+	}
+	_, err := stakingkeeper.NewMsgServerImpl(r.testApp.StakingKeeper).BeginRedelegate(r.ctx, msg)
+	r.requireT.NoError(err)
+}
+
+func waitAction(r *runEnv, duration time.Duration) {
+	ctx, _, err := r.testApp.BeginNextBlockAtTime(r.ctx.BlockTime().Add(duration))
+	r.requireT.NoError(err)
+	r.ctx = ctx
 }
 
 func addValidator(

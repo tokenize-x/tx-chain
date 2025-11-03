@@ -58,6 +58,7 @@ var ignoredPrefixes = map[string][][]byte{
 	authzkeeper.StoreKey: {
 		authzkeeper.GrantQueuePrefix,
 	},
+	// TODO: remove after pse module genesis implementation.
 	psetypes.StoreKey: {
 		psetypes.StakingTimeKey,
 		psetypes.AccountScoreKey,

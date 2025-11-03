@@ -29,3 +29,13 @@ func (k Keeper) GetDelegationTimeEntry(
 	key := collections.Join(valAddr, delAddr)
 	return k.DelegationTimeEntries.Get(ctx, key)
 }
+
+// RemoveDelegationTimeEntry removes DelegationTimeEntry from storages.
+func (k Keeper) RemoveDelegationTimeEntry(
+	ctx context.Context,
+	valAddr sdk.ValAddress,
+	delAddr sdk.AccAddress,
+) error {
+	key := collections.Join(valAddr, delAddr)
+	return k.DelegationTimeEntries.Remove(ctx, key)
+}
