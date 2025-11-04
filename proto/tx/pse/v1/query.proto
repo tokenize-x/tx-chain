@@ -1,9 +1,10 @@
 syntax = "proto3";
 package tx.pse.v1;
 
-
-import "cosmos/query/v1/query.proto";
+import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos/query/v1/query.proto";
+import "tx/pse/v1/params.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
@@ -21,4 +22,10 @@ service Query {
 message QueryParamsRequest {}
 
 // QueryParamsResponse defines the response type for querying module parameters.
-message QueryParamsResponse {}
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"params\""
+  ];
+}

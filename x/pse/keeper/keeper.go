@@ -19,6 +19,7 @@ type Keeper struct {
 
 	// collections
 	Schema                collections.Schema
+	Params                collections.Item[types.Params]
 	DelegationTimeEntries collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
 	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
 }
@@ -37,6 +38,12 @@ func NewKeeper(
 		authority:     authority,
 		stakingKeeper: stakingKeeper,
 
+		Params: collections.NewItem(
+			sb,
+			types.ParamsKey,
+			"params",
+			codec.CollValue[types.Params](cdc),
+		),
 		DelegationTimeEntries: collections.NewMap(
 			sb,
 			types.StakingTimeKey,

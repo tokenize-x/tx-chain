@@ -109,12 +109,21 @@ func (AppModule) Name() string { return types.ModuleName }
 // InitGenesis performs genesis initialization for the module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.RawMessage) {
+	genesis := types.GenesisState{}
+	cdc.MustUnmarshalJSON(data, &genesis)
 
+	if err := am.keeper.InitGenesis(ctx, genesis); err != nil {
+		panic(errors.Wrapf(types.ErrInitGenesis, "failed to initialize %s genesis state: %s", types.ModuleName, err))
+	}
 }
 
 // ExportGenesis returns the exported genesis state as raw bytes for the module.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	return cdc.MustMarshalJSON(&types.GenesisState{})
+	genState, err := am.keeper.ExportGenesis(ctx)
+	if err != nil {
+		panic(errors.Wrapf(types.ErrExportGenesis, "failed to export %s genesis state: %s", types.ModuleName, err))
+	}
+	return cdc.MustMarshalJSON(genState)
 }
 
 // IsAppModule implements the appmodule.AppModule interface.

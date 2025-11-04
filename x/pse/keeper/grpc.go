@@ -20,5 +20,12 @@ func NewQueryService(keeper Keeper) QueryService {
 
 // Params returns params of the module.
 func (qs QueryService) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-	return nil, types.ErrNotImplemented
+	params, err := qs.keeper.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryParamsResponse{
+		Params: params,
+	}, nil
 }

@@ -20,7 +20,19 @@ func NewMsgServer(keeper Keeper) MsgServer {
 	}
 }
 
-// UpdateParams is a governance operation that sets parameters of the module.
-func (ms MsgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParams) (*types.EmptyResponse, error) {
-	return nil, types.ErrNotImplemented
+// UpdateExcludedAddresses is a governance operation that updates excluded addresses.
+func (ms MsgServer) UpdateExcludedAddresses(
+	goCtx context.Context,
+	req *types.MsgUpdateExcludedAddresses,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.UpdateExcludedAddresses(
+		goCtx,
+		req.Authority,
+		req.AddressesToAdd,
+		req.AddressesToRemove,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &types.EmptyResponse{}, nil
 }

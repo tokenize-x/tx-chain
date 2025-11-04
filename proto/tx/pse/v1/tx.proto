@@ -1,26 +1,39 @@
 syntax = "proto3";
 package tx.pse.v1;
 
-import "cosmos/msg/v1/msg.proto";
 import "amino/amino.proto";
+import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
 // Msg defines the Msg service.
 service Msg {
   option (cosmos.msg.v1.service) = true;
-  
-  // UpdateParams is a governance operation which allows params to be modified.
-  // NOTE: All params must be provided.
-  rpc UpdateParams(MsgUpdateParams) returns (EmptyResponse);
+
+  // UpdateExcludedAddresses is a governance operation to update the list of excluded addresses.
+  rpc UpdateExcludedAddresses(MsgUpdateExcludedAddresses) returns (EmptyResponse);
 }
 
-message MsgUpdateParams {
+
+message MsgUpdateExcludedAddresses {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "pse/MsgUpdateParams";
+  option (amino.name) = "pse/MsgUpdateExcludedAddresses";
 
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  
+  // addresses_to_add is the list of addresses to add to the excluded addresses list.
+  repeated string addresses_to_add = 2 [
+    (cosmos_proto.scalar) = "cosmos.AddressString",
+    (gogoproto.moretags) = "yaml:\"addresses_to_add\""
+  ];
+  
+  // addresses_to_remove is the list of addresses to remove from the excluded addresses list.
+  repeated string addresses_to_remove = 3 [
+    (cosmos_proto.scalar) = "cosmos.AddressString",
+    (gogoproto.moretags) = "yaml:\"addresses_to_remove\""
+  ];
 }
 
 message EmptyResponse {}

@@ -1,8 +1,13 @@
 syntax = "proto3";
 package tx.pse.v1;
 
+import "gogoproto/gogo.proto";
+import "tx/pse/v1/params.proto";
+
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
 // GenesisState defines the module's genesis state.
 message GenesisState {
+  // params contains all gov-manageable parameters including distribution schedule.
+  Params params = 1 [(gogoproto.nullable) = false];
 }

@@ -1,0 +1,18 @@
+syntax = "proto3";
+package tx.pse.v1;
+
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+
+// Params store gov manageable parameters.
+message Params {
+  // excluded_addresses is a list of addresses excluded from PSE distribution.
+  // This list includes account addresses that should not receive PSE rewards.
+  // Can be modified via governance proposals.
+  repeated string excluded_addresses = 1 [
+    (cosmos_proto.scalar) = "cosmos.AddressString",
+    (gogoproto.moretags) = "yaml:\"excluded_addresses\""
+  ];
+}
