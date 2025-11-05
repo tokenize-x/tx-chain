@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"cosmossdk.io/collections"
+	addresscodec "cosmossdk.io/core/address"
 	sdkstore "cosmossdk.io/core/store"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -12,10 +13,13 @@ import (
 
 // Keeper of the module.
 type Keeper struct {
-	storeService  sdkstore.KVStoreService
-	cdc           codec.BinaryCodec
-	authority     string
-	stakingKeeper types.StakingKeeper
+	storeService    sdkstore.KVStoreService
+	cdc             codec.BinaryCodec
+	authority       string
+	stakingKeeper   types.StakingQuerier
+	bankKeeper      types.BankKeeper
+	addressCodec    addresscodec.Codec
+	valAddressCodec addresscodec.Codec
 
 	// collections
 	Schema                collections.Schema
@@ -29,14 +33,20 @@ func NewKeeper(
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
 	authority string,
-	stakingKeeper types.StakingKeeper,
+	stakingKeeper types.StakingQuerier,
+	bankKeeper types.BankKeeper,
+	addressCodec addresscodec.Codec,
+	valAddressCodec addresscodec.Codec,
 ) Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
 	k := Keeper{
-		storeService:  storeService,
-		cdc:           cdc,
-		authority:     authority,
-		stakingKeeper: stakingKeeper,
+		storeService:    storeService,
+		cdc:             cdc,
+		authority:       authority,
+		stakingKeeper:   stakingKeeper,
+		bankKeeper:      bankKeeper,
+		addressCodec:    addressCodec,
+		valAddressCodec: valAddressCodec,
 
 		Params: collections.NewItem(
 			sb,

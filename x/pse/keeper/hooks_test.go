@@ -8,6 +8,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
@@ -247,7 +248,23 @@ func assertScoreAction(r *runEnv, delAddr sdk.AccAddress, expectedScore sdkmath.
 	r.requireT.Equal(expectedScore, score)
 }
 
+func assertDistributionAction(r *runEnv, balances map[*sdk.AccAddress]sdkmath.Int) {
+	stakingQuerier := stakingkeeper.NewQuerier(r.testApp.StakingKeeper)
+	for addr, expectedBalance := range balances {
+		delegationsRsp, err := stakingQuerier.DelegatorDelegations(r.ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+			DelegatorAddr: addr.String(),
+		})
+		r.requireT.NoError(err)
+		totalDelegationAmount := sdkmath.NewInt(0)
+		for _, delegation := range delegationsRsp.DelegationResponses {
+			totalDelegationAmount = totalDelegationAmount.Add(delegation.Balance.Amount)
+		}
+		r.requireT.Equal(expectedBalance, totalDelegationAmount)
+	}
+}
+
 func delegateAction(r *runEnv, delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount int64) {
+	mintAndSendCoin(r, delAddr, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(amount))))
 	msg := &stakingtypes.MsgDelegate{
 		DelegatorAddress: delAddr.String(),
 		ValidatorAddress: valAddr.String(),
@@ -305,6 +322,36 @@ func waitAction(r *runEnv, duration time.Duration) {
 	ctx, _, err := r.testApp.BeginNextBlockAtTime(r.ctx.BlockTime().Add(duration))
 	r.requireT.NoError(err)
 	r.ctx = ctx
+}
+
+func distributeAction(r *runEnv, amount sdkmath.Int) {
+	mintAndSendToPSECommunityModuleAccount(r, amount)
+	err := r.testApp.PSEKeeper.Distribute(r.ctx, amount)
+	r.requireT.NoError(err)
+}
+
+func mintAndSendCoin(r *runEnv, recipient sdk.AccAddress, coins sdk.Coins) {
+	r.requireT.NoError(
+		r.testApp.BankKeeper.MintCoins(r.ctx, minttypes.ModuleName, coins),
+	)
+	r.requireT.NoError(
+		r.testApp.BankKeeper.SendCoinsFromModuleToAccount(r.ctx, minttypes.ModuleName, recipient, coins),
+	)
+}
+
+func mintAndSendToPSECommunityModuleAccount(r *runEnv, amount sdkmath.Int) {
+	bondDenom, err := r.testApp.StakingKeeper.BondDenom(r.ctx)
+	r.requireT.NoError(err)
+	distributeCoin := sdk.NewCoin(bondDenom, amount)
+	// TODO: fix the hardcoded module name.
+	macc := r.testApp.AccountKeeper.GetModuleAccount(r.ctx, "pse_community")
+
+	r.requireT.NoError(r.testApp.BankKeeper.MintCoins(
+		r.ctx, minttypes.ModuleName, sdk.NewCoins(distributeCoin),
+	))
+	r.requireT.NoError(r.testApp.BankKeeper.SendCoinsFromModuleToModule(
+		r.ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(distributeCoin),
+	))
 }
 
 func addValidator(

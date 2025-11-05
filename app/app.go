@@ -201,6 +201,9 @@ var (
 		assetnfttypes.ModuleName:       {authtypes.Burner},
 		// the line is required by the nft module to have the module account stored in the account keeper
 		nft.ModuleName: {},
+
+		// TODO: fix the hardcoded module name.
+		"pse_community": nil,
 	}
 )
 
@@ -520,7 +523,10 @@ func New(
 		runtime.NewKVStoreService(keys[psetypes.StoreKey]),
 		appCodec,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		app.StakingKeeper,
+		stakingkeeper.NewQuerier(app.StakingKeeper),
+		app.BankKeeper,
+		interfaceRegistry.SigningContext().AddressCodec(),
+		interfaceRegistry.SigningContext().ValidatorAddressCodec(),
 	)
 
 	// register the staking hooks
