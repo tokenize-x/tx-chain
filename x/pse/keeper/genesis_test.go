@@ -12,9 +12,8 @@ import (
 )
 
 func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
-	}
+	// Use DefaultGenesisState to ensure all slices are properly initialized
+	genesisState := *types.DefaultGenesisState()
 
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()

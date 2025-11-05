@@ -15,13 +15,17 @@ type Keeper struct {
 	storeService  sdkstore.KVStoreService
 	cdc           codec.BinaryCodec
 	authority     string
+	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
 	stakingKeeper types.StakingKeeper
 
 	// collections
-	Schema                collections.Schema
-	Params                collections.Item[types.Params]
-	DelegationTimeEntries collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
-	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
+	Schema                 collections.Schema
+	Params                 collections.Item[types.Params]
+	DelegationTimeEntries  collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
+	AccountScoreSnapshot   collections.Map[sdk.AccAddress, sdkmath.Int]
+	CompletedDistributions collections.Map[collections.Pair[string, int64], types.CompletedDistribution]
+	PendingTimestamps      collections.KeySet[uint64] // Sorted set of timestamps that need processing
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -29,6 +33,8 @@ func NewKeeper(
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
 	authority string,
+	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
 	stakingKeeper types.StakingKeeper,
 ) Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
@@ -36,6 +42,8 @@ func NewKeeper(
 		storeService:  storeService,
 		cdc:           cdc,
 		authority:     authority,
+		accountKeeper: accountKeeper,
+		bankKeeper:    bankKeeper,
 		stakingKeeper: stakingKeeper,
 
 		Params: collections.NewItem(
@@ -58,6 +66,19 @@ func NewKeeper(
 			sdk.AccAddressKey,
 			sdk.IntValue,
 		),
+		CompletedDistributions: collections.NewMap(
+			sb,
+			types.CompletedDistributionsKey,
+			"completed_distributions",
+			collections.PairKeyCodec(collections.StringKey, collections.Int64Key),
+			codec.CollValue[types.CompletedDistribution](cdc),
+		),
+		PendingTimestamps: collections.NewKeySet(
+			sb,
+			types.PendingTimestampsKey,
+			"pending_timestamps",
+			collections.Uint64Key,
+		),
 	}
 
 	schema, err := sb.Build()
@@ -67,4 +88,14 @@ func NewKeeper(
 	k.Schema = schema
 
 	return k
+}
+
+// GetBondDenom returns the bond denomination from staking params.
+// This is used as the distribution denom for all PSE distributions.
+func (k Keeper) GetBondDenom(ctx sdk.Context) (string, error) {
+	stakingParams, err := k.stakingKeeper.GetParams(ctx)
+	if err != nil {
+		return "", err
+	}
+	return stakingParams.BondDenom, nil
 }

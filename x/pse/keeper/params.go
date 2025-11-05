@@ -64,3 +64,47 @@ func (k Keeper) UpdateExcludedAddresses(
 
 	return k.SetParams(ctx, params)
 }
+
+// UpdateSubAccountMappings updates the sub account mappings in params via governance.
+func (k Keeper) UpdateSubAccountMappings(
+	ctx context.Context,
+	authority string,
+	mappings []types.SubAccountMapping,
+) error {
+	if k.authority != authority {
+		return errors.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+	}
+
+	// Get current params
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Build a set of module accounts that are currently in the distribution schedule
+	requiredModules := make(map[string]bool)
+	for _, period := range params.DistributionSchedule {
+		for _, dist := range period.Distributions {
+			requiredModules[dist.ModuleAccount] = true
+		}
+	}
+
+	// Build a set of module accounts in the new mappings
+	newMappings := make(map[string]bool)
+	for _, mapping := range mappings {
+		newMappings[mapping.ModuleAccount] = true
+	}
+
+	// Check that all required modules are present in the new mappings
+	for moduleAccount := range requiredModules {
+		if !newMappings[moduleAccount] {
+			return errors.Wrapf(types.ErrInvalidInput,
+				"cannot remove mapping for module '%s': it is still referenced in the distribution schedule", moduleAccount)
+		}
+	}
+
+	// Update sub account mappings
+	params.SubAccountMappings = mappings
+
+	return k.SetParams(ctx, params)
+}

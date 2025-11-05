@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -195,4 +196,115 @@ func TestUpdateExcludedAddresses(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+
+	// Test 1: Can add mappings when no schedule exists
+	mappings := []types.SubAccountMapping{
+		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr1},
+		{ModuleAccount: types.ModuleAccountTeam, SubAccountAddress: addr2},
+	}
+
+	err := pseKeeper.UpdateSubAccountMappings(ctx, authority, mappings)
+	requireT.NoError(err, "should allow adding mappings when no schedule")
+
+	// Test 2: Can remove mappings when not referenced in schedule
+	reducedMappings := []types.SubAccountMapping{
+		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr1},
+	}
+
+	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, reducedMappings)
+	requireT.NoError(err, "should allow removing unreferenced mappings")
+
+	// Test 3: Add a schedule that references treasury
+	schedule := []types.DistributionPeriod{
+		{
+			DistributionTime: 2000000000,
+			Distributions: []types.ModuleDistribution{
+				{ModuleAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+			},
+		},
+	}
+
+	params, err := pseKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	params.DistributionSchedule = schedule
+	err = pseKeeper.SetParams(ctx, params)
+	requireT.NoError(err)
+
+	// Test 4: Cannot remove treasury mapping while schedule references it
+	emptyMappings := []types.SubAccountMapping{}
+	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, emptyMappings)
+	requireT.Error(err, "should reject removal of mapping referenced in schedule")
+	requireT.Contains(err.Error(), "still referenced in the distribution schedule")
+
+	// Test 5: Can update mapping address while keeping the module
+	updatedMappings := []types.SubAccountMapping{
+		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr3}, // Changed address
+	}
+
+	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, updatedMappings)
+	requireT.NoError(err, "should allow updating mapping address")
+
+	// Verify the address was updated
+	params, err = pseKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	requireT.Len(params.SubAccountMappings, 1)
+	requireT.Equal(addr3, params.SubAccountMappings[0].SubAccountAddress)
+
+	// Test 6: Can add more mappings even with existing schedule
+	expandedMappings := []types.SubAccountMapping{
+		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr3},
+		{ModuleAccount: types.ModuleAccountTeam, SubAccountAddress: addr2},
+	}
+
+	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, expandedMappings)
+	requireT.NoError(err, "should allow adding new mappings")
+
+	// Test 7: Clear schedule, then can remove mappings
+	emptySchedule := []types.DistributionPeriod{}
+	params, err = pseKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	params.DistributionSchedule = emptySchedule
+	err = pseKeeper.SetParams(ctx, params)
+	requireT.NoError(err)
+
+	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, emptyMappings)
+	requireT.NoError(err, "should allow removing all mappings after schedule is cleared")
+}
+
+func TestUpdateSubAccountMappings_Authority(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	correctAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	wrongAuthority := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+
+	mappings := []types.SubAccountMapping{
+		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr1},
+	}
+
+	// Test with wrong authority
+	err := pseKeeper.UpdateSubAccountMappings(ctx, wrongAuthority, mappings)
+	requireT.Error(err, "should reject wrong authority")
+	requireT.Contains(err.Error(), "invalid authority")
+
+	// Test with correct authority
+	err = pseKeeper.UpdateSubAccountMappings(ctx, correctAuthority, mappings)
+	requireT.NoError(err, "should accept correct authority")
 }

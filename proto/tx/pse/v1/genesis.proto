@@ -3,6 +3,7 @@ package tx.pse.v1;
 
 import "gogoproto/gogo.proto";
 import "tx/pse/v1/params.proto";
+import "tx/pse/v1/distribution.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
@@ -10,4 +11,16 @@ option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 message GenesisState {
   // params contains all gov-manageable parameters including distribution schedule.
   Params params = 1 [(gogoproto.nullable) = false];
+
+  // completed_distributions is the immutable history of executed distributions.
+  repeated CompletedDistribution completed_distributions = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"completed_distributions\""
+  ];
+
+  // pending_distribution_timestamps is a sorted list of timestamps that still need processing.
+  // This will be rebuilt from the schedule during InitGenesis for consistency.
+  repeated uint64 pending_distribution_timestamps = 3 [
+    (gogoproto.moretags) = "yaml:\"pending_distribution_timestamps\""
+  ];
 }

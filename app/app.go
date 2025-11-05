@@ -187,7 +187,12 @@ var (
 	DefaultNodeHome string
 
 	// module account permissions.
-	maccPerms = map[string][]string{
+	maccPerms = getMaccPerms()
+)
+
+// getMaccPerms returns the module account permissions map.
+func getMaccPerms() map[string][]string {
+	perms := map[string][]string{
 		authtypes.FeeCollectorName:     nil,
 		distrtypes.ModuleName:          nil,
 		minttypes.ModuleName:           {authtypes.Minter},
@@ -200,9 +205,17 @@ var (
 		assetfttypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
 		assetnfttypes.ModuleName:       {authtypes.Burner},
 		// the line is required by the nft module to have the module account stored in the account keeper
-		nft.ModuleName: {},
+		nft.ModuleName:      {},
+		psetypes.ModuleName: {authtypes.Minter},
 	}
-)
+
+	// Add PSE module accounts
+	for name, perm := range psetypes.GetModuleAccountPerms() {
+		perms[name] = perm
+	}
+
+	return perms
+}
 
 var (
 	_ runtime.AppI            = (*App)(nil)
@@ -520,6 +533,8 @@ func New(
 		runtime.NewKVStoreService(keys[psetypes.StoreKey]),
 		appCodec,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		app.AccountKeeper,
+		app.BankKeeper,
 		app.StakingKeeper,
 	)
 

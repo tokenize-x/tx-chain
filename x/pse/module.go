@@ -138,7 +138,8 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // EndBlock returns the end blocker for the module. It returns no validator
 // updates.
 func (am AppModule) EndBlock(c context.Context) error {
-	return nil
+	// Process periodic distributions
+	return am.keeper.ProcessPeriodicDistributions(c)
 }
 
 // AppModuleSimulation functions
