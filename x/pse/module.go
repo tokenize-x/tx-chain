@@ -139,6 +139,7 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // updates.
 func (am AppModule) EndBlock(c context.Context) error {
 	// Process periodic distributions
+	// TODO: make decision to panic or not
 	return am.keeper.ProcessPeriodicDistributions(c)
 }
 

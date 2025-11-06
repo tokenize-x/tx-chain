@@ -2,8 +2,8 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -23,40 +23,27 @@ func (k Keeper) ProcessPeriodicDistributions(ctx context.Context) error {
 		return err
 	}
 
-	// Get all pending timestamps that are due
-	iter, err := k.PendingTimestamps.Iterate(ctx, nil)
+	// Get first pending timestamp (queue is sorted ascending)
+	timestamp, found, err := k.nextPendingTimestamp(ctx)
 	if err != nil {
 		return err
 	}
-	defer iter.Close()
-
-	var timestampsToRemove []uint64
-
-	for ; iter.Valid(); iter.Next() {
-		timestamp, err := iter.Key()
-		if err != nil {
-			return err
-		}
-
-		// Skip future timestamps (since KeySet is ordered, we can break early)
-		if timestamp > currentTimeUnix {
-			break
-		}
-
-		// Process all distributions for this timestamp
-		allCompleted, err := k.processDistributionPeriod(ctx, timestamp, distCtx)
-		if err != nil {
-			return err
-		}
-
-		// Mark timestamp for removal if all distributions completed
-		if allCompleted {
-			timestampsToRemove = append(timestampsToRemove, timestamp)
-		}
+	if !found {
+		return nil
 	}
 
-	// Clean up completed timestamps
-	return k.cleanupCompletedTimestamps(ctx, timestampsToRemove)
+	// If earliest timestamp is in the future, nothing to do this block
+	if timestamp > currentTimeUnix {
+		return nil
+	}
+
+	// Process distributions for this timestamp
+	if err := k.processDistributionPeriod(ctx, timestamp, distCtx); err != nil {
+		return err
+	}
+
+	// Clean up completed timestamp
+	return k.cleanupCompletedTimestamp(ctx, timestamp)
 }
 
 // GetCompletedDistributions returns all completed distributions.
@@ -217,12 +204,12 @@ func (k Keeper) prepareDistributionContext(ctx context.Context) (*distributionCo
 }
 
 // processDistributionPeriod processes all distributions for a specific timestamp.
-// Returns true if all distributions in the period are now completed (after this processing).
+// Any failure indicates an invariant violation and returns an error to halt processing.
 func (k Keeper) processDistributionPeriod(
 	ctx context.Context,
 	timestamp uint64,
 	distCtx *distributionContext,
-) (bool, error) {
+) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Get period from schedule - should always exist due to queue sync
@@ -230,27 +217,39 @@ func (k Keeper) processDistributionPeriod(
 	if !exists {
 		// Orphaned timestamp in pending queue but not in schedule
 		// This indicates queue desynchronization - critical invariant violation
-		panic(fmt.Sprintf(
-			"invariant violation: orphaned timestamp %d in pending queue but not in distribution schedule",
+		return errorsmod.Wrapf(
+			types.ErrDistributionScheduleNotFound,
+			"pending timestamp %d has no matching distribution period",
 			timestamp,
-		))
+		)
 	}
 
 	for _, dist := range period.Distributions {
 		key := types.MakeCompletedDistributionKey(dist.ModuleAccount, int64(timestamp))
 
-		// Check if already completed
+		// Check for duplicate completion entries - invariant violation if found
 		hasCompleted, err := k.CompletedDistributions.Has(ctx, key)
 		if err != nil {
-			return false, err
+			return errorsmod.Wrapf(
+				types.ErrCompletedDistributionRead,
+				"module '%s' timestamp %d: %v",
+				dist.ModuleAccount,
+				timestamp,
+				err,
+			)
 		}
 		if hasCompleted {
-			continue // Already distributed, skip
+			return errorsmod.Wrapf(
+				types.ErrDistributionAlreadyCompleted,
+				"module '%s' timestamp %d",
+				dist.ModuleAccount,
+				timestamp,
+			)
 		}
 
-		// Execute single distribution
+		// Execute single distribution (returns error on invariant failure)
 		if err := k.executeSingleDistribution(ctx, dist, timestamp, distCtx); err != nil {
-			return false, err
+			return err
 		}
 
 		sdkCtx.Logger().Info("distributed tokens",
@@ -259,21 +258,7 @@ func (k Keeper) processDistributionPeriod(
 			"amount", dist.Amount.String())
 	}
 
-	// Check if ALL distributions in this period are now completed
-	allCompleted := true
-	for _, dist := range period.Distributions {
-		key := types.MakeCompletedDistributionKey(dist.ModuleAccount, int64(timestamp))
-		has, err := k.CompletedDistributions.Has(ctx, key)
-		if err != nil {
-			return false, err
-		}
-		if !has {
-			allCompleted = false
-			break
-		}
-	}
-
-	return allCompleted, nil
+	return nil
 }
 
 // executeSingleDistribution executes a single module distribution.
@@ -283,8 +268,6 @@ func (k Keeper) executeSingleDistribution(
 	timestamp uint64,
 	distCtx *distributionContext,
 ) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
 	// Get the sub account - guaranteed to exist by validation
 	subAccount := distCtx.subAccountMappings[dist.ModuleAccount]
 
@@ -294,14 +277,19 @@ func (k Keeper) executeSingleDistribution(
 	// Create coins to distribute
 	coinsToDistribute := sdk.NewCoins(sdk.NewCoin(distCtx.bondDenom, dist.Amount))
 
-	// Transfer tokens - panic on error (invariant violation)
+	// Transfer tokens - error indicates invariant violation
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
 		dist.ModuleAccount,
 		subAccountAddr,
 		coinsToDistribute,
 	); err != nil {
-		panic(fmt.Sprintf("balance invariant violated for module '%s': %v", dist.ModuleAccount, err))
+		return errorsmod.Wrapf(
+			types.ErrTransferFailed,
+			"balance invariant violated for module '%s': %v",
+			dist.ModuleAccount,
+			err,
+		)
 	}
 
 	// Record completion
@@ -316,10 +304,30 @@ func (k Keeper) executeSingleDistribution(
 	}
 
 	if err := k.CompletedDistributions.Set(ctx, key, completedDist); err != nil {
-		return err
+		return errorsmod.Wrapf(
+			types.ErrCompletedDistributionRecord,
+			"module '%s' timestamp %d: %v",
+			dist.ModuleAccount,
+			timestamp,
+			err,
+		)
 	}
 
 	// Emit event
+	k.emitDistributionCompletedEvent(ctx, dist, timestamp, distCtx, subAccount)
+
+	return nil
+}
+
+func (k Keeper) emitDistributionCompletedEvent(
+	ctx context.Context,
+	dist types.ModuleDistribution,
+	timestamp uint64,
+	distCtx *distributionContext,
+	subAccount string,
+) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventDistributionCompleted{
 		ModuleAccount: dist.ModuleAccount,
 		SubAccount:    subAccount,
@@ -331,26 +339,37 @@ func (k Keeper) executeSingleDistribution(
 	}); err != nil {
 		sdkCtx.Logger().Error("failed to emit event", "error", err)
 	}
-
-	return nil
 }
 
-// cleanupCompletedTimestamps removes completed timestamps from the pending queue.
-func (k Keeper) cleanupCompletedTimestamps(ctx context.Context, timestampsToRemove []uint64) error {
-	if len(timestampsToRemove) == 0 {
-		return nil
+func (k Keeper) nextPendingTimestamp(ctx context.Context) (uint64, bool, error) {
+	iter, err := k.PendingTimestamps.Iterate(ctx, nil)
+	if err != nil {
+		return 0, false, err
+	}
+	defer iter.Close()
+
+	if !iter.Valid() {
+		return 0, false, nil
+	}
+
+	timestamp, err := iter.Key()
+	if err != nil {
+		return 0, false, err
+	}
+
+	return timestamp, true, nil
+}
+
+// cleanupCompletedTimestamp removes the processed timestamp from the pending queue.
+func (k Keeper) cleanupCompletedTimestamp(ctx context.Context, timestamp uint64) error {
+	if err := k.PendingTimestamps.Remove(ctx, timestamp); err != nil {
+		return err
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	for _, timestamp := range timestampsToRemove {
-		if err := k.PendingTimestamps.Remove(ctx, timestamp); err != nil {
-			return err
-		}
-	}
-
-	sdkCtx.Logger().Info("removed completed timestamps from pending queue",
-		"count", len(timestampsToRemove))
+	sdkCtx.Logger().Info("removed completed timestamp from pending queue",
+		"timestamp", timestamp)
 
 	return nil
 }

@@ -75,4 +75,13 @@ var (
 
 	// ErrPendingTimestampAdd is returned when adding pending timestamp fails.
 	ErrPendingTimestampAdd = sdkerrors.Register(ModuleName, 25, "failed to add pending timestamp")
+
+	// ErrCompletedDistributionRead is returned when reading completed distribution state fails.
+	ErrCompletedDistributionRead = sdkerrors.Register(ModuleName, 26, "failed to read completed distribution state")
+
+	// ErrDistributionAlreadyCompleted is returned when a distribution period was already processed.
+	ErrDistributionAlreadyCompleted = sdkerrors.Register(ModuleName, 27, "distribution already completed")
+
+	// ErrCompletedDistributionRecord is returned when recording a completed distribution fails.
+	ErrCompletedDistributionRecord = sdkerrors.Register(ModuleName, 28, "failed to record completed distribution")
 )
