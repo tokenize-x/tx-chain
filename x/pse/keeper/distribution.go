@@ -17,12 +17,6 @@ func (k Keeper) ProcessPeriodicDistributions(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentTimeUnix := uint64(sdkCtx.BlockTime().Unix())
 
-	// Prepare distribution context with all necessary data
-	distCtx, err := k.prepareDistributionContext(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Get first pending timestamp (queue is sorted ascending)
 	timestamp, found, err := k.nextPendingTimestamp(ctx)
 	if err != nil {
@@ -35,6 +29,12 @@ func (k Keeper) ProcessPeriodicDistributions(ctx context.Context) error {
 	// If earliest timestamp is in the future, nothing to do this block
 	if timestamp > currentTimeUnix {
 		return nil
+	}
+
+	// Prepare distribution context with all necessary data
+	distCtx, err := k.prepareDistributionContext(ctx)
+	if err != nil {
+		return err
 	}
 
 	// Process distributions for this timestamp
