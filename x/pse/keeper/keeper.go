@@ -13,13 +13,17 @@ import (
 
 // Keeper of the module.
 type Keeper struct {
-	storeService    sdkstore.KVStoreService
-	cdc             codec.BinaryCodec
-	authority       string
-	stakingKeeper   types.StakingQuerier
-	bankKeeper      types.BankKeeper
 	addressCodec    addresscodec.Codec
+	authority       string
+	cdc             codec.BinaryCodec
 	valAddressCodec addresscodec.Codec
+	storeService    sdkstore.KVStoreService
+
+	// keepers
+	accountKeeper      types.AccountKeeper
+	bankKeeper         types.BankKeeper
+	distributionKeeper types.DistributionKeeper
+	stakingKeeper      types.StakingQuerier
 
 	// collections
 	Schema                collections.Schema
@@ -34,6 +38,8 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	authority string,
 	stakingKeeper types.StakingQuerier,
+	distributionKeeper types.DistributionKeeper,
+	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	addressCodec addresscodec.Codec,
 	valAddressCodec addresscodec.Codec,
@@ -43,10 +49,13 @@ func NewKeeper(
 		storeService:    storeService,
 		cdc:             cdc,
 		authority:       authority,
-		stakingKeeper:   stakingKeeper,
-		bankKeeper:      bankKeeper,
 		addressCodec:    addressCodec,
 		valAddressCodec: valAddressCodec,
+
+		stakingKeeper:      stakingKeeper,
+		distributionKeeper: distributionKeeper,
+		accountKeeper:      accountKeeper,
+		bankKeeper:         bankKeeper,
 
 		Params: collections.NewItem(
 			sb,

@@ -524,6 +524,8 @@ func New(
 		appCodec,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		stakingkeeper.NewQuerier(app.StakingKeeper),
+		app.DistrKeeper,
+		app.AccountKeeper,
 		app.BankKeeper,
 		interfaceRegistry.SigningContext().AddressCodec(),
 		interfaceRegistry.SigningContext().ValidatorAddressCodec(),

@@ -39,6 +39,8 @@ func (k Keeper) Distribute(ctx context.Context, totalPSEAmount sdkmath.Int) erro
 	}
 
 	// add uncalculated score to account score snapshot and total score per delegator.
+	// it calculates the score from the last delegation time entry up to the current block time, which
+	// is not included in the score snapshot calculations.
 	iter, err := k.AccountScoreSnapshot.Iterate(ctx, nil)
 	if err != nil {
 		return err
@@ -50,23 +52,46 @@ func (k Keeper) Distribute(ctx context.Context, totalPSEAmount sdkmath.Int) erro
 			return err
 		}
 		score := kv.Value
-		dellAddr := kv.Key
-		finalScoreMap.AddScore(dellAddr, score)
+		delAddr := kv.Key
+		finalScoreMap.AddScore(delAddr, score)
+	}
+
+	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+	if err != nil {
+		return err
 	}
 
 	// distribute total pse coin based on per delegator score.
 	totalPSEScore := finalScoreMap.totalScore
-	err = finalScoreMap.Walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
-		userAmount := totalPSEAmount.Mul(score).Quo(totalPSEScore)
-		err = k.distributeToDelegator(ctx, addr, userAmount)
+
+	// leftover is the amount of pse coin that is not distributed to any delegator.
+	// It will be sent to community module account.
+	// there are 2 sources of leftover:
+	// 1. rounding errors due to division.
+	// 2. some delegators have no delegation.
+	leftover := totalPSEAmount
+	if totalPSEScore.IsPositive() {
+		err = finalScoreMap.Walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
+			userAmount := totalPSEAmount.Mul(score).Quo(totalPSEScore)
+			deliveredAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
+			if err != nil {
+				return err
+			}
+			leftover = leftover.Sub(deliveredAmount)
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-		return nil
-	})
+	}
 
-	if err != nil {
-		return err
+	// send leftover to community module account.
+	if leftover.IsPositive() {
+		pseModuleAddress := k.accountKeeper.GetModuleAddress(k.getCommunityPSEModuleAccount())
+		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
+		if err != nil {
+			return err
+		}
 	}
 
 	// set all scores to 0.
@@ -144,16 +169,20 @@ func (k Keeper) getCommunityPSEModuleAccount() string {
 	return "pse_community"
 }
 
-func (k Keeper) distributeToDelegator(ctx context.Context, delAddr sdk.AccAddress, amount sdkmath.Int) error {
+func (k Keeper) distributeToDelegator(ctx context.Context, delAddr sdk.AccAddress, amount sdkmath.Int, bondDenom string) (sdkmath.Int, error) {
+	if amount.IsZero() {
+		return sdkmath.NewInt(0), nil
+	}
+
 	delAddrBech32, err := k.addressCodec.BytesToString(delAddr)
 	if err != nil {
-		return err
+		return sdkmath.NewInt(0), err
 	}
 	delegationResponse, err := k.stakingKeeper.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: delAddrBech32,
 	})
 	if err != nil {
-		return err
+		return sdkmath.NewInt(0), err
 	}
 	var delegations []stakingtypes.DelegationResponse
 	totalDelegationAmount := sdkmath.NewInt(0)
@@ -163,37 +192,37 @@ func (k Keeper) distributeToDelegator(ctx context.Context, delAddr sdk.AccAddres
 	}
 
 	if len(delegations) == 0 {
-		return nil
+		return sdkmath.NewInt(0), nil
 	}
 
-	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
-	if err != nil {
-		return err
-	}
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
 		k.getCommunityPSEModuleAccount(),
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
-		return err
+		return sdkmath.NewInt(0), err
 	}
+	deliveredAmount := sdkmath.NewInt(0)
 	for _, delegation := range delegations {
+		// NOTE: this devision will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
+		// the sum of all rounding errors will be sent to community module account.
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 		if err != nil {
-			return err
+			return sdkmath.NewInt(0), err
 		}
 
 		val, err := k.stakingKeeper.GetValidator(ctx, valAddr)
 		if err != nil {
-			return err
+			return sdkmath.NewInt(0), err
 		}
 
 		_, err = k.stakingKeeper.Delegate(ctx, delAddr, delegationAmount, stakingtypes.Unbonded, val, true)
 		if err != nil {
-			return err
+			return sdkmath.NewInt(0), err
 		}
+		deliveredAmount = deliveredAmount.Add(delegationAmount)
 	}
-	return nil
+	return deliveredAmount, nil
 }

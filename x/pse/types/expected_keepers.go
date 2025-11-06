@@ -25,10 +25,26 @@ type StakingQuerier interface {
 
 // BankKeeper interface.
 type BankKeeper interface {
+	SendCoinsFromModuleToModule(
+		ctx context.Context,
+		senderModule string,
+		recipientModule string,
+		amt sdk.Coins,
+	) error
 	SendCoinsFromModuleToAccount(
 		ctx context.Context,
 		senderModule string,
 		recipientAddr sdk.AccAddress,
 		amt sdk.Coins,
 	) error
+}
+
+// DistributionKeeper interface.
+type DistributionKeeper interface {
+	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
+}
+
+// AccountKeeper interface.
+type AccountKeeper interface {
+	GetModuleAddress(moduleName string) sdk.AccAddress
 }
