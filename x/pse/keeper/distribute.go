@@ -135,7 +135,9 @@ func newScoreMap(addressCodec addresscodec.Codec) *scoreMap {
 }
 
 func (m *scoreMap) AddScore(addr sdk.AccAddress, value sdkmath.Int) {
-	m.totalScore = m.totalScore.Add(value)
+	if value.IsZero() {
+		return
+	}
 	key, err := m.addressCodec.BytesToString(addr)
 	if err != nil {
 		return
@@ -153,6 +155,8 @@ func (m *scoreMap) AddScore(addr sdk.AccAddress, value sdkmath.Int) {
 	} else {
 		m.items[idx].score = m.items[idx].score.Add(value)
 	}
+
+	m.totalScore = m.totalScore.Add(value)
 }
 
 func (m *scoreMap) Walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) error {
