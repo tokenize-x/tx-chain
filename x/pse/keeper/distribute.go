@@ -205,7 +205,7 @@ func (k Keeper) distributeToDelegator(ctx context.Context, delAddr sdk.AccAddres
 	}
 	deliveredAmount := sdkmath.NewInt(0)
 	for _, delegation := range delegations {
-		// NOTE: this devision will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
+		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
 		// the sum of all rounding errors will be sent to community module account.
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
