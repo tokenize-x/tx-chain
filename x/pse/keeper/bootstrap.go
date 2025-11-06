@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -90,13 +90,13 @@ func (k Keeper) PerformBootstrap(
 
 	// Validate allocations
 	if err := validateAllocations(allocations); err != nil {
-		return errors.Wrapf(types.ErrInvalidAllocations, "%v", err)
+		return errorsmod.Wrapf(types.ErrInvalidAllocations, "%v", err)
 	}
 
 	// Mint the total amount to the PSE module account
 	coinsToMint := sdk.NewCoins(sdk.NewCoin(denom, totalMintAmount))
 	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, coinsToMint); err != nil {
-		return errors.Wrapf(types.ErrMintFailed, "%v", err)
+		return errorsmod.Wrapf(types.ErrMintFailed, "%v", err)
 	}
 
 	sdkCtx.Logger().Info("bootstrap: minted tokens",
@@ -111,7 +111,7 @@ func (k Keeper) PerformBootstrap(
 	for _, allocation := range allocations {
 		// Validate module account name
 		if !types.IsValidModuleAccountName(allocation.ModuleAccount) {
-			return errors.Wrapf(types.ErrInvalidModuleAccount, "module account: %s", allocation.ModuleAccount)
+			return errorsmod.Wrapf(types.ErrInvalidModuleAccount, "module account: %s", allocation.ModuleAccount)
 		}
 
 		// Calculate allocation amount
@@ -131,7 +131,7 @@ func (k Keeper) PerformBootstrap(
 			allocation.ModuleAccount,
 			coinsToTransfer,
 		); err != nil {
-			return errors.Wrapf(types.ErrTransferFailed, "to %s: %v", allocation.ModuleAccount, err)
+			return errorsmod.Wrapf(types.ErrTransferFailed, "to %s: %v", allocation.ModuleAccount, err)
 		}
 
 		sdkCtx.Logger().Info("bootstrap: allocated tokens",
@@ -144,7 +144,7 @@ func (k Keeper) PerformBootstrap(
 
 	// Create 84-month distribution schedule
 	if err := k.createDistributionSchedule(ctx, moduleAccountBalances, scheduleStartTime); err != nil {
-		return errors.Wrapf(types.ErrScheduleCreationFailed, "%v", err)
+		return errorsmod.Wrapf(types.ErrScheduleCreationFailed, "%v", err)
 	}
 
 	sdkCtx.Logger().Info("bootstrap: completed successfully",
@@ -167,15 +167,15 @@ func validateAllocations(allocations []BootstrapAllocation) error {
 	totalPercentage := sdkmath.LegacyZeroDec()
 	for i, allocation := range allocations {
 		if allocation.ModuleAccount == "" {
-			return errors.Wrapf(types.ErrEmptyModuleAccount, "allocation %d", i)
+			return errorsmod.Wrapf(types.ErrEmptyModuleAccount, "allocation %d", i)
 		}
 
 		if allocation.Percentage.IsNegative() {
-			return errors.Wrapf(types.ErrNegativePercentage, "allocation %d (%s)", i, allocation.ModuleAccount)
+			return errorsmod.Wrapf(types.ErrNegativePercentage, "allocation %d (%s)", i, allocation.ModuleAccount)
 		}
 
 		if allocation.Percentage.GT(sdkmath.LegacyOneDec()) {
-			return errors.Wrapf(types.ErrPercentageExceedsOne, "allocation %d (%s)", i, allocation.ModuleAccount)
+			return errorsmod.Wrapf(types.ErrPercentageExceedsOne, "allocation %d (%s)", i, allocation.ModuleAccount)
 		}
 
 		totalPercentage = totalPercentage.Add(allocation.Percentage)
@@ -183,7 +183,7 @@ func validateAllocations(allocations []BootstrapAllocation) error {
 
 	// Check that total percentage is exactly 1.0 (with small tolerance for rounding)
 	if !totalPercentage.Equal(sdkmath.LegacyOneDec()) {
-		return errors.Wrapf(types.ErrInvalidTotalPercentage,
+		return errorsmod.Wrapf(types.ErrInvalidTotalPercentage,
 			"total percentage must equal 1.0, got %s", totalPercentage.String())
 	}
 
@@ -207,7 +207,7 @@ func (k Keeper) createDistributionSchedule(
 	// Get current params to append new schedule
 	params, err := k.GetParams(ctx)
 	if err != nil {
-		return errors.Wrapf(types.ErrParamsGet, "%v", err)
+		return errorsmod.Wrapf(types.ErrParamsGet, "%v", err)
 	}
 
 	// Convert start time to Go time for proper date arithmetic
@@ -249,7 +249,7 @@ func (k Keeper) createDistributionSchedule(
 
 			// Add timestamp to pending timestamps queue
 			if err := k.PendingTimestamps.Set(ctx, distributionTime); err != nil {
-				return errors.Wrapf(types.ErrPendingTimestampAdd, "month %d: %v", month, err)
+				return errorsmod.Wrapf(types.ErrPendingTimestampAdd, "month %d: %v", month, err)
 			}
 		}
 	}
@@ -260,7 +260,7 @@ func (k Keeper) createDistributionSchedule(
 	// Update params with new distribution schedule
 	params.DistributionSchedule = distributionPeriods
 	if err := k.SetParams(ctx, params); err != nil {
-		return errors.Wrapf(types.ErrParamsSet, "%v", err)
+		return errorsmod.Wrapf(types.ErrParamsSet, "%v", err)
 	}
 
 	sdkCtx.Logger().Info("bootstrap: created distribution schedule",
