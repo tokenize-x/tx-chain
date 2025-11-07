@@ -12,7 +12,8 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-func (k Keeper) Distribute(ctx context.Context, totalPSEAmount sdkmath.Int) error {
+// DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
+func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkmath.Int) error {
 	var allDelegationTimeEntryKeys []collections.Pair[sdk.ValAddress, sdk.AccAddress]
 	// iterate all delegation time entries and calculate uncalculated score.
 	var finalScoreMap = newScoreMap(k.addressCodec)
@@ -107,6 +108,9 @@ func (k Keeper) Distribute(ctx context.Context, totalPSEAmount sdkmath.Int) erro
 			LastChangedUnixSec: blockTimeUnixSeconds,
 			Shares:             sdkmath.LegacyNewDec(0),
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -173,7 +177,9 @@ func (k Keeper) getCommunityPSEModuleAccount() string {
 	return "pse_community"
 }
 
-func (k Keeper) distributeToDelegator(ctx context.Context, delAddr sdk.AccAddress, amount sdkmath.Int, bondDenom string) (sdkmath.Int, error) {
+func (k Keeper) distributeToDelegator(
+	ctx context.Context, delAddr sdk.AccAddress, amount sdkmath.Int, bondDenom string,
+) (sdkmath.Int, error) {
 	if amount.IsZero() {
 		return sdkmath.NewInt(0), nil
 	}

@@ -326,7 +326,7 @@ func waitAction(r *runEnv, duration time.Duration) {
 
 func distributeAction(r *runEnv, amount sdkmath.Int) {
 	mintAndSendToPSECommunityModuleAccount(r, amount)
-	err := r.testApp.PSEKeeper.Distribute(r.ctx, amount)
+	err := r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, amount)
 	r.requireT.NoError(err)
 }
 
