@@ -52,8 +52,8 @@ func New(
 				return nil, err
 			}
 
-			// Perform PSE bootstrap: create schedule, mint, and distribute tokens
-			if err := PerformBootstrap(
+			// Perform PSE initialization: create schedule, mint, and distribute tokens
+			if err := InitPSEFundsAndSchedules(
 				ctx,
 				pseKeeper,
 				bankKeeper,

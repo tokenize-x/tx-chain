@@ -16,25 +16,25 @@ const (
 	// This is Dec 1, 2025, 00:00:00 UTC.
 	DefaultDistributionStartTime = 1764547200
 
-	// BootstrapTotalMint is the total amount to mint during bootstrap
+	// InitialTotalMint is the total amount to mint during initialization
 	// 100 billion tokens (in base denomination units).
-	BootstrapTotalMint = 100_000_000_000_000_000
+	InitialTotalMint = 100_000_000_000_000_000
 )
 
-// BootstrapAllocation defines the initial allocation for a module account during bootstrap.
-type BootstrapAllocation struct {
+// InitialAllocation defines the initial allocation for a module account during initialization.
+type InitialAllocation struct {
 	ModuleAccount string
 	Percentage    sdkmath.LegacyDec // Percentage of total mint amount (0-1)
 }
 
-// DefaultBootstrapAllocations returns the default allocation percentages for module accounts.
+// DefaultAllocations returns the default allocation percentages for module accounts.
 // These percentages should sum to 1.0 (100%).
-// Excluded clearing accounts are validated but receive no funds during bootstrap.
-func DefaultBootstrapAllocations() []BootstrapAllocation {
-	return []BootstrapAllocation{
+// Excluded clearing accounts are validated but receive no funds during initialization.
+func DefaultAllocations() []InitialAllocation {
+	return []InitialAllocation{
 		{
 			ModuleAccount: psetypes.ModuleAccountCommunity,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - not funded during bootstrap
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - not funded during initialization
 		},
 		{
 			ModuleAccount: psetypes.ModuleAccountFoundation,
@@ -59,11 +59,11 @@ func DefaultBootstrapAllocations() []BootstrapAllocation {
 	}
 }
 
-// PerformBootstrap initializes the PSE module by creating a distribution schedule,
+// InitPSEFundsAndSchedules initializes the PSE module by creating a distribution schedule,
 // minting tokens, and distributing them to module accounts. The schedule defines
 // how tokens will be gradually released over time from module accounts to recipients.
 // Should be called once during the software upgrade that introduces the PSE module.
-func PerformBootstrap(
+func InitPSEFundsAndSchedules(
 	ctx context.Context,
 	pseKeeper pskeeper.Keeper,
 	bankKeeper psetypes.BankKeeper,
@@ -71,10 +71,10 @@ func PerformBootstrap(
 ) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// Initialize bootstrap parameters using predefined constants
-	allocations := DefaultBootstrapAllocations()
+	// Initialize parameters using predefined constants
+	allocations := DefaultAllocations()
 	scheduleStartTime := uint64(DefaultDistributionStartTime)
-	totalMintAmount := sdkmath.NewInt(BootstrapTotalMint)
+	totalMintAmount := sdkmath.NewInt(InitialTotalMint)
 
 	// Retrieve the chain's native token denomination from staking params
 	stakingParams, err := stakingKeeper.GetParams(ctx)
@@ -85,7 +85,7 @@ func PerformBootstrap(
 
 	// Ensure allocation percentages are valid and sum to exactly 100%
 	if err := validateAllocations(allocations); err != nil {
-		return errorsmod.Wrap(err, "invalid bootstrap allocations")
+		return errorsmod.Wrap(err, "invalid initial allocations")
 	}
 
 	// Step 1: Convert allocation percentages to absolute token amounts
@@ -154,7 +154,7 @@ func PerformBootstrap(
 		}
 	}
 
-	sdkCtx.Logger().Info("bootstrap completed",
+	sdkCtx.Logger().Info("initialization completed",
 		"minted", totalMintAmount.String(),
 		"denom", denom,
 		"allocations", len(moduleAccountBalances),
@@ -165,7 +165,7 @@ func PerformBootstrap(
 }
 
 // validateAllocations verifies that all allocation entries are well-formed and percentages sum to exactly 1.0.
-func validateAllocations(allocations []BootstrapAllocation) error {
+func validateAllocations(allocations []InitialAllocation) error {
 	if len(allocations) == 0 {
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "no allocations provided")
 	}

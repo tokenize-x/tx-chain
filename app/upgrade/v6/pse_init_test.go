@@ -40,7 +40,7 @@ func getAllocationSchedule(ctx context.Context, pseKeeper pskeeper.Keeper, requi
 	return schedule
 }
 
-func TestBootstrap_DefaultAllocations(t *testing.T) {
+func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT := require.New(t)
 
 	testApp := simapp.New()
@@ -54,7 +54,7 @@ func TestBootstrap_DefaultAllocations(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	// Step 1: Set up sub-account mappings BEFORE bootstrap
+	// Step 1: Set up sub-account mappings BEFORE initialization
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
@@ -74,13 +74,13 @@ func TestBootstrap_DefaultAllocations(t *testing.T) {
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, mappings)
 	requireT.NoError(err)
 
-	// Step 2: Perform Bootstrap (uses internal constants)
-	err = v6.PerformBootstrap(ctx, pseKeeper, bankKeeper, testApp.StakingKeeper)
+	// Step 2: Perform Initialization (uses internal constants)
+	err = v6.InitPSEFundsAndSchedules(ctx, pseKeeper, bankKeeper, testApp.StakingKeeper)
 	requireT.NoError(err)
 
 	// Step 3: Verify module accounts have correct balances
-	allocations := v6.DefaultBootstrapAllocations()
-	totalMintAmount := sdkmath.NewInt(v6.BootstrapTotalMint)
+	allocations := v6.DefaultAllocations()
+	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
 
 	totalVerified := sdkmath.ZeroInt()
 	for _, allocation := range allocations {
@@ -118,9 +118,9 @@ func TestBootstrap_DefaultAllocations(t *testing.T) {
 		// Verify each module's monthly amount
 		for _, allocation := range period.Allocations {
 			var expectedTotal sdkmath.Int
-			for _, bootstrapAlloc := range allocations {
-				if bootstrapAlloc.ModuleAccount == allocation.ClearingAccount {
-					expectedTotal = bootstrapAlloc.Percentage.MulInt(totalMintAmount).TruncateInt()
+			for _, initialAlloc := range allocations {
+				if initialAlloc.ModuleAccount == allocation.ClearingAccount {
+					expectedTotal = initialAlloc.Percentage.MulInt(totalMintAmount).TruncateInt()
 					break
 				}
 			}
@@ -135,14 +135,14 @@ func TestBootstrap_DefaultAllocations(t *testing.T) {
 		"all n months should be in the schedule")
 }
 
-func TestCreateDistributionSchedule_MatchesBootstrapAllocations(t *testing.T) {
+func TestCreateDistributionSchedule_MatchesInitialAllocations(t *testing.T) {
 	requireT := require.New(t)
 
 	// This test verifies that CreateDistributionSchedule produces
-	// a schedule that matches the percentages from DefaultBootstrapAllocations
+	// a schedule that matches the percentages from DefaultInitialAllocations
 
-	totalMint := sdkmath.NewInt(v6.BootstrapTotalMint)
-	allocations := v6.DefaultBootstrapAllocations()
+	totalMint := sdkmath.NewInt(v6.InitialTotalMint)
+	allocations := v6.DefaultAllocations()
 
 	// Build the same balances map that the upgrade migration would use
 	balances := make(map[string]sdkmath.Int)
@@ -164,7 +164,7 @@ func TestCreateDistributionSchedule_MatchesBootstrapAllocations(t *testing.T) {
 			"period %d should have allocations for all modules", i)
 
 		for _, periodAlloc := range period.Allocations {
-			// Find the corresponding bootstrap allocation
+			// Find the corresponding initial allocation
 			totalBalance := balances[periodAlloc.ClearingAccount]
 			expectedMonthly := totalBalance.QuoRaw(psetypes.TotalAllocationMonths)
 

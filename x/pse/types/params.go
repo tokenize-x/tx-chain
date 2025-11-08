@@ -54,7 +54,7 @@ func IsValidModuleAccountName(name string) bool {
 }
 
 // GetExcludedClearingAccounts returns the list of clearing accounts excluded from recipient distribution.
-// These accounts receive tokens during bootstrap but don't transfer to recipients in EndBlock.
+// These accounts receive tokens during initialization but don't transfer to recipients in EndBlock.
 func GetExcludedClearingAccounts() []string {
 	return []string{
 		ModuleAccountCommunity, // Community allocation handled by separate feature
@@ -137,7 +137,7 @@ func validateClearingAccountMappings(mappings []ClearingAccountMapping) error {
 // ValidateAllocationSchedule validates the allocation schedule.
 func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 	if len(schedule) == 0 {
-		// Empty schedule is valid (e.g., at genesis before bootstrap)
+		// Empty schedule is valid (e.g., at genesis before initialization)
 		return nil
 	}
 
