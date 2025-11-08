@@ -123,7 +123,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
 					{
-						ClearingAccount:  ModuleAccountTreasury,
+						ClearingAccount:  ModuleAccountFoundation,
 						RecipientAddress: addr1,
 					},
 				},
@@ -134,7 +134,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			name: "valid_multiple_mappings",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+					{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 					{ClearingAccount: ModuleAccountTeam, RecipientAddress: addr2},
 				},
 			},
@@ -154,7 +154,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			name: "invalid_malformed_sub_account_address",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ModuleAccountTreasury, RecipientAddress: "invalid"},
+					{ClearingAccount: ModuleAccountFoundation, RecipientAddress: "invalid"},
 				},
 			},
 			expectErr: true,
@@ -164,8 +164,8 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			name: "invalid_duplicate_module_account",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
-					{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr2},
+					{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
+					{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr2},
 				},
 			},
 			expectErr: true,
@@ -208,7 +208,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -220,13 +220,13 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 				{
 					Timestamp: 1767225600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(2000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
 					},
 				},
 			},
@@ -238,7 +238,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 0,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -251,13 +251,13 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(2000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
 					},
 				},
 			},
@@ -270,13 +270,13 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1767225600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(2000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
 					},
 				},
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -287,7 +287,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_empty_allocations_array",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp:  1735689600,
+					Timestamp:   1735689600,
 					Allocations: []ClearingAccountAllocation{},
 				},
 			},
@@ -313,8 +313,8 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(2000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
 					},
 				},
 			},
@@ -327,7 +327,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.Int{}},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.Int{}},
 					},
 				},
 			},
@@ -340,7 +340,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(-1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(-1000)},
 					},
 				},
 			},
@@ -353,7 +353,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.ZeroInt()},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.ZeroInt()},
 					},
 				},
 			},
@@ -393,14 +393,14 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "valid_schedule_with_all_mappings",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+				{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 				{ClearingAccount: ModuleAccountTeam, RecipientAddress: addr2},
 			},
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(2000)},
 					},
 				},
@@ -410,22 +410,22 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "valid_empty_schedule",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+				{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 			},
-			schedule: []ScheduledDistribution{},
+			schedule:  []ScheduledDistribution{},
 			expectErr: false,
 		},
 		{
 			name: "valid_extra_mappings_not_in_schedule",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+				{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 				{ClearingAccount: ModuleAccountTeam, RecipientAddress: addr2},
 			},
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -434,7 +434,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "invalid_schedule_without_mapping",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+				{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 			},
 			schedule: []ScheduledDistribution{
 				{
@@ -450,13 +450,13 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "invalid_multiple_modules_one_missing_mapping",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+				{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 			},
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(2000)},
 					},
 				},
@@ -465,18 +465,18 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			errMsg:    "no recipient mapping found for clearing account 'pse_team'",
 		},
 		{
-			name:      "invalid_no_mappings_but_has_schedule",
-			mappings:  []ClearingAccountMapping{},
+			name:     "invalid_no_mappings_but_has_schedule",
+			mappings: []ClearingAccountMapping{},
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp: 1735689600,
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
 			expectErr: true,
-			errMsg:    "no recipient mapping found for clearing account 'pse_treasury'",
+			errMsg:    "no recipient mapping found for clearing account 'pse_foundation'",
 		},
 	}
 
@@ -510,7 +510,7 @@ func TestParamsValidation_ModuleAccountNames(t *testing.T) {
 			name: "valid_module_name_in_mapping",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+					{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 				},
 			},
 			expectErr: false,
@@ -568,7 +568,7 @@ func TestParamsValidation_CompleteScenarios(t *testing.T) {
 			params: Params{
 				ExcludedAddresses: []string{addr1},
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr2},
+					{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr2},
 					{ClearingAccount: ModuleAccountTeam, RecipientAddress: addr3},
 				},
 			},
@@ -578,7 +578,7 @@ func TestParamsValidation_CompleteScenarios(t *testing.T) {
 			name: "valid_multiple_modules_all_mapped",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ModuleAccountTreasury, RecipientAddress: addr1},
+					{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
 					{ClearingAccount: ModuleAccountPartnership, RecipientAddress: addr2},
 					{ClearingAccount: ModuleAccountTeam, RecipientAddress: addr3},
 				},

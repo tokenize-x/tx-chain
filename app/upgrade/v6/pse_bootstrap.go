@@ -2,7 +2,6 @@ package v6
 
 import (
 	"context"
-	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
@@ -30,27 +29,32 @@ type BootstrapAllocation struct {
 
 // DefaultBootstrapAllocations returns the default allocation percentages for module accounts.
 // These percentages should sum to 1.0 (100%).
+// Excluded clearing accounts are validated but receive no funds during bootstrap.
 func DefaultBootstrapAllocations() []BootstrapAllocation {
 	return []BootstrapAllocation{
 		{
-			ModuleAccount: psetypes.ModuleAccountTreasury,
+			ModuleAccount: psetypes.ModuleAccountCommunity,
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - not funded during bootstrap
+		},
+		{
+			ModuleAccount: psetypes.ModuleAccountFoundation,
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.30"), // 30%
 		},
 		{
+			ModuleAccount: psetypes.ModuleAccountAlliance,
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.20"), // 20%
+		},
+		{
 			ModuleAccount: psetypes.ModuleAccountPartnership,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.20"), // 20%
-		},
-		{
-			ModuleAccount: psetypes.ModuleAccountFoundingPartner,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.15"), // 15%
-		},
-		{
-			ModuleAccount: psetypes.ModuleAccountTeam,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.20"), // 20%
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.03"), // 3%
 		},
 		{
 			ModuleAccount: psetypes.ModuleAccountInvestors,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.15"), // 15%
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.05"), // 5%
+		},
+		{
+			ModuleAccount: psetypes.ModuleAccountTeam,
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.02"), // 2%
 		},
 	}
 }
@@ -85,6 +89,7 @@ func PerformBootstrap(
 	}
 
 	// Step 1: Convert allocation percentages to absolute token amounts
+	// Include all accounts (excluded accounts get schedules but won't transfer to recipients in EndBlock)
 	moduleAccountBalances := make(map[string]sdkmath.Int)
 	for _, allocation := range allocations {
 		// Verify module account name is recognized by the PSE module
@@ -94,6 +99,8 @@ func PerformBootstrap(
 
 		// Apply percentage to total mint amount (truncates to integer)
 		allocationAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
+
+		// Validate that allocations are not zero
 		if allocationAmount.IsZero() {
 			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "module account %s: allocation rounds to zero", allocation.ModuleAccount)
 		}
@@ -101,16 +108,17 @@ func PerformBootstrap(
 		moduleAccountBalances[allocation.ModuleAccount] = allocationAmount
 	}
 
-	// Step 2: Verify sum of calculated amounts equals the mint constant
-	// This catches rounding errors from percentage-to-integer conversion
+	// Step 2: Verify sum of all allocations equals total mint amount
 	sumOfAllocations := sdkmath.ZeroInt()
 	for _, amount := range moduleAccountBalances {
 		sumOfAllocations = sumOfAllocations.Add(amount)
 	}
 
+	// Verify the sum matches the total mint amount
+	// This catches rounding errors from percentage-to-integer conversion
 	if !sumOfAllocations.Equal(totalMintAmount) {
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput,
-			"sum of module account allocations (%s) does not equal total mint amount (%s)",
+			"sum of all allocations (%s) does not equal total mint amount (%s)",
 			sumOfAllocations.String(), totalMintAmount.String())
 	}
 
@@ -126,25 +134,15 @@ func PerformBootstrap(
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	sdkCtx.Logger().Info("bootstrap: created and saved distribution schedule",
-		"num_periods", len(schedule),
-		"schedule_start", time.Unix(int64(scheduleStartTime), 0).UTC().Format(time.RFC3339),
-	)
-
-	// Step 5: Mint the total token supply for PSE allocations
+	// Step 5: Mint the full token supply
 	coinsToMint := sdk.NewCoins(sdk.NewCoin(denom, totalMintAmount))
 	if err := bankKeeper.MintCoins(ctx, psetypes.ModuleName, coinsToMint); err != nil {
 		return errorsmod.Wrap(err, "failed to mint coins")
 	}
 
-	sdkCtx.Logger().Info("bootstrap: minted tokens",
-		"amount", totalMintAmount.String(),
-		"denom", denom,
-	)
-
-	// Step 6: Distribute minted tokens from PSE module to clearing account modules
+	// Step 6: Distribute minted tokens from PSE module to all clearing account modules
+	// Excluded accounts receive tokens but won't transfer to recipients during normal distribution
 	for moduleAccount, amount := range moduleAccountBalances {
-		// Transfer tokens to the module account that will gradually distribute to recipients
 		coinsToTransfer := sdk.NewCoins(sdk.NewCoin(denom, amount))
 		if err := bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
@@ -154,23 +152,13 @@ func PerformBootstrap(
 		); err != nil {
 			return errorsmod.Wrapf(psetypes.ErrTransferFailed, "to %s: %v", moduleAccount, err)
 		}
-
-		sdkCtx.Logger().Info("bootstrap: allocated tokens to module account",
-			"module_account", moduleAccount,
-			"amount", amount.String(),
-			"denom", denom,
-		)
 	}
 
-	// Calculate when the last distribution will occur
-	endDateTime := time.Unix(int64(scheduleStartTime), 0).UTC().AddDate(0, psetypes.TotalAllocationMonths-1, 0)
-
-	sdkCtx.Logger().Info("bootstrap: completed successfully",
-		"total_minted", totalMintAmount.String(),
+	sdkCtx.Logger().Info("bootstrap completed",
+		"minted", totalMintAmount.String(),
 		"denom", denom,
-		"num_allocations", len(allocations),
-		"num_periods", len(schedule),
-		"schedule_end", endDateTime.Format(time.RFC3339),
+		"allocations", len(moduleAccountBalances),
+		"periods", len(schedule),
 	)
 
 	return nil

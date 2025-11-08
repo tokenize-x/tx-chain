@@ -92,6 +92,15 @@ func (k Keeper) processScheduledAllocations(
 
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
+		// Skip excluded clearing accounts - tokens remain in module account for alternative distribution
+		if types.IsExcludedClearingAccount(allocation.ClearingAccount) {
+			sdkCtx.Logger().Info("skipping excluded clearing account distribution",
+				"clearing_account", allocation.ClearingAccount,
+				"amount", allocation.Amount.String(),
+			)
+			continue
+		}
+
 		// Find the recipient address mapped to this clearing account
 		var recipientAddr string
 		for _, mapping := range clearingAccountMappings {

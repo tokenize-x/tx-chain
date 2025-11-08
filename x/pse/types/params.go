@@ -12,26 +12,29 @@ const (
 )
 
 const (
-	// ModuleAccountTreasury is the treasury module account name.
-	ModuleAccountTreasury = "pse_treasury"
+	// ModuleAccountCommunity is the community module account name.
+	ModuleAccountCommunity = "pse_community"
+	// ModuleAccountFoundation is the foundation module account name.
+	ModuleAccountFoundation = "pse_foundation"
+	// ModuleAccountAlliance is the alliance module account name.
+	ModuleAccountAlliance = "pse_alliance"
 	// ModuleAccountPartnership is the partnership module account name.
 	ModuleAccountPartnership = "pse_partnership"
-	// ModuleAccountFoundingPartner is the founding partner module account name.
-	ModuleAccountFoundingPartner = "pse_founding_partner"
-	// ModuleAccountTeam is the team module account name.
-	ModuleAccountTeam = "pse_team"
 	// ModuleAccountInvestors is the investors module account name.
 	ModuleAccountInvestors = "pse_investors"
+	// ModuleAccountTeam is the team module account name.
+	ModuleAccountTeam = "pse_team"
 )
 
 // GetModuleAccountPerms returns the module account permissions for PSE module accounts.
 func GetModuleAccountPerms() map[string][]string {
 	return map[string][]string{
-		ModuleAccountTreasury:        nil,
-		ModuleAccountPartnership:     nil,
-		ModuleAccountFoundingPartner: nil,
-		ModuleAccountTeam:            nil,
-		ModuleAccountInvestors:       nil,
+		ModuleAccountCommunity:   nil,
+		ModuleAccountFoundation:  nil,
+		ModuleAccountAlliance:    nil,
+		ModuleAccountPartnership: nil,
+		ModuleAccountInvestors:   nil,
+		ModuleAccountTeam:        nil,
 	}
 }
 
@@ -48,6 +51,25 @@ func GetAllowedModuleAccounts() []string {
 func IsValidModuleAccountName(name string) bool {
 	_, exists := GetModuleAccountPerms()[name]
 	return exists
+}
+
+// GetExcludedClearingAccounts returns the list of clearing accounts excluded from recipient distribution.
+// These accounts receive tokens during bootstrap but don't transfer to recipients in EndBlock.
+func GetExcludedClearingAccounts() []string {
+	return []string{
+		ModuleAccountCommunity, // Community allocation handled by separate feature
+	}
+}
+
+// IsExcludedClearingAccount checks if a clearing account is excluded from recipient distribution.
+func IsExcludedClearingAccount(account string) bool {
+	excludedAccounts := GetExcludedClearingAccounts()
+	for _, excluded := range excludedAccounts {
+		if account == excluded {
+			return true
+		}
+	}
+	return false
 }
 
 // DefaultParams returns default pse module parameters.

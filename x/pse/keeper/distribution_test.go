@@ -57,10 +57,12 @@ func TestDistribution_ProcessScheduledAllocations(t *testing.T) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	multisigAddr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: multisigAddr1},
-		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: multisigAddr2},
+		{ClearingAccount: types.ModuleAccountCommunity, RecipientAddress: multisigAddr1},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: multisigAddr2},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: multisigAddr3},
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, mappings)
@@ -69,10 +71,11 @@ func TestDistribution_ProcessScheduledAllocations(t *testing.T) {
 	// Step 2: Create a distribution schedule manually for testing
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix()) // 1 hour ago (already due)
 
-	// Create module balances
+	// Create module balances including excluded Community account
 	moduleBalances := map[string]sdkmath.Int{
-		types.ModuleAccountTreasury: sdkmath.NewInt(50_000_000_000), // 50B
-		types.ModuleAccountTeam:     sdkmath.NewInt(50_000_000_000), // 50B
+		types.ModuleAccountCommunity:  sdkmath.NewInt(100_000_000_000), // 100B - excluded from distribution
+		types.ModuleAccountFoundation: sdkmath.NewInt(50_000_000_000),  // 50B
+		types.ModuleAccountTeam:       sdkmath.NewInt(50_000_000_000),  // 50B
 	}
 
 	// Mint tokens to module accounts for distribution
@@ -105,9 +108,9 @@ func TestDistribution_ProcessScheduledAllocations(t *testing.T) {
 	err = pseKeeper.ProcessClearingAccountDistributions(ctx)
 	requireT.NoError(err)
 
-	// Step 5: Verify allocations transferred funds to recipient accounts
+	// Step 5: Verify allocations transferred funds to recipient accounts (excluding Community)
 	for _, allocation := range firstDist.Allocations {
-		// Verify recipient account received the tokens
+		// Find the recipient address for this allocation
 		var recipientAddr string
 		for _, mapping := range mappings {
 			if mapping.ClearingAccount == allocation.ClearingAccount {
@@ -118,8 +121,23 @@ func TestDistribution_ProcessScheduledAllocations(t *testing.T) {
 
 		recipient := sdk.MustAccAddressFromBech32(recipientAddr)
 		recipientBalance := bankKeeper.GetBalance(ctx, recipient, bondDenom)
-		requireT.Equal(allocation.Amount.String(), recipientBalance.Amount.String(),
-			"recipient should have received allocation amount")
+
+		// Check if this is an excluded account
+		if types.IsExcludedClearingAccount(allocation.ClearingAccount) {
+			// Excluded accounts should NOT transfer to recipients
+			requireT.True(recipientBalance.Amount.IsZero(),
+				"excluded account %s recipient should have zero balance", allocation.ClearingAccount)
+
+			// Verify tokens remain in the excluded module account
+			moduleAddr := testApp.AccountKeeper.GetModuleAddress(allocation.ClearingAccount)
+			moduleBalance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
+			requireT.False(moduleBalance.Amount.IsZero(),
+				"excluded account %s should still have tokens", allocation.ClearingAccount)
+		} else {
+			// Non-excluded accounts should transfer to recipients
+			requireT.Equal(allocation.Amount.String(), recipientBalance.Amount.String(),
+				"recipient should have received allocation amount from %s", allocation.ClearingAccount)
+		}
 	}
 
 	// Step 6: Verify allocation schedule count decreased (first period removed)
@@ -145,11 +163,11 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: multisigAddr1},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: multisigAddr1},
 		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: multisigAddr2},
 	}
 
-	for _, moduleAccount := range []string{types.ModuleAccountTreasury, types.ModuleAccountTeam} {
+	for _, moduleAccount := range []string{types.ModuleAccountFoundation, types.ModuleAccountTeam} {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(5000)))
 		err = testApp.BankKeeper.MintCoins(ctx, types.ModuleName, fundAmount)
 		requireT.NoError(err)
@@ -172,14 +190,14 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 		{
 			Timestamp: time1,
 			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 				{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(500)},
 			},
 		},
 		{
 			Timestamp: time2,
 			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(2000)},
+				{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
 			},
 		},
 	}
@@ -231,11 +249,11 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		{
 			name: "standard_five_accounts",
 			moduleAccountBalances: map[string]sdkmath.Int{
-				types.ModuleAccountTreasury:        sdkmath.NewInt(8_400_000), // 100K per month
-				types.ModuleAccountTeam:            sdkmath.NewInt(4_200_000), // 50K per month
-				types.ModuleAccountPartnership:     sdkmath.NewInt(2_520_000), // 30K per month
-				types.ModuleAccountFoundingPartner: sdkmath.NewInt(1_680_000), // 20K per month
-				types.ModuleAccountInvestors:       sdkmath.NewInt(1_260_000), // 15K per month
+				types.ModuleAccountFoundation:  sdkmath.NewInt(8_400_000), // 100K per month
+				types.ModuleAccountTeam:        sdkmath.NewInt(4_200_000), // 50K per month
+				types.ModuleAccountPartnership: sdkmath.NewInt(2_520_000), // 30K per month
+				types.ModuleAccountAlliance:    sdkmath.NewInt(1_680_000), // 20K per month
+				types.ModuleAccountInvestors:   sdkmath.NewInt(1_260_000), // 15K per month
 			},
 			startTime: uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
 			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, balances map[string]sdkmath.Int) {
@@ -247,7 +265,7 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		{
 			name: "large_balances",
 			moduleAccountBalances: map[string]sdkmath.Int{
-				types.ModuleAccountTreasury:    sdkmath.NewInt(30_000_000_000_000_000), // 30B
+				types.ModuleAccountFoundation:  sdkmath.NewInt(30_000_000_000_000_000), // 30B
 				types.ModuleAccountPartnership: sdkmath.NewInt(20_000_000_000_000_000), // 20B
 				types.ModuleAccountTeam:        sdkmath.NewInt(20_000_000_000_000_000), // 20B
 				types.ModuleAccountInvestors:   sdkmath.NewInt(15_000_000_000_000_000), // 15B
@@ -261,6 +279,34 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 						req.False(allocation.Amount.IsZero(), "amount should not be zero")
 					}
 				}
+			},
+		},
+		{
+			name: "includes_excluded_accounts",
+			moduleAccountBalances: map[string]sdkmath.Int{
+				types.ModuleAccountCommunity:   sdkmath.NewInt(40_000_000_000_000_000), // 40B - excluded
+				types.ModuleAccountFoundation:  sdkmath.NewInt(30_000_000_000_000_000), // 30B
+				types.ModuleAccountAlliance:    sdkmath.NewInt(20_000_000_000_000_000), // 20B
+				types.ModuleAccountPartnership: sdkmath.NewInt(3_000_000_000_000_000),  // 3B
+				types.ModuleAccountInvestors:   sdkmath.NewInt(5_000_000_000_000_000),  // 5B
+				types.ModuleAccountTeam:        sdkmath.NewInt(2_000_000_000_000_000),  // 2B
+			},
+			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, balances map[string]sdkmath.Int) {
+				// Verify Community account is included in schedule
+				foundCommunity := false
+				for _, period := range schedule {
+					for _, allocation := range period.Allocations {
+						if allocation.ClearingAccount == types.ModuleAccountCommunity {
+							foundCommunity = true
+							// Verify Community has correct allocation amount
+							expectedMonthly := balances[types.ModuleAccountCommunity].QuoRaw(types.TotalAllocationMonths)
+							req.Equal(expectedMonthly.String(), allocation.Amount.String(),
+								"Community monthly allocation should be correct")
+						}
+					}
+				}
+				req.True(foundCommunity, "Community account should be in schedule even though excluded from distribution")
 			},
 		},
 	}
@@ -338,7 +384,7 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 	}
 
 	moduleAccountBalances := map[string]sdkmath.Int{
-		types.ModuleAccountTreasury: sdkmath.NewInt(8_400_000),
+		types.ModuleAccountFoundation: sdkmath.NewInt(8_400_000),
 	}
 
 	for _, tc := range testCases {
@@ -384,7 +430,7 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 
 	// Balance that results in zero monthly amount (< TotalAllocationMonths)
 	moduleAccountBalances := map[string]sdkmath.Int{
-		types.ModuleAccountTreasury: sdkmath.NewInt(50), // 50 / n = 0 (integer division)
+		types.ModuleAccountFoundation: sdkmath.NewInt(50), // 50 / n = 0 (integer division)
 	}
 
 	// Execute: Should fail with zero monthly amount
@@ -399,8 +445,8 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 
 	// Setup
 	moduleAccountBalances := map[string]sdkmath.Int{
-		types.ModuleAccountTreasury: sdkmath.NewInt(8_400_000),
-		types.ModuleAccountTeam:     sdkmath.NewInt(4_200_000),
+		types.ModuleAccountFoundation: sdkmath.NewInt(8_400_000),
+		types.ModuleAccountTeam:       sdkmath.NewInt(4_200_000),
 	}
 
 	startTime := uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix())

@@ -212,7 +212,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 
 	// Test 1: Can add mappings when no schedule exists
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
 		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
@@ -221,7 +221,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 
 	// Test 2: Can remove mappings when not referenced in schedule
 	reducedMappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, reducedMappings)
@@ -231,7 +231,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 	scheduledDist := types.ScheduledDistribution{
 		Timestamp: 2000000000,
 		Allocations: []types.ClearingAccountAllocation{
-			{ClearingAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+			{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 		},
 	}
 
@@ -246,7 +246,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 
 	// Test 5: Can update mapping address while keeping the module
 	updatedMappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr3}, // Changed address
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr3}, // Changed address
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, updatedMappings)
@@ -260,7 +260,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 
 	// Test 6: Can add more mappings even with existing schedule
 	expandedMappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr3},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr3},
 		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
@@ -287,7 +287,7 @@ func TestUpdateSubAccountMappings_Authority(t *testing.T) {
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
 	}
 
 	// Test with wrong authority

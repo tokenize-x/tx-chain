@@ -63,11 +63,12 @@ func TestBootstrap_DefaultAllocations(t *testing.T) {
 	multisigAddr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []psetypes.ClearingAccountMapping{
-		{ClearingAccount: psetypes.ModuleAccountTreasury, RecipientAddress: multisigAddr1},
-		{ClearingAccount: psetypes.ModuleAccountPartnership, RecipientAddress: multisigAddr2},
-		{ClearingAccount: psetypes.ModuleAccountFoundingPartner, RecipientAddress: multisigAddr3},
-		{ClearingAccount: psetypes.ModuleAccountTeam, RecipientAddress: multisigAddr4},
-		{ClearingAccount: psetypes.ModuleAccountInvestors, RecipientAddress: multisigAddr5},
+		{ClearingAccount: psetypes.ModuleAccountFoundation, RecipientAddress: multisigAddr1},
+		{ClearingAccount: psetypes.ModuleAccountAlliance, RecipientAddress: multisigAddr2},
+		{ClearingAccount: psetypes.ModuleAccountPartnership, RecipientAddress: multisigAddr3},
+		{ClearingAccount: psetypes.ModuleAccountInvestors, RecipientAddress: multisigAddr4},
+		{ClearingAccount: psetypes.ModuleAccountTeam, RecipientAddress: multisigAddr5},
+		// Note: ModuleAccountCommunity is excluded and doesn't need a mapping
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, mappings)
