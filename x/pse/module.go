@@ -113,7 +113,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 	cdc.MustUnmarshalJSON(data, &genesis)
 
 	if err := am.keeper.InitGenesis(ctx, genesis); err != nil {
-		panic(errors.Wrapf(types.ErrInitGenesis, "failed to initialize %s genesis state: %s", types.ModuleName, err))
+		panic(errors.Wrap(err, "failed to initialize genesis state"))
 	}
 }
 
@@ -121,7 +121,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	genState, err := am.keeper.ExportGenesis(ctx)
 	if err != nil {
-		panic(errors.Wrapf(types.ErrExportGenesis, "failed to export %s genesis state: %s", types.ModuleName, err))
+		panic(errors.Wrap(err, "failed to export genesis state"))
 	}
 	return cdc.MustMarshalJSON(genState)
 }
@@ -140,7 +140,7 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 func (am AppModule) EndBlock(c context.Context) error {
 	// Process periodic distributions
 	// TODO: make decision to panic or not
-	return am.keeper.ProcessPeriodicDistributions(c)
+	return am.keeper.ProcessClearingAccountDistributions(c)
 }
 
 // AppModuleSimulation functions

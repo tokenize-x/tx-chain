@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"sort"
 
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
@@ -12,18 +13,32 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		return err
 	}
 
-	// Load completed distributions
-	for _, completedDist := range genState.CompletedDistributions {
-		key := types.MakeCompletedDistributionKey(completedDist.ModuleAccount, int64(completedDist.ScheduledTime))
-		if err := k.CompletedDistributions.Set(ctx, key, completedDist); err != nil {
+	// Clear any existing allocation schedule
+	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
+	if err != nil {
+		panic(err)
+	}
+	var timestampsToRemove []uint64
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			iter.Close()
+			panic(err)
+		}
+		timestampsToRemove = append(timestampsToRemove, kv.Key)
+	}
+	iter.Close()
+	for _, ts := range timestampsToRemove {
+		if err := k.AllocationSchedule.Remove(ctx, ts); err != nil {
 			panic(err)
 		}
 	}
 
-	// Rebuild pending queue from schedule + completed distributions for consistency
-	// Don't trust provided PendingDistributionTimestamps
-	if err := k.rebuildPendingQueue(ctx); err != nil {
-		panic(err)
+	// Populate allocation schedule from genesis state
+	for _, scheduledDist := range genState.ScheduledDistributions {
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist); err != nil {
+			panic(err)
+		}
 	}
 
 	return nil
@@ -43,38 +58,36 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	if genesis.Params.ExcludedAddresses == nil {
 		genesis.Params.ExcludedAddresses = []string{}
 	}
-	if genesis.Params.SubAccountMappings == nil {
-		genesis.Params.SubAccountMappings = []types.SubAccountMapping{}
-	}
-	if genesis.Params.DistributionSchedule == nil {
-		genesis.Params.DistributionSchedule = []types.DistributionPeriod{}
+	if genesis.Params.ClearingAccountMappings == nil {
+		genesis.Params.ClearingAccountMappings = []types.ClearingAccountMapping{}
 	}
 
-	genesis.CompletedDistributions, err = k.GetCompletedDistributions(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// Normalize nil slice to empty slice
-	if genesis.CompletedDistributions == nil {
-		genesis.CompletedDistributions = []types.CompletedDistribution{}
-	}
-
-	// Export pending timestamps
-	iter, err := k.PendingTimestamps.Iterate(ctx, nil)
+	// Export allocation schedule from map to sorted list
+	var allocationSchedule []types.ScheduledDistribution
+	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer iter.Close()
+
 	for ; iter.Valid(); iter.Next() {
-		timestamp, err := iter.Key()
+		kv, err := iter.KeyValue()
 		if err != nil {
 			return nil, err
 		}
-		genesis.PendingDistributionTimestamps = append(genesis.PendingDistributionTimestamps, timestamp)
+		allocationSchedule = append(allocationSchedule, kv.Value)
 	}
+
+	// Sort by timestamp in ascending order
+	sort.Slice(allocationSchedule, func(i, j int) bool {
+		return allocationSchedule[i].Timestamp < allocationSchedule[j].Timestamp
+	})
+
+	genesis.ScheduledDistributions = allocationSchedule
+
 	// Normalize nil slice to empty slice
-	if genesis.PendingDistributionTimestamps == nil {
-		genesis.PendingDistributionTimestamps = []uint64{}
+	if genesis.ScheduledDistributions == nil {
+		genesis.ScheduledDistributions = []types.ScheduledDistribution{}
 	}
 
 	return genesis, nil

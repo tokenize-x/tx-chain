@@ -25,27 +25,27 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// SubAccountMapping defines the mapping between a module account and its sub account (multisig wallet).
+// ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipient (sub account multisig wallet).
 // This mapping can be modified via governance proposals.
-type SubAccountMapping struct {
+type ClearingAccountMapping struct {
 	// module_account is the name of the module account holding the tokens to be distributed.
-	ModuleAccount string `protobuf:"bytes,1,opt,name=module_account,json=moduleAccount,proto3" json:"module_account,omitempty" yaml:"module_account"`
-	// sub_account_address is the multisig wallet address that will receive the token distributions.
-	SubAccountAddress string `protobuf:"bytes,2,opt,name=sub_account_address,json=subAccountAddress,proto3" json:"sub_account_address,omitempty" yaml:"sub_account_address"`
+	ClearingAccount string `protobuf:"bytes,1,opt,name=clearing_account,json=clearingAccount,proto3" json:"clearing_account,omitempty" yaml:"module_account"`
+	// recipient_address is the multisig wallet address that will receive the token distributions.
+	RecipientAddress string `protobuf:"bytes,2,opt,name=recipient_address,json=recipientAddress,proto3" json:"recipient_address,omitempty" yaml:"sub_account_address"`
 }
 
-func (m *SubAccountMapping) Reset()         { *m = SubAccountMapping{} }
-func (m *SubAccountMapping) String() string { return proto.CompactTextString(m) }
-func (*SubAccountMapping) ProtoMessage()    {}
-func (*SubAccountMapping) Descriptor() ([]byte, []int) {
+func (m *ClearingAccountMapping) Reset()         { *m = ClearingAccountMapping{} }
+func (m *ClearingAccountMapping) String() string { return proto.CompactTextString(m) }
+func (*ClearingAccountMapping) ProtoMessage()    {}
+func (*ClearingAccountMapping) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a549fe743b42ab69, []int{0}
 }
-func (m *SubAccountMapping) XXX_Unmarshal(b []byte) error {
+func (m *ClearingAccountMapping) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SubAccountMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClearingAccountMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_SubAccountMapping.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ClearingAccountMapping.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -55,53 +55,53 @@ func (m *SubAccountMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *SubAccountMapping) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SubAccountMapping.Merge(m, src)
+func (m *ClearingAccountMapping) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClearingAccountMapping.Merge(m, src)
 }
-func (m *SubAccountMapping) XXX_Size() int {
+func (m *ClearingAccountMapping) XXX_Size() int {
 	return m.Size()
 }
-func (m *SubAccountMapping) XXX_DiscardUnknown() {
-	xxx_messageInfo_SubAccountMapping.DiscardUnknown(m)
+func (m *ClearingAccountMapping) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClearingAccountMapping.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SubAccountMapping proto.InternalMessageInfo
+var xxx_messageInfo_ClearingAccountMapping proto.InternalMessageInfo
 
-func (m *SubAccountMapping) GetModuleAccount() string {
+func (m *ClearingAccountMapping) GetClearingAccount() string {
 	if m != nil {
-		return m.ModuleAccount
+		return m.ClearingAccount
 	}
 	return ""
 }
 
-func (m *SubAccountMapping) GetSubAccountAddress() string {
+func (m *ClearingAccountMapping) GetRecipientAddress() string {
 	if m != nil {
-		return m.SubAccountAddress
+		return m.RecipientAddress
 	}
 	return ""
 }
 
-// ModuleDistribution defines the amount to be distributed from a specific module account.
-type ModuleDistribution struct {
-	// module_account is the name of the module account.
-	ModuleAccount string `protobuf:"bytes,1,opt,name=module_account,json=moduleAccount,proto3" json:"module_account,omitempty" yaml:"module_account"`
-	// amount is the number of tokens to distribute from this module account.
-	// This amount is for the distribution denom (see DistributionDenom constant).
+// ClearingAccountAllocation defines the amount to be allocated from a specific clearing account (module account).
+type ClearingAccountAllocation struct {
+	// clearing_account is the name of the clearing account (module account).
+	ClearingAccount string `protobuf:"bytes,1,opt,name=clearing_account,json=clearingAccount,proto3" json:"clearing_account,omitempty" yaml:"clearing_account"`
+	// amount is the number of tokens to allocate from this clearing account.
+	// This amount is for the allocation denom (see AllocationDenom constant).
 	Amount cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=amount,proto3,customtype=cosmossdk.io/math.Int" json:"amount" yaml:"amount"`
 }
 
-func (m *ModuleDistribution) Reset()         { *m = ModuleDistribution{} }
-func (m *ModuleDistribution) String() string { return proto.CompactTextString(m) }
-func (*ModuleDistribution) ProtoMessage()    {}
-func (*ModuleDistribution) Descriptor() ([]byte, []int) {
+func (m *ClearingAccountAllocation) Reset()         { *m = ClearingAccountAllocation{} }
+func (m *ClearingAccountAllocation) String() string { return proto.CompactTextString(m) }
+func (*ClearingAccountAllocation) ProtoMessage()    {}
+func (*ClearingAccountAllocation) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a549fe743b42ab69, []int{1}
 }
-func (m *ModuleDistribution) XXX_Unmarshal(b []byte) error {
+func (m *ClearingAccountAllocation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ModuleDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ClearingAccountAllocation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ModuleDistribution.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ClearingAccountAllocation.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -111,46 +111,46 @@ func (m *ModuleDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *ModuleDistribution) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ModuleDistribution.Merge(m, src)
+func (m *ClearingAccountAllocation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClearingAccountAllocation.Merge(m, src)
 }
-func (m *ModuleDistribution) XXX_Size() int {
+func (m *ClearingAccountAllocation) XXX_Size() int {
 	return m.Size()
 }
-func (m *ModuleDistribution) XXX_DiscardUnknown() {
-	xxx_messageInfo_ModuleDistribution.DiscardUnknown(m)
+func (m *ClearingAccountAllocation) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClearingAccountAllocation.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ModuleDistribution proto.InternalMessageInfo
+var xxx_messageInfo_ClearingAccountAllocation proto.InternalMessageInfo
 
-func (m *ModuleDistribution) GetModuleAccount() string {
+func (m *ClearingAccountAllocation) GetClearingAccount() string {
 	if m != nil {
-		return m.ModuleAccount
+		return m.ClearingAccount
 	}
 	return ""
 }
 
-// DistributionPeriod defines a single distribution event at a specific timestamp.
-// Multiple module accounts can distribute tokens at the same time.
-type DistributionPeriod struct {
-	// distribution_time is when this distribution should occur (Unix timestamp in seconds).
-	DistributionTime uint64 `protobuf:"varint,1,opt,name=distribution_time,json=distributionTime,proto3" json:"distribution_time,omitempty" yaml:"distribution_time"`
-	// distributions is the list of amounts to distribute from each module account at this time.
-	Distributions []ModuleDistribution `protobuf:"bytes,2,rep,name=distributions,proto3" json:"distributions" yaml:"distributions"`
+// ScheduledDistribution defines a single allocation event at a specific timestamp.
+// Multiple clearing accounts can allocate tokens at the same time.
+type ScheduledDistribution struct {
+	// timestamp is when this allocation should occur (Unix timestamp in seconds).
+	Timestamp uint64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty" yaml:"timestamp"`
+	// allocations is the list of amounts to allocate from each clearing account at this time.
+	Allocations []ClearingAccountAllocation `protobuf:"bytes,2,rep,name=allocations,proto3" json:"allocations" yaml:"allocations"`
 }
 
-func (m *DistributionPeriod) Reset()         { *m = DistributionPeriod{} }
-func (m *DistributionPeriod) String() string { return proto.CompactTextString(m) }
-func (*DistributionPeriod) ProtoMessage()    {}
-func (*DistributionPeriod) Descriptor() ([]byte, []int) {
+func (m *ScheduledDistribution) Reset()         { *m = ScheduledDistribution{} }
+func (m *ScheduledDistribution) String() string { return proto.CompactTextString(m) }
+func (*ScheduledDistribution) ProtoMessage()    {}
+func (*ScheduledDistribution) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a549fe743b42ab69, []int{2}
 }
-func (m *DistributionPeriod) XXX_Unmarshal(b []byte) error {
+func (m *ScheduledDistribution) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *DistributionPeriod) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ScheduledDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_DistributionPeriod.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ScheduledDistribution.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -160,241 +160,74 @@ func (m *DistributionPeriod) XXX_Marshal(b []byte, deterministic bool) ([]byte, 
 		return b[:n], nil
 	}
 }
-func (m *DistributionPeriod) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DistributionPeriod.Merge(m, src)
+func (m *ScheduledDistribution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScheduledDistribution.Merge(m, src)
 }
-func (m *DistributionPeriod) XXX_Size() int {
+func (m *ScheduledDistribution) XXX_Size() int {
 	return m.Size()
 }
-func (m *DistributionPeriod) XXX_DiscardUnknown() {
-	xxx_messageInfo_DistributionPeriod.DiscardUnknown(m)
+func (m *ScheduledDistribution) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScheduledDistribution.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DistributionPeriod proto.InternalMessageInfo
+var xxx_messageInfo_ScheduledDistribution proto.InternalMessageInfo
 
-func (m *DistributionPeriod) GetDistributionTime() uint64 {
+func (m *ScheduledDistribution) GetTimestamp() uint64 {
 	if m != nil {
-		return m.DistributionTime
+		return m.Timestamp
 	}
 	return 0
 }
 
-func (m *DistributionPeriod) GetDistributions() []ModuleDistribution {
+func (m *ScheduledDistribution) GetAllocations() []ClearingAccountAllocation {
 	if m != nil {
-		return m.Distributions
-	}
-	return nil
-}
-
-// CompletedDistribution tracks a distribution that has been executed.
-// These are immutable historical records.
-type CompletedDistribution struct {
-	// module_account is the name of the module account that distributed the tokens.
-	ModuleAccount string `protobuf:"bytes,1,opt,name=module_account,json=moduleAccount,proto3" json:"module_account,omitempty" yaml:"module_account"`
-	// sub_account is the multisig wallet address that received the distribution.
-	SubAccount string `protobuf:"bytes,2,opt,name=sub_account,json=subAccount,proto3" json:"sub_account,omitempty" yaml:"sub_account"`
-	// scheduled_time was the originally scheduled distribution time (Unix timestamp in seconds).
-	ScheduledTime uint64 `protobuf:"varint,3,opt,name=scheduled_time,json=scheduledTime,proto3" json:"scheduled_time,omitempty" yaml:"scheduled_time"`
-	// actual_distribution_time is when the distribution actually occurred (Unix timestamp in seconds).
-	ActualDistributionTime uint64 `protobuf:"varint,4,opt,name=actual_distribution_time,json=actualDistributionTime,proto3" json:"actual_distribution_time,omitempty" yaml:"actual_distribution_time"`
-	// amount is the number of tokens that were distributed.
-	Amount cosmossdk_io_math.Int `protobuf:"bytes,5,opt,name=amount,proto3,customtype=cosmossdk.io/math.Int" json:"amount" yaml:"amount"`
-	// block_height is the block height at which the distribution occurred.
-	BlockHeight int64 `protobuf:"varint,6,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty" yaml:"block_height"`
-}
-
-func (m *CompletedDistribution) Reset()         { *m = CompletedDistribution{} }
-func (m *CompletedDistribution) String() string { return proto.CompactTextString(m) }
-func (*CompletedDistribution) ProtoMessage()    {}
-func (*CompletedDistribution) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a549fe743b42ab69, []int{3}
-}
-func (m *CompletedDistribution) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CompletedDistribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CompletedDistribution.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CompletedDistribution) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CompletedDistribution.Merge(m, src)
-}
-func (m *CompletedDistribution) XXX_Size() int {
-	return m.Size()
-}
-func (m *CompletedDistribution) XXX_DiscardUnknown() {
-	xxx_messageInfo_CompletedDistribution.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CompletedDistribution proto.InternalMessageInfo
-
-func (m *CompletedDistribution) GetModuleAccount() string {
-	if m != nil {
-		return m.ModuleAccount
-	}
-	return ""
-}
-
-func (m *CompletedDistribution) GetSubAccount() string {
-	if m != nil {
-		return m.SubAccount
-	}
-	return ""
-}
-
-func (m *CompletedDistribution) GetScheduledTime() uint64 {
-	if m != nil {
-		return m.ScheduledTime
-	}
-	return 0
-}
-
-func (m *CompletedDistribution) GetActualDistributionTime() uint64 {
-	if m != nil {
-		return m.ActualDistributionTime
-	}
-	return 0
-}
-
-func (m *CompletedDistribution) GetBlockHeight() int64 {
-	if m != nil {
-		return m.BlockHeight
-	}
-	return 0
-}
-
-// PendingDistributionInfo provides detailed information about a scheduled pending distribution.
-// used for query purposes to get the details of a pending distribution.
-type PendingDistributionInfo struct {
-	// distribution_time is when this distribution is scheduled to occur (Unix timestamp in seconds).
-	DistributionTime uint64 `protobuf:"varint,1,opt,name=distribution_time,json=distributionTime,proto3" json:"distribution_time,omitempty" yaml:"distribution_time"`
-	// remaining_seconds is the time remaining until the distribution occurs (in seconds).
-	// This is calculated as distribution_time - current_block_time.
-	// Will be 0 if the distribution is overdue (shouldn't happen in normal operation).
-	RemainingSeconds int64 `protobuf:"varint,2,opt,name=remaining_seconds,json=remainingSeconds,proto3" json:"remaining_seconds,omitempty" yaml:"remaining_seconds"`
-	// distributions is the list of amounts that will be distributed from each module account at this time.
-	Distributions []ModuleDistribution `protobuf:"bytes,3,rep,name=distributions,proto3" json:"distributions" yaml:"distributions"`
-	// total_amount is the sum of all distribution amounts across all module accounts for this period.
-	TotalAmount cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=total_amount,json=totalAmount,proto3,customtype=cosmossdk.io/math.Int" json:"total_amount" yaml:"total_amount"`
-}
-
-func (m *PendingDistributionInfo) Reset()         { *m = PendingDistributionInfo{} }
-func (m *PendingDistributionInfo) String() string { return proto.CompactTextString(m) }
-func (*PendingDistributionInfo) ProtoMessage()    {}
-func (*PendingDistributionInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a549fe743b42ab69, []int{4}
-}
-func (m *PendingDistributionInfo) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *PendingDistributionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_PendingDistributionInfo.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *PendingDistributionInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PendingDistributionInfo.Merge(m, src)
-}
-func (m *PendingDistributionInfo) XXX_Size() int {
-	return m.Size()
-}
-func (m *PendingDistributionInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_PendingDistributionInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_PendingDistributionInfo proto.InternalMessageInfo
-
-func (m *PendingDistributionInfo) GetDistributionTime() uint64 {
-	if m != nil {
-		return m.DistributionTime
-	}
-	return 0
-}
-
-func (m *PendingDistributionInfo) GetRemainingSeconds() int64 {
-	if m != nil {
-		return m.RemainingSeconds
-	}
-	return 0
-}
-
-func (m *PendingDistributionInfo) GetDistributions() []ModuleDistribution {
-	if m != nil {
-		return m.Distributions
+		return m.Allocations
 	}
 	return nil
 }
 
 func init() {
-	proto.RegisterType((*SubAccountMapping)(nil), "tx.pse.v1.SubAccountMapping")
-	proto.RegisterType((*ModuleDistribution)(nil), "tx.pse.v1.ModuleDistribution")
-	proto.RegisterType((*DistributionPeriod)(nil), "tx.pse.v1.DistributionPeriod")
-	proto.RegisterType((*CompletedDistribution)(nil), "tx.pse.v1.CompletedDistribution")
-	proto.RegisterType((*PendingDistributionInfo)(nil), "tx.pse.v1.PendingDistributionInfo")
+	proto.RegisterType((*ClearingAccountMapping)(nil), "tx.pse.v1.ClearingAccountMapping")
+	proto.RegisterType((*ClearingAccountAllocation)(nil), "tx.pse.v1.ClearingAccountAllocation")
+	proto.RegisterType((*ScheduledDistribution)(nil), "tx.pse.v1.ScheduledDistribution")
 }
 
 func init() { proto.RegisterFile("tx/pse/v1/distribution.proto", fileDescriptor_a549fe743b42ab69) }
 
 var fileDescriptor_a549fe743b42ab69 = []byte{
-	// 640 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xb1, 0x4f, 0xdb, 0x4e,
-	0x18, 0x8d, 0x09, 0x3f, 0x24, 0x2e, 0xe4, 0x27, 0x62, 0xa0, 0x04, 0x44, 0x63, 0x74, 0x5d, 0x58,
-	0x62, 0x8b, 0x56, 0x62, 0x40, 0x1d, 0x4a, 0x8a, 0xd4, 0x66, 0x40, 0x45, 0x86, 0xa9, 0x52, 0x65,
-	0x5d, 0xec, 0xc3, 0x3e, 0x61, 0xdf, 0x59, 0xbe, 0x33, 0x0a, 0xfd, 0x2b, 0xfa, 0x87, 0x74, 0xec,
-	0xda, 0xa5, 0x13, 0x23, 0xea, 0x54, 0x55, 0xaa, 0x55, 0xc1, 0x7f, 0xe0, 0xad, 0x5b, 0xe5, 0x3b,
-	0x37, 0x38, 0xb8, 0xa8, 0x4b, 0xb6, 0xdc, 0xf7, 0xbe, 0x7b, 0xf7, 0xbe, 0xf7, 0x3d, 0x39, 0x60,
-	0x4b, 0x8c, 0xad, 0x98, 0x63, 0xeb, 0x62, 0xd7, 0xf2, 0x08, 0x17, 0x09, 0x19, 0xa5, 0x82, 0x30,
-	0x6a, 0xc6, 0x09, 0x13, 0x4c, 0x5f, 0x14, 0x63, 0x33, 0xe6, 0xd8, 0xbc, 0xd8, 0xdd, 0x5c, 0xf5,
-	0x99, 0xcf, 0x64, 0xd5, 0x2a, 0x7e, 0xa9, 0x86, 0xcd, 0x0d, 0x97, 0xf1, 0x88, 0x71, 0x47, 0x01,
-	0xea, 0xa0, 0x20, 0xf8, 0x59, 0x03, 0x9d, 0x93, 0x74, 0x74, 0xe0, 0xba, 0x2c, 0xa5, 0xe2, 0x08,
-	0xc5, 0x31, 0xa1, 0xbe, 0xfe, 0x02, 0xfc, 0x1f, 0x31, 0x2f, 0x0d, 0xb1, 0x83, 0x14, 0xd0, 0xd5,
-	0xb6, 0xb5, 0x9d, 0xc5, 0xc1, 0x46, 0x9e, 0x19, 0x6b, 0x97, 0x28, 0x0a, 0xf7, 0xe1, 0x34, 0x0e,
-	0xed, 0xb6, 0x2a, 0x94, 0x44, 0xfa, 0x19, 0x58, 0xe1, 0xe9, 0xe8, 0x0f, 0xec, 0x20, 0xcf, 0x4b,
-	0x30, 0xe7, 0xdd, 0x39, 0x49, 0xb3, 0x97, 0x67, 0xc6, 0xa6, 0xa2, 0xf9, 0x4b, 0x13, 0xfc, 0xfa,
-	0xa9, 0xbf, 0x5a, 0x8a, 0x3c, 0x50, 0xa5, 0x13, 0x91, 0x10, 0xea, 0xdb, 0x1d, 0x3e, 0x51, 0x5a,
-	0x02, 0xf0, 0xa3, 0x06, 0xf4, 0x23, 0xf9, 0xf2, 0x61, 0xc5, 0x98, 0x19, 0x0c, 0x70, 0x0a, 0x16,
-	0x50, 0x24, 0x6f, 0x2a, 0xcd, 0xcf, 0xaf, 0x32, 0xa3, 0xf1, 0x3d, 0x33, 0xd6, 0x94, 0x32, 0xee,
-	0x9d, 0x9b, 0x84, 0x59, 0x11, 0x12, 0x81, 0x39, 0xa4, 0x22, 0xcf, 0x8c, 0xb6, 0xa2, 0x55, 0x97,
-	0x8a, 0x19, 0x40, 0x39, 0xc3, 0x90, 0x0a, 0xbb, 0xe4, 0x82, 0x5f, 0x34, 0xa0, 0x57, 0x85, 0x1e,
-	0xe3, 0x84, 0x30, 0x4f, 0x1f, 0x82, 0x4e, 0x75, 0xaf, 0x8e, 0x20, 0x11, 0x96, 0x8a, 0xe7, 0x07,
-	0x5b, 0x79, 0x66, 0x74, 0x15, 0x75, 0xad, 0x05, 0xda, 0xcb, 0xd5, 0xda, 0x29, 0x89, 0xb0, 0x8e,
-	0x40, 0xbb, 0x5a, 0x2b, 0x2c, 0x6f, 0xee, 0xb4, 0x9e, 0x3e, 0x36, 0x27, 0x21, 0x31, 0xeb, 0x7e,
-	0x0d, 0xb6, 0x8a, 0xe9, 0xf2, 0xcc, 0x58, 0xad, 0xbf, 0xc4, 0xa1, 0x3d, 0xcd, 0x08, 0x7f, 0x34,
-	0xc1, 0xda, 0x4b, 0x16, 0xc5, 0x21, 0x16, 0xd8, 0x9b, 0xb1, 0xed, 0x6f, 0x40, 0xab, 0x12, 0x89,
-	0xd2, 0x7b, 0x33, 0xcf, 0x0c, 0xbd, 0x96, 0x97, 0x87, 0x73, 0x02, 0xee, 0x72, 0x52, 0x48, 0xe2,
-	0x6e, 0x80, 0x8b, 0x37, 0x3c, 0xe5, 0x6b, 0x53, 0xfa, 0x5a, 0x91, 0x34, 0x8d, 0x43, 0xbb, 0x3d,
-	0x29, 0x48, 0x47, 0xdf, 0x81, 0x2e, 0x72, 0x45, 0x8a, 0x42, 0xa7, 0xbe, 0xa3, 0x79, 0xc9, 0xf5,
-	0x24, 0xcf, 0x0c, 0xa3, 0x5c, 0xff, 0x03, 0x9d, 0xd0, 0x7e, 0xa4, 0xa0, 0xc3, 0xfb, 0x0b, 0xbb,
-	0x0b, 0xda, 0x7f, 0xb3, 0x0b, 0x9a, 0xbe, 0x0f, 0x96, 0x46, 0x21, 0x73, 0xcf, 0x9d, 0x00, 0x13,
-	0x3f, 0x10, 0xdd, 0x85, 0x6d, 0x6d, 0xa7, 0x39, 0x58, 0xcf, 0x33, 0x63, 0x45, 0x5d, 0xaf, 0xa2,
-	0xd0, 0x6e, 0xc9, 0xe3, 0x6b, 0x75, 0xfa, 0x35, 0x07, 0xd6, 0x8f, 0x31, 0xf5, 0x08, 0xf5, 0xab,
-	0x6a, 0x87, 0xf4, 0x8c, 0xcd, 0x32, 0xa9, 0x43, 0xd0, 0x49, 0x70, 0x84, 0x08, 0x25, 0xd4, 0x77,
-	0x38, 0x76, 0x19, 0xf5, 0xd4, 0x07, 0xa2, 0x59, 0xa5, 0xaa, 0xb5, 0x40, 0x7b, 0x79, 0x52, 0x3b,
-	0x51, 0xa5, 0x7a, 0xe8, 0x9b, 0xb3, 0x0e, 0xbd, 0x8e, 0xc1, 0x92, 0x60, 0x02, 0x85, 0x4e, 0xb9,
-	0xac, 0x79, 0xb9, 0xac, 0xc1, 0xbf, 0x96, 0x55, 0xba, 0x5d, 0xbd, 0x7a, 0x7f, 0x65, 0x2d, 0x09,
-	0x1e, 0x48, 0x6c, 0xf0, 0xea, 0xea, 0xa6, 0xa7, 0x5d, 0xdf, 0xf4, 0xb4, 0x9f, 0x37, 0x3d, 0xed,
-	0xc3, 0x6d, 0xaf, 0x71, 0x7d, 0xdb, 0x6b, 0x7c, 0xbb, 0xed, 0x35, 0xde, 0xf6, 0x7d, 0x22, 0x82,
-	0x74, 0x64, 0xba, 0x2c, 0xb2, 0x04, 0x3b, 0xc7, 0x94, 0xbc, 0xc7, 0xfd, 0xb1, 0x25, 0xc6, 0x7d,
-	0x37, 0x40, 0x84, 0x5a, 0x17, 0x7b, 0x96, 0xfa, 0x93, 0x10, 0x97, 0x31, 0xe6, 0xa3, 0x05, 0xf9,
-	0x7d, 0x7f, 0xf6, 0x3b, 0x00, 0x00, 0xff, 0xff, 0x04, 0x75, 0x20, 0xa8, 0x3b, 0x06, 0x00, 0x00,
+	// 456 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0x31, 0x6f, 0xd3, 0x40,
+	0x14, 0xc7, 0x63, 0x40, 0x95, 0x72, 0x15, 0x22, 0x58, 0x09, 0x34, 0x01, 0xd9, 0xc8, 0x62, 0xe8,
+	0x12, 0x9f, 0x5a, 0xa4, 0x0e, 0x88, 0x25, 0xa1, 0x02, 0x75, 0x60, 0x71, 0x99, 0x58, 0xa2, 0xf3,
+	0xf9, 0xe4, 0x9c, 0x6a, 0xdf, 0x9d, 0x7c, 0xcf, 0x51, 0xca, 0xa7, 0xe0, 0x9b, 0xb0, 0xb0, 0x30,
+	0xb3, 0x74, 0xac, 0x98, 0x10, 0xc3, 0x09, 0x25, 0xdf, 0xc0, 0x9f, 0x00, 0xd9, 0xe7, 0xa4, 0xa5,
+	0x22, 0x9b, 0xfd, 0xfe, 0xef, 0xfd, 0xf4, 0xff, 0xbf, 0x7b, 0xe8, 0x39, 0x2c, 0xb1, 0xd2, 0x0c,
+	0x2f, 0x8e, 0x70, 0xc2, 0x35, 0x14, 0x3c, 0x2e, 0x81, 0x4b, 0x11, 0xaa, 0x42, 0x82, 0x74, 0xbb,
+	0xb0, 0x0c, 0x95, 0x66, 0xe1, 0xe2, 0x68, 0xd4, 0x4f, 0x65, 0x2a, 0x9b, 0x2a, 0xae, 0xbf, 0x6c,
+	0xc3, 0x68, 0x48, 0xa5, 0xce, 0xa5, 0x9e, 0x59, 0xc1, 0xfe, 0x58, 0x29, 0xf8, 0xe1, 0xa0, 0x27,
+	0x6f, 0x33, 0x46, 0x0a, 0x2e, 0xd2, 0x09, 0xa5, 0xb2, 0x14, 0xf0, 0x81, 0x28, 0xc5, 0x45, 0xea,
+	0x9e, 0xa2, 0x1e, 0x6d, 0x95, 0x19, 0xb1, 0xd2, 0x81, 0xf3, 0xc2, 0x39, 0xec, 0x4e, 0x87, 0x95,
+	0xf1, 0x07, 0x97, 0x24, 0xcf, 0x5e, 0x07, 0xb9, 0x4c, 0xca, 0x8c, 0x6d, 0xf4, 0x20, 0x7a, 0x44,
+	0xff, 0x85, 0xb9, 0x14, 0x3d, 0x2e, 0x18, 0xe5, 0x8a, 0x33, 0x01, 0x33, 0x92, 0x24, 0x05, 0xd3,
+	0xfa, 0xe0, 0x5e, 0x83, 0x39, 0xa9, 0x8c, 0x3f, 0xb2, 0x18, 0x5d, 0xc6, 0x1b, 0xc6, 0xa6, 0x29,
+	0xf8, 0xf9, 0x6d, 0xdc, 0x6f, 0xbd, 0x4e, 0x6c, 0xe9, 0x1c, 0x6a, 0x72, 0xd4, 0xdb, 0x02, 0xdb,
+	0x7a, 0xf0, 0xdd, 0x41, 0xc3, 0x3b, 0x29, 0x26, 0x59, 0x26, 0x29, 0xa9, 0xb7, 0xe4, 0xbe, 0xdb,
+	0x19, 0xe4, 0x59, 0x65, 0xfc, 0xa7, 0xd6, 0xc1, 0xdd, 0x8e, 0xff, 0x44, 0xf9, 0x88, 0xf6, 0x48,
+	0xde, 0x4c, 0x5b, 0xff, 0x6f, 0xae, 0x8c, 0xdf, 0xf9, 0x6d, 0xfc, 0x81, 0x75, 0xa9, 0x93, 0x8b,
+	0x90, 0x4b, 0x9c, 0x13, 0x98, 0x87, 0x67, 0x02, 0x2a, 0xe3, 0x3f, 0xb4, 0x68, 0x3b, 0x54, 0xe7,
+	0x41, 0x6d, 0x9e, 0x33, 0x01, 0x51, 0xcb, 0x0a, 0xbe, 0x3a, 0x68, 0x70, 0x4e, 0xe7, 0xac, 0xde,
+	0x63, 0x72, 0x7a, 0xeb, 0x75, 0xdd, 0x63, 0xd4, 0x05, 0x9e, 0x33, 0x0d, 0x24, 0x57, 0x8d, 0xe1,
+	0x07, 0xd3, 0x7e, 0x65, 0xfc, 0x9e, 0xa5, 0x6e, 0xa5, 0x20, 0xba, 0x69, 0x73, 0x63, 0xb4, 0x4f,
+	0xb6, 0xc9, 0xeb, 0x45, 0xdf, 0x3f, 0xdc, 0x3f, 0x7e, 0x19, 0x6e, 0x2f, 0x24, 0xdc, 0xb9, 0xa6,
+	0xe9, 0xa8, 0x8e, 0x53, 0x19, 0xdf, 0x6d, 0x5d, 0xdf, 0x60, 0x82, 0xe8, 0x36, 0x74, 0xfa, 0xfe,
+	0x6a, 0xe5, 0x39, 0xd7, 0x2b, 0xcf, 0xf9, 0xb3, 0xf2, 0x9c, 0x2f, 0x6b, 0xaf, 0x73, 0xbd, 0xf6,
+	0x3a, 0xbf, 0xd6, 0x5e, 0xe7, 0xd3, 0x38, 0xe5, 0x30, 0x2f, 0xe3, 0x90, 0xca, 0x1c, 0x83, 0xbc,
+	0x60, 0x82, 0x7f, 0x66, 0xe3, 0x25, 0x86, 0xe5, 0x98, 0xce, 0x09, 0x17, 0x78, 0x71, 0x82, 0xed,
+	0x21, 0xc3, 0xa5, 0x62, 0x3a, 0xde, 0x6b, 0x6e, 0xf0, 0xd5, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xca, 0x50, 0x67, 0xed, 0xdf, 0x02, 0x00, 0x00,
 }
 
-func (m *SubAccountMapping) Marshal() (dAtA []byte, err error) {
+func (m *ClearingAccountMapping) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -404,34 +237,34 @@ func (m *SubAccountMapping) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SubAccountMapping) MarshalTo(dAtA []byte) (int, error) {
+func (m *ClearingAccountMapping) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *SubAccountMapping) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ClearingAccountMapping) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.SubAccountAddress) > 0 {
-		i -= len(m.SubAccountAddress)
-		copy(dAtA[i:], m.SubAccountAddress)
-		i = encodeVarintDistribution(dAtA, i, uint64(len(m.SubAccountAddress)))
+	if len(m.RecipientAddress) > 0 {
+		i -= len(m.RecipientAddress)
+		copy(dAtA[i:], m.RecipientAddress)
+		i = encodeVarintDistribution(dAtA, i, uint64(len(m.RecipientAddress)))
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.ModuleAccount) > 0 {
-		i -= len(m.ModuleAccount)
-		copy(dAtA[i:], m.ModuleAccount)
-		i = encodeVarintDistribution(dAtA, i, uint64(len(m.ModuleAccount)))
+	if len(m.ClearingAccount) > 0 {
+		i -= len(m.ClearingAccount)
+		copy(dAtA[i:], m.ClearingAccount)
+		i = encodeVarintDistribution(dAtA, i, uint64(len(m.ClearingAccount)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *ModuleDistribution) Marshal() (dAtA []byte, err error) {
+func (m *ClearingAccountAllocation) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -441,12 +274,12 @@ func (m *ModuleDistribution) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ModuleDistribution) MarshalTo(dAtA []byte) (int, error) {
+func (m *ClearingAccountAllocation) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ModuleDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ClearingAccountAllocation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -461,17 +294,17 @@ func (m *ModuleDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x12
-	if len(m.ModuleAccount) > 0 {
-		i -= len(m.ModuleAccount)
-		copy(dAtA[i:], m.ModuleAccount)
-		i = encodeVarintDistribution(dAtA, i, uint64(len(m.ModuleAccount)))
+	if len(m.ClearingAccount) > 0 {
+		i -= len(m.ClearingAccount)
+		copy(dAtA[i:], m.ClearingAccount)
+		i = encodeVarintDistribution(dAtA, i, uint64(len(m.ClearingAccount)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *DistributionPeriod) Marshal() (dAtA []byte, err error) {
+func (m *ScheduledDistribution) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -481,20 +314,20 @@ func (m *DistributionPeriod) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *DistributionPeriod) MarshalTo(dAtA []byte) (int, error) {
+func (m *ScheduledDistribution) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *DistributionPeriod) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ScheduledDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Distributions) > 0 {
-		for iNdEx := len(m.Distributions) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Allocations) > 0 {
+		for iNdEx := len(m.Allocations) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Distributions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Allocations[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -505,127 +338,8 @@ func (m *DistributionPeriod) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x12
 		}
 	}
-	if m.DistributionTime != 0 {
-		i = encodeVarintDistribution(dAtA, i, uint64(m.DistributionTime))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CompletedDistribution) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CompletedDistribution) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CompletedDistribution) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.BlockHeight != 0 {
-		i = encodeVarintDistribution(dAtA, i, uint64(m.BlockHeight))
-		i--
-		dAtA[i] = 0x30
-	}
-	{
-		size := m.Amount.Size()
-		i -= size
-		if _, err := m.Amount.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintDistribution(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x2a
-	if m.ActualDistributionTime != 0 {
-		i = encodeVarintDistribution(dAtA, i, uint64(m.ActualDistributionTime))
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.ScheduledTime != 0 {
-		i = encodeVarintDistribution(dAtA, i, uint64(m.ScheduledTime))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.SubAccount) > 0 {
-		i -= len(m.SubAccount)
-		copy(dAtA[i:], m.SubAccount)
-		i = encodeVarintDistribution(dAtA, i, uint64(len(m.SubAccount)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.ModuleAccount) > 0 {
-		i -= len(m.ModuleAccount)
-		copy(dAtA[i:], m.ModuleAccount)
-		i = encodeVarintDistribution(dAtA, i, uint64(len(m.ModuleAccount)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *PendingDistributionInfo) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PendingDistributionInfo) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *PendingDistributionInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size := m.TotalAmount.Size()
-		i -= size
-		if _, err := m.TotalAmount.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
-		}
-		i = encodeVarintDistribution(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x22
-	if len(m.Distributions) > 0 {
-		for iNdEx := len(m.Distributions) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Distributions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintDistribution(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
-	if m.RemainingSeconds != 0 {
-		i = encodeVarintDistribution(dAtA, i, uint64(m.RemainingSeconds))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.DistributionTime != 0 {
-		i = encodeVarintDistribution(dAtA, i, uint64(m.DistributionTime))
+	if m.Timestamp != 0 {
+		i = encodeVarintDistribution(dAtA, i, uint64(m.Timestamp))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -643,30 +357,30 @@ func encodeVarintDistribution(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *SubAccountMapping) Size() (n int) {
+func (m *ClearingAccountMapping) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.ModuleAccount)
+	l = len(m.ClearingAccount)
 	if l > 0 {
 		n += 1 + l + sovDistribution(uint64(l))
 	}
-	l = len(m.SubAccountAddress)
+	l = len(m.RecipientAddress)
 	if l > 0 {
 		n += 1 + l + sovDistribution(uint64(l))
 	}
 	return n
 }
 
-func (m *ModuleDistribution) Size() (n int) {
+func (m *ClearingAccountAllocation) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.ModuleAccount)
+	l = len(m.ClearingAccount)
 	if l > 0 {
 		n += 1 + l + sovDistribution(uint64(l))
 	}
@@ -675,72 +389,21 @@ func (m *ModuleDistribution) Size() (n int) {
 	return n
 }
 
-func (m *DistributionPeriod) Size() (n int) {
+func (m *ScheduledDistribution) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.DistributionTime != 0 {
-		n += 1 + sovDistribution(uint64(m.DistributionTime))
+	if m.Timestamp != 0 {
+		n += 1 + sovDistribution(uint64(m.Timestamp))
 	}
-	if len(m.Distributions) > 0 {
-		for _, e := range m.Distributions {
+	if len(m.Allocations) > 0 {
+		for _, e := range m.Allocations {
 			l = e.Size()
 			n += 1 + l + sovDistribution(uint64(l))
 		}
 	}
-	return n
-}
-
-func (m *CompletedDistribution) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ModuleAccount)
-	if l > 0 {
-		n += 1 + l + sovDistribution(uint64(l))
-	}
-	l = len(m.SubAccount)
-	if l > 0 {
-		n += 1 + l + sovDistribution(uint64(l))
-	}
-	if m.ScheduledTime != 0 {
-		n += 1 + sovDistribution(uint64(m.ScheduledTime))
-	}
-	if m.ActualDistributionTime != 0 {
-		n += 1 + sovDistribution(uint64(m.ActualDistributionTime))
-	}
-	l = m.Amount.Size()
-	n += 1 + l + sovDistribution(uint64(l))
-	if m.BlockHeight != 0 {
-		n += 1 + sovDistribution(uint64(m.BlockHeight))
-	}
-	return n
-}
-
-func (m *PendingDistributionInfo) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.DistributionTime != 0 {
-		n += 1 + sovDistribution(uint64(m.DistributionTime))
-	}
-	if m.RemainingSeconds != 0 {
-		n += 1 + sovDistribution(uint64(m.RemainingSeconds))
-	}
-	if len(m.Distributions) > 0 {
-		for _, e := range m.Distributions {
-			l = e.Size()
-			n += 1 + l + sovDistribution(uint64(l))
-		}
-	}
-	l = m.TotalAmount.Size()
-	n += 1 + l + sovDistribution(uint64(l))
 	return n
 }
 
@@ -750,7 +413,7 @@ func sovDistribution(x uint64) (n int) {
 func sozDistribution(x uint64) (n int) {
 	return sovDistribution(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SubAccountMapping) Unmarshal(dAtA []byte) error {
+func (m *ClearingAccountMapping) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -773,15 +436,15 @@ func (m *SubAccountMapping) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SubAccountMapping: wiretype end group for non-group")
+			return fmt.Errorf("proto: ClearingAccountMapping: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SubAccountMapping: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ClearingAccountMapping: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModuleAccount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ClearingAccount", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -809,11 +472,11 @@ func (m *SubAccountMapping) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ModuleAccount = string(dAtA[iNdEx:postIndex])
+			m.ClearingAccount = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SubAccountAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RecipientAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -841,7 +504,7 @@ func (m *SubAccountMapping) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SubAccountAddress = string(dAtA[iNdEx:postIndex])
+			m.RecipientAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -864,7 +527,7 @@ func (m *SubAccountMapping) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ModuleDistribution) Unmarshal(dAtA []byte) error {
+func (m *ClearingAccountAllocation) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -887,15 +550,15 @@ func (m *ModuleDistribution) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ModuleDistribution: wiretype end group for non-group")
+			return fmt.Errorf("proto: ClearingAccountAllocation: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ModuleDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ClearingAccountAllocation: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModuleAccount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ClearingAccount", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -923,7 +586,7 @@ func (m *ModuleDistribution) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ModuleAccount = string(dAtA[iNdEx:postIndex])
+			m.ClearingAccount = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -980,7 +643,7 @@ func (m *ModuleDistribution) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DistributionPeriod) Unmarshal(dAtA []byte) error {
+func (m *ScheduledDistribution) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1003,17 +666,17 @@ func (m *DistributionPeriod) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DistributionPeriod: wiretype end group for non-group")
+			return fmt.Errorf("proto: ScheduledDistribution: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DistributionPeriod: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ScheduledDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DistributionTime", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
 			}
-			m.DistributionTime = 0
+			m.Timestamp = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowDistribution
@@ -1023,14 +686,14 @@ func (m *DistributionPeriod) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DistributionTime |= uint64(b&0x7F) << shift
+				m.Timestamp |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Distributions", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Allocations", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1057,369 +720,8 @@ func (m *DistributionPeriod) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Distributions = append(m.Distributions, ModuleDistribution{})
-			if err := m.Distributions[len(m.Distributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDistribution(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CompletedDistribution) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDistribution
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CompletedDistribution: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CompletedDistribution: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ModuleAccount", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ModuleAccount = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SubAccount", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SubAccount = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScheduledTime", wireType)
-			}
-			m.ScheduledTime = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ScheduledTime |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActualDistributionTime", wireType)
-			}
-			m.ActualDistributionTime = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ActualDistributionTime |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Amount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
-			}
-			m.BlockHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.BlockHeight |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipDistribution(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PendingDistributionInfo) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowDistribution
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PendingDistributionInfo: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PendingDistributionInfo: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DistributionTime", wireType)
-			}
-			m.DistributionTime = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.DistributionTime |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RemainingSeconds", wireType)
-			}
-			m.RemainingSeconds = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.RemainingSeconds |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Distributions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Distributions = append(m.Distributions, ModuleDistribution{})
-			if err := m.Distributions[len(m.Distributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TotalAmount", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDistribution
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthDistribution
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.TotalAmount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Allocations = append(m.Allocations, ClearingAccountAllocation{})
+			if err := m.Allocations[len(m.Allocations)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

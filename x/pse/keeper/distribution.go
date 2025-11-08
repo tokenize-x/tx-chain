@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
@@ -10,424 +11,198 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-// ProcessPeriodicDistributions processes all pending periodic distributions.
-// This should be called from EndBlock to automatically distribute tokens based on scheduled timestamps.
-// Distributions are guaranteed to succeed due to upfront validation of mappings and balances.
-func (k Keeper) ProcessPeriodicDistributions(ctx context.Context) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentTimeUnix := uint64(sdkCtx.BlockTime().Unix())
-
-	// Get first pending timestamp (queue is sorted ascending)
-	timestamp, found, err := k.nextPendingTimestamp(ctx)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return nil
-	}
-
-	// If earliest timestamp is in the future, nothing to do this block
-	if timestamp > currentTimeUnix {
-		return nil
-	}
-
-	// Prepare distribution context with all necessary data
-	distCtx, err := k.prepareDistributionContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Process distributions for this timestamp
-	if err := k.processDistributionPeriod(ctx, timestamp, distCtx); err != nil {
-		return err
-	}
-
-	// Clean up completed timestamp
-	return k.cleanupCompletedTimestamp(ctx, timestamp)
-}
-
-// GetCompletedDistributions returns all completed distributions.
-func (k Keeper) GetCompletedDistributions(ctx context.Context) ([]types.CompletedDistribution, error) {
-	var distributions []types.CompletedDistribution
-
-	iter, err := k.CompletedDistributions.Iterate(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		if err != nil {
-			return nil, err
-		}
-		distributions = append(distributions, kv.Value)
-	}
-
-	return distributions, nil
-}
-
-// GetCompletedDistributionsByModule returns completed distributions
-// for a specific module account.
-func (k Keeper) GetCompletedDistributionsByModule(
-	ctx context.Context, moduleAccount string,
-) ([]types.CompletedDistribution, error) {
-	var distributions []types.CompletedDistribution
-
-	iter, err := k.CompletedDistributions.Iterate(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		if err != nil {
-			return nil, err
-		}
-		if kv.Value.ModuleAccount == moduleAccount {
-			distributions = append(distributions, kv.Value)
-		}
-	}
-
-	return distributions, nil
-}
-
-// GetPendingDistributionsInfo returns detailed information about all pending scheduled distributions.
-// It includes timing details, remaining time, and total amounts for each distribution period.
-// Uses the PendingTimestamps queue as the source of truth for what's actually pending.
-func (k Keeper) GetPendingDistributionsInfo(ctx context.Context) ([]types.PendingDistributionInfo, error) {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentTime := uint64(sdkCtx.BlockTime().Unix())
-
-	params, err := k.GetParams(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Build a map of timestamp -> period for quick lookup
-	periodByTimestamp := make(map[uint64]types.DistributionPeriod)
-	for _, period := range params.DistributionSchedule {
-		periodByTimestamp[period.DistributionTime] = period
-	}
-
-	var pendingDistributions []types.PendingDistributionInfo
-
-	// Iterate through the ACTUAL pending queue (source of truth)
-	iter, err := k.PendingTimestamps.Iterate(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		timestamp, err := iter.Key()
-		if err != nil {
-			return nil, err
-		}
-
-		// Get period from schedule - should always exist due to queue sync
-		period, exists := periodByTimestamp[timestamp]
-		if !exists {
-			// Orphaned timestamp - this shouldn't happen but skip if it does
-			sdkCtx.Logger().Error("orphaned timestamp in pending queue", "timestamp", timestamp)
-			continue
-		}
-
-		// Calculate remaining time
-		remainingSeconds := int64(timestamp) - int64(currentTime)
-
-		// Calculate total amount across all module accounts
-		totalAmount := sdkmath.ZeroInt()
-		for _, dist := range period.Distributions {
-			totalAmount = totalAmount.Add(dist.Amount)
-		}
-
-		pendingInfo := types.PendingDistributionInfo{
-			DistributionTime: timestamp,
-			RemainingSeconds: remainingSeconds,
-			Distributions:    period.Distributions,
-			TotalAmount:      totalAmount,
-		}
-
-		pendingDistributions = append(pendingDistributions, pendingInfo)
-	}
-
-	return pendingDistributions, nil
-}
-
-// distributionContext holds all the context needed for processing distributions.
-type distributionContext struct {
-	bondDenom          string
-	subAccountMappings map[string]string // module_account -> sub_account
-	periodByTimestamp  map[uint64]types.DistributionPeriod
-	currentTimeUnix    uint64
-	currentBlockHeight int64
-}
-
-// prepareDistributionContext prepares all necessary context for distribution processing.
-func (k Keeper) prepareDistributionContext(ctx context.Context) (*distributionContext, error) {
+// ProcessClearingAccountDistributions processes the next due distribution from the schedule.
+// Checks the earliest scheduled distribution and processes it if the current block time has passed its timestamp.
+// Only one distribution is processed per call. Should be called from EndBlock.
+func (k Keeper) ProcessClearingAccountDistributions(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Get bond denom from staking params
 	//nolint:contextcheck // this is correct context passing
 	bondDenom, err := k.GetBondDenom(sdkCtx)
 	if err != nil {
-		return nil, err
-	}
-
-	// Get params which contains the distribution schedule
-	params, err := k.GetParams(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Build sub account mappings map
-	subAccountMappings := make(map[string]string)
-	for _, mapping := range params.SubAccountMappings {
-		subAccountMappings[mapping.ModuleAccount] = mapping.SubAccountAddress
-	}
-
-	// Build period lookup map
-	periodByTimestamp := make(map[uint64]types.DistributionPeriod)
-	for _, period := range params.DistributionSchedule {
-		periodByTimestamp[period.DistributionTime] = period
-	}
-
-	return &distributionContext{
-		bondDenom:          bondDenom,
-		subAccountMappings: subAccountMappings,
-		periodByTimestamp:  periodByTimestamp,
-		currentTimeUnix:    uint64(sdkCtx.BlockTime().Unix()),
-		currentBlockHeight: sdkCtx.BlockHeight(),
-	}, nil
-}
-
-// processDistributionPeriod processes all distributions for a specific timestamp.
-// Any failure indicates an invariant violation and returns an error to halt processing.
-func (k Keeper) processDistributionPeriod(
-	ctx context.Context,
-	timestamp uint64,
-	distCtx *distributionContext,
-) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	// Get period from schedule - should always exist due to queue sync
-	period, exists := distCtx.periodByTimestamp[timestamp]
-	if !exists {
-		// Orphaned timestamp in pending queue but not in schedule
-		// This indicates queue desynchronization - critical invariant violation
-		return errorsmod.Wrapf(
-			types.ErrDistributionScheduleNotFound,
-			"pending timestamp %d has no matching distribution period",
-			timestamp,
-		)
-	}
-
-	for _, dist := range period.Distributions {
-		key := types.MakeCompletedDistributionKey(dist.ModuleAccount, int64(timestamp))
-
-		// Check for duplicate completion entries - invariant violation if found
-		hasCompleted, err := k.CompletedDistributions.Has(ctx, key)
-		if err != nil {
-			return errorsmod.Wrapf(
-				types.ErrCompletedDistributionRead,
-				"module '%s' timestamp %d: %v",
-				dist.ModuleAccount,
-				timestamp,
-				err,
-			)
-		}
-		if hasCompleted {
-			return errorsmod.Wrapf(
-				types.ErrDistributionAlreadyCompleted,
-				"module '%s' timestamp %d",
-				dist.ModuleAccount,
-				timestamp,
-			)
-		}
-
-		// Execute single distribution (returns error on invariant failure)
-		if err := k.executeSingleDistribution(ctx, dist, timestamp, distCtx); err != nil {
-			return err
-		}
-
-		sdkCtx.Logger().Info("distributed tokens",
-			"module_account", dist.ModuleAccount,
-			"sub_account", distCtx.subAccountMappings[dist.ModuleAccount],
-			"amount", dist.Amount.String())
-	}
-
-	return nil
-}
-
-// executeSingleDistribution executes a single module distribution.
-func (k Keeper) executeSingleDistribution(
-	ctx context.Context,
-	dist types.ModuleDistribution,
-	timestamp uint64,
-	distCtx *distributionContext,
-) error {
-	// Get the sub account - guaranteed to exist by validation
-	subAccount := distCtx.subAccountMappings[dist.ModuleAccount]
-
-	// Parse sub account address - guaranteed valid by validation
-	subAccountAddr := sdk.MustAccAddressFromBech32(subAccount)
-
-	// Create coins to distribute
-	coinsToDistribute := sdk.NewCoins(sdk.NewCoin(distCtx.bondDenom, dist.Amount))
-
-	// Transfer tokens - error indicates invariant violation
-	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx,
-		dist.ModuleAccount,
-		subAccountAddr,
-		coinsToDistribute,
-	); err != nil {
-		return errorsmod.Wrapf(
-			types.ErrTransferFailed,
-			"balance invariant violated for module '%s': %v",
-			dist.ModuleAccount,
-			err,
-		)
-	}
-
-	// Record completion
-	key := types.MakeCompletedDistributionKey(dist.ModuleAccount, int64(timestamp))
-	completedDist := types.CompletedDistribution{
-		ModuleAccount:          dist.ModuleAccount,
-		SubAccount:             subAccount,
-		ScheduledTime:          timestamp,
-		ActualDistributionTime: distCtx.currentTimeUnix,
-		Amount:                 dist.Amount,
-		BlockHeight:            distCtx.currentBlockHeight,
-	}
-
-	if err := k.CompletedDistributions.Set(ctx, key, completedDist); err != nil {
-		return errorsmod.Wrapf(
-			types.ErrCompletedDistributionRecord,
-			"module '%s' timestamp %d: %v",
-			dist.ModuleAccount,
-			timestamp,
-			err,
-		)
-	}
-
-	// Emit event
-	k.emitDistributionCompletedEvent(ctx, dist, timestamp, distCtx, subAccount)
-
-	return nil
-}
-
-func (k Keeper) emitDistributionCompletedEvent(
-	ctx context.Context,
-	dist types.ModuleDistribution,
-	timestamp uint64,
-	distCtx *distributionContext,
-	subAccount string,
-) {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventDistributionCompleted{
-		ModuleAccount: dist.ModuleAccount,
-		SubAccount:    subAccount,
-		ScheduledTime: timestamp,
-		ActualTime:    distCtx.currentTimeUnix,
-		Amount:        dist.Amount,
-		Denom:         distCtx.bondDenom,
-		BlockHeight:   distCtx.currentBlockHeight,
-	}); err != nil {
-		sdkCtx.Logger().Error("failed to emit event", "error", err)
-	}
-}
-
-func (k Keeper) nextPendingTimestamp(ctx context.Context) (uint64, bool, error) {
-	iter, err := k.PendingTimestamps.Iterate(ctx, nil)
-	if err != nil {
-		return 0, false, err
-	}
-	defer iter.Close()
-
-	if !iter.Valid() {
-		return 0, false, nil
-	}
-
-	timestamp, err := iter.Key()
-	if err != nil {
-		return 0, false, err
-	}
-
-	return timestamp, true, nil
-}
-
-// cleanupCompletedTimestamp removes the processed timestamp from the pending queue.
-func (k Keeper) cleanupCompletedTimestamp(ctx context.Context, timestamp uint64) error {
-	if err := k.PendingTimestamps.Remove(ctx, timestamp); err != nil {
 		return err
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// Get params containing clearing account to recipient address mappings
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
 
-	sdkCtx.Logger().Info("removed completed timestamp from pending queue",
+	// Get iterator for the allocation schedule (sorted by timestamp ascending)
+	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// Return early if schedule is empty
+	if !iter.Valid() {
+		iter.Close()
+		return nil
+	}
+
+	// Extract the earliest scheduled distribution
+	kv, err := iter.KeyValue()
+	iter.Close()
+	if err != nil {
+		return err
+	}
+
+	timestamp := kv.Key
+
+	// Skip if distribution time has not yet arrived
+	// Since the map is sorted by timestamp, if the first item is in the future, all items are
+	if timestamp > uint64(sdkCtx.BlockTime().Unix()) {
+		return nil
+	}
+
+	// Process all allocations scheduled for this timestamp
+	if err := k.processScheduledAllocations(ctx, timestamp, bondDenom, params.ClearingAccountMappings); err != nil {
+		return err
+	}
+
+	// Remove the completed distribution from the schedule
+	if err := k.AllocationSchedule.Remove(ctx, timestamp); err != nil {
+		return err
+	}
+
+	sdkCtx.Logger().Info("processed and removed allocation from schedule",
 		"timestamp", timestamp)
 
 	return nil
 }
 
-// rebuildPendingQueue rebuilds the pending timestamps queue from the distribution schedule
-// and completed distributions. This ensures the queue is in sync with actual state.
-// Used by InitGenesis and when schedule updates are made via governance.
-func (k Keeper) rebuildPendingQueue(ctx context.Context) error {
-	params, err := k.GetParams(ctx)
+// processScheduledAllocations transfers tokens from clearing accounts to their mapped recipients.
+// Processes all allocations within a single scheduled distribution.
+// Any transfer failure indicates a state invariant violation (insufficient balance or invalid recipient).
+func (k Keeper) processScheduledAllocations(
+	ctx context.Context,
+	timestamp uint64,
+	bondDenom string,
+	clearingAccountMappings []types.ClearingAccountMapping,
+) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// Retrieve the scheduled distribution for this timestamp
+	scheduledDistribution, err := k.AllocationSchedule.Get(ctx, timestamp)
 	if err != nil {
-		return err
+		return errorsmod.Wrapf(err, "allocation schedule not found for timestamp %d", timestamp)
 	}
 
-	// Clear existing pending timestamps
-	iter, err := k.PendingTimestamps.Iterate(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	var timestampsToRemove []uint64
-	for ; iter.Valid(); iter.Next() {
-		timestamp, err := iter.Key()
-		if err != nil {
-			iter.Close()
-			return err
-		}
-		timestampsToRemove = append(timestampsToRemove, timestamp)
-	}
-	iter.Close()
-
-	for _, timestamp := range timestampsToRemove {
-		if err := k.PendingTimestamps.Remove(ctx, timestamp); err != nil {
-			return err
-		}
-	}
-
-	// Rebuild from schedule: add timestamps where not all distributions are completed
-	for _, period := range params.DistributionSchedule {
-		allCompleted := true
-		for _, dist := range period.Distributions {
-			key := types.MakeCompletedDistributionKey(dist.ModuleAccount, int64(period.DistributionTime))
-			has, err := k.CompletedDistributions.Has(ctx, key)
-			if err != nil {
-				return err
-			}
-			if !has {
-				allCompleted = false
+	// Transfer tokens for each allocation in this distribution period
+	for _, allocation := range scheduledDistribution.Allocations {
+		// Find the recipient address mapped to this clearing account
+		var recipientAddr string
+		for _, mapping := range clearingAccountMappings {
+			if mapping.ClearingAccount == allocation.ClearingAccount {
+				recipientAddr = mapping.RecipientAddress
 				break
 			}
 		}
 
-		// If not all completed, add to pending queue
-		if !allCompleted {
-			if err := k.PendingTimestamps.Set(ctx, period.DistributionTime); err != nil {
-				return err
+		// Convert recipient address string to SDK account address
+		recipient := sdk.MustAccAddressFromBech32(recipientAddr)
+
+		// Prepare coins to transfer
+		coinsToAllocate := sdk.NewCoins(sdk.NewCoin(bondDenom, allocation.Amount))
+
+		// Transfer tokens from clearing account to recipient
+		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+			ctx,
+			allocation.ClearingAccount,
+			recipient,
+			coinsToAllocate,
+		); err != nil {
+			return errorsmod.Wrapf(
+				types.ErrTransferFailed,
+				"failed to transfer from clearing account '%s': %v",
+				allocation.ClearingAccount,
+				err,
+			)
+		}
+
+		// Emit allocation completed event
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventAllocationCompleted{
+			ClearingAccount:  allocation.ClearingAccount,
+			RecipientAddress: recipientAddr,
+			ScheduledAt:      timestamp,
+			DistributedAt:    uint64(sdkCtx.BlockTime().Unix()),
+			Amount:           allocation.Amount,
+		}); err != nil {
+			sdkCtx.Logger().Error("failed to emit allocation completed event", "error", err)
+		}
+
+		sdkCtx.Logger().Info("allocated tokens",
+			"clearing_account", allocation.ClearingAccount,
+			"recipient", recipientAddr,
+			"amount", allocation.Amount.String())
+	}
+
+	return nil
+}
+
+// CreateDistributionSchedule generates a periodic distribution schedule over n months.
+// Each distribution period allocates an equal portion (1/n) of each module account's total balance.
+// Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
+// Returns the schedule without persisting it to state, making this a pure, testable function.
+func CreateDistributionSchedule(
+	moduleAccountBalances map[string]sdkmath.Int,
+	startTime uint64,
+) ([]types.ScheduledDistribution, error) {
+	if len(moduleAccountBalances) == 0 {
+		return nil, types.ErrNoModuleBalances
+	}
+
+	// Convert Unix timestamp to time.Time for date arithmetic
+	startDateTime := time.Unix(int64(startTime), 0).UTC()
+
+	// Pre-allocate slice with exact capacity for n distribution periods
+	schedule := make([]types.ScheduledDistribution, 0, types.TotalAllocationMonths)
+
+	for month := range types.TotalAllocationMonths {
+		// Calculate distribution timestamp by adding months to start time
+		// AddDate handles month length variations and leap years correctly
+		distributionDateTime := startDateTime.AddDate(0, month, 0)
+		distributionTime := uint64(distributionDateTime.Unix())
+
+		// Build allocations list for this distribution period
+		allocations := make([]types.ClearingAccountAllocation, 0, len(moduleAccountBalances))
+
+		for clearingAccount, totalBalance := range moduleAccountBalances {
+			// Divide total balance equally across all distribution periods using integer division
+			monthlyAmount := totalBalance.QuoRaw(types.TotalAllocationMonths)
+
+			// Fail if balance is too small to distribute over n periods
+			if monthlyAmount.IsZero() {
+				return nil, errorsmod.Wrapf(types.ErrInvalidInput, "clearing account %s: balance too small to divide into monthly distributions", clearingAccount)
 			}
+
+			allocations = append(allocations, types.ClearingAccountAllocation{
+				ClearingAccount: clearingAccount,
+				Amount:          monthlyAmount,
+			})
+		}
+
+		// Add this distribution period to the schedule
+		if len(allocations) > 0 {
+			schedule = append(schedule, types.ScheduledDistribution{
+				Timestamp:   distributionTime,
+				Allocations: allocations,
+			})
 		}
 	}
 
+	return schedule, nil
+}
+
+// SaveDistributionSchedule persists the distribution schedule to blockchain state.
+// Each scheduled distribution is stored in the AllocationSchedule map, indexed by its timestamp.
+func (k Keeper) SaveDistributionSchedule(ctx context.Context, schedule []types.ScheduledDistribution) error {
+	for _, scheduledDist := range schedule {
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist); err != nil {
+			return errorsmod.Wrapf(err, "failed to save distribution at timestamp %d", scheduledDist.Timestamp)
+		}
+	}
 	return nil
 }

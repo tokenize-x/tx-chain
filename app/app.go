@@ -1195,6 +1195,8 @@ func New(
 			app.configurator,
 			app.BankKeeper,
 			app.MintKeeper,
+			app.StakingKeeper,
+			app.PSEKeeper,
 		),
 	}
 

@@ -271,14 +271,12 @@
     - [Msg](#coreum.feemodel.v1.Msg)
   
 - [tx/pse/v1/distribution.proto](#tx/pse/v1/distribution.proto)
-    - [CompletedDistribution](#tx.pse.v1.CompletedDistribution)
-    - [DistributionPeriod](#tx.pse.v1.DistributionPeriod)
-    - [ModuleDistribution](#tx.pse.v1.ModuleDistribution)
-    - [PendingDistributionInfo](#tx.pse.v1.PendingDistributionInfo)
-    - [SubAccountMapping](#tx.pse.v1.SubAccountMapping)
+    - [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation)
+    - [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping)
+    - [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution)
   
 - [tx/pse/v1/event.proto](#tx/pse/v1/event.proto)
-    - [EventDistributionCompleted](#tx.pse.v1.EventDistributionCompleted)
+    - [EventAllocationCompleted](#tx.pse.v1.EventAllocationCompleted)
   
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [GenesisState](#tx.pse.v1.GenesisState)
@@ -5716,101 +5714,32 @@ Msg defines the Msg service.
 
 
 
-<a name="tx.pse.v1.CompletedDistribution"></a>
+<a name="tx.pse.v1.ClearingAccountAllocation"></a>
 
-### CompletedDistribution
-
-```
-CompletedDistribution tracks a distribution that has been executed.
-These are immutable historical records.
-```
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `module_account` | [string](#string) |  |  `module_account is the name of the module account that distributed the tokens.`  |
-| `sub_account` | [string](#string) |  |  `sub_account is the multisig wallet address that received the distribution.`  |
-| `scheduled_time` | [uint64](#uint64) |  |  `scheduled_time was the originally scheduled distribution time (Unix timestamp in seconds).`  |
-| `actual_distribution_time` | [uint64](#uint64) |  |  `actual_distribution_time is when the distribution actually occurred (Unix timestamp in seconds).`  |
-| `amount` | [string](#string) |  |  `amount is the number of tokens that were distributed.`  |
-| `block_height` | [int64](#int64) |  |  `block_height is the block height at which the distribution occurred.`  |
-
-
-
-
-
-
-<a name="tx.pse.v1.DistributionPeriod"></a>
-
-### DistributionPeriod
+### ClearingAccountAllocation
 
 ```
-DistributionPeriod defines a single distribution event at a specific timestamp.
-Multiple module accounts can distribute tokens at the same time.
+ClearingAccountAllocation defines the amount to be allocated from a specific clearing account (module account).
 ```
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `distribution_time` | [uint64](#uint64) |  |  `distribution_time is when this distribution should occur (Unix timestamp in seconds).`  |
-| `distributions` | [ModuleDistribution](#tx.pse.v1.ModuleDistribution) | repeated |  `distributions is the list of amounts to distribute from each module account at this time.`  |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account (module account).`  |
+| `amount` | [string](#string) |  |  `amount is the number of tokens to allocate from this clearing account. This amount is for the allocation denom (see AllocationDenom constant).`  |
 
 
 
 
 
 
-<a name="tx.pse.v1.ModuleDistribution"></a>
+<a name="tx.pse.v1.ClearingAccountMapping"></a>
 
-### ModuleDistribution
-
-```
-ModuleDistribution defines the amount to be distributed from a specific module account.
-```
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `module_account` | [string](#string) |  |  `module_account is the name of the module account.`  |
-| `amount` | [string](#string) |  |  `amount is the number of tokens to distribute from this module account. This amount is for the distribution denom (see DistributionDenom constant).`  |
-
-
-
-
-
-
-<a name="tx.pse.v1.PendingDistributionInfo"></a>
-
-### PendingDistributionInfo
+### ClearingAccountMapping
 
 ```
-PendingDistributionInfo provides detailed information about a scheduled pending distribution.
-used for query purposes to get the details of a pending distribution.
-```
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `distribution_time` | [uint64](#uint64) |  |  `distribution_time is when this distribution is scheduled to occur (Unix timestamp in seconds).`  |
-| `remaining_seconds` | [int64](#int64) |  |  `remaining_seconds is the time remaining until the distribution occurs (in seconds). This is calculated as distribution_time - current_block_time. Will be 0 if the distribution is overdue (shouldn't happen in normal operation).`  |
-| `distributions` | [ModuleDistribution](#tx.pse.v1.ModuleDistribution) | repeated |  `distributions is the list of amounts that will be distributed from each module account at this time.`  |
-| `total_amount` | [string](#string) |  |  `total_amount is the sum of all distribution amounts across all module accounts for this period.`  |
-
-
-
-
-
-
-<a name="tx.pse.v1.SubAccountMapping"></a>
-
-### SubAccountMapping
-
-```
-SubAccountMapping defines the mapping between a module account and its sub account (multisig wallet).
+ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipient (sub account multisig wallet).
 This mapping can be modified via governance proposals.
 ```
 
@@ -5818,8 +5747,29 @@ This mapping can be modified via governance proposals.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `module_account` | [string](#string) |  |  `module_account is the name of the module account holding the tokens to be distributed.`  |
-| `sub_account_address` | [string](#string) |  |  `sub_account_address is the multisig wallet address that will receive the token distributions.`  |
+| `clearing_account` | [string](#string) |  |  `module_account is the name of the module account holding the tokens to be distributed.`  |
+| `recipient_address` | [string](#string) |  |  `recipient_address is the multisig wallet address that will receive the token distributions.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.ScheduledDistribution"></a>
+
+### ScheduledDistribution
+
+```
+ScheduledDistribution defines a single allocation event at a specific timestamp.
+Multiple clearing accounts can allocate tokens at the same time.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `timestamp` | [uint64](#uint64) |  |  `timestamp is when this allocation should occur (Unix timestamp in seconds).`  |
+| `allocations` | [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation) | repeated |  `allocations is the list of amounts to allocate from each clearing account at this time.`  |
 
 
 
@@ -5842,25 +5792,23 @@ This mapping can be modified via governance proposals.
 
 
 
-<a name="tx.pse.v1.EventDistributionCompleted"></a>
+<a name="tx.pse.v1.EventAllocationCompleted"></a>
 
-### EventDistributionCompleted
+### EventAllocationCompleted
 
 ```
-EventDistributionCompleted is emitted when a periodic distribution is successfully completed.
+EventAllocationCompleted is emitted when a periodic allocation is successfully completed.
 ```
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `module_account` | [string](#string) |  |  `module_account is the source module account name from which tokens are distributed.`  |
-| `sub_account` | [string](#string) |  |  `sub_account is the destination sub-account receiving the tokens.`  |
-| `scheduled_time` | [uint64](#uint64) |  |  `scheduled_time is the Unix timestamp when the distribution was scheduled to occur.`  |
-| `actual_time` | [uint64](#uint64) |  |  `actual_time is the Unix timestamp when the distribution actually occurred.`  |
-| `amount` | [string](#string) |  |  `amount is the amount of tokens distributed.`  |
-| `denom` | [string](#string) |  |  `denom is the denomination of the tokens distributed.`  |
-| `block_height` | [int64](#int64) |  |  `block_height is the block height at which the distribution occurred.`  |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the source clearing account name from which tokens are allocated.`  |
+| `recipient_address` | [string](#string) |  |  `recipient_address is the destination recipient address receiving the tokens.`  |
+| `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
+| `distributed_at` | [uint64](#uint64) |  |  `distributed_at is the Unix timestamp when the distribution actually occurred.`  |
+| `amount` | [string](#string) |  |  `amount is the amount of tokens allocated.`  |
 
 
 
@@ -5895,9 +5843,8 @@ GenesisState defines the module's genesis state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#tx.pse.v1.Params) |  |  `params contains all gov-manageable parameters including distribution schedule.`  |
-| `completed_distributions` | [CompletedDistribution](#tx.pse.v1.CompletedDistribution) | repeated |  `completed_distributions is the immutable history of executed distributions.`  |
-| `pending_distribution_timestamps` | [uint64](#uint64) | repeated |  `pending_distribution_timestamps is a sorted list of timestamps that still need processing. This will be rebuilt from the schedule during InitGenesis for consistency.`  |
+| `params` | [Params](#tx.pse.v1.Params) |  |  `params contains all gov-manageable parameters.`  |
+| `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all scheduled distributions (both past and pending). Stored as a list for genesis import/export, but will be stored as a map in state. Must be sorted by timestamp in ascending order. Completed allocations are removed from the map after processing.`  |
 
 
 
@@ -5933,8 +5880,7 @@ Params store gov manageable parameters.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
-| `sub_account_mappings` | [SubAccountMapping](#tx.pse.v1.SubAccountMapping) | repeated |  `sub_account_mappings defines the mapping between module accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
-| `distribution_schedule` | [DistributionPeriod](#tx.pse.v1.DistributionPeriod) | repeated |  `distribution_schedule contains all distribution periods (both past and pending). Must be sorted by distribution_time in ascending order. Can be modified by governance proposals (only pending periods can be modified).`  |
+| `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `sub_account_mappings defines the mapping between module accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
 
 
 

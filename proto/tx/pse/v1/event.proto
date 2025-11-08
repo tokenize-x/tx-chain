@@ -5,23 +5,19 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
-// EventDistributionCompleted is emitted when a periodic distribution is successfully completed.
-message EventDistributionCompleted {
-  // module_account is the source module account name from which tokens are distributed.
-  string module_account = 1;
-  // sub_account is the destination sub-account receiving the tokens.
-  string sub_account = 2;
-  // scheduled_time is the Unix timestamp when the distribution was scheduled to occur.
-  uint64 scheduled_time = 3;
-  // actual_time is the Unix timestamp when the distribution actually occurred.
-  uint64 actual_time = 4;
-  // amount is the amount of tokens distributed.
+// EventAllocationCompleted is emitted when a periodic allocation is successfully completed.
+message EventAllocationCompleted {
+  // clearing_account is the source clearing account name from which tokens are allocated.
+  string clearing_account = 1;
+  // recipient_address is the destination recipient address receiving the tokens.
+  string recipient_address = 2;
+  // scheduled_at is the Unix timestamp when the allocation was scheduled to occur.
+  uint64 scheduled_at = 3;
+  // distributed_at is the Unix timestamp when the distribution actually occurred.
+  uint64 distributed_at = 4;
+  // amount is the amount of tokens allocated.
   string amount = 5 [
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
-  // denom is the denomination of the tokens distributed.
-  string denom = 6;
-  // block_height is the block height at which the distribution occurred.
-  int64 block_height = 7;
 }

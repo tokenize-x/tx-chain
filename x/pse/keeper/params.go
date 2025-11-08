@@ -69,7 +69,7 @@ func (k Keeper) UpdateExcludedAddresses(
 func (k Keeper) UpdateSubAccountMappings(
 	ctx context.Context,
 	authority string,
-	mappings []types.SubAccountMapping,
+	mappings []types.ClearingAccountMapping,
 ) error {
 	if k.authority != authority {
 		return errors.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
@@ -81,30 +81,40 @@ func (k Keeper) UpdateSubAccountMappings(
 		return err
 	}
 
-	// Build a set of module accounts that are currently in the distribution schedule
-	requiredModules := make(map[string]bool)
-	for _, period := range params.DistributionSchedule {
-		for _, dist := range period.Distributions {
-			requiredModules[dist.ModuleAccount] = true
+	// Build a set of clearing accounts that are currently in the allocation schedule
+	requiredAccounts := make(map[string]bool)
+	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			return err
+		}
+		for _, alloc := range kv.Value.Allocations {
+			requiredAccounts[alloc.ClearingAccount] = true
 		}
 	}
 
 	// Build a set of module accounts in the new mappings
 	newMappings := make(map[string]bool)
 	for _, mapping := range mappings {
-		newMappings[mapping.ModuleAccount] = true
+		newMappings[mapping.ClearingAccount] = true
 	}
 
-	// Check that all required modules are present in the new mappings
-	for moduleAccount := range requiredModules {
-		if !newMappings[moduleAccount] {
+	// Check that all required clearing accounts are present in the new mappings
+	for clearingAccount := range requiredAccounts {
+		if !newMappings[clearingAccount] {
 			return errors.Wrapf(types.ErrInvalidInput,
-				"cannot remove mapping for module '%s': it is still referenced in the distribution schedule", moduleAccount)
+				"cannot remove mapping for clearing account '%s': it is still referenced in the allocation schedule", clearingAccount)
 		}
 	}
 
 	// Update sub account mappings
-	params.SubAccountMappings = mappings
+	params.ClearingAccountMappings = mappings
 
 	return k.SetParams(ctx, params)
 }

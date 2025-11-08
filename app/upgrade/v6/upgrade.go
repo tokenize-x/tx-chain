@@ -7,8 +7,10 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	"github.com/tokenize-x/tx-chain/v6/app/upgrade"
+	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
 )
@@ -22,6 +24,8 @@ func New(
 	configurator module.Configurator,
 	bankKeeper wbankkeeper.BaseKeeperWrapper,
 	mintKeeper mintkeeper.Keeper,
+	stakingKeeper *stakingkeeper.Keeper,
+	pseKeeper pskeeper.Keeper,
 ) upgrade.Upgrade {
 	return upgrade.Upgrade{
 		Name: Name,
@@ -45,6 +49,16 @@ func New(
 			}
 
 			if err := migrateMintParams(ctx, mintKeeper); err != nil {
+				return nil, err
+			}
+
+			// Perform PSE bootstrap: create schedule, mint, and distribute tokens
+			if err := PerformBootstrap(
+				ctx,
+				pseKeeper,
+				bankKeeper,
+				stakingKeeper,
+			); err != nil {
 				return nil, err
 			}
 

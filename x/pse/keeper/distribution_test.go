@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -16,7 +18,28 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-func TestDistribution_WithBootstrap(t *testing.T) {
+// getAllocationSchedule returns the allocation schedule as a sorted list
+func getAllocationSchedule(ctx context.Context, pseKeeper keeper.Keeper, requireT *require.Assertions) []types.ScheduledDistribution {
+	var schedule []types.ScheduledDistribution
+	iter, err := pseKeeper.AllocationSchedule.Iterate(ctx, nil)
+	requireT.NoError(err)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		requireT.NoError(err)
+		schedule = append(schedule, kv.Value)
+	}
+
+	// Sort by timestamp
+	sort.Slice(schedule, func(i, j int) bool {
+		return schedule[i].Timestamp < schedule[j].Timestamp
+	})
+
+	return schedule
+}
+
+func TestDistribution_ProcessScheduledAllocations(t *testing.T) {
 	requireT := require.New(t)
 
 	testApp := simapp.New()
@@ -30,118 +53,78 @@ func TestDistribution_WithBootstrap(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	// Step 1: Set up sub-account mappings BEFORE bootstrap (required by referential integrity)
+	// Step 1: Set up sub-account mappings
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
-	mappings := []types.SubAccountMapping{
-		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: multisigAddr1},
-		{ModuleAccount: types.ModuleAccountPartnership, SubAccountAddress: multisigAddr2},
-		{ModuleAccount: types.ModuleAccountFoundingPartner, SubAccountAddress: multisigAddr3},
-		{ModuleAccount: types.ModuleAccountTeam, SubAccountAddress: multisigAddr4},
-		{ModuleAccount: types.ModuleAccountInvestors, SubAccountAddress: multisigAddr5},
+	mappings := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: multisigAddr1},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: multisigAddr2},
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, mappings)
 	requireT.NoError(err)
 
-	// Step 2: Perform Bootstrap
-	totalMintAmount := sdkmath.NewInt(100_000_000_000)        // 100 billion
-	startTime := uint64(time.Now().Add(1 * time.Hour).Unix()) // 1 hour from now
+	// Step 2: Create a distribution schedule manually for testing
+	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix()) // 1 hour ago (already due)
 
-	err = pseKeeper.PerformBootstrap(ctx, totalMintAmount, bondDenom, nil, startTime)
-	requireT.NoError(err)
-
-	// Step 3: Verify module accounts have correct balances
-	allocations := keeper.DefaultBootstrapAllocations()
-
-	for _, allocation := range allocations {
-		expectedAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
-		moduleAddr := testApp.AccountKeeper.GetModuleAddress(allocation.ModuleAccount)
-		requireT.NotNil(moduleAddr)
-
-		balance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
-		requireT.Equal(expectedAmount.String(), balance.Amount.String(),
-			"module %s should have correct balance", allocation.ModuleAccount)
+	// Create module balances
+	moduleBalances := map[string]sdkmath.Int{
+		types.ModuleAccountTreasury: sdkmath.NewInt(50_000_000_000), // 50B
+		types.ModuleAccountTeam:     sdkmath.NewInt(50_000_000_000), // 50B
 	}
 
-	// Step 4: Verify distribution schedule was created
-	params, err := pseKeeper.GetParams(ctx)
-	requireT.NoError(err)
-	requireT.Len(params.DistributionSchedule, keeper.TotalDistributionMonths,
-		"should have 84 monthly distributions")
-
-	// Step 5: Verify first distribution amounts
-	firstPeriod := params.DistributionSchedule[0]
-	requireT.Equal(startTime, firstPeriod.DistributionTime)
-	requireT.Len(firstPeriod.Distributions, len(allocations))
-
-	for _, dist := range firstPeriod.Distributions {
-		// Each monthly distribution should be 1/84th of the module's total
-		var expectedTotal sdkmath.Int
-		for _, alloc := range allocations {
-			if alloc.ModuleAccount == dist.ModuleAccount {
-				expectedTotal = alloc.Percentage.MulInt(totalMintAmount).TruncateInt()
-				break
-			}
-		}
-		expectedMonthly := expectedTotal.QuoRaw(keeper.TotalDistributionMonths)
-		requireT.Equal(expectedMonthly.String(), dist.Amount.String(),
-			"monthly amount for %s should be 1/84th of total", dist.ModuleAccount)
+	// Mint tokens to module accounts for distribution
+	for moduleAccount, amount := range moduleBalances {
+		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, amount))
+		err = bankKeeper.MintCoins(ctx, types.ModuleName, coins)
+		requireT.NoError(err)
+		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, moduleAccount, coins)
+		requireT.NoError(err)
 	}
 
-	// Step 6: Verify pending timestamps were added
-	pendingInfo, err := pseKeeper.GetPendingDistributionsInfo(ctx)
+	// Create schedule
+	schedule, err := keeper.CreateDistributionSchedule(moduleBalances, startTime)
 	requireT.NoError(err)
-	requireT.Len(pendingInfo, keeper.TotalDistributionMonths,
-		"all 84 months should be pending")
 
-	// Step 7: Fast-forward time to first distribution
+	// Save only the first distribution (for testing)
+	firstDist := schedule[0]
+	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{firstDist})
+	requireT.NoError(err)
+
+	// Verify schedule was saved
+	allocationSchedule := getAllocationSchedule(ctx, pseKeeper, requireT)
+	requireT.Len(allocationSchedule, 1, "should have 1 allocation")
+
+	// Step 3: Fast-forward time to first distribution
 	ctx = ctx.WithBlockTime(time.Unix(int64(startTime)+10, 0)) // 10 seconds after first distribution time
 	ctx = ctx.WithBlockHeight(100)
 
-	// Step 8: Process distributions
-	err = pseKeeper.ProcessPeriodicDistributions(ctx)
+	// Step 4: Process distributions
+	err = pseKeeper.ProcessClearingAccountDistributions(ctx)
 	requireT.NoError(err)
 
-	// Step 9: Verify first month distributions were completed
-	for _, dist := range firstPeriod.Distributions {
-		// Check it's marked as completed
-		key := types.MakeCompletedDistributionKey(dist.ModuleAccount, int64(startTime))
-		has, err := pseKeeper.CompletedDistributions.Has(ctx, key)
-		requireT.NoError(err)
-		requireT.True(has, "distribution for %s should be completed", dist.ModuleAccount)
-
-		// Verify sub-account received the tokens
-		var subAccountAddr string
+	// Step 5: Verify allocations transferred funds to recipient accounts
+	for _, allocation := range firstDist.Allocations {
+		// Verify recipient account received the tokens
+		var recipientAddr string
 		for _, mapping := range mappings {
-			if mapping.ModuleAccount == dist.ModuleAccount {
-				subAccountAddr = mapping.SubAccountAddress
+			if mapping.ClearingAccount == allocation.ClearingAccount {
+				recipientAddr = mapping.RecipientAddress
 				break
 			}
 		}
 
-		subAccAddr := sdk.MustAccAddressFromBech32(subAccountAddr)
-		subAccBalance := bankKeeper.GetBalance(ctx, subAccAddr, bondDenom)
-		requireT.Equal(dist.Amount.String(), subAccBalance.Amount.String(),
-			"sub-account should have received distribution amount")
+		recipient := sdk.MustAccAddressFromBech32(recipientAddr)
+		recipientBalance := bankKeeper.GetBalance(ctx, recipient, bondDenom)
+		requireT.Equal(allocation.Amount.String(), recipientBalance.Amount.String(),
+			"recipient should have received allocation amount")
 	}
 
-	// Step 10: Verify pending distributions count decreased
-	pendingInfoAfter, err := pseKeeper.GetPendingDistributionsInfo(ctx)
-	requireT.NoError(err)
-	requireT.Len(pendingInfoAfter, keeper.TotalDistributionMonths-1,
-		"should have 83 pending months remaining")
-
-	// Step 11: Verify completed distributions query
-	completedDists, err := pseKeeper.GetCompletedDistributions(ctx)
-	requireT.NoError(err)
-	requireT.Len(completedDists, len(firstPeriod.Distributions),
-		"should have completed distributions equal to first period count")
+	// Step 6: Verify allocation schedule count decreased (first period removed)
+	allocationScheduleAfter := getAllocationSchedule(ctx, pseKeeper, requireT)
+	requireT.Len(allocationScheduleAfter, 0, "should have 0 remaining allocations")
 }
 
 func TestDistribution_GenesisRebuild(t *testing.T) {
@@ -161,9 +144,9 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
-	mappings := []types.SubAccountMapping{
-		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: multisigAddr1},
-		{ModuleAccount: types.ModuleAccountTeam, SubAccountAddress: multisigAddr2},
+	mappings := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: multisigAddr1},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: multisigAddr2},
 	}
 
 	for _, moduleAccount := range []string{types.ModuleAccountTreasury, types.ModuleAccountTeam} {
@@ -177,40 +160,40 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	time1 := uint64(time.Now().Add(1 * time.Hour).Unix())
 	time2 := uint64(time.Now().Add(2 * time.Hour).Unix())
 
-	// Create a schedule
-	schedule := []types.DistributionPeriod{
+	// Set up params with mappings
+	params, err := pseKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	params.ClearingAccountMappings = mappings
+	err = pseKeeper.SetParams(ctx, params)
+	requireT.NoError(err)
+
+	// Create and store allocation schedule
+	schedule := []types.ScheduledDistribution{
 		{
-			DistributionTime: time1,
-			Distributions: []types.ModuleDistribution{
-				{ModuleAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
-				{ModuleAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(500)},
+			Timestamp: time1,
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(500)},
 			},
 		},
 		{
-			DistributionTime: time2,
-			Distributions: []types.ModuleDistribution{
-				{ModuleAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(2000)},
+			Timestamp: time2,
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(2000)},
 			},
 		},
 	}
 
-	params, err := pseKeeper.GetParams(ctx)
-	requireT.NoError(err)
-	params.SubAccountMappings = mappings
-	params.DistributionSchedule = schedule
-	err = pseKeeper.SetParams(ctx, params)
-	requireT.NoError(err)
-
-	// Manually add to pending queue
-	err = pseKeeper.PendingTimestamps.Set(ctx, time1)
-	requireT.NoError(err)
-	err = pseKeeper.PendingTimestamps.Set(ctx, time2)
-	requireT.NoError(err)
+	// Store in allocation schedule map
+	for _, scheduledDist := range schedule {
+		err = pseKeeper.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist)
+		requireT.NoError(err)
+	}
 
 	// Process first distribution
 	ctx = ctx.WithBlockTime(time.Unix(int64(time1)+10, 0))
 	ctx = ctx.WithBlockHeight(100)
-	err = pseKeeper.ProcessPeriodicDistributions(ctx)
+	err = pseKeeper.ProcessClearingAccountDistributions(ctx)
 	requireT.NoError(err)
 
 	// Export genesis
@@ -218,11 +201,9 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify export contains:
-	// - 2 distributions in schedule
-	// - 2 completed distributions (treasury + team from time1)
-	// Note: PendingDistributionTimestamps might have stale data, will be rebuilt on import
-	requireT.Len(genesisState.Params.DistributionSchedule, 2)
-	requireT.Len(genesisState.CompletedDistributions, 2)
+	// - 2 allocations in schedule (time2 only, since time1 was processed and removed)
+	requireT.Len(genesisState.ScheduledDistributions, 1, "should have 1 remaining allocation (time2)")
+	requireT.Equal(time2, genesisState.ScheduledDistributions[0].Timestamp)
 
 	// Create new app and import genesis
 	testApp2 := simapp.New()
@@ -230,19 +211,228 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	ctx2 = ctx2.WithBlockTime(time.Unix(int64(time1)+10, 0)) // Set to same time as when we exported
 	pseKeeper2 := testApp2.PSEKeeper
 
-	// InitGenesis should rebuild pending queue from schedule
+	// InitGenesis should restore allocation schedule from genesis state
 	err = pseKeeper2.InitGenesis(ctx2, *genesisState)
 	requireT.NoError(err)
 
-	// Verify pending queue was correctly rebuilt
-	// Should only have time2 since time1 is completed
-	pendingInfo, err := pseKeeper2.GetPendingDistributionsInfo(ctx2)
-	requireT.NoError(err)
-	requireT.Len(pendingInfo, 1, "should have 1 pending period (time2)")
-	requireT.Equal(time2, pendingInfo[0].DistributionTime)
+	// Verify allocation schedule only contains time2 since time1 was already processed
+	allocationSchedule2 := getAllocationSchedule(ctx2, pseKeeper2, requireT)
+	requireT.Len(allocationSchedule2, 1, "should have 1 remaining allocation (time2)")
+	requireT.Equal(time2, allocationSchedule2[0].Timestamp)
+}
 
-	// Verify completed distributions were loaded
-	completedDists, err := pseKeeper2.GetCompletedDistributions(ctx2)
-	requireT.NoError(err)
-	requireT.Len(completedDists, 2, "should have 2 completed distributions")
+func TestCreateDistributionSchedule_Success(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		moduleAccountBalances map[string]sdkmath.Int
+		startTime             uint64
+		verifyFn              func(*require.Assertions, []types.ScheduledDistribution, map[string]sdkmath.Int)
+	}{
+		{
+			name: "standard_five_accounts",
+			moduleAccountBalances: map[string]sdkmath.Int{
+				types.ModuleAccountTreasury:        sdkmath.NewInt(8_400_000), // 100K per month
+				types.ModuleAccountTeam:            sdkmath.NewInt(4_200_000), // 50K per month
+				types.ModuleAccountPartnership:     sdkmath.NewInt(2_520_000), // 30K per month
+				types.ModuleAccountFoundingPartner: sdkmath.NewInt(1_680_000), // 20K per month
+				types.ModuleAccountInvestors:       sdkmath.NewInt(1_260_000), // 15K per month
+			},
+			startTime: uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, balances map[string]sdkmath.Int) {
+				// Verify Feb 2025 is properly calculated
+				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
+				req.Equal(expectedFeb2025, schedule[1].Timestamp, "second period should be Feb 1, 2025")
+			},
+		},
+		{
+			name: "large_balances",
+			moduleAccountBalances: map[string]sdkmath.Int{
+				types.ModuleAccountTreasury:    sdkmath.NewInt(30_000_000_000_000_000), // 30B
+				types.ModuleAccountPartnership: sdkmath.NewInt(20_000_000_000_000_000), // 20B
+				types.ModuleAccountTeam:        sdkmath.NewInt(20_000_000_000_000_000), // 20B
+				types.ModuleAccountInvestors:   sdkmath.NewInt(15_000_000_000_000_000), // 15B
+			},
+			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, balances map[string]sdkmath.Int) {
+				// Verify no overflow or precision issues with large numbers
+				for _, period := range schedule {
+					for _, allocation := range period.Allocations {
+						req.True(allocation.Amount.IsPositive(), "amount should be positive")
+						req.False(allocation.Amount.IsZero(), "amount should not be zero")
+					}
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			requireT := require.New(t)
+
+			// Execute: Create schedule
+			schedule, err := keeper.CreateDistributionSchedule(tc.moduleAccountBalances, tc.startTime)
+			requireT.NoError(err)
+
+			// Verify: Should have n periods
+			requireT.Len(schedule, types.TotalAllocationMonths)
+
+			// Verify: First period timestamp
+			requireT.Equal(tc.startTime, schedule[0].Timestamp)
+
+			// Verify: Each period has allocations for all modules
+			for i, period := range schedule {
+				requireT.Len(period.Allocations, len(tc.moduleAccountBalances),
+					"period %d should have allocations for all modules", i)
+
+				// Verify each allocation amount is 1/n of total
+				for _, allocation := range period.Allocations {
+					expectedTotal := tc.moduleAccountBalances[allocation.ClearingAccount]
+					expectedMonthly := expectedTotal.QuoRaw(types.TotalAllocationMonths)
+					requireT.Equal(expectedMonthly.String(), allocation.Amount.String(),
+						"period %d: monthly amount for %s should be 1/n of total", i, allocation.ClearingAccount)
+				}
+			}
+
+			// Verify: Last period is 83 months after start
+			startDateTime := time.Unix(int64(tc.startTime), 0).UTC()
+			expectedLast := uint64(startDateTime.AddDate(0, 83, 0).Unix())
+			requireT.Equal(expectedLast, schedule[83].Timestamp,
+				"last period should be 83 months after start using Gregorian calendar")
+
+			// Run test-specific verifications
+			if tc.verifyFn != nil {
+				tc.verifyFn(requireT, schedule, tc.moduleAccountBalances)
+			}
+		})
+	}
+}
+
+func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
+	testCases := []struct {
+		name      string
+		startTime time.Time
+		verifyFn  func(*require.Assertions, []types.ScheduledDistribution, time.Time)
+	}{
+		{
+			name:      "leap_year_transition",
+			startTime: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+				// Feb 2025 (month 12) should be Feb 1, 2025
+				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
+				req.Equal(expectedFeb2025, schedule[12].Timestamp,
+					"12 months after Feb 1, 2024 should be Feb 1, 2025 (leap year handling)")
+			},
+		},
+		{
+			name:      "month_end_boundaries",
+			startTime: time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+				// Jan 31 + 1 month = Feb 31 (invalid) -> normalizes to Mar 3
+				// This is Go's AddDate behavior for overflow dates
+				expectedMar3 := time.Date(2025, 3, 3, 0, 0, 0, 0, time.UTC)
+				actualSecondMonth := time.Unix(int64(schedule[1].Timestamp), 0).UTC()
+				req.Equal(expectedMar3.Unix(), actualSecondMonth.Unix(),
+					"Jan 31 + 1 month normalizes to Mar 3 (AddDate overflow normalization)")
+			},
+		},
+	}
+
+	moduleAccountBalances := map[string]sdkmath.Int{
+		types.ModuleAccountTreasury: sdkmath.NewInt(8_400_000),
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			requireT := require.New(t)
+
+			// Execute: Create schedule
+			schedule, err := keeper.CreateDistributionSchedule(moduleAccountBalances, uint64(tc.startTime.Unix()))
+			requireT.NoError(err)
+
+			// Verify: All timestamps follow Gregorian calendar rules
+			for i, period := range schedule {
+				expectedTime := tc.startTime.AddDate(0, i, 0)
+				requireT.Equal(uint64(expectedTime.Unix()), period.Timestamp,
+					"period %d should be %s", i, expectedTime.Format(time.RFC3339))
+			}
+
+			// Run test-specific verifications
+			if tc.verifyFn != nil {
+				tc.verifyFn(requireT, schedule, tc.startTime)
+			}
+		})
+	}
+}
+
+func TestCreateDistributionSchedule_EmptyBalances(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := uint64(time.Now().Unix())
+	emptyBalances := map[string]sdkmath.Int{}
+
+	// Execute: Should fail with empty balances
+	schedule, err := keeper.CreateDistributionSchedule(emptyBalances, startTime)
+	requireT.Error(err)
+	requireT.Nil(schedule)
+	requireT.ErrorIs(err, types.ErrNoModuleBalances)
+}
+
+func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := uint64(time.Now().Unix())
+
+	// Balance that results in zero monthly amount (< TotalAllocationMonths)
+	moduleAccountBalances := map[string]sdkmath.Int{
+		types.ModuleAccountTreasury: sdkmath.NewInt(50), // 50 / n = 0 (integer division)
+	}
+
+	// Execute: Should fail with zero monthly amount
+	schedule, err := keeper.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	requireT.Error(err)
+	requireT.Nil(schedule)
+	requireT.Contains(err.Error(), "balance too small to divide into monthly distributions")
+}
+
+func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
+	requireT := require.New(t)
+
+	// Setup
+	moduleAccountBalances := map[string]sdkmath.Int{
+		types.ModuleAccountTreasury: sdkmath.NewInt(8_400_000),
+		types.ModuleAccountTeam:     sdkmath.NewInt(4_200_000),
+	}
+
+	startTime := uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix())
+
+	// Execute twice
+	schedule1, err1 := keeper.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	requireT.NoError(err1)
+
+	schedule2, err2 := keeper.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	requireT.NoError(err2)
+
+	// Verify: Results should be identical
+	requireT.Equal(len(schedule1), len(schedule2))
+
+	for i := range schedule1 {
+		requireT.Equal(schedule1[i].Timestamp, schedule2[i].Timestamp,
+			"period %d timestamps should match", i)
+		requireT.Equal(len(schedule1[i].Allocations), len(schedule2[i].Allocations),
+			"period %d should have same number of allocations", i)
+
+		// Note: map iteration order is not guaranteed, so we need to match by clearing account
+		allocs1 := make(map[string]sdkmath.Int)
+		for _, a := range schedule1[i].Allocations {
+			allocs1[a.ClearingAccount] = a.Amount
+		}
+
+		allocs2 := make(map[string]sdkmath.Int)
+		for _, a := range schedule2[i].Allocations {
+			allocs2[a.ClearingAccount] = a.Amount
+		}
+
+		requireT.Equal(allocs1, allocs2,
+			"period %d allocations should match", i)
+	}
 }

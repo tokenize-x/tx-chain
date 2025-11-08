@@ -20,12 +20,11 @@ type Keeper struct {
 	stakingKeeper types.StakingKeeper
 
 	// collections
-	Schema                 collections.Schema
-	Params                 collections.Item[types.Params]
-	DelegationTimeEntries  collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
-	AccountScoreSnapshot   collections.Map[sdk.AccAddress, sdkmath.Int]
-	CompletedDistributions collections.Map[collections.Pair[string, int64], types.CompletedDistribution]
-	PendingTimestamps      collections.KeySet[uint64] // Sorted set of timestamps that need processing
+	Schema                collections.Schema
+	Params                collections.Item[types.Params]
+	DelegationTimeEntries collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
+	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
+	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: timestamp -> ScheduledDistribution
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -66,18 +65,12 @@ func NewKeeper(
 			sdk.AccAddressKey,
 			sdk.IntValue,
 		),
-		CompletedDistributions: collections.NewMap(
+		AllocationSchedule: collections.NewMap(
 			sb,
-			types.CompletedDistributionsKey,
-			"completed_distributions",
-			collections.PairKeyCodec(collections.StringKey, collections.Int64Key),
-			codec.CollValue[types.CompletedDistribution](cdc),
-		),
-		PendingTimestamps: collections.NewKeySet(
-			sb,
-			types.PendingTimestampsKey,
-			"pending_timestamps",
+			types.AllocationScheduleKey,
+			"allocation_schedule",
 			collections.Uint64Key,
+			codec.CollValue[types.ScheduledDistribution](cdc),
 		),
 	}
 

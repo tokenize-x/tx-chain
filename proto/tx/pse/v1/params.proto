@@ -19,16 +19,8 @@ message Params {
 
   // sub_account_mappings defines the mapping between module accounts and their sub accounts (multisig wallets).
   // These mappings can be modified via governance proposals.
-  repeated SubAccountMapping sub_account_mappings = 2 [
+  repeated ClearingAccountMapping clearing_account_mappings = 2 [
     (gogoproto.nullable) = false,
-    (gogoproto.moretags) = "yaml:\"sub_account_mappings\""
-  ];
-
-  // distribution_schedule contains all distribution periods (both past and pending).
-  // Must be sorted by distribution_time in ascending order.
-  // Can be modified by governance proposals (only pending periods can be modified).
-  repeated DistributionPeriod distribution_schedule = 3 [
-    (gogoproto.nullable) = false,
-    (gogoproto.moretags) = "yaml:\"distribution_schedule\""
+    (gogoproto.moretags) = "yaml:\"clearing_account_mappings\""
   ];
 }

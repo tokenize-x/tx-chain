@@ -211,73 +211,64 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	// Test 1: Can add mappings when no schedule exists
-	mappings := []types.SubAccountMapping{
-		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr1},
-		{ModuleAccount: types.ModuleAccountTeam, SubAccountAddress: addr2},
+	mappings := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
 	err := pseKeeper.UpdateSubAccountMappings(ctx, authority, mappings)
 	requireT.NoError(err, "should allow adding mappings when no schedule")
 
 	// Test 2: Can remove mappings when not referenced in schedule
-	reducedMappings := []types.SubAccountMapping{
-		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr1},
+	reducedMappings := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr1},
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, reducedMappings)
 	requireT.NoError(err, "should allow removing unreferenced mappings")
 
 	// Test 3: Add a schedule that references treasury
-	schedule := []types.DistributionPeriod{
-		{
-			DistributionTime: 2000000000,
-			Distributions: []types.ModuleDistribution{
-				{ModuleAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
-			},
+	scheduledDist := types.ScheduledDistribution{
+		Timestamp: 2000000000,
+		Allocations: []types.ClearingAccountAllocation{
+			{ClearingAccount: types.ModuleAccountTreasury, Amount: sdkmath.NewInt(1000)},
 		},
 	}
 
-	params, err := pseKeeper.GetParams(ctx)
-	requireT.NoError(err)
-	params.DistributionSchedule = schedule
-	err = pseKeeper.SetParams(ctx, params)
+	err = pseKeeper.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist)
 	requireT.NoError(err)
 
 	// Test 4: Cannot remove treasury mapping while schedule references it
-	emptyMappings := []types.SubAccountMapping{}
+	emptyMappings := []types.ClearingAccountMapping{}
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, emptyMappings)
 	requireT.Error(err, "should reject removal of mapping referenced in schedule")
-	requireT.Contains(err.Error(), "still referenced in the distribution schedule")
+	requireT.Contains(err.Error(), "still referenced in the allocation schedule")
 
 	// Test 5: Can update mapping address while keeping the module
-	updatedMappings := []types.SubAccountMapping{
-		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr3}, // Changed address
+	updatedMappings := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr3}, // Changed address
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, updatedMappings)
 	requireT.NoError(err, "should allow updating mapping address")
 
 	// Verify the address was updated
-	params, err = pseKeeper.GetParams(ctx)
+	params, err := pseKeeper.GetParams(ctx)
 	requireT.NoError(err)
-	requireT.Len(params.SubAccountMappings, 1)
-	requireT.Equal(addr3, params.SubAccountMappings[0].SubAccountAddress)
+	requireT.Len(params.ClearingAccountMappings, 1)
+	requireT.Equal(addr3, params.ClearingAccountMappings[0].RecipientAddress)
 
 	// Test 6: Can add more mappings even with existing schedule
-	expandedMappings := []types.SubAccountMapping{
-		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr3},
-		{ModuleAccount: types.ModuleAccountTeam, SubAccountAddress: addr2},
+	expandedMappings := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr3},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, expandedMappings)
 	requireT.NoError(err, "should allow adding new mappings")
 
 	// Test 7: Clear schedule, then can remove mappings
-	emptySchedule := []types.DistributionPeriod{}
-	params, err = pseKeeper.GetParams(ctx)
-	requireT.NoError(err)
-	params.DistributionSchedule = emptySchedule
-	err = pseKeeper.SetParams(ctx, params)
+	err = pseKeeper.AllocationSchedule.Remove(ctx, scheduledDist.Timestamp)
 	requireT.NoError(err)
 
 	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, emptyMappings)
@@ -295,8 +286,8 @@ func TestUpdateSubAccountMappings_Authority(t *testing.T) {
 	wrongAuthority := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
-	mappings := []types.SubAccountMapping{
-		{ModuleAccount: types.ModuleAccountTreasury, SubAccountAddress: addr1},
+	mappings := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountTreasury, RecipientAddress: addr1},
 	}
 
 	// Test with wrong authority
