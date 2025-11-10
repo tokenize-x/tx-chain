@@ -7,16 +7,13 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cometbft/cometbft/crypto/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
@@ -55,29 +52,39 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	// Step 1: Set up sub-account mappings BEFORE initialization
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	multisigAddr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
-	mappings := []psetypes.ClearingAccountMapping{
-		{ClearingAccount: psetypes.ModuleAccountFoundation, RecipientAddress: multisigAddr1},
-		{ClearingAccount: psetypes.ModuleAccountAlliance, RecipientAddress: multisigAddr2},
-		{ClearingAccount: psetypes.ModuleAccountPartnership, RecipientAddress: multisigAddr3},
-		{ClearingAccount: psetypes.ModuleAccountInvestors, RecipientAddress: multisigAddr4},
-		{ClearingAccount: psetypes.ModuleAccountTeam, RecipientAddress: multisigAddr5},
-		// Note: ModuleAccountCommunity is excluded and doesn't need a mapping
+	// Override default clearing account mappings with valid test addresses
+	v6.DefaultClearingAccountMappings = func() []psetypes.ClearingAccountMapping {
+		return []psetypes.ClearingAccountMapping{
+			{ClearingAccount: psetypes.ModuleAccountFoundation, RecipientAddress: multisigAddr1},
+			{ClearingAccount: psetypes.ModuleAccountAlliance, RecipientAddress: multisigAddr2},
+			{ClearingAccount: psetypes.ModuleAccountPartnership, RecipientAddress: multisigAddr3},
+			{ClearingAccount: psetypes.ModuleAccountInvestors, RecipientAddress: multisigAddr4},
+			{ClearingAccount: psetypes.ModuleAccountTeam, RecipientAddress: multisigAddr5},
+		}
 	}
-
-	err = pseKeeper.UpdateClearingMappings(ctx, authority, mappings)
-	requireT.NoError(err)
-
-	// Step 2: Perform Initialization (uses internal constants)
+	// Step 1: Perform Initialization (uses internal constants)
+	// Note: InitPSEAllocationsAndSchedule will create clearing account mappings with placeholder addresses
 	err = v6.InitPSEAllocationsAndSchedule(ctx, pseKeeper, bankKeeper, testApp.StakingKeeper)
 	requireT.NoError(err)
+
+	// Step 2: Verify clearing account mappings were created
+	params, err := pseKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	requireT.Len(params.ClearingAccountMappings, 5, "should have mappings for 5 non-excluded clearing accounts")
+	// Verify all mappings have recipient addresses (placeholder in production, valid test addresses in tests)
+	for _, mapping := range params.ClearingAccountMappings {
+		requireT.NotEmpty(mapping.RecipientAddress,
+			"mapping for %s should have a recipient address", mapping.ClearingAccount)
+		// Verify Community is not in mappings
+		requireT.NotEqual(psetypes.ModuleAccountCommunity, mapping.ClearingAccount,
+			"Community should not have a mapping")
+	}
 
 	// Step 3: Verify module accounts have correct balances
 	allocations := v6.DefaultAllocations()
@@ -266,12 +273,12 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 	testCases := []struct {
 		name      string
 		startTime time.Time
-		verifyFn  func(*require.Assertions, []types.ScheduledDistribution, time.Time)
+		verifyFn  func(*require.Assertions, []psetypes.ScheduledDistribution, time.Time)
 	}{
 		{
 			name:      "leap_year_transition",
 			startTime: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
-			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+			verifyFn: func(req *require.Assertions, schedule []psetypes.ScheduledDistribution, start time.Time) {
 				// Feb 2025 (month 12) should be Feb 1, 2025
 				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
 				req.Equal(expectedFeb2025, schedule[12].Timestamp,
@@ -281,7 +288,7 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 		{
 			name:      "month_end_boundaries",
 			startTime: time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
-			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+			verifyFn: func(req *require.Assertions, schedule []psetypes.ScheduledDistribution, start time.Time) {
 				// Jan 31 + 1 month = Feb 31 (invalid) -> normalizes to Mar 3
 				// This is Go's AddDate behavior for overflow dates
 				expectedMar3 := time.Date(2025, 3, 3, 0, 0, 0, 0, time.UTC)
@@ -293,7 +300,7 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 	}
 
 	allocations := []v6.InitialAllocation{
-		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
+		{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
 	}
 	totalMint := sdkmath.NewInt(8_400_000)
 
@@ -331,7 +338,7 @@ func TestCreateDistributionSchedule_EmptyBalances(t *testing.T) {
 	schedule, err := v6.CreateDistributionSchedule(emptyAllocations, totalMint, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
-	requireT.ErrorIs(err, types.ErrNoModuleBalances)
+	requireT.ErrorIs(err, psetypes.ErrNoModuleBalances)
 }
 
 func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
@@ -341,7 +348,7 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 
 	// Allocation that results in zero monthly amount (< TotalAllocationMonths)
 	allocations := []v6.InitialAllocation{
-		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.0000000001")}, // Very small percentage
+		{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.0000000001")}, // Very small percentage
 	}
 	totalMint := sdkmath.NewInt(50) // 50 * tiny percentage = 0 (integer division)
 
@@ -357,8 +364,8 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 
 	// Setup
 	allocations := []v6.InitialAllocation{
-		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.667")}, // ~8.4M
-		{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.333")},       // ~4.2M
+		{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.667")}, // ~8.4M
+		{ModuleAccount: psetypes.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.333")},       // ~4.2M
 	}
 	totalMint := sdkmath.NewInt(12_600_000)
 

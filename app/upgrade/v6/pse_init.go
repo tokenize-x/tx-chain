@@ -7,6 +7,8 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -63,6 +65,35 @@ func DefaultAllocations() []InitialAllocation {
 	}
 }
 
+// DefaultClearingAccountMappings returns the default clearing account mappings.
+// Excluded clearing accounts (like Community) are not included in the mappings.
+// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
+var DefaultClearingAccountMappings = func() []psetypes.ClearingAccountMapping {
+	return []psetypes.ClearingAccountMapping{
+		{
+			ClearingAccount:  psetypes.ModuleAccountFoundation,
+			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+		},
+		{
+			ClearingAccount:  psetypes.ModuleAccountAlliance,
+			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+		},
+		{
+			ClearingAccount:  psetypes.ModuleAccountPartnership,
+			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+		},
+		{
+			ClearingAccount:  psetypes.ModuleAccountInvestors,
+			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+		},
+		{
+			ClearingAccount:  psetypes.ModuleAccountTeam,
+			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+		},
+		// Note: ModuleAccountCommunity is excluded and doesn't need a mapping
+	}
+}
+
 // InitPSEAllocationsAndSchedule initializes the PSE module by creating a distribution schedule,
 // minting tokens, and distributing them to module accounts. The schedule defines
 // how tokens will be gradually released over time from module accounts to recipients.
@@ -99,19 +130,29 @@ func InitPSEAllocationsAndSchedule(
 		}
 	}
 
-	// Step 2: Generate the n-month distribution schedule
+	// Step 2: Create clearing account mappings
+	// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
+	mappings := DefaultClearingAccountMappings()
+
+	// Get authority (governance module address)
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	if err := pseKeeper.UpdateClearingMappings(ctx, authority, mappings); err != nil {
+		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to create clearing account mappings: %v", err)
+	}
+
+	// Step 3: Generate the n-month distribution schedule
 	// This defines when and how much each module account will distribute to recipients
 	schedule, err := CreateDistributionSchedule(allocations, totalMintAmount, scheduleStartTime)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 3: Persist the schedule to blockchain state
+	// Step 4: Persist the schedule to blockchain state
 	if err := pseKeeper.SaveDistributionSchedule(ctx, schedule); err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 4: Mint and fund clearing accounts
+	// Step 5: Mint and fund clearing accounts
 	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, denom); err != nil {
 		return err
 	}
