@@ -89,61 +89,34 @@ func InitPSEAllocationsAndSchedule(
 		return errorsmod.Wrap(err, "invalid initial allocations")
 	}
 
-	// Step 1: Convert allocation percentages to absolute token amounts
-	// Include all accounts (excluded accounts get schedules but won't transfer to recipients in EndBlock)
-	moduleAccountBalances := make(map[string]sdkmath.Int)
+	// Step 1: Validate all module account names
 	for _, allocation := range allocations {
-		// Verify module account name is recognized by the PSE module
 		if !psetypes.IsValidModuleAccountName(allocation.ModuleAccount) {
 			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "invalid module account: %s", allocation.ModuleAccount)
 		}
-
-		// Apply percentage to total mint amount (truncates to integer)
-		allocationAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
-
-		// Validate that allocations are not zero
-		if allocationAmount.IsZero() {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "module account %s: allocation rounds to zero", allocation.ModuleAccount)
-		}
-
-		moduleAccountBalances[allocation.ModuleAccount] = allocationAmount
 	}
 
-	// Step 2: Verify sum of all allocations equals total mint amount
-	sumOfAllocations := sdkmath.ZeroInt()
-	for _, amount := range moduleAccountBalances {
-		sumOfAllocations = sumOfAllocations.Add(amount)
-	}
-
-	// Verify the sum matches the total mint amount
-	// This catches rounding errors from percentage-to-integer conversion
-	if !sumOfAllocations.Equal(totalMintAmount) {
-		return errorsmod.Wrapf(psetypes.ErrInvalidInput,
-			"sum of all allocations (%s) does not equal total mint amount (%s)",
-			sumOfAllocations.String(), totalMintAmount.String())
-	}
-
-	// Step 3: Generate the n-month distribution schedule
+	// Step 2: Generate the n-month distribution schedule
 	// This defines when and how much each module account will distribute to recipients
-	schedule, err := CreateDistributionSchedule(moduleAccountBalances, scheduleStartTime)
+	schedule, err := CreateDistributionSchedule(allocations, totalMintAmount, scheduleStartTime)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 4: Persist the schedule to blockchain state
+	// Step 3: Persist the schedule to blockchain state
 	if err := pseKeeper.SaveDistributionSchedule(ctx, schedule); err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 5: Mint and fund clearing accounts
-	if err := MintAndFundClearingAccounts(ctx, bankKeeper, moduleAccountBalances, denom); err != nil {
+	// Step 4: Mint and fund clearing accounts
+	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, denom); err != nil {
 		return err
 	}
 
 	sdkCtx.Logger().Info("initialization completed",
 		"minted", totalMintAmount.String(),
 		"denom", denom,
-		"allocations", len(moduleAccountBalances),
+		"allocations", len(allocations),
 		"periods", len(schedule),
 	)
 
@@ -155,10 +128,11 @@ func InitPSEAllocationsAndSchedule(
 // Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
 // Returns the schedule without persisting it to state, making this a pure, testable function.
 func CreateDistributionSchedule(
-	moduleAccountBalances map[string]sdkmath.Int,
+	allocations []InitialAllocation,
+	totalMintAmount sdkmath.Int,
 	startTime uint64,
 ) ([]psetypes.ScheduledDistribution, error) {
-	if len(moduleAccountBalances) == 0 {
+	if len(allocations) == 0 {
 		return nil, psetypes.ErrNoModuleBalances
 	}
 
@@ -175,28 +149,31 @@ func CreateDistributionSchedule(
 		distributionTime := uint64(distributionDateTime.Unix())
 
 		// Build allocations list for this distribution period
-		allocations := make([]psetypes.ClearingAccountAllocation, 0, len(moduleAccountBalances))
+		periodAllocations := make([]psetypes.ClearingAccountAllocation, 0, len(allocations))
 
-		for clearingAccount, totalBalance := range moduleAccountBalances {
+		for _, allocation := range allocations {
+			// Calculate total balance for this module account from percentage
+			totalBalance := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
+
 			// Divide total balance equally across all distribution periods using integer division
 			monthlyAmount := totalBalance.QuoRaw(psetypes.TotalAllocationMonths)
 
 			// Fail if balance is too small to distribute over n periods
 			if monthlyAmount.IsZero() {
-				return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "clearing account %s: balance too small to divide into monthly distributions", clearingAccount)
+				return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "clearing account %s: balance too small to divide into monthly distributions", allocation.ModuleAccount)
 			}
 
-			allocations = append(allocations, psetypes.ClearingAccountAllocation{
-				ClearingAccount: clearingAccount,
+			periodAllocations = append(periodAllocations, psetypes.ClearingAccountAllocation{
+				ClearingAccount: allocation.ModuleAccount,
 				Amount:          monthlyAmount,
 			})
 		}
 
 		// Add this distribution period to the schedule
-		if len(allocations) > 0 {
+		if len(periodAllocations) > 0 {
 			schedule = append(schedule, psetypes.ScheduledDistribution{
 				Timestamp:   distributionTime,
-				Allocations: allocations,
+				Allocations: periodAllocations,
 			})
 		}
 	}
@@ -209,15 +186,10 @@ func CreateDistributionSchedule(
 func MintAndFundClearingAccounts(
 	ctx context.Context,
 	bankKeeper psetypes.BankKeeper,
-	moduleAccountBalances map[string]sdkmath.Int,
+	allocations []InitialAllocation,
+	totalMintAmount sdkmath.Int,
 	denom string,
 ) error {
-	// Calculate total mint amount from all module account balances
-	totalMintAmount := sdkmath.ZeroInt()
-	for _, amount := range moduleAccountBalances {
-		totalMintAmount = totalMintAmount.Add(amount)
-	}
-
 	// Mint the full token supply
 	coinsToMint := sdk.NewCoins(sdk.NewCoin(denom, totalMintAmount))
 	if err := bankKeeper.MintCoins(ctx, psetypes.ModuleName, coinsToMint); err != nil {
@@ -226,15 +198,23 @@ func MintAndFundClearingAccounts(
 
 	// Distribute minted tokens from PSE module to all clearing account modules
 	// Excluded accounts receive tokens but won't transfer to recipients during normal distribution
-	for moduleAccount, amount := range moduleAccountBalances {
-		coinsToTransfer := sdk.NewCoins(sdk.NewCoin(denom, amount))
+	for _, allocation := range allocations {
+		// Calculate amount for this module account from percentage
+		allocationAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
+
+		// Validate that allocation is not zero
+		if allocationAmount.IsZero() {
+			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "module account %s: allocation rounds to zero", allocation.ModuleAccount)
+		}
+
+		coinsToTransfer := sdk.NewCoins(sdk.NewCoin(denom, allocationAmount))
 		if err := bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			psetypes.ModuleName,
-			moduleAccount,
+			allocation.ModuleAccount,
 			coinsToTransfer,
 		); err != nil {
-			return errorsmod.Wrapf(psetypes.ErrTransferFailed, "to %s: %v", moduleAccount, err)
+			return errorsmod.Wrapf(psetypes.ErrTransferFailed, "to %s: %v", allocation.ModuleAccount, err)
 		}
 	}
 

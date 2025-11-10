@@ -144,16 +144,10 @@ func TestCreateDistributionSchedule_MatchesInitialAllocations(t *testing.T) {
 	totalMint := sdkmath.NewInt(v6.InitialTotalMint)
 	allocations := v6.DefaultAllocations()
 
-	// Build the same balances map that the upgrade migration would use
-	balances := make(map[string]sdkmath.Int)
-	for _, allocation := range allocations {
-		amount := allocation.Percentage.MulInt(totalMint).TruncateInt()
-		balances[allocation.ModuleAccount] = amount
-	}
-
 	// Create the schedule
 	schedule, err := v6.CreateDistributionSchedule(
-		balances,
+		allocations,
+		totalMint,
 		v6.DefaultDistributionStartTime,
 	)
 	requireT.NoError(err)
@@ -165,7 +159,13 @@ func TestCreateDistributionSchedule_MatchesInitialAllocations(t *testing.T) {
 
 		for _, periodAlloc := range period.Allocations {
 			// Find the corresponding initial allocation
-			totalBalance := balances[periodAlloc.ClearingAccount]
+			var totalBalance sdkmath.Int
+			for _, alloc := range allocations {
+				if alloc.ModuleAccount == periodAlloc.ClearingAccount {
+					totalBalance = alloc.Percentage.MulInt(totalMint).TruncateInt()
+					break
+				}
+			}
 			expectedMonthly := totalBalance.QuoRaw(psetypes.TotalAllocationMonths)
 
 			requireT.Equal(expectedMonthly.String(), periodAlloc.Amount.String(),

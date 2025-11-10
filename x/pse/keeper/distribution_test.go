@@ -72,24 +72,26 @@ func TestDistribution_ProcessScheduledAllocations(t *testing.T) {
 	// Step 2: Create a distribution schedule manually for testing
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix()) // 1 hour ago (already due)
 
-	// Create module balances including excluded Community account
-	moduleBalances := map[string]sdkmath.Int{
-		types.ModuleAccountCommunity:  sdkmath.NewInt(100_000_000_000), // 100B - excluded from distribution
-		types.ModuleAccountFoundation: sdkmath.NewInt(50_000_000_000),  // 50B
-		types.ModuleAccountTeam:       sdkmath.NewInt(50_000_000_000),  // 50B
+	// Create allocations and calculate total mint amount
+	totalMint := sdkmath.NewInt(200_000_000_000) // 200B total
+	allocations := []v6.InitialAllocation{
+		{ModuleAccount: types.ModuleAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.50")},  // 100B
+		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")}, // 50B
+		{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")},       // 50B
 	}
 
 	// Mint tokens to module accounts for distribution
-	for moduleAccount, amount := range moduleBalances {
+	for _, allocation := range allocations {
+		amount := allocation.Percentage.MulInt(totalMint).TruncateInt()
 		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, amount))
 		err = bankKeeper.MintCoins(ctx, types.ModuleName, coins)
 		requireT.NoError(err)
-		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, moduleAccount, coins)
+		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, allocation.ModuleAccount, coins)
 		requireT.NoError(err)
 	}
 
 	// Create schedule
-	schedule, err := v6.CreateDistributionSchedule(moduleBalances, startTime)
+	schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, startTime)
 	requireT.NoError(err)
 
 	// Save only the first distribution (for testing)
@@ -242,22 +244,24 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 
 func TestCreateDistributionSchedule_Success(t *testing.T) {
 	testCases := []struct {
-		name                  string
-		moduleAccountBalances map[string]sdkmath.Int
-		startTime             uint64
-		verifyFn              func(*require.Assertions, []types.ScheduledDistribution, map[string]sdkmath.Int)
+		name        string
+		allocations []v6.InitialAllocation
+		totalMint   sdkmath.Int
+		startTime   uint64
+		verifyFn    func(*require.Assertions, []types.ScheduledDistribution, []v6.InitialAllocation, sdkmath.Int)
 	}{
 		{
 			name: "standard_five_accounts",
-			moduleAccountBalances: map[string]sdkmath.Int{
-				types.ModuleAccountFoundation:  sdkmath.NewInt(8_400_000), // 100K per month
-				types.ModuleAccountTeam:        sdkmath.NewInt(4_200_000), // 50K per month
-				types.ModuleAccountPartnership: sdkmath.NewInt(2_520_000), // 30K per month
-				types.ModuleAccountAlliance:    sdkmath.NewInt(1_680_000), // 20K per month
-				types.ModuleAccountInvestors:   sdkmath.NewInt(1_260_000), // 15K per month
+			allocations: []v6.InitialAllocation{
+				{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},  // 8.4M
+				{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},        // 4.2M
+				{ModuleAccount: types.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.12")}, // 2.52M
+				{ModuleAccount: types.ModuleAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.08")},    // 1.68M
+				{ModuleAccount: types.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.06")},   // 1.26M
 			},
+			totalMint: sdkmath.NewInt(21_000_000), // 21M total
 			startTime: uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, balances map[string]sdkmath.Int) {
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, allocations []v6.InitialAllocation, totalMint sdkmath.Int) {
 				// Verify Feb 2025 is properly calculated
 				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
 				req.Equal(expectedFeb2025, schedule[1].Timestamp, "second period should be Feb 1, 2025")
@@ -265,14 +269,15 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		},
 		{
 			name: "large_balances",
-			moduleAccountBalances: map[string]sdkmath.Int{
-				types.ModuleAccountFoundation:  sdkmath.NewInt(30_000_000_000_000_000), // 30B
-				types.ModuleAccountPartnership: sdkmath.NewInt(20_000_000_000_000_000), // 20B
-				types.ModuleAccountTeam:        sdkmath.NewInt(20_000_000_000_000_000), // 20B
-				types.ModuleAccountInvestors:   sdkmath.NewInt(15_000_000_000_000_000), // 15B
+			allocations: []v6.InitialAllocation{
+				{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.353")},  // 30B
+				{ModuleAccount: types.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")}, // 20B
+				{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")},        // 20B
+				{ModuleAccount: types.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.177")},   // 15B
 			},
+			totalMint: sdkmath.NewInt(85_000_000_000_000_000), // 85B total
 			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, balances map[string]sdkmath.Int) {
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, allocations []v6.InitialAllocation, totalMint sdkmath.Int) {
 				// Verify no overflow or precision issues with large numbers
 				for _, period := range schedule {
 					for _, allocation := range period.Allocations {
@@ -284,16 +289,17 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		},
 		{
 			name: "includes_excluded_accounts",
-			moduleAccountBalances: map[string]sdkmath.Int{
-				types.ModuleAccountCommunity:   sdkmath.NewInt(40_000_000_000_000_000), // 40B - excluded
-				types.ModuleAccountFoundation:  sdkmath.NewInt(30_000_000_000_000_000), // 30B
-				types.ModuleAccountAlliance:    sdkmath.NewInt(20_000_000_000_000_000), // 20B
-				types.ModuleAccountPartnership: sdkmath.NewInt(3_000_000_000_000_000),  // 3B
-				types.ModuleAccountInvestors:   sdkmath.NewInt(5_000_000_000_000_000),  // 5B
-				types.ModuleAccountTeam:        sdkmath.NewInt(2_000_000_000_000_000),  // 2B
+			allocations: []v6.InitialAllocation{
+				{ModuleAccount: types.ModuleAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},   // 40B
+				{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.30")},  // 30B
+				{ModuleAccount: types.ModuleAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},    // 20B
+				{ModuleAccount: types.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.03")}, // 3B
+				{ModuleAccount: types.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.05")},   // 5B
+				{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.02")},        // 2B
 			},
+			totalMint: sdkmath.NewInt(100_000_000_000_000_000), // 100B total
 			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, balances map[string]sdkmath.Int) {
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, allocations []v6.InitialAllocation, totalMint sdkmath.Int) {
 				// Verify Community account is included in schedule
 				foundCommunity := false
 				for _, period := range schedule {
@@ -301,7 +307,8 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 						if allocation.ClearingAccount == types.ModuleAccountCommunity {
 							foundCommunity = true
 							// Verify Community has correct allocation amount
-							expectedMonthly := balances[types.ModuleAccountCommunity].QuoRaw(types.TotalAllocationMonths)
+							communityTotal := allocations[0].Percentage.MulInt(totalMint).TruncateInt()
+							expectedMonthly := communityTotal.QuoRaw(types.TotalAllocationMonths)
 							req.Equal(expectedMonthly.String(), allocation.Amount.String(),
 								"Community monthly allocation should be correct")
 						}
@@ -317,7 +324,7 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 			requireT := require.New(t)
 
 			// Execute: Create schedule
-			schedule, err := v6.CreateDistributionSchedule(tc.moduleAccountBalances, tc.startTime)
+			schedule, err := v6.CreateDistributionSchedule(tc.allocations, tc.totalMint, tc.startTime)
 			requireT.NoError(err)
 
 			// Verify: Should have n periods
@@ -328,15 +335,22 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 
 			// Verify: Each period has allocations for all modules
 			for i, period := range schedule {
-				requireT.Len(period.Allocations, len(tc.moduleAccountBalances),
+				requireT.Len(period.Allocations, len(tc.allocations),
 					"period %d should have allocations for all modules", i)
 
 				// Verify each allocation amount is 1/n of total
-				for _, allocation := range period.Allocations {
-					expectedTotal := tc.moduleAccountBalances[allocation.ClearingAccount]
+				for _, periodAlloc := range period.Allocations {
+					// Find corresponding initial allocation
+					var expectedTotal sdkmath.Int
+					for _, alloc := range tc.allocations {
+						if alloc.ModuleAccount == periodAlloc.ClearingAccount {
+							expectedTotal = alloc.Percentage.MulInt(tc.totalMint).TruncateInt()
+							break
+						}
+					}
 					expectedMonthly := expectedTotal.QuoRaw(types.TotalAllocationMonths)
-					requireT.Equal(expectedMonthly.String(), allocation.Amount.String(),
-						"period %d: monthly amount for %s should be 1/n of total", i, allocation.ClearingAccount)
+					requireT.Equal(expectedMonthly.String(), periodAlloc.Amount.String(),
+						"period %d: monthly amount for %s should be 1/n of total", i, periodAlloc.ClearingAccount)
 				}
 			}
 
@@ -348,7 +362,7 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 
 			// Run test-specific verifications
 			if tc.verifyFn != nil {
-				tc.verifyFn(requireT, schedule, tc.moduleAccountBalances)
+				tc.verifyFn(requireT, schedule, tc.allocations, tc.totalMint)
 			}
 		})
 	}
@@ -384,16 +398,17 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 		},
 	}
 
-	moduleAccountBalances := map[string]sdkmath.Int{
-		types.ModuleAccountFoundation: sdkmath.NewInt(8_400_000),
+	allocations := []v6.InitialAllocation{
+		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
 	}
+	totalMint := sdkmath.NewInt(8_400_000)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			requireT := require.New(t)
 
 			// Execute: Create schedule
-			schedule, err := v6.CreateDistributionSchedule(moduleAccountBalances, uint64(tc.startTime.Unix()))
+			schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, uint64(tc.startTime.Unix()))
 			requireT.NoError(err)
 
 			// Verify: All timestamps follow Gregorian calendar rules
@@ -415,10 +430,11 @@ func TestCreateDistributionSchedule_EmptyBalances(t *testing.T) {
 	requireT := require.New(t)
 
 	startTime := uint64(time.Now().Unix())
-	emptyBalances := map[string]sdkmath.Int{}
+	emptyAllocations := []v6.InitialAllocation{}
+	totalMint := sdkmath.NewInt(1000)
 
-	// Execute: Should fail with empty balances
-	schedule, err := v6.CreateDistributionSchedule(emptyBalances, startTime)
+	// Execute: Should fail with empty allocations
+	schedule, err := v6.CreateDistributionSchedule(emptyAllocations, totalMint, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
 	requireT.ErrorIs(err, types.ErrNoModuleBalances)
@@ -429,13 +445,14 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 
 	startTime := uint64(time.Now().Unix())
 
-	// Balance that results in zero monthly amount (< TotalAllocationMonths)
-	moduleAccountBalances := map[string]sdkmath.Int{
-		types.ModuleAccountFoundation: sdkmath.NewInt(50), // 50 / n = 0 (integer division)
+	// Allocation that results in zero monthly amount (< TotalAllocationMonths)
+	allocations := []v6.InitialAllocation{
+		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.0000000001")}, // Very small percentage
 	}
+	totalMint := sdkmath.NewInt(50) // 50 * tiny percentage = 0 (integer division)
 
 	// Execute: Should fail with zero monthly amount
-	schedule, err := v6.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
 	requireT.Contains(err.Error(), "balance too small to divide into monthly distributions")
@@ -445,18 +462,19 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 	requireT := require.New(t)
 
 	// Setup
-	moduleAccountBalances := map[string]sdkmath.Int{
-		types.ModuleAccountFoundation: sdkmath.NewInt(8_400_000),
-		types.ModuleAccountTeam:       sdkmath.NewInt(4_200_000),
+	allocations := []v6.InitialAllocation{
+		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.667")}, // ~8.4M
+		{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.333")},       // ~4.2M
 	}
+	totalMint := sdkmath.NewInt(12_600_000)
 
 	startTime := uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix())
 
 	// Execute twice
-	schedule1, err1 := v6.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	schedule1, err1 := v6.CreateDistributionSchedule(allocations, totalMint, startTime)
 	requireT.NoError(err1)
 
-	schedule2, err2 := v6.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	schedule2, err2 := v6.CreateDistributionSchedule(allocations, totalMint, startTime)
 	requireT.NoError(err2)
 
 	// Verify: Results should be identical
