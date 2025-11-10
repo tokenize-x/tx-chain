@@ -15,6 +15,19 @@ import (
 func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	// Peek at the next scheduled distribution
+	scheduledDistribution, shouldProcess, err := k.PeekNextAllocationSchedule(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Return early if schedule is empty or not ready to process
+	if !shouldProcess {
+		return nil
+	}
+
+	timestamp := scheduledDistribution.Timestamp
+
 	// Get bond denom from staking params
 	//nolint:contextcheck // this is correct context passing
 	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
@@ -28,35 +41,8 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 		return err
 	}
 
-	// Get iterator for the allocation schedule (sorted by timestamp ascending)
-	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	// Return early if schedule is empty
-	if !iter.Valid() {
-		iter.Close()
-		return nil
-	}
-
-	// Extract the earliest scheduled distribution
-	kv, err := iter.KeyValue()
-	iter.Close()
-	if err != nil {
-		return err
-	}
-
-	timestamp := kv.Key
-
-	// Skip if distribution time has not yet arrived
-	// Since the map is sorted by timestamp, if the first item is in the future, all items are
-	if timestamp > uint64(sdkCtx.BlockTime().Unix()) {
-		return nil
-	}
-
 	// Process all allocations scheduled for this timestamp
-	if err := k.distributeAllocatedTokens(ctx, timestamp, bondDenom, params.ClearingAccountMappings); err != nil {
+	if err := k.distributeAllocatedTokens(ctx, timestamp, bondDenom, params.ClearingAccountMappings, scheduledDistribution); err != nil {
 		return err
 	}
 
@@ -71,6 +57,39 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	return nil
 }
 
+// PeekNextAllocationSchedule returns the earliest scheduled distribution and whether it should be processed.
+func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.ScheduledDistribution, bool, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// Get iterator for the allocation schedule (sorted by timestamp ascending)
+	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
+	if err != nil {
+		return types.ScheduledDistribution{}, false, err
+	}
+	defer iter.Close()
+
+	// Return early if schedule is empty
+	if !iter.Valid() {
+		return types.ScheduledDistribution{}, false, nil
+	}
+
+	// Extract the earliest scheduled distribution
+	kv, err := iter.KeyValue()
+	if err != nil {
+		return types.ScheduledDistribution{}, false, err
+	}
+
+	timestamp := kv.Key
+	scheduledDist := kv.Value
+
+	// Check if distribution time has arrived
+	// Since the map is sorted by timestamp, if the first item is in the future, all items are
+	currentTime := uint64(sdkCtx.BlockTime().Unix())
+	shouldProcess := timestamp <= currentTime
+
+	return scheduledDist, shouldProcess, nil
+}
+
 // distributeAllocatedTokens transfers tokens from clearing accounts to their mapped recipients.
 // Processes all allocations within a single scheduled distribution.
 // Any transfer failure indicates a state invariant violation (insufficient balance or invalid recipient).
@@ -79,14 +98,9 @@ func (k Keeper) distributeAllocatedTokens(
 	timestamp uint64,
 	bondDenom string,
 	clearingAccountMappings []types.ClearingAccountMapping,
+	scheduledDistribution types.ScheduledDistribution,
 ) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	// Retrieve the scheduled distribution for this timestamp
-	scheduledDistribution, err := k.AllocationSchedule.Get(ctx, timestamp)
-	if err != nil {
-		return errorsmod.Wrapf(err, "allocation schedule not found for timestamp %d", timestamp)
-	}
 
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
