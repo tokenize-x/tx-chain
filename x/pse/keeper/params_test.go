@@ -198,7 +198,7 @@ func TestUpdateExcludedAddresses(t *testing.T) {
 	}
 }
 
-func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
+func TestUpdateClearingMappings_ReferentialIntegrity(t *testing.T) {
 	requireT := require.New(t)
 
 	testApp := simapp.New()
@@ -216,7 +216,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
-	err := pseKeeper.UpdateSubAccountMappings(ctx, authority, mappings)
+	err := pseKeeper.UpdateClearingMappings(ctx, authority, mappings)
 	requireT.NoError(err, "should allow adding mappings when no schedule")
 
 	// Test 2: Can remove mappings when not referenced in schedule
@@ -224,7 +224,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
 	}
 
-	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, reducedMappings)
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, reducedMappings)
 	requireT.NoError(err, "should allow removing unreferenced mappings")
 
 	// Test 3: Add a schedule that references treasury
@@ -240,7 +240,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 
 	// Test 4: Cannot remove treasury mapping while schedule references it
 	emptyMappings := []types.ClearingAccountMapping{}
-	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, emptyMappings)
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, emptyMappings)
 	requireT.Error(err, "should reject removal of mapping referenced in schedule")
 	requireT.Contains(err.Error(), "still referenced in the allocation schedule")
 
@@ -249,7 +249,7 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr3}, // Changed address
 	}
 
-	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, updatedMappings)
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, updatedMappings)
 	requireT.NoError(err, "should allow updating mapping address")
 
 	// Verify the address was updated
@@ -264,18 +264,18 @@ func TestUpdateSubAccountMappings_ReferentialIntegrity(t *testing.T) {
 		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
-	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, expandedMappings)
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, expandedMappings)
 	requireT.NoError(err, "should allow adding new mappings")
 
 	// Test 7: Clear schedule, then can remove mappings
 	err = pseKeeper.AllocationSchedule.Remove(ctx, scheduledDist.Timestamp)
 	requireT.NoError(err)
 
-	err = pseKeeper.UpdateSubAccountMappings(ctx, authority, emptyMappings)
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, emptyMappings)
 	requireT.NoError(err, "should allow removing all mappings after schedule is cleared")
 }
 
-func TestUpdateSubAccountMappings_Authority(t *testing.T) {
+func TestUpdateClearingMappings_Authority(t *testing.T) {
 	requireT := require.New(t)
 
 	testApp := simapp.New()
@@ -291,11 +291,11 @@ func TestUpdateSubAccountMappings_Authority(t *testing.T) {
 	}
 
 	// Test with wrong authority
-	err := pseKeeper.UpdateSubAccountMappings(ctx, wrongAuthority, mappings)
+	err := pseKeeper.UpdateClearingMappings(ctx, wrongAuthority, mappings)
 	requireT.Error(err, "should reject wrong authority")
 	requireT.Contains(err.Error(), "invalid authority")
 
 	// Test with correct authority
-	err = pseKeeper.UpdateSubAccountMappings(ctx, correctAuthority, mappings)
+	err = pseKeeper.UpdateClearingMappings(ctx, correctAuthority, mappings)
 	requireT.NoError(err, "should accept correct authority")
 }

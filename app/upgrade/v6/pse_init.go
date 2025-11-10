@@ -20,6 +20,9 @@ const (
 	// InitialTotalMint is the total amount to mint during initialization
 	// 100 billion tokens (in base denomination units).
 	InitialTotalMint = 100_000_000_000_000_000
+
+	// TotalAllocationMonths is the total number of months for the allocation schedule.
+	TotalAllocationMonths = 84
 )
 
 // InitialAllocation defines the initial allocation for a module account during initialization.
@@ -140,9 +143,9 @@ func CreateDistributionSchedule(
 	startDateTime := time.Unix(int64(startTime), 0).UTC()
 
 	// Pre-allocate slice with exact capacity for n distribution periods
-	schedule := make([]psetypes.ScheduledDistribution, 0, psetypes.TotalAllocationMonths)
+	schedule := make([]psetypes.ScheduledDistribution, 0, TotalAllocationMonths)
 
-	for month := range psetypes.TotalAllocationMonths {
+	for month := range TotalAllocationMonths {
 		// Calculate distribution timestamp by adding months to start time
 		// AddDate handles month length variations and leap years correctly
 		distributionDateTime := startDateTime.AddDate(0, month, 0)
@@ -156,7 +159,7 @@ func CreateDistributionSchedule(
 			totalBalance := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 
 			// Divide total balance equally across all distribution periods using integer division
-			monthlyAmount := totalBalance.QuoRaw(psetypes.TotalAllocationMonths)
+			monthlyAmount := totalBalance.QuoRaw(TotalAllocationMonths)
 
 			// Fail if balance is too small to distribute over n periods
 			if monthlyAmount.IsZero() {
@@ -169,13 +172,15 @@ func CreateDistributionSchedule(
 			})
 		}
 
-		// Add this distribution period to the schedule
-		if len(periodAllocations) > 0 {
-			schedule = append(schedule, psetypes.ScheduledDistribution{
-				Timestamp:   distributionTime,
-				Allocations: periodAllocations,
-			})
+		if len(periodAllocations) == 0 {
+			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "no allocations for distribution period %d", month)
 		}
+
+		// Add this distribution period to the schedule
+		schedule = append(schedule, psetypes.ScheduledDistribution{
+			Timestamp:   distributionTime,
+			Allocations: periodAllocations,
+		})
 	}
 
 	return schedule, nil

@@ -65,8 +65,8 @@ func (k Keeper) UpdateExcludedAddresses(
 	return k.SetParams(ctx, params)
 }
 
-// UpdateSubAccountMappings updates the sub account mappings in params via governance.
-func (k Keeper) UpdateSubAccountMappings(
+// UpdateClearingMappings updates the sub account mappings in params via governance.
+func (k Keeper) UpdateClearingMappings(
 	ctx context.Context,
 	authority string,
 	mappings []types.ClearingAccountMapping,

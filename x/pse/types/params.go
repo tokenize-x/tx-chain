@@ -7,11 +7,6 @@ import (
 )
 
 const (
-	// TotalAllocationMonths is the total number of months for the allocation schedule.
-	TotalAllocationMonths = 84
-)
-
-const (
 	// ModuleAccountCommunity is the community module account name.
 	ModuleAccountCommunity = "pse_community"
 	// ModuleAccountFoundation is the foundation module account name.
@@ -38,38 +33,15 @@ func GetModuleAccountPerms() map[string][]string {
 	}
 }
 
-// GetAllowedModuleAccounts returns a list of all allowed module account names.
-func GetAllowedModuleAccounts() []string {
-	accounts := make([]string, 0, len(GetModuleAccountPerms()))
-	for name := range GetModuleAccountPerms() {
-		accounts = append(accounts, name)
-	}
-	return accounts
-}
-
 // IsValidModuleAccountName checks if the given name is one of the allowed module accounts.
 func IsValidModuleAccountName(name string) bool {
 	_, exists := GetModuleAccountPerms()[name]
 	return exists
 }
 
-// GetExcludedClearingAccounts returns the list of clearing accounts excluded from recipient distribution.
-// These accounts receive tokens during initialization but don't transfer to recipients in EndBlock.
-func GetExcludedClearingAccounts() []string {
-	return []string{
-		ModuleAccountCommunity, // Community allocation handled by separate feature
-	}
-}
-
 // IsExcludedClearingAccount checks if a clearing account is excluded from recipient distribution.
 func IsExcludedClearingAccount(account string) bool {
-	excludedAccounts := GetExcludedClearingAccounts()
-	for _, excluded := range excludedAccounts {
-		if account == excluded {
-			return true
-		}
-	}
-	return false
+	return account == ModuleAccountCommunity
 }
 
 // DefaultParams returns default pse module parameters.

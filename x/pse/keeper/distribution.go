@@ -9,10 +9,10 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-// ProcessClearingAccountDistributions processes the next due distribution from the schedule.
+// ProcessNextDistribution processes the next due distribution from the schedule.
 // Checks the earliest scheduled distribution and processes it if the current block time has passed its timestamp.
 // Only one distribution is processed per call. Should be called from EndBlock.
-func (k Keeper) ProcessClearingAccountDistributions(ctx context.Context) error {
+func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Get bond denom from staking params
@@ -56,7 +56,7 @@ func (k Keeper) ProcessClearingAccountDistributions(ctx context.Context) error {
 	}
 
 	// Process all allocations scheduled for this timestamp
-	if err := k.processScheduledAllocations(ctx, timestamp, bondDenom, params.ClearingAccountMappings); err != nil {
+	if err := k.distributeAllocatedTokens(ctx, timestamp, bondDenom, params.ClearingAccountMappings); err != nil {
 		return err
 	}
 
@@ -71,10 +71,10 @@ func (k Keeper) ProcessClearingAccountDistributions(ctx context.Context) error {
 	return nil
 }
 
-// processScheduledAllocations transfers tokens from clearing accounts to their mapped recipients.
+// distributeAllocatedTokens transfers tokens from clearing accounts to their mapped recipients.
 // Processes all allocations within a single scheduled distribution.
 // Any transfer failure indicates a state invariant violation (insufficient balance or invalid recipient).
-func (k Keeper) processScheduledAllocations(
+func (k Keeper) distributeAllocatedTokens(
 	ctx context.Context,
 	timestamp uint64,
 	bondDenom string,
@@ -112,14 +112,14 @@ func (k Keeper) processScheduledAllocations(
 		recipient := sdk.MustAccAddressFromBech32(recipientAddr)
 
 		// Prepare coins to transfer
-		coinsToAllocate := sdk.NewCoins(sdk.NewCoin(bondDenom, allocation.Amount))
+		coinsToSend := sdk.NewCoins(sdk.NewCoin(bondDenom, allocation.Amount))
 
 		// Transfer tokens from clearing account to recipient
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			allocation.ClearingAccount,
 			recipient,
-			coinsToAllocate,
+			coinsToSend,
 		); err != nil {
 			return errorsmod.Wrapf(
 				types.ErrTransferFailed,
