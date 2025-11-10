@@ -82,13 +82,3 @@ func NewKeeper(
 
 	return k
 }
-
-// GetBondDenom returns the bond denomination from staking params.
-// This is used as the distribution denom for all PSE distributions.
-func (k Keeper) GetBondDenom(ctx sdk.Context) (string, error) {
-	stakingParams, err := k.stakingKeeper.GetParams(ctx)
-	if err != nil {
-		return "", err
-	}
-	return stakingParams.BondDenom, nil
-}

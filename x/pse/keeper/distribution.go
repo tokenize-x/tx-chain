@@ -17,7 +17,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 
 	// Get bond denom from staking params
 	//nolint:contextcheck // this is correct context passing
-	bondDenom, err := k.GetBondDenom(sdkCtx)
+	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
 	if err != nil {
 		return err
 	}

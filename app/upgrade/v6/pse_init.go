@@ -112,11 +112,10 @@ func InitPSEAllocationsAndSchedule(
 	totalMintAmount := sdkmath.NewInt(InitialTotalMint)
 
 	// Retrieve the chain's native token denomination from staking params
-	stakingParams, err := stakingKeeper.GetParams(ctx)
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to get staking params: %v", err)
 	}
-	denom := stakingParams.BondDenom
 
 	// Ensure allocation percentages are valid and sum to exactly 100%
 	if err := validateAllocations(allocations); err != nil {
@@ -153,13 +152,13 @@ func InitPSEAllocationsAndSchedule(
 	}
 
 	// Step 5: Mint and fund clearing accounts
-	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, denom); err != nil {
+	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, bondDenom); err != nil {
 		return err
 	}
 
 	sdkCtx.Logger().Info("initialization completed",
 		"minted", totalMintAmount.String(),
-		"denom", denom,
+		"denom", bondDenom,
 		"allocations", len(allocations),
 		"periods", len(schedule),
 	)
