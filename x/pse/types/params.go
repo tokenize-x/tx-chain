@@ -177,6 +177,7 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 }
 
 // ValidateScheduleMappingConsistency ensures all clearing accounts in the schedule have corresponding mappings.
+// Excluded clearing accounts (like Community) don't need mappings since they don't distribute to recipients.
 func ValidateScheduleMappingConsistency(schedule []ScheduledDistribution, mappings []ClearingAccountMapping) error {
 	// Build a set of available clearing accounts from mappings
 	availableAccounts := make(map[string]bool)
@@ -185,8 +186,13 @@ func ValidateScheduleMappingConsistency(schedule []ScheduledDistribution, mappin
 	}
 
 	// Check that every clearing account in the schedule has a mapping
+	// Excluded clearing accounts don't need mappings
 	for i, period := range schedule {
 		for j, alloc := range period.Allocations {
+			// Skip excluded clearing accounts - they don't need recipient mappings
+			if IsExcludedClearingAccount(alloc.ClearingAccount) {
+				continue
+			}
 			if !availableAccounts[alloc.ClearingAccount] {
 				return fmt.Errorf(
 					"period %d, allocation %d: no recipient mapping found for clearing account '%s'",

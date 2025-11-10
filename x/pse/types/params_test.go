@@ -478,6 +478,22 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			expectErr: true,
 			errMsg:    "no recipient mapping found for clearing account 'pse_foundation'",
 		},
+		{
+			name: "valid_community_excluded_no_mapping_required",
+			mappings: []ClearingAccountMapping{
+				{ClearingAccount: ModuleAccountFoundation, RecipientAddress: addr1},
+			},
+			schedule: []ScheduledDistribution{
+				{
+					Timestamp: 1735689600,
+					Allocations: []ClearingAccountAllocation{
+						{ClearingAccount: ModuleAccountCommunity, Amount: sdkmath.NewInt(1000)},   // Excluded - no mapping needed
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)}, // Needs mapping
+					},
+				},
+			},
+			expectErr: false, // Community doesn't need a mapping since it's excluded
+		},
 	}
 
 	for _, tc := range testCases {

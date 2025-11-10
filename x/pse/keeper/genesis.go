@@ -9,6 +9,11 @@ import (
 
 // InitGenesis initializes the module's state from a provided genesis state.
 func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) error {
+	// Validate genesis state (includes mapping consistency check)
+	if err := genState.Validate(); err != nil {
+		return err
+	}
+
 	if err := k.Params.Set(ctx, genState.Params); err != nil {
 		return err
 	}

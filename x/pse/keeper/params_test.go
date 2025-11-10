@@ -273,6 +273,25 @@ func TestUpdateClearingMappings_ReferentialIntegrity(t *testing.T) {
 
 	err = pseKeeper.UpdateClearingMappings(ctx, authority, emptyMappings)
 	requireT.NoError(err, "should allow removing all mappings after schedule is cleared")
+
+	// Test 8: Community account can be in schedule without a mapping (excluded from distribution)
+	communityDist := types.ScheduledDistribution{
+		Timestamp: 2000000001,
+		Allocations: []types.ClearingAccountAllocation{
+			{ClearingAccount: types.ModuleAccountCommunity, Amount: sdkmath.NewInt(1000)}, // Excluded - no mapping needed
+			{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(500)},
+		},
+	}
+
+	err = pseKeeper.AllocationSchedule.Set(ctx, communityDist.Timestamp, communityDist)
+	requireT.NoError(err)
+
+	// Should allow mappings without Community since it's excluded
+	mappingsWithoutCommunity := []types.ClearingAccountMapping{
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
+	}
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, mappingsWithoutCommunity)
+	requireT.NoError(err, "should allow Community in schedule without mapping since it's excluded")
 }
 
 func TestUpdateClearingMappings_Authority(t *testing.T) {

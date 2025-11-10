@@ -106,7 +106,12 @@ func (k Keeper) UpdateClearingMappings(
 	}
 
 	// Check that all required clearing accounts are present in the new mappings
+	// Excluded clearing accounts (like Community) don't need mappings since they don't distribute to recipients
 	for clearingAccount := range requiredAccounts {
+		// Skip excluded clearing accounts - they don't need recipient mappings
+		if types.IsExcludedClearingAccount(clearingAccount) {
+			continue
+		}
 		if !newMappings[clearingAccount] {
 			return errors.Wrapf(types.ErrInvalidInput,
 				"cannot remove mapping for clearing account '%s': it is still referenced in the allocation schedule", clearingAccount)

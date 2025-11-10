@@ -100,6 +100,8 @@ func (k Keeper) distributeAllocatedTokens(
 		}
 
 		// Find the recipient address mapped to this clearing account
+		// Note: Excluded clearing accounts (like Community) are skipped above and don't need mappings.
+		// Mappings are validated on update and genesis, so we can assume they exist for non-excluded accounts.
 		var recipientAddr string
 		for _, mapping := range clearingAccountMappings {
 			if mapping.ClearingAccount == allocation.ClearingAccount {
