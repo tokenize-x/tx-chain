@@ -274,17 +274,19 @@ func assertCommunityPoolBalanceAction(r *runEnv, expectedBalance sdkmath.Int) {
 
 func assertScoreResetAction(r *runEnv) {
 	count := 0
-	r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, nil, func(key sdk.AccAddress, value sdkmath.Int) (bool, error) {
+	err := r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, nil, func(key sdk.AccAddress, value sdkmath.Int) (bool, error) {
 		count++
 		return false, nil
 	})
+	r.requireT.NoError(err)
 	r.requireT.Equal(0, count)
 
 	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
-	r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil, func(key collections.Pair[sdk.ValAddress, sdk.AccAddress], value types.DelegationTimeEntry) (bool, error) {
+	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil, func(key collections.Pair[sdk.ValAddress, sdk.AccAddress], value types.DelegationTimeEntry) (bool, error) {
 		r.requireT.Equal(blockTimeUnixSeconds, value.LastChangedUnixSec)
 		return false, nil
 	})
+	r.requireT.NoError(err)
 	r.requireT.Equal(0, count)
 }
 
