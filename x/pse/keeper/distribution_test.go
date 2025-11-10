@@ -13,6 +13,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
+	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 	"github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -88,7 +89,7 @@ func TestDistribution_ProcessScheduledAllocations(t *testing.T) {
 	}
 
 	// Create schedule
-	schedule, err := keeper.CreateDistributionSchedule(moduleBalances, startTime)
+	schedule, err := v6.CreateDistributionSchedule(moduleBalances, startTime)
 	requireT.NoError(err)
 
 	// Save only the first distribution (for testing)
@@ -316,7 +317,7 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 			requireT := require.New(t)
 
 			// Execute: Create schedule
-			schedule, err := keeper.CreateDistributionSchedule(tc.moduleAccountBalances, tc.startTime)
+			schedule, err := v6.CreateDistributionSchedule(tc.moduleAccountBalances, tc.startTime)
 			requireT.NoError(err)
 
 			// Verify: Should have n periods
@@ -392,7 +393,7 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 			requireT := require.New(t)
 
 			// Execute: Create schedule
-			schedule, err := keeper.CreateDistributionSchedule(moduleAccountBalances, uint64(tc.startTime.Unix()))
+			schedule, err := v6.CreateDistributionSchedule(moduleAccountBalances, uint64(tc.startTime.Unix()))
 			requireT.NoError(err)
 
 			// Verify: All timestamps follow Gregorian calendar rules
@@ -417,7 +418,7 @@ func TestCreateDistributionSchedule_EmptyBalances(t *testing.T) {
 	emptyBalances := map[string]sdkmath.Int{}
 
 	// Execute: Should fail with empty balances
-	schedule, err := keeper.CreateDistributionSchedule(emptyBalances, startTime)
+	schedule, err := v6.CreateDistributionSchedule(emptyBalances, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
 	requireT.ErrorIs(err, types.ErrNoModuleBalances)
@@ -434,7 +435,7 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 	}
 
 	// Execute: Should fail with zero monthly amount
-	schedule, err := keeper.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	schedule, err := v6.CreateDistributionSchedule(moduleAccountBalances, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
 	requireT.Contains(err.Error(), "balance too small to divide into monthly distributions")
@@ -452,10 +453,10 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 	startTime := uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix())
 
 	// Execute twice
-	schedule1, err1 := keeper.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	schedule1, err1 := v6.CreateDistributionSchedule(moduleAccountBalances, startTime)
 	requireT.NoError(err1)
 
-	schedule2, err2 := keeper.CreateDistributionSchedule(moduleAccountBalances, startTime)
+	schedule2, err2 := v6.CreateDistributionSchedule(moduleAccountBalances, startTime)
 	requireT.NoError(err2)
 
 	// Verify: Results should be identical

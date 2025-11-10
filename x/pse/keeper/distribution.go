@@ -2,10 +2,8 @@ package keeper
 
 import (
 	"context"
-	"time"
 
 	errorsmod "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -149,60 +147,6 @@ func (k Keeper) processScheduledAllocations(
 	}
 
 	return nil
-}
-
-// CreateDistributionSchedule generates a periodic distribution schedule over n months.
-// Each distribution period allocates an equal portion (1/n) of each module account's total balance.
-// Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
-// Returns the schedule without persisting it to state, making this a pure, testable function.
-func CreateDistributionSchedule(
-	moduleAccountBalances map[string]sdkmath.Int,
-	startTime uint64,
-) ([]types.ScheduledDistribution, error) {
-	if len(moduleAccountBalances) == 0 {
-		return nil, types.ErrNoModuleBalances
-	}
-
-	// Convert Unix timestamp to time.Time for date arithmetic
-	startDateTime := time.Unix(int64(startTime), 0).UTC()
-
-	// Pre-allocate slice with exact capacity for n distribution periods
-	schedule := make([]types.ScheduledDistribution, 0, types.TotalAllocationMonths)
-
-	for month := range types.TotalAllocationMonths {
-		// Calculate distribution timestamp by adding months to start time
-		// AddDate handles month length variations and leap years correctly
-		distributionDateTime := startDateTime.AddDate(0, month, 0)
-		distributionTime := uint64(distributionDateTime.Unix())
-
-		// Build allocations list for this distribution period
-		allocations := make([]types.ClearingAccountAllocation, 0, len(moduleAccountBalances))
-
-		for clearingAccount, totalBalance := range moduleAccountBalances {
-			// Divide total balance equally across all distribution periods using integer division
-			monthlyAmount := totalBalance.QuoRaw(types.TotalAllocationMonths)
-
-			// Fail if balance is too small to distribute over n periods
-			if monthlyAmount.IsZero() {
-				return nil, errorsmod.Wrapf(types.ErrInvalidInput, "clearing account %s: balance too small to divide into monthly distributions", clearingAccount)
-			}
-
-			allocations = append(allocations, types.ClearingAccountAllocation{
-				ClearingAccount: clearingAccount,
-				Amount:          monthlyAmount,
-			})
-		}
-
-		// Add this distribution period to the schedule
-		if len(allocations) > 0 {
-			schedule = append(schedule, types.ScheduledDistribution{
-				Timestamp:   distributionTime,
-				Allocations: allocations,
-			})
-		}
-	}
-
-	return schedule, nil
 }
 
 // SaveDistributionSchedule persists the distribution schedule to blockchain state.

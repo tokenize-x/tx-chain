@@ -2,6 +2,7 @@ package v6
 
 import (
 	"context"
+	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
@@ -59,11 +60,11 @@ func DefaultAllocations() []InitialAllocation {
 	}
 }
 
-// InitPSEFundsAndSchedules initializes the PSE module by creating a distribution schedule,
+// InitPSEAllocationsAndSchedule initializes the PSE module by creating a distribution schedule,
 // minting tokens, and distributing them to module accounts. The schedule defines
 // how tokens will be gradually released over time from module accounts to recipients.
 // Should be called once during the software upgrade that introduces the PSE module.
-func InitPSEFundsAndSchedules(
+func InitPSEAllocationsAndSchedule(
 	ctx context.Context,
 	pseKeeper pskeeper.Keeper,
 	bankKeeper psetypes.BankKeeper,
@@ -124,7 +125,7 @@ func InitPSEFundsAndSchedules(
 
 	// Step 3: Generate the n-month distribution schedule
 	// This defines when and how much each module account will distribute to recipients
-	schedule, err := pskeeper.CreateDistributionSchedule(moduleAccountBalances, scheduleStartTime)
+	schedule, err := CreateDistributionSchedule(moduleAccountBalances, scheduleStartTime)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
@@ -134,13 +135,96 @@ func InitPSEFundsAndSchedules(
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 5: Mint the full token supply
+	// Step 5: Mint and fund clearing accounts
+	if err := MintAndFundClearingAccounts(ctx, bankKeeper, moduleAccountBalances, denom); err != nil {
+		return err
+	}
+
+	sdkCtx.Logger().Info("initialization completed",
+		"minted", totalMintAmount.String(),
+		"denom", denom,
+		"allocations", len(moduleAccountBalances),
+		"periods", len(schedule),
+	)
+
+	return nil
+}
+
+// CreateDistributionSchedule generates a periodic distribution schedule over n months.
+// Each distribution period allocates an equal portion (1/n) of each module account's total balance.
+// Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
+// Returns the schedule without persisting it to state, making this a pure, testable function.
+func CreateDistributionSchedule(
+	moduleAccountBalances map[string]sdkmath.Int,
+	startTime uint64,
+) ([]psetypes.ScheduledDistribution, error) {
+	if len(moduleAccountBalances) == 0 {
+		return nil, psetypes.ErrNoModuleBalances
+	}
+
+	// Convert Unix timestamp to time.Time for date arithmetic
+	startDateTime := time.Unix(int64(startTime), 0).UTC()
+
+	// Pre-allocate slice with exact capacity for n distribution periods
+	schedule := make([]psetypes.ScheduledDistribution, 0, psetypes.TotalAllocationMonths)
+
+	for month := range psetypes.TotalAllocationMonths {
+		// Calculate distribution timestamp by adding months to start time
+		// AddDate handles month length variations and leap years correctly
+		distributionDateTime := startDateTime.AddDate(0, month, 0)
+		distributionTime := uint64(distributionDateTime.Unix())
+
+		// Build allocations list for this distribution period
+		allocations := make([]psetypes.ClearingAccountAllocation, 0, len(moduleAccountBalances))
+
+		for clearingAccount, totalBalance := range moduleAccountBalances {
+			// Divide total balance equally across all distribution periods using integer division
+			monthlyAmount := totalBalance.QuoRaw(psetypes.TotalAllocationMonths)
+
+			// Fail if balance is too small to distribute over n periods
+			if monthlyAmount.IsZero() {
+				return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "clearing account %s: balance too small to divide into monthly distributions", clearingAccount)
+			}
+
+			allocations = append(allocations, psetypes.ClearingAccountAllocation{
+				ClearingAccount: clearingAccount,
+				Amount:          monthlyAmount,
+			})
+		}
+
+		// Add this distribution period to the schedule
+		if len(allocations) > 0 {
+			schedule = append(schedule, psetypes.ScheduledDistribution{
+				Timestamp:   distributionTime,
+				Allocations: allocations,
+			})
+		}
+	}
+
+	return schedule, nil
+}
+
+// MintAndFundClearingAccounts mints the total token supply and distributes it to clearing account modules.
+// Excluded accounts receive tokens but won't transfer to recipients during normal distribution.
+func MintAndFundClearingAccounts(
+	ctx context.Context,
+	bankKeeper psetypes.BankKeeper,
+	moduleAccountBalances map[string]sdkmath.Int,
+	denom string,
+) error {
+	// Calculate total mint amount from all module account balances
+	totalMintAmount := sdkmath.ZeroInt()
+	for _, amount := range moduleAccountBalances {
+		totalMintAmount = totalMintAmount.Add(amount)
+	}
+
+	// Mint the full token supply
 	coinsToMint := sdk.NewCoins(sdk.NewCoin(denom, totalMintAmount))
 	if err := bankKeeper.MintCoins(ctx, psetypes.ModuleName, coinsToMint); err != nil {
 		return errorsmod.Wrap(err, "failed to mint coins")
 	}
 
-	// Step 6: Distribute minted tokens from PSE module to all clearing account modules
+	// Distribute minted tokens from PSE module to all clearing account modules
 	// Excluded accounts receive tokens but won't transfer to recipients during normal distribution
 	for moduleAccount, amount := range moduleAccountBalances {
 		coinsToTransfer := sdk.NewCoins(sdk.NewCoin(denom, amount))
@@ -153,13 +237,6 @@ func InitPSEFundsAndSchedules(
 			return errorsmod.Wrapf(psetypes.ErrTransferFailed, "to %s: %v", moduleAccount, err)
 		}
 	}
-
-	sdkCtx.Logger().Info("initialization completed",
-		"minted", totalMintAmount.String(),
-		"denom", denom,
-		"allocations", len(moduleAccountBalances),
-		"periods", len(schedule),
-	)
 
 	return nil
 }

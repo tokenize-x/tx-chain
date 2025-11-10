@@ -53,7 +53,7 @@ func New(
 			}
 
 			// Perform PSE initialization: create schedule, mint, and distribute tokens
-			if err := InitPSEFundsAndSchedules(
+			if err := InitPSEAllocationsAndSchedule(
 				ctx,
 				pseKeeper,
 				bankKeeper,

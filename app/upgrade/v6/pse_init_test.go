@@ -75,7 +75,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT.NoError(err)
 
 	// Step 2: Perform Initialization (uses internal constants)
-	err = v6.InitPSEFundsAndSchedules(ctx, pseKeeper, bankKeeper, testApp.StakingKeeper)
+	err = v6.InitPSEAllocationsAndSchedule(ctx, pseKeeper, bankKeeper, testApp.StakingKeeper)
 	requireT.NoError(err)
 
 	// Step 3: Verify module accounts have correct balances
@@ -152,7 +152,7 @@ func TestCreateDistributionSchedule_MatchesInitialAllocations(t *testing.T) {
 	}
 
 	// Create the schedule
-	schedule, err := pskeeper.CreateDistributionSchedule(
+	schedule, err := v6.CreateDistributionSchedule(
 		balances,
 		v6.DefaultDistributionStartTime,
 	)
