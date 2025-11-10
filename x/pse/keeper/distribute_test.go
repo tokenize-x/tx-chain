@@ -12,20 +12,12 @@ import (
 )
 
 func TestKeeper_Distribute(t *testing.T) {
-	// TODO: add more test cases.
-	// test accumulated score (done.)
-	// test unaccumulated score
-	// test accumulated score + uncaculated score
-	// test redelegation, undelegation, cancel unbonding delegation
-	// test no delegation for scoring user
-	// test score reset
-	// test excluded address
 	cases := []struct {
 		name    string
 		actions []func(*runEnv)
 	}{
 		{
-			name: "test accumulated score",
+			name: "test unaccumulated score",
 			actions: []func(*runEnv){
 				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
 				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 900_000) },
@@ -33,10 +25,113 @@ func TestKeeper_Distribute(t *testing.T) {
 				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
 				func(r *runEnv) {
 					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
-						&r.delegators[0]: sdkmath.NewInt(1_100_366), // + 1000 * 1.1 m / 3 m
-						&r.delegators[1]: sdkmath.NewInt(900_299),   // + 1000 * 0.9 m / 3 m
+						&r.delegators[0]: sdkmath.NewInt(1_100_366), // + 1000 * 1.1 / 3
+						&r.delegators[1]: sdkmath.NewInt(900_299),   // + 1000 * 0.9 / 3
 					})
 				},
+				func(r *runEnv) { assertScoreResetAction(r) },
+			},
+		},
+		{
+			name: "test accumulated score + unaccumulated score",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 900_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 900_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 1_100_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(2_000_387), // + (1100 * 8 + 2000 * 8) / 64
+						&r.delegators[1]: sdkmath.NewInt(2_000_362), // + (900 * 8 + 2000 * 8) / 64
+					})
+				},
+				func(r *runEnv) { assertScoreResetAction(r) },
+			},
+		},
+		{
+			name: "test accumulated score + unaccumulated score + multiple validators",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 900_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[1], 900_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 900_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[1], 900_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[1], 1_100_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(4_000_442), // + (1100 * 8 + 2000 * 8) * 2 / 112
+						&r.delegators[1]: sdkmath.NewInt(4_000_414), // + (900 * 8 + 2000 * 8) * 2 / 112
+					})
+				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2)) },
+				func(r *runEnv) { assertScoreResetAction(r) },
+			},
+		},
+		{
+			name: "test unbonding delegation",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 900_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[0], 900_000) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[1], r.validators[0], 700_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(200_295), // + (1100 * 8 + 200 * 8) / 35.2
+						&r.delegators[1]: sdkmath.NewInt(200_249), // + (900 * 8 + 200 * 8) / 35.2
+					})
+				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2)) },
+				func(r *runEnv) { assertScoreResetAction(r) },
+			},
+		},
+		{
+			name: "test redelegation",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 900_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { redelegateAction(r, r.delegators[0], r.validators[0], r.validators[2], 900_000) },
+				func(r *runEnv) { redelegateAction(r, r.delegators[1], r.validators[0], r.validators[2], 700_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(1_100_365), // + 1000 * 1.1 / 3
+						&r.delegators[1]: sdkmath.NewInt(900_298),   // + 1000 * 0.9 / 3
+					})
+				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2)) },
+				func(r *runEnv) { assertScoreResetAction(r) },
+			},
+		},
+		{
+			name: "test no delegation with scoring user",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 900_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(0),       // + 1000 * 1.1 / 3
+						&r.delegators[1]: sdkmath.NewInt(900_299), // + 1000 * 0.9 / 3
+					})
+				},
+				// + 1000 * 1.1 / 3 (from user's share) + 2 (from rounding)
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(366+2)) },
+				func(r *runEnv) { assertScoreResetAction(r) },
 			},
 		},
 	}

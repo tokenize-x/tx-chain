@@ -213,10 +213,9 @@ func (k Keeper) distributeToDelegator(
 	); err != nil {
 		return sdkmath.NewInt(0), err
 	}
-	deliveredAmount := sdkmath.NewInt(0)
 	for _, delegation := range delegations {
 		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
-		// the sum of all rounding errors will be sent to community module account.
+		// if that one subunit exists, it will remain in user balance as undelegated.
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 		if err != nil {
@@ -232,7 +231,6 @@ func (k Keeper) distributeToDelegator(
 		if err != nil {
 			return sdkmath.NewInt(0), err
 		}
-		deliveredAmount = deliveredAmount.Add(delegationAmount)
 	}
-	return deliveredAmount, nil
+	return amount, nil
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/collections"
 	sdkmath "cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
 func TestKeeper_Hooks(t *testing.T) {
@@ -261,6 +263,29 @@ func assertDistributionAction(r *runEnv, balances map[*sdk.AccAddress]sdkmath.In
 		}
 		r.requireT.Equal(expectedBalance, totalDelegationAmount)
 	}
+}
+
+func assertCommunityPoolBalanceAction(r *runEnv, expectedBalance sdkmath.Int) {
+	communityPool, err := r.testApp.DistrKeeper.FeePool.Get(r.ctx)
+	r.requireT.NoError(err)
+	communityPoolBalance := communityPool.CommunityPool.AmountOf(sdk.DefaultBondDenom)
+	r.requireT.Equal(expectedBalance, communityPoolBalance.TruncateInt())
+}
+
+func assertScoreResetAction(r *runEnv) {
+	count := 0
+	r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, nil, func(key sdk.AccAddress, value sdkmath.Int) (bool, error) {
+		count++
+		return false, nil
+	})
+	r.requireT.Equal(0, count)
+
+	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
+	r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil, func(key collections.Pair[sdk.ValAddress, sdk.AccAddress], value types.DelegationTimeEntry) (bool, error) {
+		r.requireT.Equal(blockTimeUnixSeconds, value.LastChangedUnixSec)
+		return false, nil
+	})
+	r.requireT.Equal(0, count)
 }
 
 func delegateAction(r *runEnv, delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount int64) {
