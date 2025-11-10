@@ -136,7 +136,6 @@ func (k Keeper) distributeAllocatedTokens(
 			ClearingAccount:  allocation.ClearingAccount,
 			RecipientAddress: recipientAddr,
 			ScheduledAt:      timestamp,
-			DistributedAt:    uint64(sdkCtx.BlockTime().Unix()),
 			Amount:           allocation.Amount,
 		}); err != nil {
 			sdkCtx.Logger().Error("failed to emit allocation completed event", "error", err)

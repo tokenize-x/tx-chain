@@ -12,14 +12,11 @@ message GenesisState {
   // params contains all gov-manageable parameters.
   Params params = 1 [(gogoproto.nullable) = false];
 
-  // Field number 2 previously stored completed distributions and is now reserved.
-  reserved 2;
-
   // scheduled_distributions contains all scheduled distributions (both past and pending).
   // Stored as a list for genesis import/export, but will be stored as a map in state.
   // Must be sorted by timestamp in ascending order.
   // Completed allocations are removed from the map after processing.
-  repeated ScheduledDistribution scheduled_distributions = 3 [
+  repeated ScheduledDistribution scheduled_distributions = 2 [
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"scheduled_distributions\""
   ];

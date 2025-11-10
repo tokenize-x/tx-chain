@@ -13,10 +13,8 @@ message EventAllocationCompleted {
   string recipient_address = 2;
   // scheduled_at is the Unix timestamp when the allocation was scheduled to occur.
   uint64 scheduled_at = 3;
-  // distributed_at is the Unix timestamp when the distribution actually occurred.
-  uint64 distributed_at = 4;
   // amount is the amount of tokens allocated.
-  string amount = 5 [
+  string amount = 4 [
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];

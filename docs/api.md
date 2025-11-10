@@ -5807,7 +5807,6 @@ EventAllocationCompleted is emitted when a periodic allocation is successfully c
 | `clearing_account` | [string](#string) |  |  `clearing_account is the source clearing account name from which tokens are allocated.`  |
 | `recipient_address` | [string](#string) |  |  `recipient_address is the destination recipient address receiving the tokens.`  |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
-| `distributed_at` | [uint64](#uint64) |  |  `distributed_at is the Unix timestamp when the distribution actually occurred.`  |
 | `amount` | [string](#string) |  |  `amount is the amount of tokens allocated.`  |
 
 
