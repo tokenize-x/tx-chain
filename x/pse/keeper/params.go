@@ -77,7 +77,7 @@ func (k Keeper) UpdateClearingMappings(
 	}
 
 	// Get all eligible (non-excluded) clearing accounts that must be present
-	eligibleAccounts := types.GetEligibleModuleAccounts()
+	eligibleAccounts := types.GetNonCommunityClearingAccounts()
 
 	// Build a set of clearing accounts in the new mappings
 	mappingAccounts := make(map[string]bool)
@@ -95,8 +95,7 @@ func (k Keeper) UpdateClearingMappings(
 
 	if len(missingAccounts) > 0 {
 		return errors.Wrapf(types.ErrInvalidInput,
-			"mappings are missing the following required clearing accounts: %v",
-			missingAccounts)
+			"there are missing non-Community clearing accounts in the mappings")
 	}
 
 	// Check for extra accounts (accounts that are not eligible)
@@ -116,15 +115,13 @@ func (k Keeper) UpdateClearingMappings(
 
 	if len(extraAccounts) > 0 {
 		return errors.Wrapf(types.ErrInvalidInput,
-			"mappings contain invalid clearing accounts: %v",
-			extraAccounts)
+			"mappings contain invalid non-Community clearing accounts")
 	}
 
 	// Verify that the number of mappings matches the number of eligible accounts
 	if len(mappings) != len(eligibleAccounts) {
 		return errors.Wrapf(types.ErrInvalidInput,
-			"expected exactly %d mappings (one for each eligible clearing account), got %d",
-			len(eligibleAccounts), len(mappings))
+			"expected exact number of mappings (one for each non-Community clearing account)")
 	}
 
 	// Get current params

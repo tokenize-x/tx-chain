@@ -73,11 +73,11 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
-		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr2},
-		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr3},
-		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr4},
-		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr5},
+		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr1},
+		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr2},
+		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr3},
+		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr4},
+		{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr5},
 	}
 
 	// Setup params with mappings
@@ -97,31 +97,31 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 		{
 			Timestamp: time1,
 			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-				{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(200)},
-				{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(300)},
-				{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(400)},
-				{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(500)},
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
+				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
+				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(400)},
+				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(500)},
 			},
 		},
 		{
 			Timestamp: time2,
 			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
-				{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(400)},
-				{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(600)},
-				{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(800)},
-				{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
+				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(400)},
+				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(600)},
+				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(800)},
+				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(1000)},
 			},
 		},
 		{
 			Timestamp: time3,
 			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(3000)},
-				{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(600)},
-				{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(900)},
-				{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(1200)},
-				{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(1500)},
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(3000)},
+				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(600)},
+				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(900)},
+				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(1200)},
+				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(1500)},
 			},
 		},
 	}
@@ -132,18 +132,18 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 		requireT.NoError(err)
 	}
 
-	// Fund all eligible module accounts
-	for _, moduleAccount := range []string{
-		types.ModuleAccountFoundation,
-		types.ModuleAccountAlliance,
-		types.ModuleAccountPartnership,
-		types.ModuleAccountInvestors,
-		types.ModuleAccountTeam,
+	// Fund all non-Community clearing accounts
+	for _, clearingAccount := range []string{
+		types.ClearingAccountFoundation,
+		types.ClearingAccountAlliance,
+		types.ClearingAccountPartnership,
+		types.ClearingAccountInvestors,
+		types.ClearingAccountTeam,
 	} {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
 		err = testApp1.BankKeeper.MintCoins(ctx1, types.ModuleName, fundAmount)
 		requireT.NoError(err)
-		err = testApp1.BankKeeper.SendCoinsFromModuleToModule(ctx1, types.ModuleName, moduleAccount, fundAmount)
+		err = testApp1.BankKeeper.SendCoinsFromModuleToModule(ctx1, types.ModuleName, clearingAccount, fundAmount)
 		requireT.NoError(err)
 	}
 
@@ -207,18 +207,18 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	ctx2 = ctx2.WithBlockTime(time.Unix(int64(time2)+10, 0))
 	ctx2 = ctx2.WithBlockHeight(200)
 
-	// Fund module accounts on new chain before processing
-	for _, moduleAccount := range []string{
-		types.ModuleAccountFoundation,
-		types.ModuleAccountAlliance,
-		types.ModuleAccountPartnership,
-		types.ModuleAccountInvestors,
-		types.ModuleAccountTeam,
+	// Fund non-Community clearing accounts on new chain before processing
+	for _, clearingAccount := range []string{
+		types.ClearingAccountFoundation,
+		types.ClearingAccountAlliance,
+		types.ClearingAccountPartnership,
+		types.ClearingAccountInvestors,
+		types.ClearingAccountTeam,
 	} {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
 		err = testApp2.BankKeeper.MintCoins(ctx2, types.ModuleName, fundAmount)
 		requireT.NoError(err)
-		err = testApp2.BankKeeper.SendCoinsFromModuleToModule(ctx2, types.ModuleName, moduleAccount, fundAmount)
+		err = testApp2.BankKeeper.SendCoinsFromModuleToModule(ctx2, types.ModuleName, clearingAccount, fundAmount)
 		requireT.NoError(err)
 	}
 
@@ -284,20 +284,20 @@ func TestGenesis_InvalidState(t *testing.T) {
 			name: "invalid_allocation_schedule_missing_account",
 			modifyGenesis: func(gs *types.GenesisState) {
 				now := uint64(time.Now().Unix())
-				// Only include 4 accounts, missing ModuleAccountTeam
+				// Only include 4 accounts, missing ClearingAccountTeam
 				gs.ScheduledDistributions = []types.ScheduledDistribution{
 					{
 						Timestamp: now,
 						Allocations: []types.ClearingAccountAllocation{
-							{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-							{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(200)},
-							{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(300)},
-							{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(400)},
+							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
+							{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
+							{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
+							{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(400)},
 						},
 					},
 				}
 			},
-			expectError: "missing allocation for required eligible PSE module account",
+			expectError: "missing allocation for required non-Community PSE clearing account",
 		},
 		{
 			name: "invalid_allocation_schedule_excluded_account",
@@ -308,17 +308,17 @@ func TestGenesis_InvalidState(t *testing.T) {
 					{
 						Timestamp: now,
 						Allocations: []types.ClearingAccountAllocation{
-							{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-							{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(200)},
-							{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(300)},
-							{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(400)},
-							{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(500)},
-							{ClearingAccount: types.ModuleAccountCommunity, Amount: sdkmath.NewInt(600)},
+							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
+							{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
+							{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
+							{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(400)},
+							{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(500)},
+							{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(600)},
 						},
 					},
 				}
 			},
-			expectError: "is not an eligible PSE module account",
+			expectError: "is not a non-Community PSE clearing account",
 		},
 		{
 			name: "missing_mappings_for_allocations",
@@ -329,11 +329,11 @@ func TestGenesis_InvalidState(t *testing.T) {
 					{
 						Timestamp: now,
 						Allocations: []types.ClearingAccountAllocation{
-							{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-							{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(200)},
-							{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(300)},
-							{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(400)},
-							{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(500)},
+							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
+							{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
+							{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
+							{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(400)},
+							{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(500)},
 						},
 					},
 				}

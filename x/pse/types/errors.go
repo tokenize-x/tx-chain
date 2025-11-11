@@ -19,4 +19,7 @@ var (
 
 	// ErrNoModuleBalances is returned when no module account balances are provided.
 	ErrNoModuleBalances = sdkerrors.Register(ModuleName, 6, "no module account balances provided")
+
+	// ErrInvalidParam is returned when a parameter is invalid.
+	ErrInvalidParam = sdkerrors.Register(ModuleName, 7, "invalid parameter")
 )

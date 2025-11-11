@@ -106,9 +106,9 @@ func (k Keeper) distributeAllocatedTokens(
 
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
-		// Skip excluded clearing accounts - tokens remain in module account for alternative distribution
-		if types.IsExcludedForAllocation(allocation.ClearingAccount) {
-			sdkCtx.Logger().Info("skipping excluded clearing account distribution",
+		// Skip Community clearing account - tokens remain in module account for alternative distribution
+		if allocation.ClearingAccount == types.ClearingAccountCommunity {
+			sdkCtx.Logger().Info("skipping Community clearing account distribution",
 				"clearing_account", allocation.ClearingAccount,
 				"amount", allocation.Amount.String(),
 			)

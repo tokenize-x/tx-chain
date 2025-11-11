@@ -36,43 +36,42 @@ type InitialFundAllocation struct {
 
 // DefaultInitialFundAllocations returns the default token funding percentages for module accounts.
 // These percentages should sum to 1.0 (100%).
-// Non-eligible accounts (like Community) receive tokens but are not included in the distribution schedule.
+// Non-Community clearing accounts receive tokens but are not included in the distribution schedule.
 func DefaultInitialFundAllocations() []InitialFundAllocation {
 	return []InitialFundAllocation{
 		{
-			ModuleAccount: psetypes.ModuleAccountCommunity,
+			ModuleAccount: psetypes.ClearingAccountCommunity,
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - receives tokens but not in schedule
 		},
 		{
-			ModuleAccount: psetypes.ModuleAccountFoundation,
+			ModuleAccount: psetypes.ClearingAccountFoundation,
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.30"), // 30%
 		},
 		{
-			ModuleAccount: psetypes.ModuleAccountAlliance,
+			ModuleAccount: psetypes.ClearingAccountAlliance,
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.20"), // 20%
 		},
 		{
-			ModuleAccount: psetypes.ModuleAccountPartnership,
+			ModuleAccount: psetypes.ClearingAccountPartnership,
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.03"), // 3%
 		},
 		{
-			ModuleAccount: psetypes.ModuleAccountInvestors,
+			ModuleAccount: psetypes.ClearingAccountInvestors,
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.05"), // 5%
 		},
 		{
-			ModuleAccount: psetypes.ModuleAccountTeam,
+			ModuleAccount: psetypes.ClearingAccountTeam,
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.02"), // 2%
 		},
 	}
 }
 
-// FilterFundAllocationsForDistribution returns only the fund allocations for clearing accounts
-// eligible for distribution. Non-eligible accounts (like Community) are excluded from the
-// distribution schedule and mappings.
-func FilterFundAllocationsForDistribution(fundAllocations []InitialFundAllocation) []InitialFundAllocation {
+// FilterNonCommunityAllocations returns only the fund allocations for clearing accounts
+// all of the clearing accounts except for Community.
+func FilterNonCommunityAllocations(fundAllocations []InitialFundAllocation) []InitialFundAllocation {
 	var distributionAllocations []InitialFundAllocation
 	for _, allocation := range fundAllocations {
-		if psetypes.IsEligibleForAllocation(allocation.ModuleAccount) {
+		if allocation.ModuleAccount != psetypes.ClearingAccountCommunity {
 			distributionAllocations = append(distributionAllocations, allocation)
 		}
 	}
@@ -80,31 +79,31 @@ func FilterFundAllocationsForDistribution(fundAllocations []InitialFundAllocatio
 }
 
 // DefaultClearingAccountMappings returns the default clearing account mappings.
-// Excluded clearing accounts (like Community) are not included in the mappings.
+// Community clearing account is not included in the mappings.
 // TODO: Replace placeholder addresses with actual recipient addresses provided by management.
 var DefaultClearingAccountMappings = func() []psetypes.ClearingAccountMapping {
 	return []psetypes.ClearingAccountMapping{
 		{
-			ClearingAccount:  psetypes.ModuleAccountFoundation,
+			ClearingAccount:  psetypes.ClearingAccountFoundation,
 			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
 		},
 		{
-			ClearingAccount:  psetypes.ModuleAccountAlliance,
+			ClearingAccount:  psetypes.ClearingAccountAlliance,
 			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
 		},
 		{
-			ClearingAccount:  psetypes.ModuleAccountPartnership,
+			ClearingAccount:  psetypes.ClearingAccountPartnership,
 			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
 		},
 		{
-			ClearingAccount:  psetypes.ModuleAccountInvestors,
+			ClearingAccount:  psetypes.ClearingAccountInvestors,
 			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
 		},
 		{
-			ClearingAccount:  psetypes.ModuleAccountTeam,
+			ClearingAccount:  psetypes.ClearingAccountTeam,
 			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
 		},
-		// Note: ModuleAccountCommunity is excluded and doesn't need a mapping
+		// Note: Community clearing account is not included in the mappings
 	}
 }
 
@@ -137,19 +136,19 @@ func InitPSEAllocationsAndSchedule(
 	}
 
 	// Step 1: Validate all module account names
-	// All accounts (including non-eligible ones like Community) can receive tokens
-	// but only eligible accounts will be in the distribution schedule
+	// All accounts (including non-Community clearing accounts) can receive tokens
+	// but only non-Community clearing accounts will be in the distribution schedule
 	for _, allocation := range fundAllocations {
-		perms := psetypes.GetModuleAccountPerms()
+		perms := psetypes.GetClearingAccountPerms()
 		if _, exists := perms[allocation.ModuleAccount]; !exists {
 			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "invalid module account: %s", allocation.ModuleAccount)
 		}
 	}
 
-	// Step 2: Filter to only accounts eligible for distribution (for schedule and mappings)
-	distributionAllocations := FilterFundAllocationsForDistribution(fundAllocations)
+	// Step 2: Filter to only non-Community clearing accounts (for schedule and mappings)
+	distributionAllocations := FilterNonCommunityAllocations(fundAllocations)
 
-	// Step 3: Create clearing account mappings (only for accounts eligible for distribution)
+	// Step 3: Create clearing account mappings (only for non-Community clearing accounts)
 	// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
 	mappings := DefaultClearingAccountMappings()
 
@@ -159,8 +158,8 @@ func InitPSEAllocationsAndSchedule(
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to create clearing account mappings: %v", err)
 	}
 
-	// Step 4: Generate the n-month distribution schedule (only for accounts eligible for distribution)
-	// This defines when and how much each eligible module account will distribute to recipients
+	// Step 4: Generate the n-month distribution schedule (only for non-Community clearing accounts)
+	// This defines when and how much each non-Community clearing account will distribute to recipients
 	schedule, err := CreateDistributionSchedule(distributionAllocations, totalMintAmount, scheduleStartTime)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
@@ -171,7 +170,7 @@ func InitPSEAllocationsAndSchedule(
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 6: Mint and fund clearing accounts (all accounts, including non-eligible ones)
+	// Step 6: Mint and fund clearing accounts (all accounts, including non-Community clearing accounts)
 	if err := MintAndFundClearingAccounts(ctx, bankKeeper, fundAllocations, totalMintAmount, bondDenom); err != nil {
 		return err
 	}
@@ -188,8 +187,8 @@ func InitPSEAllocationsAndSchedule(
 }
 
 // CreateDistributionSchedule generates a periodic distribution schedule over n months.
-// Only fund allocations for accounts eligible for distribution are included in the schedule.
-// Each distribution period allocates an equal portion (1/n) of each eligible module account's total balance.
+// Only fund allocations for non-Community clearing accounts are included in the schedule.
+// Each distribution period allocates an equal portion (1/n) of each non-Community clearing account's total balance.
 // Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
 // Returns the schedule without persisting it to state, making this a pure, testable function.
 func CreateDistributionSchedule(
@@ -214,7 +213,7 @@ func CreateDistributionSchedule(
 		distributionTime := uint64(distributionDateTime.Unix())
 
 		// Build allocations list for this distribution period
-		// Only accounts eligible for distribution are included (non-eligible accounts are already filtered out)
+		// Only non-Community clearing accounts are included (Community clearing account is already filtered out)
 		periodAllocations := make([]psetypes.ClearingAccountAllocation, 0, len(distributionFundAllocations))
 
 		for _, allocation := range distributionFundAllocations {
@@ -254,8 +253,7 @@ func CreateDistributionSchedule(
 }
 
 // MintAndFundClearingAccounts mints the total token supply and distributes it to clearing account modules.
-// All accounts (including non-eligible ones like Community) receive tokens.
-// Non-eligible accounts receive tokens but are not included in the distribution schedule.
+// All accounts receive tokens.
 func MintAndFundClearingAccounts(
 	ctx context.Context,
 	bankKeeper psetypes.BankKeeper,
@@ -270,7 +268,7 @@ func MintAndFundClearingAccounts(
 	}
 
 	// Distribute minted tokens from PSE module to all clearing account modules
-	// All accounts receive tokens, including non-eligible ones (like Community)
+	// All accounts receive tokens, including non-Community clearing accounts
 	for _, allocation := range fundAllocations {
 		// Calculate amount for this module account from percentage
 		allocationAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()

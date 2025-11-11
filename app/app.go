@@ -210,7 +210,7 @@ func getMaccPerms() map[string][]string {
 	}
 
 	// Add PSE module accounts
-	for name, perm := range psetypes.GetModuleAccountPerms() {
+	for name, perm := range psetypes.GetClearingAccountPerms() {
 		perms[name] = perm
 	}
 

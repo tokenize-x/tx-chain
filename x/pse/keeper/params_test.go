@@ -210,11 +210,11 @@ func TestUpdateClearingMappings_Authority(t *testing.T) {
 
 	// Must include all eligible clearing accounts
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
-		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr1},
-		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr1},
-		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr1},
-		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr1},
+		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr1},
+		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr1},
+		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr1},
+		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr1},
+		{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr1},
 	}
 
 	// Test with wrong authority
