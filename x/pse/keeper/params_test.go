@@ -211,21 +211,27 @@ func TestUpdateClearingMappings_ReferentialIntegrity(t *testing.T) {
 	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	// Test 1: Can add mappings when no schedule exists
+	// Must include all eligible clearing accounts
 	mappings := []types.ClearingAccountMapping{
 		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr1},
 		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
 	err := pseKeeper.UpdateClearingMappings(ctx, authority, mappings)
 	requireT.NoError(err, "should allow adding mappings when no schedule")
 
-	// Test 2: Can remove mappings when not referenced in schedule
-	reducedMappings := []types.ClearingAccountMapping{
+	// Test 2: Cannot remove mappings - all eligible accounts must be present
+	incompleteMappings := []types.ClearingAccountMapping{
 		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
+		// Missing other eligible accounts
 	}
 
-	err = pseKeeper.UpdateClearingMappings(ctx, authority, reducedMappings)
-	requireT.NoError(err, "should allow removing unreferenced mappings")
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, incompleteMappings)
+	requireT.Error(err, "should reject incomplete mappings")
+	requireT.Contains(err.Error(), "mappings are missing the following required clearing accounts")
 
 	// Test 3: Add a schedule that references treasury
 	scheduledDist := types.ScheduledDistribution{
@@ -238,15 +244,19 @@ func TestUpdateClearingMappings_ReferentialIntegrity(t *testing.T) {
 	err = pseKeeper.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist)
 	requireT.NoError(err)
 
-	// Test 4: Cannot remove treasury mapping while schedule references it
+	// Test 4: Cannot remove mappings - all eligible accounts must be present
 	emptyMappings := []types.ClearingAccountMapping{}
 	err = pseKeeper.UpdateClearingMappings(ctx, authority, emptyMappings)
-	requireT.Error(err, "should reject removal of mapping referenced in schedule")
-	requireT.Contains(err.Error(), "still referenced in the allocation schedule")
+	requireT.Error(err, "should reject empty mappings")
+	requireT.Contains(err.Error(), "mappings are missing the following required clearing accounts")
 
-	// Test 5: Can update mapping address while keeping the module
+	// Test 5: Can update mapping address while keeping all eligible accounts
 	updatedMappings := []types.ClearingAccountMapping{
 		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr3}, // Changed address
+		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 
 	err = pseKeeper.UpdateClearingMappings(ctx, authority, updatedMappings)
@@ -255,24 +265,25 @@ func TestUpdateClearingMappings_ReferentialIntegrity(t *testing.T) {
 	// Verify the address was updated
 	params, err := pseKeeper.GetParams(ctx)
 	requireT.NoError(err)
-	requireT.Len(params.ClearingAccountMappings, 1)
-	requireT.Equal(addr3, params.ClearingAccountMappings[0].RecipientAddress)
-
-	// Test 6: Can add more mappings even with existing schedule
-	expandedMappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr3},
-		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
+	requireT.Len(params.ClearingAccountMappings, 5, "should have all 5 eligible clearing accounts")
+	// Find Foundation mapping and verify address was updated
+	for _, mapping := range params.ClearingAccountMappings {
+		if mapping.ClearingAccount == types.ModuleAccountFoundation {
+			requireT.Equal(addr3, mapping.RecipientAddress, "Foundation address should be updated")
+		}
 	}
 
-	err = pseKeeper.UpdateClearingMappings(ctx, authority, expandedMappings)
-	requireT.NoError(err, "should allow adding new mappings")
+	// Test 6: All eligible accounts must be present (already satisfied)
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, updatedMappings)
+	requireT.NoError(err, "should allow keeping all eligible mappings")
 
-	// Test 7: Clear schedule, then can remove mappings
+	// Test 7: Clear schedule, but still must have all eligible mappings
 	err = pseKeeper.AllocationSchedule.Remove(ctx, scheduledDist.Timestamp)
 	requireT.NoError(err)
 
-	err = pseKeeper.UpdateClearingMappings(ctx, authority, emptyMappings)
-	requireT.NoError(err, "should allow removing all mappings after schedule is cleared")
+	// Still need all eligible mappings even without schedule
+	err = pseKeeper.UpdateClearingMappings(ctx, authority, updatedMappings)
+	requireT.NoError(err, "should still require all eligible mappings even after schedule is cleared")
 
 	// Test 8: Community account can be in schedule without a mapping (excluded from distribution)
 	communityDist := types.ScheduledDistribution{
@@ -286,9 +297,13 @@ func TestUpdateClearingMappings_ReferentialIntegrity(t *testing.T) {
 	err = pseKeeper.AllocationSchedule.Set(ctx, communityDist.Timestamp, communityDist)
 	requireT.NoError(err)
 
-	// Should allow mappings without Community since it's excluded
+	// Should allow mappings without Community since it's excluded, but must have all eligible accounts
 	mappingsWithoutCommunity := []types.ClearingAccountMapping{
 		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr2},
 	}
 	err = pseKeeper.UpdateClearingMappings(ctx, authority, mappingsWithoutCommunity)
 	requireT.NoError(err, "should allow Community in schedule without mapping since it's excluded")
@@ -305,8 +320,13 @@ func TestUpdateClearingMappings_Authority(t *testing.T) {
 	wrongAuthority := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
+	// Must include all eligible clearing accounts
 	mappings := []types.ClearingAccountMapping{
 		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr1},
 	}
 
 	// Test with wrong authority

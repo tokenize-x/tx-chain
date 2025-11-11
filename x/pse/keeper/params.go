@@ -66,6 +66,7 @@ func (k Keeper) UpdateExcludedAddresses(
 }
 
 // UpdateClearingMappings updates the sub account mappings in params via governance.
+// The mappings must contain exactly all eligible (non-excluded) clearing accounts - no more, no less.
 func (k Keeper) UpdateClearingMappings(
 	ctx context.Context,
 	authority string,
@@ -75,47 +76,61 @@ func (k Keeper) UpdateClearingMappings(
 		return errors.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
+	// Get all eligible (non-excluded) clearing accounts that must be present
+	eligibleAccounts := types.GetEligibleModuleAccounts()
+
+	// Build a set of clearing accounts in the new mappings
+	mappingAccounts := make(map[string]bool)
+	for _, mapping := range mappings {
+		mappingAccounts[mapping.ClearingAccount] = true
+	}
+
+	// Check for missing eligible accounts
+	var missingAccounts []string
+	for _, eligibleAccount := range eligibleAccounts {
+		if !mappingAccounts[eligibleAccount] {
+			missingAccounts = append(missingAccounts, eligibleAccount)
+		}
+	}
+
+	if len(missingAccounts) > 0 {
+		return errors.Wrapf(types.ErrInvalidInput,
+			"mappings are missing the following required clearing accounts: %v. All eligible clearing accounts must be present.",
+			missingAccounts)
+	}
+
+	// Check for extra accounts (accounts that are not eligible)
+	// Build a set of eligible accounts for quick lookup
+	eligibleSet := make(map[string]bool)
+	for _, eligibleAccount := range eligibleAccounts {
+		eligibleSet[eligibleAccount] = true
+	}
+
+	var extraAccounts []string
+	for _, mapping := range mappings {
+		// Check if it's not in the eligible list
+		if !eligibleSet[mapping.ClearingAccount] {
+			extraAccounts = append(extraAccounts, mapping.ClearingAccount)
+		}
+	}
+
+	if len(extraAccounts) > 0 {
+		return errors.Wrapf(types.ErrInvalidInput,
+			"mappings contain invalid clearing accounts: %v. Only eligible clearing accounts are allowed.",
+			extraAccounts)
+	}
+
+	// Verify that the number of mappings matches the number of eligible accounts
+	if len(mappings) != len(eligibleAccounts) {
+		return errors.Wrapf(types.ErrInvalidInput,
+			"expected exactly %d mappings (one for each eligible clearing account), got %d",
+			len(eligibleAccounts), len(mappings))
+	}
+
 	// Get current params
 	params, err := k.GetParams(ctx)
 	if err != nil {
 		return err
-	}
-
-	// Build a set of clearing accounts that are currently in the allocation schedule
-	requiredAccounts := make(map[string]bool)
-	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		if err != nil {
-			return err
-		}
-		for _, alloc := range kv.Value.Allocations {
-			requiredAccounts[alloc.ClearingAccount] = true
-		}
-	}
-
-	// Build a set of module accounts in the new mappings
-	newMappings := make(map[string]bool)
-	for _, mapping := range mappings {
-		newMappings[mapping.ClearingAccount] = true
-	}
-
-	// Check that all required clearing accounts are present in the new mappings
-	// Excluded clearing accounts (like Community) don't need mappings since they don't distribute to recipients
-	for clearingAccount := range requiredAccounts {
-		// Skip excluded clearing accounts - they don't need recipient mappings
-		if types.IsExcludedClearingAccount(clearingAccount) {
-			continue
-		}
-		if !newMappings[clearingAccount] {
-			return errors.Wrapf(types.ErrInvalidInput,
-				"cannot remove mapping for clearing account '%s': it is still referenced in the allocation schedule", clearingAccount)
-		}
 	}
 
 	// Update sub account mappings

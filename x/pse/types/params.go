@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/samber/lo"
 )
 
 const (
@@ -33,15 +34,21 @@ func GetModuleAccountPerms() map[string][]string {
 	}
 }
 
-// IsValidModuleAccountName checks if the given name is one of the allowed module accounts.
-func IsValidModuleAccountName(name string) bool {
-	_, exists := GetModuleAccountPerms()[name]
-	return exists
-}
-
 // IsExcludedClearingAccount checks if a clearing account is excluded from recipient distribution.
 func IsExcludedClearingAccount(account string) bool {
 	return account == ModuleAccountCommunity
+}
+
+func IsEligibleClearingAccount(account string) bool {
+	return lo.Contains(GetEligibleModuleAccounts(), account)
+}
+
+// GetEligibleModuleAccounts returns the non-excluded module accounts.
+func GetEligibleModuleAccounts() []string {
+	accounts := lo.Keys(GetModuleAccountPerms())
+	return lo.Filter(accounts, func(acct string, _ int) bool {
+		return !IsExcludedClearingAccount(acct)
+	})
 }
 
 // DefaultParams returns default pse module parameters.

@@ -27,20 +27,20 @@ const (
 	TotalAllocationMonths = 84
 )
 
-// InitialAllocation defines the initial allocation for a module account during initialization.
-type InitialAllocation struct {
+// InitialFundAllocation defines the token funding allocation for a module account during initialization.
+type InitialFundAllocation struct {
 	ModuleAccount string
 	Percentage    sdkmath.LegacyDec // Percentage of total mint amount (0-1)
 }
 
-// DefaultAllocations returns the default allocation percentages for module accounts.
+// DefaultInitialFundAllocations returns the default token funding percentages for module accounts.
 // These percentages should sum to 1.0 (100%).
-// Excluded clearing accounts are validated but receive no funds during initialization.
-func DefaultAllocations() []InitialAllocation {
-	return []InitialAllocation{
+// Non-eligible accounts (like Community) receive tokens but are not included in the distribution schedule.
+func DefaultInitialFundAllocations() []InitialFundAllocation {
+	return []InitialFundAllocation{
 		{
 			ModuleAccount: psetypes.ModuleAccountCommunity,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - not funded during initialization
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - receives tokens but not in schedule
 		},
 		{
 			ModuleAccount: psetypes.ModuleAccountFoundation,
@@ -63,6 +63,18 @@ func DefaultAllocations() []InitialAllocation {
 			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.02"), // 2%
 		},
 	}
+}
+
+// FilterFundAllocationsForDistribution returns only the fund allocations for clearing accounts eligible for distribution.
+// Non-eligible accounts (like Community) are excluded from the distribution schedule and mappings.
+func FilterFundAllocationsForDistribution(fundAllocations []InitialFundAllocation) []InitialFundAllocation {
+	var distributionAllocations []InitialFundAllocation
+	for _, allocation := range fundAllocations {
+		if psetypes.IsEligibleClearingAccount(allocation.ModuleAccount) {
+			distributionAllocations = append(distributionAllocations, allocation)
+		}
+	}
+	return distributionAllocations
 }
 
 // DefaultClearingAccountMappings returns the default clearing account mappings.
@@ -107,7 +119,7 @@ func InitPSEAllocationsAndSchedule(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Initialize parameters using predefined constants
-	allocations := DefaultAllocations()
+	fundAllocations := DefaultInitialFundAllocations()
 	scheduleStartTime := uint64(DefaultDistributionStartTime)
 	totalMintAmount := sdkmath.NewInt(InitialTotalMint)
 
@@ -117,19 +129,25 @@ func InitPSEAllocationsAndSchedule(
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to get staking params: %v", err)
 	}
 
-	// Ensure allocation percentages are valid and sum to exactly 100%
-	if err := validateAllocations(allocations); err != nil {
-		return errorsmod.Wrap(err, "invalid initial allocations")
+	// Ensure fund allocation percentages are valid and sum to exactly 100%
+	if err := validateFundAllocations(fundAllocations); err != nil {
+		return errorsmod.Wrap(err, "invalid fund allocations")
 	}
 
 	// Step 1: Validate all module account names
-	for _, allocation := range allocations {
-		if !psetypes.IsValidModuleAccountName(allocation.ModuleAccount) {
+	// All accounts (including non-eligible ones like Community) can receive tokens
+	// but only eligible accounts will be in the distribution schedule
+	for _, allocation := range fundAllocations {
+		perms := psetypes.GetModuleAccountPerms()
+		if _, exists := perms[allocation.ModuleAccount]; !exists {
 			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "invalid module account: %s", allocation.ModuleAccount)
 		}
 	}
 
-	// Step 2: Create clearing account mappings
+	// Step 2: Filter to only accounts eligible for distribution (for schedule and mappings)
+	distributionAllocations := FilterFundAllocationsForDistribution(fundAllocations)
+
+	// Step 3: Create clearing account mappings (only for accounts eligible for distribution)
 	// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
 	mappings := DefaultClearingAccountMappings()
 
@@ -139,27 +157,28 @@ func InitPSEAllocationsAndSchedule(
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to create clearing account mappings: %v", err)
 	}
 
-	// Step 3: Generate the n-month distribution schedule
-	// This defines when and how much each module account will distribute to recipients
-	schedule, err := CreateDistributionSchedule(allocations, totalMintAmount, scheduleStartTime)
+	// Step 4: Generate the n-month distribution schedule (only for accounts eligible for distribution)
+	// This defines when and how much each eligible module account will distribute to recipients
+	schedule, err := CreateDistributionSchedule(distributionAllocations, totalMintAmount, scheduleStartTime)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 4: Persist the schedule to blockchain state
+	// Step 5: Persist the schedule to blockchain state
 	if err := pseKeeper.SaveDistributionSchedule(ctx, schedule); err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 5: Mint and fund clearing accounts
-	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, bondDenom); err != nil {
+	// Step 6: Mint and fund clearing accounts (all accounts, including non-eligible ones)
+	if err := MintAndFundClearingAccounts(ctx, bankKeeper, fundAllocations, totalMintAmount, bondDenom); err != nil {
 		return err
 	}
 
 	sdkCtx.Logger().Info("initialization completed",
 		"minted", totalMintAmount.String(),
 		"denom", bondDenom,
-		"allocations", len(allocations),
+		"fund_allocations", len(fundAllocations),
+		"distribution_allocations", len(distributionAllocations),
 		"periods", len(schedule),
 	)
 
@@ -167,15 +186,16 @@ func InitPSEAllocationsAndSchedule(
 }
 
 // CreateDistributionSchedule generates a periodic distribution schedule over n months.
-// Each distribution period allocates an equal portion (1/n) of each module account's total balance.
+// Only fund allocations for accounts eligible for distribution are included in the schedule.
+// Each distribution period allocates an equal portion (1/n) of each eligible module account's total balance.
 // Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
 // Returns the schedule without persisting it to state, making this a pure, testable function.
 func CreateDistributionSchedule(
-	allocations []InitialAllocation,
+	distributionFundAllocations []InitialFundAllocation,
 	totalMintAmount sdkmath.Int,
 	startTime uint64,
 ) ([]psetypes.ScheduledDistribution, error) {
-	if len(allocations) == 0 {
+	if len(distributionFundAllocations) == 0 {
 		return nil, psetypes.ErrNoModuleBalances
 	}
 
@@ -192,9 +212,10 @@ func CreateDistributionSchedule(
 		distributionTime := uint64(distributionDateTime.Unix())
 
 		// Build allocations list for this distribution period
-		periodAllocations := make([]psetypes.ClearingAccountAllocation, 0, len(allocations))
+		// Only accounts eligible for distribution are included (non-eligible accounts are already filtered out)
+		periodAllocations := make([]psetypes.ClearingAccountAllocation, 0, len(distributionFundAllocations))
 
-		for _, allocation := range allocations {
+		for _, allocation := range distributionFundAllocations {
 			// Calculate total balance for this module account from percentage
 			totalBalance := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 
@@ -227,11 +248,12 @@ func CreateDistributionSchedule(
 }
 
 // MintAndFundClearingAccounts mints the total token supply and distributes it to clearing account modules.
-// Excluded accounts receive tokens but won't transfer to recipients during normal distribution.
+// All accounts (including non-eligible ones like Community) receive tokens.
+// Non-eligible accounts receive tokens but are not included in the distribution schedule.
 func MintAndFundClearingAccounts(
 	ctx context.Context,
 	bankKeeper psetypes.BankKeeper,
-	allocations []InitialAllocation,
+	fundAllocations []InitialFundAllocation,
 	totalMintAmount sdkmath.Int,
 	denom string,
 ) error {
@@ -242,8 +264,8 @@ func MintAndFundClearingAccounts(
 	}
 
 	// Distribute minted tokens from PSE module to all clearing account modules
-	// Excluded accounts receive tokens but won't transfer to recipients during normal distribution
-	for _, allocation := range allocations {
+	// All accounts receive tokens, including non-eligible ones (like Community)
+	for _, allocation := range fundAllocations {
 		// Calculate amount for this module account from percentage
 		allocationAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 
@@ -266,24 +288,24 @@ func MintAndFundClearingAccounts(
 	return nil
 }
 
-// validateAllocations verifies that all allocation entries are well-formed and percentages sum to exactly 1.0.
-func validateAllocations(allocations []InitialAllocation) error {
-	if len(allocations) == 0 {
-		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "no allocations provided")
+// validateFundAllocations verifies that all fund allocation entries are well-formed and percentages sum to exactly 1.0.
+func validateFundAllocations(fundAllocations []InitialFundAllocation) error {
+	if len(fundAllocations) == 0 {
+		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "no fund allocations provided")
 	}
 
 	totalPercentage := sdkmath.LegacyZeroDec()
-	for i, allocation := range allocations {
+	for i, allocation := range fundAllocations {
 		if allocation.ModuleAccount == "" {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "allocation %d: empty module account name", i)
+			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "fund allocation %d: empty module account name", i)
 		}
 
 		if allocation.Percentage.IsNegative() {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "allocation %d (%s): negative percentage", i, allocation.ModuleAccount)
+			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "fund allocation %d (%s): negative percentage", i, allocation.ModuleAccount)
 		}
 
 		if allocation.Percentage.GT(sdkmath.LegacyOneDec()) {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "allocation %d (%s): percentage %.2f exceeds 100%%", i, allocation.ModuleAccount, allocation.Percentage.MustFloat64()*100)
+			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "fund allocation %d (%s): percentage %.2f exceeds 100%%", i, allocation.ModuleAccount, allocation.Percentage.MustFloat64()*100)
 		}
 
 		totalPercentage = totalPercentage.Add(allocation.Percentage)
