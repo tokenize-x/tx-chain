@@ -14,8 +14,8 @@ func TestDefaultParams(t *testing.T) {
 	requireT := require.New(t)
 
 	params := DefaultParams()
-	requireT.Nil(params.ExcludedAddresses)
-	requireT.Nil(params.ClearingAccountMappings)
+	requireT.Empty(params.ExcludedAddresses)
+	requireT.Empty(params.ClearingAccountMappings)
 	requireT.NoError(params.ValidateBasic())
 }
 

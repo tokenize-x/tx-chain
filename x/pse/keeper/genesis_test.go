@@ -39,7 +39,15 @@ func TestGenesis(t *testing.T) {
 	requireT.NoError(err)
 	requireT.NotNil(got)
 
-	requireT.EqualExportedValues(&genesisState, got)
+	if got.Params.ClearingAccountMappings == nil {
+		got.Params.ClearingAccountMappings = []types.ClearingAccountMapping{}
+	}
+	if got.ScheduledDistributions == nil {
+		got.ScheduledDistributions = []types.ScheduledDistribution{}
+	}
+
+	requireT.EqualExportedValues(&genesisState.Params, &got.Params)
+	requireT.EqualExportedValues(&genesisState.ScheduledDistributions, &got.ScheduledDistributions)
 }
 
 // TestGenesis_HardForkWithAllocations tests the hard fork scenario.
@@ -237,9 +245,9 @@ func TestGenesis_EmptyState(t *testing.T) {
 	requireT.NoError(err, "default genesis should be valid")
 
 	// Verify default state has nil allocations (not empty slices)
-	requireT.Nil(defaultGenesis.ScheduledDistributions, "default genesis should have nil allocations")
-	requireT.Nil(defaultGenesis.Params.ClearingAccountMappings, "default genesis should have nil mappings")
-	requireT.Nil(defaultGenesis.Params.ExcludedAddresses, "default genesis should have nil excluded addresses")
+	requireT.Empty(defaultGenesis.ScheduledDistributions, "default genesis should have nil allocations")
+	requireT.Empty(defaultGenesis.Params.ClearingAccountMappings, "default genesis should have nil mappings")
+	requireT.Empty(defaultGenesis.Params.ExcludedAddresses, "default genesis should have nil excluded addresses")
 
 	// Import into keeper
 	testApp := simapp.New()
@@ -252,6 +260,16 @@ func TestGenesis_EmptyState(t *testing.T) {
 	// Export and verify it matches
 	exported, err := pseKeeper.ExportGenesis(ctx)
 	requireT.NoError(err)
+
+	if exported.Params.ExcludedAddresses == nil {
+		exported.Params.ExcludedAddresses = []string{}
+	}
+	if exported.Params.ClearingAccountMappings == nil {
+		exported.Params.ClearingAccountMappings = []types.ClearingAccountMapping{}
+	}
+	if exported.ScheduledDistributions == nil {
+		exported.ScheduledDistributions = []types.ScheduledDistribution{}
+	}
 	requireT.EqualExportedValues(defaultGenesis, exported, "exported should match default")
 }
 

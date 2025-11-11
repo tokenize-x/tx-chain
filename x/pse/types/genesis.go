@@ -1,12 +1,14 @@
 package types
 
-import "cosmossdk.io/errors"
+import (
+	"cosmossdk.io/errors"
+)
 
 // DefaultGenesisState returns genesis state with default values.
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params:                 DefaultParams(),
-		ScheduledDistributions: nil,
+		ScheduledDistributions: []ScheduledDistribution{},
 	}
 }
 
