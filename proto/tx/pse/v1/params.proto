@@ -17,7 +17,7 @@ message Params {
     (gogoproto.moretags) = "yaml:\"excluded_addresses\""
   ];
 
-  // sub_account_mappings defines the mapping between module accounts and their sub accounts (multisig wallets).
+  // clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets).
   // These mappings can be modified via governance proposals.
   repeated ClearingAccountMapping clearing_account_mappings = 2 [
     (gogoproto.nullable) = false,

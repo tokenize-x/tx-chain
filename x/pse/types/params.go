@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	// ClearingAccountCommunity is the community module account name.
+	// ClearingAccountCommunity is the community clearing account name.
 	ClearingAccountCommunity = "pse_community"
-	// ClearingAccountFoundation is the foundation module account name.
+	// ClearingAccountFoundation is the foundation clearing account name.
 	ClearingAccountFoundation = "pse_foundation"
-	// ClearingAccountAlliance is the alliance module account name.
+	// ClearingAccountAlliance is the alliance clearing account name.
 	ClearingAccountAlliance = "pse_alliance"
-	// ClearingAccountPartnership is the partnership module account name.
+	// ClearingAccountPartnership is the partnership clearing account name.
 	ClearingAccountPartnership = "pse_partnership"
-	// ClearingAccountInvestors is the investors module account name.
+	// ClearingAccountInvestors is the investors clearing account name.
 	ClearingAccountInvestors = "pse_investors"
-	// ClearingAccountTeam is the team module account name.
+	// ClearingAccountTeam is the team clearing account name.
 	ClearingAccountTeam = "pse_team"
 )
 

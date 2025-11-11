@@ -9,9 +9,9 @@ option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 // ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipient (sub account multisig wallet).
 // This mapping can be modified via governance proposals.
 message ClearingAccountMapping {
-  // module_account is the name of the module account holding the tokens to be distributed.
+  // clearing_account is the name of the clearing account holding the tokens to be distributed.
   string clearing_account = 1 [
-    (gogoproto.moretags) = "yaml:\"module_account\""
+    (gogoproto.moretags) = "yaml:\"clearing_account\""
   ];
 
   // recipient_address is the multisig wallet address that will receive the token distributions.

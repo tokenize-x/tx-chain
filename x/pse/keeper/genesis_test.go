@@ -65,7 +65,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	// Setup mappings for all eligible module accounts
+	// Setup mappings for all eligible clearing accounts
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()

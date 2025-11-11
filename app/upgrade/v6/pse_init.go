@@ -32,8 +32,8 @@ const (
 
 // InitialFundAllocation defines the token funding allocation for a module account during initialization.
 type InitialFundAllocation struct {
-	ModuleAccount string
-	Percentage    sdkmath.LegacyDec // Percentage of total mint amount (0-1)
+	ClearingAccount string
+	Percentage      sdkmath.LegacyDec // Percentage of total mint amount (0-1)
 }
 
 // DefaultInitialFundAllocations returns the default token funding percentages for module accounts.
@@ -42,28 +42,28 @@ type InitialFundAllocation struct {
 func DefaultInitialFundAllocations() []InitialFundAllocation {
 	return []InitialFundAllocation{
 		{
-			ModuleAccount: psetypes.ClearingAccountCommunity,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - receives tokens but not in schedule
+			ClearingAccount: psetypes.ClearingAccountCommunity,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - receives tokens but not in schedule
 		},
 		{
-			ModuleAccount: psetypes.ClearingAccountFoundation,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.30"), // 30%
+			ClearingAccount: psetypes.ClearingAccountFoundation,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.30"), // 30%
 		},
 		{
-			ModuleAccount: psetypes.ClearingAccountAlliance,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.20"), // 20%
+			ClearingAccount: psetypes.ClearingAccountAlliance,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.20"), // 20%
 		},
 		{
-			ModuleAccount: psetypes.ClearingAccountPartnership,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.03"), // 3%
+			ClearingAccount: psetypes.ClearingAccountPartnership,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.03"), // 3%
 		},
 		{
-			ModuleAccount: psetypes.ClearingAccountInvestors,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.05"), // 5%
+			ClearingAccount: psetypes.ClearingAccountInvestors,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.05"), // 5%
 		},
 		{
-			ModuleAccount: psetypes.ClearingAccountTeam,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.02"), // 2%
+			ClearingAccount: psetypes.ClearingAccountTeam,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.02"), // 2%
 		},
 	}
 }
@@ -73,7 +73,7 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 func FilterNonCommunityAllocations(fundAllocations []InitialFundAllocation) []InitialFundAllocation {
 	var distributionAllocations []InitialFundAllocation
 	for _, allocation := range fundAllocations {
-		if allocation.ModuleAccount != psetypes.ClearingAccountCommunity {
+		if allocation.ClearingAccount != psetypes.ClearingAccountCommunity {
 			distributionAllocations = append(distributionAllocations, allocation)
 		}
 	}
@@ -198,15 +198,12 @@ func InitPSEAllocationsAndSchedule(
 	// but only non-Community clearing accounts will be in the distribution schedule
 	for _, allocation := range fundAllocations {
 		perms := psetypes.GetClearingAccountPerms()
-		if _, exists := perms[allocation.ModuleAccount]; !exists {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "invalid module account: %s", allocation.ModuleAccount)
+		if _, exists := perms[allocation.ClearingAccount]; !exists {
+			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "invalid module account: %s", allocation.ClearingAccount)
 		}
 	}
 
-	// Step 2: Filter to only non-Community clearing accounts (for schedule and mappings)
-	distributionAllocations := FilterNonCommunityAllocations(fundAllocations)
-
-	// Step 3: Create clearing account mappings (only for non-Community clearing accounts)
+	// Step 2: Create clearing account mappings (only for non-Community clearing accounts)
 	// Get chain-specific mappings based on chain ID
 	// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
 	mappings, err := DefaultClearingAccountMappings(sdkCtx.ChainID())
@@ -219,6 +216,9 @@ func InitPSEAllocationsAndSchedule(
 	if err := pseKeeper.UpdateClearingMappings(ctx, authority, mappings); err != nil {
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to create clearing account mappings: %v", err)
 	}
+
+	// Step 3: Filter to only non-Community clearing accounts (for schedule and mappings)
+	distributionAllocations := FilterNonCommunityAllocations(fundAllocations)
 
 	// Step 4: Generate the n-month distribution schedule (only for non-Community clearing accounts)
 	// This defines when and how much each non-Community clearing account will distribute to recipients
@@ -290,12 +290,12 @@ func CreateDistributionSchedule(
 				return nil, errorsmod.Wrapf(
 					psetypes.ErrInvalidInput,
 					"clearing account %s: balance too small to divide into monthly distributions",
-					allocation.ModuleAccount,
+					allocation.ClearingAccount,
 				)
 			}
 
 			periodAllocations = append(periodAllocations, psetypes.ClearingAccountAllocation{
-				ClearingAccount: allocation.ModuleAccount,
+				ClearingAccount: allocation.ClearingAccount,
 				Amount:          monthlyAmount,
 			})
 		}
@@ -340,7 +340,7 @@ func MintAndFundClearingAccounts(
 			return errorsmod.Wrapf(
 				psetypes.ErrInvalidInput,
 				"module account %s: allocation rounds to zero",
-				allocation.ModuleAccount,
+				allocation.ClearingAccount,
 			)
 		}
 
@@ -348,10 +348,10 @@ func MintAndFundClearingAccounts(
 		if err := bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			psetypes.ModuleName,
-			allocation.ModuleAccount,
+			allocation.ClearingAccount,
 			coinsToTransfer,
 		); err != nil {
-			return errorsmod.Wrapf(psetypes.ErrTransferFailed, "to %s: %v", allocation.ModuleAccount, err)
+			return errorsmod.Wrapf(psetypes.ErrTransferFailed, "to %s: %v", allocation.ClearingAccount, err)
 		}
 	}
 
@@ -366,7 +366,7 @@ func validateFundAllocations(fundAllocations []InitialFundAllocation) error {
 
 	totalPercentage := sdkmath.LegacyZeroDec()
 	for i, allocation := range fundAllocations {
-		if allocation.ModuleAccount == "" {
+		if allocation.ClearingAccount == "" {
 			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "fund allocation %d: empty module account name", i)
 		}
 
@@ -374,7 +374,7 @@ func validateFundAllocations(fundAllocations []InitialFundAllocation) error {
 			return errorsmod.Wrapf(
 				psetypes.ErrInvalidInput,
 				"fund allocation %d (%s): negative percentage",
-				i, allocation.ModuleAccount,
+				i, allocation.ClearingAccount,
 			)
 		}
 
@@ -382,7 +382,7 @@ func validateFundAllocations(fundAllocations []InitialFundAllocation) error {
 			return errorsmod.Wrapf(
 				psetypes.ErrInvalidInput,
 				"fund allocation %d (%s): percentage %.2f exceeds 100%%",
-				i, allocation.ModuleAccount, allocation.Percentage.MustFloat64()*100,
+				i, allocation.ClearingAccount, allocation.Percentage.MustFloat64()*100,
 			)
 		}
 

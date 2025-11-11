@@ -5747,7 +5747,7 @@ This mapping can be modified via governance proposals.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `clearing_account` | [string](#string) |  |  `module_account is the name of the module account holding the tokens to be distributed.`  |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account holding the tokens to be distributed.`  |
 | `recipient_address` | [string](#string) |  |  `recipient_address is the multisig wallet address that will receive the token distributions.`  |
 
 
@@ -5879,7 +5879,7 @@ Params store gov manageable parameters.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
-| `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `sub_account_mappings defines the mapping between module accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
+| `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
 
 
 

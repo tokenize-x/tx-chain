@@ -17,8 +17,8 @@ var (
 	// ErrScheduleCreationFailed is returned when creating distribution schedule fails.
 	ErrScheduleCreationFailed = sdkerrors.Register(ModuleName, 5, "failed to create distribution schedule")
 
-	// ErrNoModuleBalances is returned when no module account balances are provided.
-	ErrNoModuleBalances = sdkerrors.Register(ModuleName, 6, "no module account balances provided")
+	// ErrNoModuleBalances is returned when no clearing account balances are provided.
+	ErrNoModuleBalances = sdkerrors.Register(ModuleName, 6, "no clearing account balances provided")
 
 	// ErrInvalidParam is returned when a parameter is invalid.
 	ErrInvalidParam = sdkerrors.Register(ModuleName, 7, "invalid parameter")

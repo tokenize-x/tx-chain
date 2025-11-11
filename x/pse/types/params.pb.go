@@ -30,7 +30,7 @@ type Params struct {
 	// This list includes account addresses that should not receive PSE rewards.
 	// Can be modified via governance proposals.
 	ExcludedAddresses []string `protobuf:"bytes,1,rep,name=excluded_addresses,json=excludedAddresses,proto3" json:"excluded_addresses,omitempty" yaml:"excluded_addresses"`
-	// sub_account_mappings defines the mapping between module accounts and their sub accounts (multisig wallets).
+	// clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets).
 	// These mappings can be modified via governance proposals.
 	ClearingAccountMappings []ClearingAccountMapping `protobuf:"bytes,2,rep,name=clearing_account_mappings,json=clearingAccountMappings,proto3" json:"clearing_account_mappings" yaml:"clearing_account_mappings"`
 }

@@ -86,8 +86,7 @@ func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.Scheduled
 
 	// Check if distribution time has arrived
 	// Since the map is sorted by timestamp, if the first item is in the future, all items are
-	currentTime := uint64(sdkCtx.BlockTime().Unix())
-	shouldProcess := timestamp <= currentTime
+	shouldProcess := timestamp <= uint64(sdkCtx.BlockTime().Unix())
 
 	return scheduledDist, shouldProcess, nil
 }
@@ -106,7 +105,7 @@ func (k Keeper) distributeAllocatedTokens(
 
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
-		// Skip Community clearing account - tokens remain in module account for alternative distribution
+		// Skip Community clearing account - tokens remain in clearing account for alternative distribution
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
 			sdkCtx.Logger().Info("skipping Community clearing account distribution",
 				"clearing_account", allocation.ClearingAccount,

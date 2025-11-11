@@ -70,12 +70,12 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		expectedAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 		totalVerified = totalVerified.Add(expectedAmount)
 
-		moduleAddr := testApp.AccountKeeper.GetModuleAddress(allocation.ModuleAccount)
+		moduleAddr := testApp.AccountKeeper.GetModuleAddress(allocation.ClearingAccount)
 		requireT.NotNil(moduleAddr)
 
 		balance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
 		requireT.Equal(expectedAmount.String(), balance.Amount.String(),
-			"module %s should have correct balance", allocation.ModuleAccount)
+			"module %s should have correct balance", allocation.ClearingAccount)
 	}
 
 	// Step 4: Verify total actually minted (from supply diff) equals expected amount
@@ -128,7 +128,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		for _, allocation := range period.Allocations {
 			var expectedTotal sdkmath.Int
 			for _, initialAlloc := range scheduleAllocations {
-				if initialAlloc.ModuleAccount == allocation.ClearingAccount {
+				if initialAlloc.ClearingAccount == allocation.ClearingAccount {
 					expectedTotal = initialAlloc.Percentage.MulInt(totalMintAmount).TruncateInt()
 					break
 				}
@@ -160,11 +160,11 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		{
 			name: "standard_five_accounts",
 			allocations: []v6.InitialFundAllocation{
-				{ModuleAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},  // 8.4M
-				{ModuleAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},        // 4.2M
-				{ModuleAccount: types.ClearingAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.12")}, // 2.52M
-				{ModuleAccount: types.ClearingAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.08")},    // 1.68M
-				{ModuleAccount: types.ClearingAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.06")},   // 1.26M
+				{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},  // 8.4M
+				{ClearingAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},        // 4.2M
+				{ClearingAccount: types.ClearingAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.12")}, // 2.52M
+				{ClearingAccount: types.ClearingAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.08")},    // 1.68M
+				{ClearingAccount: types.ClearingAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.06")},   // 1.26M
 			},
 			totalMint: sdkmath.NewInt(21_000_000), // 21M total
 			startTime: uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
@@ -180,10 +180,10 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		{
 			name: "large_balances",
 			allocations: []v6.InitialFundAllocation{
-				{ModuleAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.353")},  // 30B
-				{ModuleAccount: types.ClearingAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")}, // 20B
-				{ModuleAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")},        // 20B
-				{ModuleAccount: types.ClearingAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.177")},   // 15B
+				{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.353")},  // 30B
+				{ClearingAccount: types.ClearingAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")}, // 20B
+				{ClearingAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")},        // 20B
+				{ClearingAccount: types.ClearingAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.177")},   // 15B
 			},
 			totalMint: sdkmath.NewInt(85_000_000_000_000_000), // 85B total
 			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
@@ -203,12 +203,12 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		{
 			name: "includes_excluded_accounts",
 			allocations: []v6.InitialFundAllocation{
-				{ModuleAccount: types.ClearingAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},   // 40B
-				{ModuleAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.30")},  // 30B
-				{ModuleAccount: types.ClearingAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},    // 20B
-				{ModuleAccount: types.ClearingAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.03")}, // 3B
-				{ModuleAccount: types.ClearingAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.05")},   // 5B
-				{ModuleAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.02")},        // 2B
+				{ClearingAccount: types.ClearingAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},   // 40B
+				{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.30")},  // 30B
+				{ClearingAccount: types.ClearingAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},    // 20B
+				{ClearingAccount: types.ClearingAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.03")}, // 3B
+				{ClearingAccount: types.ClearingAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.05")},   // 5B
+				{ClearingAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.02")},        // 2B
 			},
 			totalMint: sdkmath.NewInt(100_000_000_000_000_000), // 100B total
 			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
@@ -259,7 +259,7 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 					// Find corresponding initial allocation
 					var expectedTotal sdkmath.Int
 					for _, alloc := range tc.allocations {
-						if alloc.ModuleAccount == periodAlloc.ClearingAccount {
+						if alloc.ClearingAccount == periodAlloc.ClearingAccount {
 							expectedTotal = alloc.Percentage.MulInt(tc.totalMint).TruncateInt()
 							break
 						}
@@ -315,7 +315,7 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 	}
 
 	allocations := []v6.InitialFundAllocation{
-		{ModuleAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
+		{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
 	}
 	totalMint := sdkmath.NewInt(8_400_000)
 
@@ -364,8 +364,8 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 	// Allocation that results in zero monthly amount (< TotalAllocationMonths)
 	allocations := []v6.InitialFundAllocation{
 		{
-			ModuleAccount: types.ClearingAccountFoundation,
-			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.0000000001"), // Very small percentage
+			ClearingAccount: types.ClearingAccountFoundation,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.0000000001"), // Very small percentage
 		},
 	}
 	totalMint := sdkmath.NewInt(50) // 50 * tiny percentage = 0 (integer division)
@@ -382,8 +382,8 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 
 	// Setup
 	allocations := []v6.InitialFundAllocation{
-		{ModuleAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.667")}, // ~8.4M
-		{ModuleAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.333")},       // ~4.2M
+		{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.667")}, // ~8.4M
+		{ClearingAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.333")},       // ~4.2M
 	}
 	totalMint := sdkmath.NewInt(12_600_000)
 
@@ -460,9 +460,9 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	// Create allocations and calculate total mint amount
 	totalMint := sdkmath.NewInt(200_000_000_000) // 200B total
 	allocations := []v6.InitialFundAllocation{
-		{ModuleAccount: types.ClearingAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.50")},  // 100B
-		{ModuleAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")}, // 50B
-		{ModuleAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")},       // 50B
+		{ClearingAccount: types.ClearingAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.50")},  // 100B
+		{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")}, // 50B
+		{ClearingAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")},       // 50B
 	}
 
 	// Mint and fund clearing accounts for distribution

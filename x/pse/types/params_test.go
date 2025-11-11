@@ -143,7 +143,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name: "invalid_empty_module_account",
+			name: "invalid_empty_clearing_account",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
 					{ClearingAccount: "", RecipientAddress: addr1},
@@ -163,7 +163,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			errMsg:    "invalid sub account address",
 		},
 		{
-			name: "invalid_duplicate_module_account",
+			name: "invalid_duplicate_clearing_account",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
 					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
@@ -192,7 +192,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 	}
 }
 
-// Helper function to create valid allocations for all eligible PSE module accounts
+// Helper function to create valid allocations for all eligible PSE clearing accounts
 // (excludes Community which is not eligible for distribution).
 func createAllModuleAllocations(amount sdkmath.Int) []ClearingAccountAllocation {
 	return []ClearingAccountAllocation{
@@ -387,7 +387,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			errMsg:    "duplicate clearing account",
 		},
 		{
-			name: "invalid_missing_module_account",
+			name: "invalid_missing_clearing_account",
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp: getTestTimestamp(0),
@@ -635,7 +635,7 @@ func TestParamsValidation_ClearingAccountNames(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name: "invalid_bech32_address_as_module_account_in_mapping",
+			name: "invalid_bech32_address_as_clearing_account_in_mapping",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
 					{ClearingAccount: addr1, RecipientAddress: addr1}, // Using bech32 address as module name
