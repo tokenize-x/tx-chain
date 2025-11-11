@@ -31,7 +31,6 @@ require (
 	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tokenize-x/tx-chain/v6 v6.0.0-20241002100003-2dcad94c2fbc
-	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 
 require (
