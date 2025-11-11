@@ -2,7 +2,6 @@ package types
 
 import (
 	"cosmossdk.io/errors"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/samber/lo"
 )
@@ -165,7 +164,11 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 
 			// Check for duplicate clearing accounts in the same period
 			if seenClearingAccounts[alloc.ClearingAccount] {
-				return errors.Wrapf(ErrInvalidParam, "period %d: duplicate clearing account %s in same period", i, alloc.ClearingAccount)
+				return errors.Wrapf(
+					ErrInvalidParam,
+					"period %d: duplicate clearing account %s in same period",
+					i, alloc.ClearingAccount,
+				)
 			}
 			seenClearingAccounts[alloc.ClearingAccount] = true
 
