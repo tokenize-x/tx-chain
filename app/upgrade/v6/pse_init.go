@@ -2,6 +2,7 @@ package v6
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	errorsmod "cosmossdk.io/errors"
@@ -10,6 +11,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
@@ -78,32 +80,88 @@ func FilterNonCommunityAllocations(fundAllocations []InitialFundAllocation) []In
 	return distributionAllocations
 }
 
-// DefaultClearingAccountMappings returns the default clearing account mappings.
+// DefaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.
 // Community clearing account is not included in the mappings.
 // TODO: Replace placeholder addresses with actual recipient addresses provided by management.
-var DefaultClearingAccountMappings = func() []psetypes.ClearingAccountMapping {
-	return []psetypes.ClearingAccountMapping{
-		{
-			ClearingAccount:  psetypes.ClearingAccountFoundation,
-			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
-		},
-		{
-			ClearingAccount:  psetypes.ClearingAccountAlliance,
-			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
-		},
-		{
-			ClearingAccount:  psetypes.ClearingAccountPartnership,
-			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
-		},
-		{
-			ClearingAccount:  psetypes.ClearingAccountInvestors,
-			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
-		},
-		{
-			ClearingAccount:  psetypes.ClearingAccountTeam,
-			RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
-		},
-		// Note: Community clearing account is not included in the mappings
+func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountMapping, error) {
+	switch chainID {
+	case string(constant.ChainIDMain):
+		// Mainnet addresses
+		return []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount:  psetypes.ClearingAccountFoundation,
+				RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountAlliance,
+				RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountPartnership,
+				RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountInvestors,
+				RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountTeam,
+				RecipientAddress: "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+			},
+		}, nil
+
+	case string(constant.ChainIDTest):
+		// Testnet addresses
+		return []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount:  psetypes.ClearingAccountFoundation,
+				RecipientAddress: "testcore1dm4x48jqunpdh9h8sud30cwmtsghfuqascgqam",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountAlliance,
+				RecipientAddress: "testcore1dm4x48jqunpdh9h8sud30cwmtsghfuqascgqam",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountPartnership,
+				RecipientAddress: "testcore1dm4x48jqunpdh9h8sud30cwmtsghfuqascgqam",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountInvestors,
+				RecipientAddress: "testcore1dm4x48jqunpdh9h8sud30cwmtsghfuqascgqam",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountTeam,
+				RecipientAddress: "testcore1dm4x48jqunpdh9h8sud30cwmtsghfuqascgqam",
+			},
+		}, nil
+
+	case string(constant.ChainIDDev):
+		// Devnet addresses
+		return []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount:  psetypes.ClearingAccountFoundation,
+				RecipientAddress: "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountAlliance,
+				RecipientAddress: "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountPartnership,
+				RecipientAddress: "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountInvestors,
+				RecipientAddress: "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
+			},
+			{
+				ClearingAccount:  psetypes.ClearingAccountTeam,
+				RecipientAddress: "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
+			},
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unknown chain id: %s", chainID)
 	}
 }
 
@@ -149,8 +207,12 @@ func InitPSEAllocationsAndSchedule(
 	distributionAllocations := FilterNonCommunityAllocations(fundAllocations)
 
 	// Step 3: Create clearing account mappings (only for non-Community clearing accounts)
+	// Get chain-specific mappings based on chain ID
 	// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
-	mappings := DefaultClearingAccountMappings()
+	mappings, err := DefaultClearingAccountMappings(sdkCtx.ChainID())
+	if err != nil {
+		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to get clearing account mappings: %v", err)
+	}
 
 	// Get authority (governance module address)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()

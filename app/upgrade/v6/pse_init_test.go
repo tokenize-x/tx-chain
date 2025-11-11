@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
+	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
@@ -21,8 +22,9 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT := require.New(t)
 
 	testApp := simapp.New()
-	ctx := testApp.NewContext(false)
-	ctx = ctx.WithBlockTime(time.Now())
+	ctx := testApp.NewContext(false).
+		WithChainID(string(constant.ChainIDDev)).
+		WithBlockTime(time.Now())
 	pseKeeper := testApp.PSEKeeper
 	bankKeeper := testApp.BankKeeper
 
@@ -30,23 +32,6 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	stakingParams, err := testApp.StakingKeeper.GetParams(ctx)
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
-
-	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-
-	// Override default clearing account mappings with valid test addresses
-	v6.DefaultClearingAccountMappings = func() []types.ClearingAccountMapping {
-		return []types.ClearingAccountMapping{
-			{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr1},
-			{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr2},
-			{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr3},
-			{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr4},
-			{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr5},
-		}
-	}
 
 	// Get total supply before initialization
 	supplyBefore := bankKeeper.GetSupply(ctx, bondDenom)
@@ -440,8 +425,9 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT := require.New(t)
 
 	testApp := simapp.New()
-	ctx := testApp.NewContext(false)
-	ctx = ctx.WithBlockTime(time.Now()) // Set proper block time
+	ctx := testApp.NewContext(false).
+		WithChainID(string(constant.ChainIDDev)).
+		WithBlockTime(time.Now())
 	pseKeeper := testApp.PSEKeeper
 	bankKeeper := testApp.BankKeeper
 
