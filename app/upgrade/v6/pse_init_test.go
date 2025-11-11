@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	"github.com/stretchr/testify/require"
 
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
@@ -52,7 +53,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 
 	// Step 1: Perform Initialization (uses internal constants)
 	// Note: InitPSEAllocationsAndSchedule will create clearing account mappings with placeholder addresses
-	err = v6.InitPSEAllocationsAndSchedule(ctx, pseKeeper, bankKeeper, testApp.StakingKeeper)
+	err = v6.InitPSEAllocationsAndSchedule(ctx, pseKeeper, bankKeeper, stakingkeeper.NewQuerier(testApp.StakingKeeper))
 	requireT.NoError(err)
 
 	// Get total supply after initialization

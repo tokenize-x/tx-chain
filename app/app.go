@@ -535,7 +535,10 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		app.AccountKeeper,
 		app.BankKeeper,
-		app.StakingKeeper,
+		app.DistrKeeper,
+		stakingkeeper.NewQuerier(app.StakingKeeper),
+		interfaceRegistry.SigningContext().AddressCodec(),
+		interfaceRegistry.SigningContext().ValidatorAddressCodec(),
 	)
 
 	// register the staking hooks

@@ -57,7 +57,7 @@ func New(
 				ctx,
 				pseKeeper,
 				bankKeeper,
-				stakingKeeper,
+				stakingkeeper.NewQuerier(stakingKeeper),
 			); err != nil {
 				return nil, err
 			}

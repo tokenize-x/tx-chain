@@ -115,7 +115,7 @@ func InitPSEAllocationsAndSchedule(
 	ctx context.Context,
 	pseKeeper pskeeper.Keeper,
 	bankKeeper psetypes.BankKeeper,
-	stakingKeeper psetypes.StakingKeeper,
+	stakingKeeper psetypes.StakingQuerier,
 ) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 

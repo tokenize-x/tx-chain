@@ -42,7 +42,7 @@ func TestGenesis(t *testing.T) {
 	requireT.EqualExportedValues(&genesisState, got)
 }
 
-// TestGenesis_HardForkWithAllocations tests the hard fork scenario
+// TestGenesis_HardForkWithAllocations tests the hard fork scenario.
 func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	requireT := require.New(t)
 
