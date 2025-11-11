@@ -146,7 +146,7 @@ func (k Keeper) distributeAllocatedTokens(
 		}
 
 		// Emit allocation completed event
-		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventAllocationCompleted{
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventAllocationDistributed{
 			ClearingAccount:  allocation.ClearingAccount,
 			RecipientAddress: recipientAddr,
 			ScheduledAt:      timestamp,

@@ -276,7 +276,7 @@
     - [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution)
   
 - [tx/pse/v1/event.proto](#tx/pse/v1/event.proto)
-    - [EventAllocationCompleted](#tx.pse.v1.EventAllocationCompleted)
+    - [EventAllocationDistributed](#tx.pse.v1.EventAllocationDistributed)
   
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [GenesisState](#tx.pse.v1.GenesisState)
@@ -5792,12 +5792,12 @@ Multiple clearing accounts can allocate tokens at the same time.
 
 
 
-<a name="tx.pse.v1.EventAllocationCompleted"></a>
+<a name="tx.pse.v1.EventAllocationDistributed"></a>
 
-### EventAllocationCompleted
+### EventAllocationDistributed
 
 ```
-EventAllocationCompleted is emitted when a periodic allocation is successfully completed.
+EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
 ```
 
 

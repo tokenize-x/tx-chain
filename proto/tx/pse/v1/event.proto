@@ -5,8 +5,8 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
-// EventAllocationCompleted is emitted when a periodic allocation is successfully completed.
-message EventAllocationCompleted {
+// EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
+message EventAllocationDistributed {
   // clearing_account is the source clearing account name from which tokens are allocated.
   string clearing_account = 1;
   // recipient_address is the destination recipient address receiving the tokens.
