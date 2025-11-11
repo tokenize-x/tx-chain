@@ -17,6 +17,7 @@ import (
 const (
 	// DefaultDistributionStartTime is the default start time for the distribution schedule
 	// This is Dec 1, 2025, 00:00:00 UTC.
+	// TODO: Confirm the start time.
 	DefaultDistributionStartTime = 1764547200
 
 	// InitialTotalMint is the total amount to mint during initialization

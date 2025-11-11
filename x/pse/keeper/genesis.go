@@ -17,27 +17,6 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		return err
 	}
 
-	// Clear any existing allocation schedule
-	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
-	if err != nil {
-		return err
-	}
-	var timestampsToRemove []uint64
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		if err != nil {
-			iter.Close()
-			return err
-		}
-		timestampsToRemove = append(timestampsToRemove, kv.Key)
-	}
-	iter.Close()
-	for _, ts := range timestampsToRemove {
-		if err := k.AllocationSchedule.Remove(ctx, ts); err != nil {
-			return err
-		}
-	}
-
 	// Populate allocation schedule from genesis state
 	for _, scheduledDist := range genState.ScheduledDistributions {
 		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist); err != nil {

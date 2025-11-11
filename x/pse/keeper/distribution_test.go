@@ -22,9 +22,8 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	pseKeeper := testApp.PSEKeeper
 
 	// Get bond denom
-	stakingParams, err := testApp.StakingKeeper.GetParams(ctx)
+	bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
 	requireT.NoError(err)
-	bondDenom := stakingParams.BondDenom
 
 	// Set up mappings and fund modules for all eligible accounts
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
