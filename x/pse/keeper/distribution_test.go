@@ -111,7 +111,10 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.Len(genesisState.ScheduledDistributions, 1, "should have 1 remaining allocation (time2)")
 	requireT.Equal(time2, genesisState.ScheduledDistributions[0].Timestamp)
 	// Verify the remaining allocation has all 5 eligible accounts
-	requireT.Len(genesisState.ScheduledDistributions[0].Allocations, 5, "should have allocations for all 5 eligible accounts")
+	requireT.Len(
+		genesisState.ScheduledDistributions[0].Allocations, 5,
+		"should have allocations for all 5 eligible accounts",
+	)
 
 	// Create new app and import genesis
 	testApp2 := simapp.New()

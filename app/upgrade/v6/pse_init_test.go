@@ -14,7 +14,6 @@ import (
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
 func TestPseInit_DefaultAllocations(t *testing.T) {
@@ -38,13 +37,13 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	// Override default clearing account mappings with valid test addresses
-	v6.DefaultClearingAccountMappings = func() []psetypes.ClearingAccountMapping {
-		return []psetypes.ClearingAccountMapping{
-			{ClearingAccount: psetypes.ModuleAccountFoundation, RecipientAddress: addr1},
-			{ClearingAccount: psetypes.ModuleAccountAlliance, RecipientAddress: addr2},
-			{ClearingAccount: psetypes.ModuleAccountPartnership, RecipientAddress: addr3},
-			{ClearingAccount: psetypes.ModuleAccountInvestors, RecipientAddress: addr4},
-			{ClearingAccount: psetypes.ModuleAccountTeam, RecipientAddress: addr5},
+	v6.DefaultClearingAccountMappings = func() []types.ClearingAccountMapping {
+		return []types.ClearingAccountMapping{
+			{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
+			{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr2},
+			{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr3},
+			{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr4},
+			{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr5},
 		}
 	}
 
@@ -71,7 +70,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		requireT.NotEmpty(mapping.RecipientAddress,
 			"mapping for %s should have a recipient address", mapping.ClearingAccount)
 		// Verify Community is not in mappings
-		requireT.NotEqual(psetypes.ModuleAccountCommunity, mapping.ClearingAccount,
+		requireT.NotEqual(types.ModuleAccountCommunity, mapping.ClearingAccount,
 			"Community should not have a mapping")
 	}
 
@@ -165,20 +164,28 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		allocations []v6.InitialFundAllocation
 		totalMint   sdkmath.Int
 		startTime   uint64
-		verifyFn    func(*require.Assertions, []psetypes.ScheduledDistribution, []v6.InitialFundAllocation, sdkmath.Int)
+		verifyFn    func(
+			*require.Assertions,
+			[]types.ScheduledDistribution,
+			[]v6.InitialFundAllocation,
+			sdkmath.Int,
+		)
 	}{
 		{
 			name: "standard_five_accounts",
 			allocations: []v6.InitialFundAllocation{
-				{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},  // 8.4M
-				{ModuleAccount: psetypes.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},        // 4.2M
-				{ModuleAccount: psetypes.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.12")}, // 2.52M
-				{ModuleAccount: psetypes.ModuleAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.08")},    // 1.68M
-				{ModuleAccount: psetypes.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.06")},   // 1.26M
+				{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},  // 8.4M
+				{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},        // 4.2M
+				{ModuleAccount: types.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.12")}, // 2.52M
+				{ModuleAccount: types.ModuleAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.08")},    // 1.68M
+				{ModuleAccount: types.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.06")},   // 1.26M
 			},
 			totalMint: sdkmath.NewInt(21_000_000), // 21M total
 			startTime: uint64(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			verifyFn: func(req *require.Assertions, schedule []psetypes.ScheduledDistribution, allocations []v6.InitialFundAllocation, totalMint sdkmath.Int) {
+			verifyFn: func(req *require.Assertions,
+				schedule []types.ScheduledDistribution, allocations []v6.InitialFundAllocation,
+				totalMint sdkmath.Int,
+			) {
 				// Verify Feb 2025 is properly calculated
 				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
 				req.Equal(expectedFeb2025, schedule[1].Timestamp, "second period should be Feb 1, 2025")
@@ -187,14 +194,17 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		{
 			name: "large_balances",
 			allocations: []v6.InitialFundAllocation{
-				{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.353")},  // 30B
-				{ModuleAccount: psetypes.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")}, // 20B
-				{ModuleAccount: psetypes.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")},        // 20B
-				{ModuleAccount: psetypes.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.177")},   // 15B
+				{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.353")},  // 30B
+				{ModuleAccount: types.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")}, // 20B
+				{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.235")},        // 20B
+				{ModuleAccount: types.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.177")},   // 15B
 			},
 			totalMint: sdkmath.NewInt(85_000_000_000_000_000), // 85B total
 			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			verifyFn: func(req *require.Assertions, schedule []psetypes.ScheduledDistribution, allocations []v6.InitialFundAllocation, totalMint sdkmath.Int) {
+			verifyFn: func(req *require.Assertions,
+				schedule []types.ScheduledDistribution, allocations []v6.InitialFundAllocation,
+				totalMint sdkmath.Int,
+			) {
 				// Verify no overflow or precision issues with large numbers
 				for _, period := range schedule {
 					for _, allocation := range period.Allocations {
@@ -207,21 +217,24 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 		{
 			name: "includes_excluded_accounts",
 			allocations: []v6.InitialFundAllocation{
-				{ModuleAccount: psetypes.ModuleAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},   // 40B
-				{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.30")},  // 30B
-				{ModuleAccount: psetypes.ModuleAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},    // 20B
-				{ModuleAccount: psetypes.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.03")}, // 3B
-				{ModuleAccount: psetypes.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.05")},   // 5B
-				{ModuleAccount: psetypes.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.02")},        // 2B
+				{ModuleAccount: types.ModuleAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},   // 40B
+				{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.30")},  // 30B
+				{ModuleAccount: types.ModuleAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},    // 20B
+				{ModuleAccount: types.ModuleAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.03")}, // 3B
+				{ModuleAccount: types.ModuleAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.05")},   // 5B
+				{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.02")},        // 2B
 			},
 			totalMint: sdkmath.NewInt(100_000_000_000_000_000), // 100B total
 			startTime: uint64(time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC).Unix()),
-			verifyFn: func(req *require.Assertions, schedule []psetypes.ScheduledDistribution, allocations []v6.InitialFundAllocation, totalMint sdkmath.Int) {
+			verifyFn: func(req *require.Assertions,
+				schedule []types.ScheduledDistribution, allocations []v6.InitialFundAllocation,
+				totalMint sdkmath.Int,
+			) {
 				// Verify Community account is included in schedule
 				foundCommunity := false
 				for _, period := range schedule {
 					for _, allocation := range period.Allocations {
-						if allocation.ClearingAccount == psetypes.ModuleAccountCommunity {
+						if allocation.ClearingAccount == types.ModuleAccountCommunity {
 							foundCommunity = true
 							// Verify Community has correct allocation amount
 							communityTotal := allocations[0].Percentage.MulInt(totalMint).TruncateInt()
@@ -289,12 +302,12 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 	testCases := []struct {
 		name      string
 		startTime time.Time
-		verifyFn  func(*require.Assertions, []psetypes.ScheduledDistribution, time.Time)
+		verifyFn  func(*require.Assertions, []types.ScheduledDistribution, time.Time)
 	}{
 		{
 			name:      "leap_year_transition",
 			startTime: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
-			verifyFn: func(req *require.Assertions, schedule []psetypes.ScheduledDistribution, start time.Time) {
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
 				// Feb 2025 (month 12) should be Feb 1, 2025
 				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
 				req.Equal(expectedFeb2025, schedule[12].Timestamp,
@@ -304,7 +317,7 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 		{
 			name:      "month_end_boundaries",
 			startTime: time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
-			verifyFn: func(req *require.Assertions, schedule []psetypes.ScheduledDistribution, start time.Time) {
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
 				// Jan 31 + 1 month = Feb 31 (invalid) -> normalizes to Mar 3
 				// This is Go's AddDate behavior for overflow dates
 				expectedMar3 := time.Date(2025, 3, 3, 0, 0, 0, 0, time.UTC)
@@ -316,7 +329,7 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 	}
 
 	allocations := []v6.InitialFundAllocation{
-		{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
+		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
 	}
 	totalMint := sdkmath.NewInt(8_400_000)
 
@@ -354,7 +367,7 @@ func TestCreateDistributionSchedule_EmptyBalances(t *testing.T) {
 	schedule, err := v6.CreateDistributionSchedule(emptyAllocations, totalMint, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
-	requireT.ErrorIs(err, psetypes.ErrNoModuleBalances)
+	requireT.ErrorIs(err, types.ErrNoModuleBalances)
 }
 
 func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
@@ -364,7 +377,10 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 
 	// Allocation that results in zero monthly amount (< TotalAllocationMonths)
 	allocations := []v6.InitialFundAllocation{
-		{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.0000000001")}, // Very small percentage
+		{
+			ModuleAccount: types.ModuleAccountFoundation,
+			Percentage:    sdkmath.LegacyMustNewDecFromStr("0.0000000001"), // Very small percentage
+		},
 	}
 	totalMint := sdkmath.NewInt(50) // 50 * tiny percentage = 0 (integer division)
 
@@ -380,8 +396,8 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 
 	// Setup
 	allocations := []v6.InitialFundAllocation{
-		{ModuleAccount: psetypes.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.667")}, // ~8.4M
-		{ModuleAccount: psetypes.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.333")},       // ~4.2M
+		{ModuleAccount: types.ModuleAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.667")}, // ~8.4M
+		{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.333")},       // ~4.2M
 	}
 	totalMint := sdkmath.NewInt(12_600_000)
 
@@ -395,12 +411,12 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 	requireT.NoError(err2)
 
 	// Verify: Results should be identical
-	requireT.Equal(len(schedule1), len(schedule2))
+	requireT.Len(schedule2, len(schedule1))
 
 	for i := range schedule1 {
 		requireT.Equal(schedule1[i].Timestamp, schedule2[i].Timestamp,
 			"period %d timestamps should match", i)
-		requireT.Equal(len(schedule1[i].Allocations), len(schedule2[i].Allocations),
+		requireT.Len(schedule2[i].Allocations, len(schedule1[i].Allocations),
 			"period %d should have same number of allocations", i)
 
 		// Note: map iteration order is not guaranteed, so we need to match by clearing account
@@ -521,5 +537,5 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	// Step 6: Verify allocation schedule count decreased (first period removed)
 	allocationScheduleAfter, err := pseKeeper.GetAllocationSchedule(ctx)
 	requireT.NoError(err)
-	requireT.Len(allocationScheduleAfter, 0, "should have 0 remaining allocations")
+	requireT.Empty(allocationScheduleAfter, "should have 0 remaining allocations")
 }

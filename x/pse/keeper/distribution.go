@@ -42,7 +42,9 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	}
 
 	// Process all allocations scheduled for this timestamp
-	if err := k.distributeAllocatedTokens(ctx, timestamp, bondDenom, params.ClearingAccountMappings, scheduledDistribution); err != nil {
+	if err := k.distributeAllocatedTokens(
+		ctx, timestamp, bondDenom, params.ClearingAccountMappings, scheduledDistribution,
+	); err != nil {
 		return err
 	}
 

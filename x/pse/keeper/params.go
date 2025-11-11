@@ -95,7 +95,7 @@ func (k Keeper) UpdateClearingMappings(
 
 	if len(missingAccounts) > 0 {
 		return errors.Wrapf(types.ErrInvalidInput,
-			"mappings are missing the following required clearing accounts: %v. All eligible clearing accounts must be present.",
+			"mappings are missing the following required clearing accounts: %v",
 			missingAccounts)
 	}
 
@@ -116,7 +116,7 @@ func (k Keeper) UpdateClearingMappings(
 
 	if len(extraAccounts) > 0 {
 		return errors.Wrapf(types.ErrInvalidInput,
-			"mappings contain invalid clearing accounts: %v. Only eligible clearing accounts are allowed.",
+			"mappings contain invalid clearing accounts: %v",
 			extraAccounts)
 	}
 

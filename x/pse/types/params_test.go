@@ -192,7 +192,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 }
 
 // Helper function to create valid allocations for all eligible PSE module accounts
-// (excludes Community which is not eligible for distribution)
+// (excludes Community which is not eligible for distribution).
 func createAllModuleAllocations(amount sdkmath.Int) []ClearingAccountAllocation {
 	return []ClearingAccountAllocation{
 		{ClearingAccount: ModuleAccountFoundation, Amount: amount},
@@ -204,7 +204,7 @@ func createAllModuleAllocations(amount sdkmath.Int) []ClearingAccountAllocation 
 }
 
 // Helper function to generate test timestamps
-// Returns timestamp for the first day of the current month plus offsetMonths
+// Returns timestamp for the first day of the current month plus offsetMonths.
 func getTestTimestamp(offsetMonths int) uint64 {
 	now := time.Now().UTC()
 	baseTime := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
@@ -253,7 +253,8 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				{
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountCommunity, Amount: sdkmath.NewInt(5000)}, // Community (excluded) should NOT be in schedule
+						// Community (excluded) should NOT be in schedule
+						{ClearingAccount: ModuleAccountCommunity, Amount: sdkmath.NewInt(5000)},
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
 						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},

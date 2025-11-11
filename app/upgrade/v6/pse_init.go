@@ -65,8 +65,9 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 	}
 }
 
-// FilterFundAllocationsForDistribution returns only the fund allocations for clearing accounts eligible for distribution.
-// Non-eligible accounts (like Community) are excluded from the distribution schedule and mappings.
+// FilterFundAllocationsForDistribution returns only the fund allocations for clearing accounts
+// eligible for distribution. Non-eligible accounts (like Community) are excluded from the
+// distribution schedule and mappings.
 func FilterFundAllocationsForDistribution(fundAllocations []InitialFundAllocation) []InitialFundAllocation {
 	var distributionAllocations []InitialFundAllocation
 	for _, allocation := range fundAllocations {
@@ -224,7 +225,11 @@ func CreateDistributionSchedule(
 
 			// Fail if balance is too small to distribute over n periods
 			if monthlyAmount.IsZero() {
-				return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "clearing account %s: balance too small to divide into monthly distributions", allocation.ModuleAccount)
+				return nil, errorsmod.Wrapf(
+					psetypes.ErrInvalidInput,
+					"clearing account %s: balance too small to divide into monthly distributions",
+					allocation.ModuleAccount,
+				)
 			}
 
 			periodAllocations = append(periodAllocations, psetypes.ClearingAccountAllocation{
@@ -271,7 +276,11 @@ func MintAndFundClearingAccounts(
 
 		// Validate that allocation is not zero
 		if allocationAmount.IsZero() {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "module account %s: allocation rounds to zero", allocation.ModuleAccount)
+			return errorsmod.Wrapf(
+				psetypes.ErrInvalidInput,
+				"module account %s: allocation rounds to zero",
+				allocation.ModuleAccount,
+			)
 		}
 
 		coinsToTransfer := sdk.NewCoins(sdk.NewCoin(denom, allocationAmount))
@@ -301,11 +310,19 @@ func validateFundAllocations(fundAllocations []InitialFundAllocation) error {
 		}
 
 		if allocation.Percentage.IsNegative() {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "fund allocation %d (%s): negative percentage", i, allocation.ModuleAccount)
+			return errorsmod.Wrapf(
+				psetypes.ErrInvalidInput,
+				"fund allocation %d (%s): negative percentage",
+				i, allocation.ModuleAccount,
+			)
 		}
 
 		if allocation.Percentage.GT(sdkmath.LegacyOneDec()) {
-			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "fund allocation %d (%s): percentage %.2f exceeds 100%%", i, allocation.ModuleAccount, allocation.Percentage.MustFloat64()*100)
+			return errorsmod.Wrapf(
+				psetypes.ErrInvalidInput,
+				"fund allocation %d (%s): percentage %.2f exceeds 100%%",
+				i, allocation.ModuleAccount, allocation.Percentage.MustFloat64()*100,
+			)
 		}
 
 		totalPercentage = totalPercentage.Add(allocation.Percentage)

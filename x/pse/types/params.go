@@ -165,8 +165,10 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 			// Validate clearing account is one of the eligible PSE module accounts
 			// Excluded accounts (like Community) should NOT be in the schedule
 			if !lo.Contains(eligibleModuleAccounts, alloc.ClearingAccount) {
-				return fmt.Errorf("period %d, allocation %d: clearing_account '%s' is not an eligible PSE module account (expected one of: %v)",
-					i, j, alloc.ClearingAccount, eligibleModuleAccounts)
+				return fmt.Errorf(
+					"period %d, allocation %d: clearing_account '%s' is not an eligible PSE module account (expected one of: %v)",
+					i, j, alloc.ClearingAccount, eligibleModuleAccounts,
+				)
 			}
 
 			// Check for duplicate clearing accounts in the same period

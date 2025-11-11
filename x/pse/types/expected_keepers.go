@@ -27,7 +27,7 @@ type BankKeeper interface {
 
 // StakingKeeper interface.
 type StakingKeeper interface {
-	BondDenom(context.Context) (string, error)
+	BondDenom(ctx context.Context) (string, error)
 	GetDelegation(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) (stakingtypes.Delegation, error)
 	GetValidator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.Validator, error)
 }
