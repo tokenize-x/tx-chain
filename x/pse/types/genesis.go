@@ -6,7 +6,7 @@ import "cosmossdk.io/errors"
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		Params:                 DefaultParams(),
-		ScheduledDistributions: []ScheduledDistribution{},
+		ScheduledDistributions: nil,
 	}
 }
 

@@ -55,8 +55,8 @@ func GetEligibleModuleAccounts() []string {
 // DefaultParams returns default pse module parameters.
 func DefaultParams() Params {
 	return Params{
-		ExcludedAddresses:       []string{},
-		ClearingAccountMappings: []ClearingAccountMapping{},
+		ExcludedAddresses:       nil,
+		ClearingAccountMappings: nil,
 	}
 }
 
