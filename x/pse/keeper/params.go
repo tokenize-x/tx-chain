@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
@@ -94,6 +95,7 @@ func (k Keeper) UpdateClearingMappings(
 	}
 
 	if len(missingAccounts) > 0 {
+		sort.Strings(missingAccounts)
 		return errors.Wrapf(types.ErrInvalidInput,
 			"mappings are missing the following required clearing accounts: %v",
 			missingAccounts)
@@ -115,6 +117,7 @@ func (k Keeper) UpdateClearingMappings(
 	}
 
 	if len(extraAccounts) > 0 {
+		sort.Strings(extraAccounts)
 		return errors.Wrapf(types.ErrInvalidInput,
 			"mappings contain invalid clearing accounts: %v",
 			extraAccounts)

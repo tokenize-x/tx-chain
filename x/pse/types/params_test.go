@@ -192,9 +192,10 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 	}
 }
 
-// Helper function to create valid allocations for all eligible PSE module accounts
-// (excludes Community which is not eligible for distribution).
-func createAllModuleAllocations(amount sdkmath.Int) []ClearingAccountAllocation {
+// Helper function to create distribution schedule allocations for all eligible PSE module accounts.
+// These are used in ScheduledDistribution periods to define how tokens are allocated across
+// clearing accounts. Note: Community is excluded as it's not eligible for distribution.
+func createDistributionScheduleAllocations(amount sdkmath.Int) []ClearingAccountAllocation {
 	return []ClearingAccountAllocation{
 		{ClearingAccount: ModuleAccountFoundation, Amount: amount},
 		{ClearingAccount: ModuleAccountAlliance, Amount: amount},
@@ -229,7 +230,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp:   getTestTimestamp(0),
-					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
+					Allocations: createDistributionScheduleAllocations(sdkmath.NewInt(1000)),
 				},
 			},
 			expectErr: false,
@@ -239,11 +240,11 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp:   getTestTimestamp(0),
-					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
+					Allocations: createDistributionScheduleAllocations(sdkmath.NewInt(1000)),
 				},
 				{
 					Timestamp:   getTestTimestamp(12),
-					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
+					Allocations: createDistributionScheduleAllocations(sdkmath.NewInt(2000)),
 				},
 			},
 			expectErr: false,
@@ -285,11 +286,11 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp:   getTestTimestamp(0),
-					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
+					Allocations: createDistributionScheduleAllocations(sdkmath.NewInt(1000)),
 				},
 				{
 					Timestamp:   getTestTimestamp(0),
-					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
+					Allocations: createDistributionScheduleAllocations(sdkmath.NewInt(2000)),
 				},
 			},
 			expectErr: true,
@@ -300,11 +301,11 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			schedule: []ScheduledDistribution{
 				{
 					Timestamp:   getTestTimestamp(12),
-					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
+					Allocations: createDistributionScheduleAllocations(sdkmath.NewInt(2000)),
 				},
 				{
 					Timestamp:   getTestTimestamp(0),
-					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
+					Allocations: createDistributionScheduleAllocations(sdkmath.NewInt(1000)),
 				},
 			},
 			expectErr: true,
