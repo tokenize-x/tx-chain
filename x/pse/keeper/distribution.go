@@ -105,7 +105,7 @@ func (k Keeper) distributeAllocatedTokens(
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
 		// Skip excluded clearing accounts - tokens remain in module account for alternative distribution
-		if types.IsExcludedClearingAccount(allocation.ClearingAccount) {
+		if types.IsExcludedForAllocation(allocation.ClearingAccount) {
 			sdkCtx.Logger().Info("skipping excluded clearing account distribution",
 				"clearing_account", allocation.ClearingAccount,
 				"amount", allocation.Amount.String(),
@@ -173,4 +173,29 @@ func (k Keeper) SaveDistributionSchedule(ctx context.Context, schedule []types.S
 		}
 	}
 	return nil
+}
+
+// GetAllocationSchedule returns the complete allocation schedule as a sorted list.
+// The schedule is sorted by timestamp in ascending order.
+// Returns an empty slice if no allocations are scheduled.
+func (k Keeper) GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {
+	var schedule []types.ScheduledDistribution
+
+	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			return nil, err
+		}
+		schedule = append(schedule, kv.Value)
+	}
+
+	// Note: Collections map iterates in ascending order of keys (timestamps),
+	// so the schedule is already sorted. No need to sort again.
+	return schedule, nil
 }

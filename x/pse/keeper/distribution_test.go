@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -11,25 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	"github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
-
-// getAllocationSchedule returns the allocation schedule as a sorted list
-func getAllocationSchedule(ctx context.Context, pseKeeper keeper.Keeper, requireT *require.Assertions) []types.ScheduledDistribution {
-	var schedule []types.ScheduledDistribution
-	iter, err := pseKeeper.AllocationSchedule.Iterate(ctx, nil)
-	requireT.NoError(err)
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		requireT.NoError(err)
-		schedule = append(schedule, kv.Value)
-	}
-
-	return schedule
-}
 
 func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT := require.New(t)
@@ -44,16 +26,29 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	// Set up mappings and fund modules
-	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	// Set up mappings and fund modules for all eligible accounts
+	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: multisigAddr1},
-		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: multisigAddr2},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr2},
+		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr3},
+		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr4},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr5},
 	}
 
-	for _, moduleAccount := range []string{types.ModuleAccountFoundation, types.ModuleAccountTeam} {
+	// Fund all eligible module accounts
+	for _, moduleAccount := range []string{
+		types.ModuleAccountFoundation,
+		types.ModuleAccountAlliance,
+		types.ModuleAccountPartnership,
+		types.ModuleAccountInvestors,
+		types.ModuleAccountTeam,
+	} {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(5000)))
 		err = testApp.BankKeeper.MintCoins(ctx, types.ModuleName, fundAmount)
 		requireT.NoError(err)
@@ -71,12 +66,15 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	err = pseKeeper.SetParams(ctx, params)
 	requireT.NoError(err)
 
-	// Create and store allocation schedule
+	// Create and store allocation schedule with all eligible accounts
 	schedule := []types.ScheduledDistribution{
 		{
 			Timestamp: time1,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(200)},
+				{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(300)},
+				{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(400)},
 				{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(500)},
 			},
 		},
@@ -84,6 +82,10 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 			Timestamp: time2,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
+				{ClearingAccount: types.ModuleAccountAlliance, Amount: sdkmath.NewInt(400)},
+				{ClearingAccount: types.ModuleAccountPartnership, Amount: sdkmath.NewInt(600)},
+				{ClearingAccount: types.ModuleAccountInvestors, Amount: sdkmath.NewInt(800)},
+				{ClearingAccount: types.ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
 			},
 		},
 	}
@@ -105,9 +107,11 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify export contains:
-	// - 2 allocations in schedule (time2 only, since time1 was processed and removed)
+	// - 1 allocation in schedule (time2 only, since time1 was processed and removed)
 	requireT.Len(genesisState.ScheduledDistributions, 1, "should have 1 remaining allocation (time2)")
 	requireT.Equal(time2, genesisState.ScheduledDistributions[0].Timestamp)
+	// Verify the remaining allocation has all 5 eligible accounts
+	requireT.Len(genesisState.ScheduledDistributions[0].Allocations, 5, "should have allocations for all 5 eligible accounts")
 
 	// Create new app and import genesis
 	testApp2 := simapp.New()
@@ -120,7 +124,8 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify allocation schedule only contains time2 since time1 was already processed
-	allocationSchedule2 := getAllocationSchedule(ctx2, pseKeeper2, requireT)
+	allocationSchedule2, err := pseKeeper2.GetAllocationSchedule(ctx2)
+	requireT.NoError(err)
 	requireT.Len(allocationSchedule2, 1, "should have 1 remaining allocation (time2)")
 	requireT.Equal(time2, allocationSchedule2[0].Timestamp)
 }

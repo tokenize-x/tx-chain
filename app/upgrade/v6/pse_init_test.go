@@ -1,8 +1,6 @@
 package v6_test
 
 import (
-	"context"
-	"sort"
 	"testing"
 	"time"
 
@@ -15,31 +13,9 @@ import (
 
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
-
-// getAllocationSchedule returns the allocation schedule as a sorted list
-func getAllocationSchedule(ctx context.Context, pseKeeper pskeeper.Keeper, requireT *require.Assertions) []psetypes.ScheduledDistribution {
-	var schedules []psetypes.ScheduledDistribution
-	iter, err := pseKeeper.AllocationSchedule.Iterate(ctx, nil)
-	requireT.NoError(err)
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		requireT.NoError(err)
-		schedules = append(schedules, kv.Value)
-	}
-
-	// Sort by timestamp
-	sort.Slice(schedules, func(i, j int) bool {
-		return schedules[i].Timestamp < schedules[j].Timestamp
-	})
-
-	return schedules
-}
 
 func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT := require.New(t)
@@ -55,26 +31,36 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	// Override default clearing account mappings with valid test addresses
 	v6.DefaultClearingAccountMappings = func() []psetypes.ClearingAccountMapping {
 		return []psetypes.ClearingAccountMapping{
-			{ClearingAccount: psetypes.ModuleAccountFoundation, RecipientAddress: multisigAddr1},
-			{ClearingAccount: psetypes.ModuleAccountAlliance, RecipientAddress: multisigAddr2},
-			{ClearingAccount: psetypes.ModuleAccountPartnership, RecipientAddress: multisigAddr3},
-			{ClearingAccount: psetypes.ModuleAccountInvestors, RecipientAddress: multisigAddr4},
-			{ClearingAccount: psetypes.ModuleAccountTeam, RecipientAddress: multisigAddr5},
+			{ClearingAccount: psetypes.ModuleAccountFoundation, RecipientAddress: addr1},
+			{ClearingAccount: psetypes.ModuleAccountAlliance, RecipientAddress: addr2},
+			{ClearingAccount: psetypes.ModuleAccountPartnership, RecipientAddress: addr3},
+			{ClearingAccount: psetypes.ModuleAccountInvestors, RecipientAddress: addr4},
+			{ClearingAccount: psetypes.ModuleAccountTeam, RecipientAddress: addr5},
 		}
 	}
+
+	// Get total supply before initialization
+	supplyBefore := bankKeeper.GetSupply(ctx, bondDenom)
+
 	// Step 1: Perform Initialization (uses internal constants)
 	// Note: InitPSEAllocationsAndSchedule will create clearing account mappings with placeholder addresses
 	err = v6.InitPSEAllocationsAndSchedule(ctx, pseKeeper, bankKeeper, testApp.StakingKeeper)
 	requireT.NoError(err)
+
+	// Get total supply after initialization
+	supplyAfter := bankKeeper.GetSupply(ctx, bondDenom)
+
+	// Calculate actual mint amount from supply diff
+	totalActualMint := supplyAfter.Amount.Sub(supplyBefore.Amount)
 
 	// Step 2: Verify clearing account mappings were created
 	params, err := pseKeeper.GetParams(ctx)
@@ -107,20 +93,46 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 			"module %s should have correct balance", allocation.ModuleAccount)
 	}
 
-	// Step 4: Verify total minted equals sum of allocations (no rounding errors)
+	// Step 4: Verify total actually minted (from supply diff) equals expected amount
+	requireT.Equal(totalMintAmount.String(), totalActualMint.String(),
+		"actual minted amount (from supply diff) should equal total mint amount")
+
+	// Step 4b: Verify sum of allocations equals total mint amount (no rounding errors)
 	requireT.Equal(totalMintAmount.String(), totalVerified.String(),
 		"sum of allocations should equal total mint amount")
 
 	// Step 5: Verify allocation schedule was created with n months
-	allocationSchedule := getAllocationSchedule(ctx, pseKeeper, requireT)
+	allocationSchedule, err := pseKeeper.GetAllocationSchedule(ctx)
+	requireT.NoError(err)
 	requireT.Len(allocationSchedule, v6.TotalAllocationMonths,
 		"should have n monthly allocations")
 
 	// Step 6: Verify first and last timestamps (schedule uses actual months, not fixed 30-day intervals)
 	requireT.Equal(uint64(v6.DefaultDistributionStartTime), allocationSchedule[0].Timestamp,
 		"first period should start at default distribution start time")
-	requireT.Greater(allocationSchedule[83].Timestamp, uint64(v6.DefaultDistributionStartTime),
+	requireT.Greater(allocationSchedule[v6.TotalAllocationMonths-1].Timestamp, uint64(v6.DefaultDistributionStartTime),
 		"last period should be after start time")
+
+	// Step 6b: Verify each distribution is on the first day of month and months increment correctly
+	var prevTime time.Time
+	for i, period := range allocationSchedule {
+		currentTime := time.Unix(int64(period.Timestamp), 0).UTC()
+
+		// Verify it's the first day of the month
+		requireT.Equal(1, currentTime.Day(),
+			"period %d should be on the first day of the month, got day %d", i, currentTime.Day())
+
+		// Verify month increases by exactly 1 from previous (accounting for year rollover)
+		if i > 0 {
+			expectedTime := prevTime.AddDate(0, 1, 0)
+			requireT.Equal(expectedTime.Year(), currentTime.Year(),
+				"period %d: year should be %d, got %d", i, expectedTime.Year(), currentTime.Year())
+			requireT.Equal(expectedTime.Month(), currentTime.Month(),
+				"period %d: month should be %s, got %s", i, expectedTime.Month(), currentTime.Month())
+		}
+
+		prevTime = currentTime
+	}
 
 	// Step 7: Verify each period has allocations for all PSE module accounts
 	for i, period := range allocationSchedule {
@@ -423,17 +435,17 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 
 	// Step 1: Set up sub-account mappings
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	multisigAddr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	multisigAddr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	// Must include all eligible clearing accounts (Community is excluded)
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: multisigAddr2},
-		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: multisigAddr1},
-		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: multisigAddr1},
-		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: multisigAddr1},
-		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: multisigAddr3},
+		{ClearingAccount: types.ModuleAccountFoundation, RecipientAddress: addr2},
+		{ClearingAccount: types.ModuleAccountAlliance, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountPartnership, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountInvestors, RecipientAddress: addr1},
+		{ClearingAccount: types.ModuleAccountTeam, RecipientAddress: addr3},
 	}
 
 	err = pseKeeper.UpdateClearingMappings(ctx, authority, mappings)
@@ -450,15 +462,9 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 		{ModuleAccount: types.ModuleAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")},       // 50B
 	}
 
-	// Mint tokens to module accounts for distribution
-	for _, allocation := range allocations {
-		amount := allocation.Percentage.MulInt(totalMint).TruncateInt()
-		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, amount))
-		err = bankKeeper.MintCoins(ctx, types.ModuleName, coins)
-		requireT.NoError(err)
-		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, allocation.ModuleAccount, coins)
-		requireT.NoError(err)
-	}
+	// Mint and fund clearing accounts for distribution
+	err = v6.MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMint, bondDenom)
+	requireT.NoError(err)
 
 	// Create schedule
 	schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, startTime)
@@ -470,7 +476,8 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify schedule was saved
-	allocationSchedule := getAllocationSchedule(ctx, pseKeeper, requireT)
+	allocationSchedule, err := pseKeeper.GetAllocationSchedule(ctx)
+	requireT.NoError(err)
 	requireT.Len(allocationSchedule, 1, "should have 1 allocation")
 
 	// Step 3: Fast-forward time to first distribution
@@ -484,7 +491,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	// Step 5: Verify allocations transferred funds to recipient accounts (excluding Community)
 	for _, allocation := range firstDist.Allocations {
 		// Check if this is an excluded account
-		if types.IsExcludedClearingAccount(allocation.ClearingAccount) {
+		if types.IsExcludedForAllocation(allocation.ClearingAccount) {
 			// Excluded accounts should NOT transfer to recipients
 			moduleAddr := testApp.AccountKeeper.GetModuleAddress(allocation.ClearingAccount)
 			moduleBalance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
@@ -512,6 +519,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	}
 
 	// Step 6: Verify allocation schedule count decreased (first period removed)
-	allocationScheduleAfter := getAllocationSchedule(ctx, pseKeeper, requireT)
+	allocationScheduleAfter, err := pseKeeper.GetAllocationSchedule(ctx)
+	requireT.NoError(err)
 	requireT.Len(allocationScheduleAfter, 0, "should have 0 remaining allocations")
 }

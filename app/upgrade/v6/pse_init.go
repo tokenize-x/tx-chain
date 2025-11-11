@@ -70,7 +70,7 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 func FilterFundAllocationsForDistribution(fundAllocations []InitialFundAllocation) []InitialFundAllocation {
 	var distributionAllocations []InitialFundAllocation
 	for _, allocation := range fundAllocations {
-		if psetypes.IsEligibleClearingAccount(allocation.ModuleAccount) {
+		if psetypes.IsEligibleForAllocation(allocation.ModuleAccount) {
 			distributionAllocations = append(distributionAllocations, allocation)
 		}
 	}

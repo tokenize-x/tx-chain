@@ -34,12 +34,13 @@ func GetModuleAccountPerms() map[string][]string {
 	}
 }
 
-// IsExcludedClearingAccount checks if a clearing account is excluded from recipient distribution.
-func IsExcludedClearingAccount(account string) bool {
+// IsExcludedForAllocation checks if a clearing account is excluded from recipient distribution.
+func IsExcludedForAllocation(account string) bool {
 	return account == ModuleAccountCommunity
 }
 
-func IsEligibleClearingAccount(account string) bool {
+// IsEligibleForAllocation checks if a clearing account is eligible for recipient distribution.
+func IsEligibleForAllocation(account string) bool {
 	return lo.Contains(GetEligibleModuleAccounts(), account)
 }
 
@@ -47,7 +48,7 @@ func IsEligibleClearingAccount(account string) bool {
 func GetEligibleModuleAccounts() []string {
 	accounts := lo.Keys(GetModuleAccountPerms())
 	return lo.Filter(accounts, func(acct string, _ int) bool {
-		return !IsExcludedClearingAccount(acct)
+		return !IsExcludedForAllocation(acct)
 	})
 }
 
@@ -120,6 +121,10 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 		return nil
 	}
 
+	// Get all eligible PSE module accounts (excludes Community and other non-distribution accounts)
+	// Only eligible accounts should be in the schedule
+	eligibleModuleAccounts := GetEligibleModuleAccounts()
+
 	seenTimestamps := make(map[uint64]bool)
 	var lastTime uint64
 
@@ -157,6 +162,13 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 				return fmt.Errorf("period %d, allocation %d: clearing_account cannot be empty", i, j)
 			}
 
+			// Validate clearing account is one of the eligible PSE module accounts
+			// Excluded accounts (like Community) should NOT be in the schedule
+			if !lo.Contains(eligibleModuleAccounts, alloc.ClearingAccount) {
+				return fmt.Errorf("period %d, allocation %d: clearing_account '%s' is not an eligible PSE module account (expected one of: %v)",
+					i, j, alloc.ClearingAccount, eligibleModuleAccounts)
+			}
+
 			// Check for duplicate clearing accounts in the same period
 			if seenClearingAccounts[alloc.ClearingAccount] {
 				return fmt.Errorf("period %d: duplicate clearing account %s in same period", i, alloc.ClearingAccount)
@@ -178,6 +190,14 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 				return fmt.Errorf("period %d, allocation %d: amount cannot be zero", i, j)
 			}
 		}
+
+		// Validate that all eligible module accounts are present in this period
+		for _, expectedAccount := range eligibleModuleAccounts {
+			if !seenClearingAccounts[expectedAccount] {
+				return fmt.Errorf("period %d: missing allocation for required eligible PSE module account '%s'",
+					i, expectedAccount)
+			}
+		}
 	}
 
 	return nil
@@ -197,7 +217,7 @@ func ValidateScheduleMappingConsistency(schedule []ScheduledDistribution, mappin
 	for i, period := range schedule {
 		for j, alloc := range period.Allocations {
 			// Skip excluded clearing accounts - they don't need recipient mappings
-			if IsExcludedClearingAccount(alloc.ClearingAccount) {
+			if IsExcludedForAllocation(alloc.ClearingAccount) {
 				continue
 			}
 			if !availableAccounts[alloc.ClearingAccount] {

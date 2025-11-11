@@ -2,6 +2,7 @@ package types
 
 import (
 	"testing"
+	"time"
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -190,6 +191,26 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 	}
 }
 
+// Helper function to create valid allocations for all eligible PSE module accounts
+// (excludes Community which is not eligible for distribution)
+func createAllModuleAllocations(amount sdkmath.Int) []ClearingAccountAllocation {
+	return []ClearingAccountAllocation{
+		{ClearingAccount: ModuleAccountFoundation, Amount: amount},
+		{ClearingAccount: ModuleAccountAlliance, Amount: amount},
+		{ClearingAccount: ModuleAccountPartnership, Amount: amount},
+		{ClearingAccount: ModuleAccountInvestors, Amount: amount},
+		{ClearingAccount: ModuleAccountTeam, Amount: amount},
+	}
+}
+
+// Helper function to generate test timestamps
+// Returns timestamp for the first day of the current month plus offsetMonths
+func getTestTimestamp(offsetMonths int) uint64 {
+	now := time.Now().UTC()
+	baseTime := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return uint64(baseTime.AddDate(0, offsetMonths, 0).Unix())
+}
+
 func TestValidateAllocationSchedule(t *testing.T) {
 	testCases := []struct {
 		name      string
@@ -206,10 +227,8 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "valid_single_period",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-					},
+					Timestamp:   getTestTimestamp(0),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 			},
 			expectErr: false,
@@ -218,19 +237,33 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "valid_multiple_periods_sorted",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-					},
+					Timestamp:   getTestTimestamp(0),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 				{
-					Timestamp: 1767225600,
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
-					},
+					Timestamp:   getTestTimestamp(12),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
 				},
 			},
 			expectErr: false,
+		},
+		{
+			name: "invalid_with_excluded_community_account",
+			schedule: []ScheduledDistribution{
+				{
+					Timestamp: getTestTimestamp(0),
+					Allocations: []ClearingAccountAllocation{
+						{ClearingAccount: ModuleAccountCommunity, Amount: sdkmath.NewInt(5000)}, // Community (excluded) should NOT be in schedule
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
+					},
+				},
+			},
+			expectErr: true,
+			errMsg:    "is not an eligible PSE module account",
 		},
 		{
 			name: "invalid_zero_timestamp",
@@ -249,16 +282,12 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_duplicate_timestamp",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-					},
+					Timestamp:   getTestTimestamp(0),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 				{
-					Timestamp: 1735689600,
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
-					},
+					Timestamp:   getTestTimestamp(0),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
 				},
 			},
 			expectErr: true,
@@ -268,16 +297,12 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_unsorted_schedule",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1767225600,
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
-					},
+					Timestamp:   getTestTimestamp(12),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
 				},
 				{
-					Timestamp: 1735689600,
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-					},
+					Timestamp:   getTestTimestamp(0),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 			},
 			expectErr: true,
@@ -287,7 +312,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_empty_allocations_array",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp:   1735689600,
+					Timestamp:   getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{},
 				},
 			},
@@ -295,12 +320,29 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			errMsg:    "must have at least one allocation",
 		},
 		{
+			name: "invalid_too_few_allocations",
+			schedule: []ScheduledDistribution{
+				{
+					Timestamp: getTestTimestamp(0),
+					Allocations: []ClearingAccountAllocation{
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
+					},
+				},
+			},
+			expectErr: true,
+			errMsg:    "missing allocation for required eligible PSE module account",
+		},
+		{
 			name: "invalid_empty_clearing_account",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: "", Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -308,13 +350,34 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			errMsg:    "clearing_account cannot be empty",
 		},
 		{
+			name: "invalid_unknown_clearing_account",
+			schedule: []ScheduledDistribution{
+				{
+					Timestamp: getTestTimestamp(0),
+					Allocations: []ClearingAccountAllocation{
+						{ClearingAccount: "unknown_module", Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
+					},
+				},
+			},
+			expectErr: true,
+			errMsg:    "is not an eligible PSE module account",
+		},
+		{
 			name: "invalid_duplicate_clearing_account_in_period",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
-						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)},
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)}, // Duplicate
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -322,12 +385,33 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			errMsg:    "duplicate clearing account",
 		},
 		{
+			name: "invalid_missing_module_account",
+			schedule: []ScheduledDistribution{
+				{
+					Timestamp: getTestTimestamp(0),
+					Allocations: []ClearingAccountAllocation{
+						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						// Missing ModuleAccountTeam
+					},
+				},
+			},
+			expectErr: true,
+			errMsg:    "missing allocation for required eligible PSE module account",
+		},
+		{
 			name: "invalid_nil_amount",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.Int{}},
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -338,9 +422,13 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_negative_amount",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(-1000)},
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -351,9 +439,13 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_zero_amount",
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.ZeroInt()},
+						{ClearingAccount: ModuleAccountAlliance, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountPartnership, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountInvestors, Amount: sdkmath.NewInt(1000)},
+						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
 					},
 				},
 			},
@@ -398,7 +490,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			},
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(2000)},
@@ -423,7 +515,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			},
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
@@ -438,7 +530,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			},
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(1000)},
 					},
@@ -454,7 +546,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			},
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 						{ClearingAccount: ModuleAccountTeam, Amount: sdkmath.NewInt(2000)},
@@ -469,7 +561,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			mappings: []ClearingAccountMapping{},
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(1000)},
 					},
@@ -485,9 +577,9 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 			},
 			schedule: []ScheduledDistribution{
 				{
-					Timestamp: 1735689600,
+					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ModuleAccountCommunity, Amount: sdkmath.NewInt(1000)},   // Excluded - no mapping needed
+						{ClearingAccount: ModuleAccountCommunity, Amount: sdkmath.NewInt(1000)},  // Excluded - no mapping needed
 						{ClearingAccount: ModuleAccountFoundation, Amount: sdkmath.NewInt(2000)}, // Needs mapping
 					},
 				},
