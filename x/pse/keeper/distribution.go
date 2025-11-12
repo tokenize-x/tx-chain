@@ -119,7 +119,7 @@ func (k Keeper) distributeAllocatedTokens(
 
 		// Find the recipient address mapped to this clearing account
 		// Note: Community clearing account is handled above and doesn't need a mapping.
-		// Mappings are validated on update and genesis, so we can assume they exist for non-Community accounts.
+		// Mappings are validated on update and genesis, so they are guaranteed to exist.
 		var recipientAddr string
 		for _, mapping := range clearingAccountMappings {
 			if mapping.ClearingAccount == allocation.ClearingAccount {
@@ -129,6 +129,7 @@ func (k Keeper) distributeAllocatedTokens(
 		}
 
 		// Convert recipient address string to SDK account address
+		// Safe to use Must* because addresses are validated at genesis/update time
 		recipient := sdk.MustAccAddressFromBech32(recipientAddr)
 
 		// Prepare coins to transfer

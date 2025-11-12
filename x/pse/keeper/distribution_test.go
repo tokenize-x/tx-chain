@@ -60,11 +60,12 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	err = pseKeeper.SetParams(ctx, params)
 	requireT.NoError(err)
 
-	// Create and store allocation schedule with all eligible accounts
+	// Create and store allocation schedule with all clearing accounts
 	schedule := []types.ScheduledDistribution{
 		{
 			Timestamp: time1,
 			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(5000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
@@ -75,6 +76,7 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 		{
 			Timestamp: time2,
 			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(10000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(400)},
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(600)},
@@ -104,10 +106,10 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	// - 1 allocation in schedule (time2 only, since time1 was processed and removed)
 	requireT.Len(genesisState.ScheduledDistributions, 1, "should have 1 remaining allocation (time2)")
 	requireT.Equal(time2, genesisState.ScheduledDistributions[0].Timestamp)
-	// Verify the remaining allocation has all 5 eligible accounts
+	// Verify the remaining allocation has all 6 clearing accounts
 	requireT.Len(
-		genesisState.ScheduledDistributions[0].Allocations, 5,
-		"should have allocations for all 5 eligible accounts",
+		genesisState.ScheduledDistributions[0].Allocations, 6,
+		"should have allocations for all 6 clearing accounts",
 	)
 
 	// Create new app and import genesis

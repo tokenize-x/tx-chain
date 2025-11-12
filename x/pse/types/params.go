@@ -109,8 +109,8 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 		return nil
 	}
 
-	// Only non-Community clearing accounts should be in the schedule
-	nonCommunityClearingAccounts := GetNonCommunityClearingAccounts()
+	// All clearing accounts (including Community) should be in the schedule
+	allClearingAccounts := GetAllClearingAccounts()
 
 	seenTimestamps := make(map[uint64]bool)
 	var lastTime uint64
@@ -146,10 +146,9 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 				return errorsmod.Wrapf(ErrInvalidParam, "clearing_account cannot be empty")
 			}
 
-			// Validate clearing account is one of the non-Community PSE clearing accounts
-			// Excluded accounts (like Community) should NOT be in the schedule
-			if !lo.Contains(nonCommunityClearingAccounts, alloc.ClearingAccount) {
-				return errorsmod.Wrapf(ErrInvalidParam, "non-Community clearing account not found")
+			// Validate clearing account is one of the PSE clearing accounts
+			if !lo.Contains(allClearingAccounts, alloc.ClearingAccount) {
+				return errorsmod.Wrapf(ErrInvalidParam, "clearing account not found")
 			}
 
 			// Check for duplicate clearing accounts in the same period
@@ -174,10 +173,10 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 			}
 		}
 
-		// Validate that all non-Community clearing accounts are present in this period
-		for _, expectedAccount := range nonCommunityClearingAccounts {
+		// Validate that all PSE clearing accounts are present in this period
+		for _, expectedAccount := range allClearingAccounts {
 			if !seenClearingAccounts[expectedAccount] {
-				return errorsmod.Wrapf(ErrInvalidParam, "missing allocation for required non-Community PSE clearing account")
+				return errorsmod.Wrapf(ErrInvalidParam, "missing allocation for required PSE clearing account")
 			}
 		}
 	}
@@ -185,8 +184,9 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 	return nil
 }
 
-// ValidateScheduleMappingConsistency ensures all clearing accounts in the schedule have corresponding mappings.
-// Excluded clearing accounts (like Community) don't need mappings since they don't distribute to recipients.
+// ValidateScheduleMappingConsistency ensures all PSE clearing accounts in the schedule
+// have corresponding mappings. Community clearing account uses score-based distribution
+// and doesn't need recipient mappings.
 func ValidateScheduleMappingConsistency(schedule []ScheduledDistribution, mappings []ClearingAccountMapping) error {
 	// Build a set of available clearing accounts from mappings
 	availableAccounts := make(map[string]bool)
@@ -194,11 +194,11 @@ func ValidateScheduleMappingConsistency(schedule []ScheduledDistribution, mappin
 		availableAccounts[mapping.ClearingAccount] = true
 	}
 
-	// Check that every clearing account in the schedule has a mapping
-	// Excluded clearing accounts don't need mappings
+	// Check that every non-Community clearing account in the schedule has a mapping
+	// Community uses score-based distribution and doesn't need recipient mappings
 	for i, period := range schedule {
 		for j, alloc := range period.Allocations {
-			// Skip Community clearing account - it doesn't need recipient mappings
+			// Skip Community clearing account - it uses score-based distribution
 			if alloc.ClearingAccount == ClearingAccountCommunity {
 				continue
 			}

@@ -97,6 +97,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 		{
 			Timestamp: time1,
 			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(5000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
@@ -107,6 +108,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 		{
 			Timestamp: time2,
 			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(10000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(400)},
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(600)},
@@ -117,6 +119,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 		{
 			Timestamp: time3,
 			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(15000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(3000)},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(600)},
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(900)},
@@ -157,12 +160,12 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	requireT.Equal(time2, exportedGenesis.ScheduledDistributions[0].Timestamp)
 	requireT.Equal(time3, exportedGenesis.ScheduledDistributions[1].Timestamp)
 
-	// Verify exported state has all 5 mappings
-	requireT.Len(exportedGenesis.Params.ClearingAccountMappings, 5, "should have all 5 mappings")
+	// Verify exported state has all 5 mappings (Community doesn't need mapping)
+	requireT.Len(exportedGenesis.Params.ClearingAccountMappings, 5, "should have all 5 non-Community mappings")
 
-	// Verify each period has all 5 eligible accounts
+	// Verify each period has all 6 clearing accounts
 	for i, period := range exportedGenesis.ScheduledDistributions {
-		requireT.Len(period.Allocations, 5, "period %d should have all 5 eligible accounts", i)
+		requireT.Len(period.Allocations, 6, "period %d should have all 6 clearing accounts", i)
 	}
 
 	// Verify exported state is valid
@@ -272,7 +275,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 			name: "invalid_allocation_schedule_missing_account",
 			modifyGenesis: func(gs *types.GenesisState) {
 				now := uint64(time.Now().Unix())
-				// Only include 4 accounts, missing ClearingAccountTeam
+				// Only include 4 accounts, missing Community and Team
 				gs.ScheduledDistributions = []types.ScheduledDistribution{
 					{
 						Timestamp: now,
@@ -285,13 +288,13 @@ func TestGenesis_InvalidState(t *testing.T) {
 					},
 				}
 			},
-			expectError: "missing allocation for required non-Community PSE clearing account",
+			expectError: "missing allocation for required PSE clearing account",
 		},
 		{
 			name: "invalid_allocation_schedule_excluded_account",
 			modifyGenesis: func(gs *types.GenesisState) {
 				now := uint64(time.Now().Unix())
-				// Include Community account (which is excluded)
+				// Include only non-Community accounts, missing Community
 				gs.ScheduledDistributions = []types.ScheduledDistribution{
 					{
 						Timestamp: now,
@@ -301,12 +304,11 @@ func TestGenesis_InvalidState(t *testing.T) {
 							{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
 							{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(400)},
 							{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(500)},
-							{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(600)},
 						},
 					},
 				}
 			},
-			expectError: "non-Community clearing account not found",
+			expectError: "missing allocation for required PSE clearing account",
 		},
 		{
 			name: "missing_mappings_for_allocations",
@@ -317,6 +319,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 					{
 						Timestamp: now,
 						Allocations: []types.ClearingAccountAllocation{
+							{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(600)},
 							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
 							{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
 							{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},

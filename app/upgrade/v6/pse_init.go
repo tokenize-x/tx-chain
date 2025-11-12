@@ -38,12 +38,13 @@ type InitialFundAllocation struct {
 
 // DefaultInitialFundAllocations returns the default token funding percentages for module accounts.
 // These percentages should sum to 1.0 (100%).
-// Non-Community clearing accounts receive tokens but are not included in the distribution schedule.
+// All clearing accounts receive tokens and are included in the distribution schedule.
+// Community uses score-based distribution, while others use direct recipient transfers.
 func DefaultInitialFundAllocations() []InitialFundAllocation {
 	return []InitialFundAllocation{
 		{
 			ClearingAccount: psetypes.ClearingAccountCommunity,
-			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - receives tokens but not in schedule
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - uses score-based distribution
 		},
 		{
 			ClearingAccount: psetypes.ClearingAccountFoundation,
@@ -126,8 +127,7 @@ func InitPSEAllocationsAndSchedule(
 	}
 
 	// Step 1: Validate all module account names
-	// All accounts (including non-Community clearing accounts) can receive tokens
-	// but only non-Community clearing accounts will be in the distribution schedule
+	// All clearing accounts receive tokens and are included in the distribution schedule
 	for _, allocation := range allocations {
 		perms := psetypes.GetAllClearingAccounts()
 		if !lo.Contains(perms, allocation.ClearingAccount) {
@@ -150,7 +150,8 @@ func InitPSEAllocationsAndSchedule(
 	}
 
 	// Step 3: Generate the n-month distribution schedule for all clearing accounts
-	// This defines when and how much each clearing account will distribute to recipients
+	// This defines when and how much each clearing account will distribute
+	// Community uses score-based distribution, others use direct recipient transfers
 	schedule, err := CreateDistributionSchedule(allocations, totalMintAmount, scheduleStartTime)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
@@ -161,7 +162,7 @@ func InitPSEAllocationsAndSchedule(
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 5: Mint and fund clearing accounts (all accounts, including non-Community clearing accounts)
+	// Step 5: Mint and fund all clearing accounts
 	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, bondDenom); err != nil {
 		return err
 	}
@@ -177,10 +178,11 @@ func InitPSEAllocationsAndSchedule(
 }
 
 // CreateDistributionSchedule generates a periodic distribution schedule over n months.
-// Only fund allocations for non-Community clearing accounts are included in the schedule.
-// Each distribution period allocates an equal portion (1/n) of each non-Community clearing account's total balance.
+// All clearing accounts (including Community) are included in the schedule.
+// Each distribution period allocates an equal portion (1/n) of each clearing account's total balance.
 // Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
 // Returns the schedule without persisting it to state, making this a pure, testable function.
+// Community clearing account uses score-based distribution, others use direct recipient transfers.
 func CreateDistributionSchedule(
 	distributionFundAllocations []InitialFundAllocation,
 	totalMintAmount sdkmath.Int,
@@ -203,7 +205,7 @@ func CreateDistributionSchedule(
 		distributionTime := uint64(distributionDateTime.Unix())
 
 		// Build allocations list for this distribution period
-		// Only non-Community clearing accounts are included (Community clearing account is already filtered out)
+		// All clearing accounts (including Community) are included
 		periodAllocations := make([]psetypes.ClearingAccountAllocation, 0, len(distributionFundAllocations))
 
 		for _, allocation := range distributionFundAllocations {
@@ -258,7 +260,6 @@ func MintAndFundClearingAccounts(
 	}
 
 	// Distribute minted tokens from PSE module to all clearing account modules
-	// All accounts receive tokens, including non-Community clearing accounts
 	for _, allocation := range fundAllocations {
 		// Calculate amount for this module account from percentage
 		allocationAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
