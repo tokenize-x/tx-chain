@@ -1,7 +1,7 @@
 package types
 
 import (
-	"cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 )
 
 // DefaultGenesisState returns genesis state with default values.
@@ -20,12 +20,12 @@ func (m *GenesisState) Validate() error {
 
 	// Validate allocation schedule
 	if err := ValidateAllocationSchedule(m.ScheduledDistributions); err != nil {
-		return errors.Wrapf(err, "invalid allocation schedule")
+		return errorsmod.Wrapf(err, "invalid allocation schedule")
 	}
 
 	// Validate referential integrity: all clearing accounts in schedule must have mappings
 	if err := ValidateScheduleMappingConsistency(m.ScheduledDistributions, m.Params.ClearingAccountMappings); err != nil {
-		return errors.Wrapf(err, "invalid allocation schedule mapping consistency")
+		return errorsmod.Wrapf(err, "invalid allocation schedule mapping consistency")
 	}
 
 	return nil

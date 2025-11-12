@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/samber/lo"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
@@ -128,8 +129,8 @@ func InitPSEAllocationsAndSchedule(
 	// All accounts (including non-Community clearing accounts) can receive tokens
 	// but only non-Community clearing accounts will be in the distribution schedule
 	for _, allocation := range allocations {
-		perms := psetypes.GetClearingAccountPerms()
-		if _, exists := perms[allocation.ClearingAccount]; !exists {
+		perms := psetypes.GetAllClearingAccounts()
+		if !lo.Contains(perms, allocation.ClearingAccount) {
 			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "invalid module account: %s", allocation.ClearingAccount)
 		}
 	}

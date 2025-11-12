@@ -1,7 +1,7 @@
 package types
 
 import (
-	"cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/samber/lo"
 )
@@ -21,22 +21,21 @@ const (
 	ClearingAccountTeam = "pse_team"
 )
 
-// GetClearingAccountPerms returns the clearing account permissions for PSE clearing accounts.
-func GetClearingAccountPerms() map[string][]string {
-	return map[string][]string{
-		ClearingAccountCommunity:   nil,
-		ClearingAccountFoundation:  nil,
-		ClearingAccountAlliance:    nil,
-		ClearingAccountPartnership: nil,
-		ClearingAccountInvestors:   nil,
-		ClearingAccountTeam:        nil,
+// GetAllClearingAccounts returns all PSE clearing accounts.
+func GetAllClearingAccounts() []string {
+	return []string{
+		ClearingAccountCommunity,
+		ClearingAccountFoundation,
+		ClearingAccountAlliance,
+		ClearingAccountPartnership,
+		ClearingAccountInvestors,
+		ClearingAccountTeam,
 	}
 }
 
-// GetNonCommunityClearingAccounts returns the clearing accounts except for Community.
+// GetNonCommunityClearingAccounts returns all PSE clearing accounts except for Community.
 func GetNonCommunityClearingAccounts() []string {
-	accounts := lo.Keys(GetClearingAccountPerms())
-	return lo.Filter(accounts, func(acct string, _ int) bool {
+	return lo.Filter(GetAllClearingAccounts(), func(acct string, _ int) bool {
 		return acct != ClearingAccountCommunity
 	})
 }
@@ -66,12 +65,12 @@ func validateExcludedAddresses(addresses []string) error {
 	for i, addr := range addresses {
 		// Validate address format
 		if _, err := sdk.AccAddressFromBech32(addr); err != nil {
-			return errors.Wrapf(err, "excluded address %d: invalid address %s", i, addr)
+			return errorsmod.Wrapf(err, "excluded address %d: invalid address %s", i, addr)
 		}
 
 		// Check for duplicates
 		if seen[addr] {
-			return errors.Wrapf(ErrInvalidParam, "excluded address %d: duplicate address %s", i, addr)
+			return errorsmod.Wrapf(ErrInvalidParam, "excluded address %d: duplicate address %s", i, addr)
 		}
 		seen[addr] = true
 	}
@@ -85,17 +84,17 @@ func validateClearingAccountMappings(mappings []ClearingAccountMapping) error {
 	for i, mapping := range mappings {
 		// Validate clearing_account (clearing account name) is not empty
 		if mapping.ClearingAccount == "" {
-			return errors.Wrapf(ErrInvalidParam, "mapping %d: clearing_account cannot be empty", i)
+			return errorsmod.Wrapf(ErrInvalidParam, "mapping %d: clearing_account cannot be empty", i)
 		}
 
 		// Validate sub account address
 		if _, err := sdk.AccAddressFromBech32(mapping.RecipientAddress); err != nil {
-			return errors.Wrapf(err, "mapping %d: invalid sub account address", i)
+			return errorsmod.Wrapf(err, "mapping %d: invalid sub account address", i)
 		}
 
 		// Check for duplicate clearing accounts
 		if seenClearingAccounts[mapping.ClearingAccount] {
-			return errors.Wrapf(ErrInvalidParam, "mapping %d: duplicate clearing account %s", i, mapping.ClearingAccount)
+			return errorsmod.Wrapf(ErrInvalidParam, "mapping %d: duplicate clearing account %s", i, mapping.ClearingAccount)
 		}
 		seenClearingAccounts[mapping.ClearingAccount] = true
 	}
@@ -119,24 +118,24 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 	for i, period := range schedule {
 		// Validate timestamp is not zero
 		if period.Timestamp == 0 {
-			return errors.Wrapf(ErrInvalidParam, "timestamp cannot be zero")
+			return errorsmod.Wrapf(ErrInvalidParam, "timestamp cannot be zero")
 		}
 
 		// Check for duplicate timestamps
 		if seenTimestamps[period.Timestamp] {
-			return errors.Wrapf(ErrInvalidParam, "duplicate timestamp")
+			return errorsmod.Wrapf(ErrInvalidParam, "duplicate timestamp")
 		}
 		seenTimestamps[period.Timestamp] = true
 
 		// Validate schedule is sorted in ascending order
 		if i > 0 && period.Timestamp <= lastTime {
-			return errors.Wrapf(ErrInvalidParam, "periods must be sorted by timestamp in ascending order")
+			return errorsmod.Wrapf(ErrInvalidParam, "periods must be sorted by timestamp in ascending order")
 		}
 		lastTime = period.Timestamp
 
 		// Validate allocations array is not empty
 		if len(period.Allocations) == 0 {
-			return errors.Wrapf(ErrInvalidParam, "must have at least one allocation")
+			return errorsmod.Wrapf(ErrInvalidParam, "must have at least one allocation")
 		}
 
 		// Validate individual allocations within the period
@@ -144,41 +143,41 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 		for _, alloc := range period.Allocations {
 			// Validate clearing_account is not empty
 			if alloc.ClearingAccount == "" {
-				return errors.Wrapf(ErrInvalidParam, "clearing_account cannot be empty")
+				return errorsmod.Wrapf(ErrInvalidParam, "clearing_account cannot be empty")
 			}
 
 			// Validate clearing account is one of the non-Community PSE clearing accounts
 			// Excluded accounts (like Community) should NOT be in the schedule
 			if !lo.Contains(nonCommunityClearingAccounts, alloc.ClearingAccount) {
-				return errors.Wrapf(ErrInvalidParam, "non-Community clearing account not found")
+				return errorsmod.Wrapf(ErrInvalidParam, "non-Community clearing account not found")
 			}
 
 			// Check for duplicate clearing accounts in the same period
 			if seenClearingAccounts[alloc.ClearingAccount] {
-				return errors.Wrapf(ErrInvalidParam, "duplicate clearing account in the same period")
+				return errorsmod.Wrapf(ErrInvalidParam, "duplicate clearing account in the same period")
 			}
 			seenClearingAccounts[alloc.ClearingAccount] = true
 
 			// Validate amount is not nil (should be enforced by proto, but double-check)
 			if alloc.Amount.IsNil() {
-				return errors.Wrapf(ErrInvalidParam, "amount cannot be nil")
+				return errorsmod.Wrapf(ErrInvalidParam, "amount cannot be nil")
 			}
 
 			// Validate amount is not negative
 			if alloc.Amount.IsNegative() {
-				return errors.Wrapf(ErrInvalidParam, "amount cannot be negative")
+				return errorsmod.Wrapf(ErrInvalidParam, "amount cannot be negative")
 			}
 
 			// Validate amount is not zero (zero allocations don't make sense)
 			if alloc.Amount.IsZero() {
-				return errors.Wrapf(ErrInvalidParam, "amount cannot be zero")
+				return errorsmod.Wrapf(ErrInvalidParam, "amount cannot be zero")
 			}
 		}
 
 		// Validate that all non-Community clearing accounts are present in this period
 		for _, expectedAccount := range nonCommunityClearingAccounts {
 			if !seenClearingAccounts[expectedAccount] {
-				return errors.Wrapf(ErrInvalidParam, "missing allocation for required non-Community PSE clearing account")
+				return errorsmod.Wrapf(ErrInvalidParam, "missing allocation for required non-Community PSE clearing account")
 			}
 		}
 	}
@@ -204,7 +203,7 @@ func ValidateScheduleMappingConsistency(schedule []ScheduledDistribution, mappin
 				continue
 			}
 			if !availableAccounts[alloc.ClearingAccount] {
-				return errors.Wrapf(
+				return errorsmod.Wrapf(
 					ErrInvalidParam,
 					"period %d, allocation %d: no recipient mapping found for clearing account '%s'",
 					i, j, alloc.ClearingAccount,
