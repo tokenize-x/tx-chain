@@ -66,7 +66,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 	totalPSEScore := finalScoreMap.totalScore
 
 	// leftover is the amount of pse coin that is not distributed to any delegator.
-	// It will be sent to community clearing account.
+	// It will be sent to CommunityPool.
 	// there are 2 sources of leftover:
 	// 1. rounding errors due to division.
 	// 2. some delegators have no delegation.
@@ -86,7 +86,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 		}
 	}
 
-	// send leftover to community clearing account.
+	// send leftover to CommunityPool.
 	if leftover.IsPositive() {
 		pseModuleAddress := k.accountKeeper.GetModuleAddress(k.getCommunityPSEClearingAccount())
 		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
@@ -215,7 +215,7 @@ func (k Keeper) distributeToDelegator(
 	deliveredAmount := sdkmath.NewInt(0)
 	for _, delegation := range delegations {
 		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
-		// the sum of all rounding errors will be sent to community clearing account.
+		// the sum of all rounding errors will be sent to CommunityPool
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 		if err != nil {

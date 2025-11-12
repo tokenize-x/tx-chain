@@ -32,22 +32,17 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
-	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr2},
-		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr3},
-		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr4},
-		{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr5},
+	addrs := []string{addr1, addr2, addr3, addr4, addr5}
+	var mappings []types.ClearingAccountMapping
+	for i, clearingAccount := range types.GetNonCommunityClearingAccounts() {
+		mappings = append(mappings, types.ClearingAccountMapping{
+			ClearingAccount:  clearingAccount,
+			RecipientAddress: addrs[i%len(addrs)],
+		})
 	}
 
 	// Fund all non-Community clearing accounts
-	for _, clearingAccount := range []string{
-		types.ClearingAccountFoundation,
-		types.ClearingAccountAlliance,
-		types.ClearingAccountPartnership,
-		types.ClearingAccountInvestors,
-		types.ClearingAccountTeam,
-	} {
+	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(5000)))
 		err = testApp.BankKeeper.MintCoins(ctx, types.ModuleName, fundAmount)
 		requireT.NoError(err)

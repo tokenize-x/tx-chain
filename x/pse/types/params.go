@@ -119,83 +119,66 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 	for i, period := range schedule {
 		// Validate timestamp is not zero
 		if period.Timestamp == 0 {
-			return errors.Wrapf(ErrInvalidParam, "period %d: timestamp cannot be zero", i)
+			return errors.Wrapf(ErrInvalidParam, "timestamp cannot be zero")
 		}
 
 		// Check for duplicate timestamps
 		if seenTimestamps[period.Timestamp] {
-			return errors.Wrapf(ErrInvalidParam, "period %d: duplicate timestamp %d", i, period.Timestamp)
+			return errors.Wrapf(ErrInvalidParam, "duplicate timestamp")
 		}
 		seenTimestamps[period.Timestamp] = true
 
 		// Validate schedule is sorted in ascending order
 		if i > 0 && period.Timestamp <= lastTime {
-			return errors.Wrapf(
-				ErrInvalidParam,
-				"period %d: periods must be sorted by timestamp in ascending order (got %d after %d)",
-				i, period.Timestamp, lastTime,
-			)
+			return errors.Wrapf(ErrInvalidParam, "periods must be sorted by timestamp in ascending order")
 		}
 		lastTime = period.Timestamp
 
 		// Validate allocations array is not empty
 		if len(period.Allocations) == 0 {
-			return errors.Wrapf(ErrInvalidParam, "period %d: must have at least one allocation", i)
+			return errors.Wrapf(ErrInvalidParam, "must have at least one allocation")
 		}
 
 		// Validate individual allocations within the period
 		seenClearingAccounts := make(map[string]bool)
-		for j, alloc := range period.Allocations {
+		for _, alloc := range period.Allocations {
 			// Validate clearing_account is not empty
 			if alloc.ClearingAccount == "" {
-				return errors.Wrapf(ErrInvalidParam, "period %d, allocation %d: clearing_account cannot be empty", i, j)
+				return errors.Wrapf(ErrInvalidParam, "clearing_account cannot be empty")
 			}
 
 			// Validate clearing account is one of the non-Community PSE clearing accounts
 			// Excluded accounts (like Community) should NOT be in the schedule
 			if !lo.Contains(nonCommunityClearingAccounts, alloc.ClearingAccount) {
-				return errors.Wrapf(
-					ErrInvalidParam,
-					//nolint:lll
-					"period %d, allocation %d: clearing_account '%s' is not a non-Community PSE clearing account",
-					i, j, alloc.ClearingAccount,
-				)
+				return errors.Wrapf(ErrInvalidParam, "non-Community clearing account not found")
 			}
 
 			// Check for duplicate clearing accounts in the same period
 			if seenClearingAccounts[alloc.ClearingAccount] {
-				return errors.Wrapf(
-					ErrInvalidParam,
-					"period %d: duplicate clearing account %s in same period",
-					i, alloc.ClearingAccount,
-				)
+				return errors.Wrapf(ErrInvalidParam, "duplicate clearing account in the same period")
 			}
 			seenClearingAccounts[alloc.ClearingAccount] = true
 
 			// Validate amount is not nil (should be enforced by proto, but double-check)
 			if alloc.Amount.IsNil() {
-				return errors.Wrapf(ErrInvalidParam, "period %d, allocation %d: amount cannot be nil", i, j)
+				return errors.Wrapf(ErrInvalidParam, "amount cannot be nil")
 			}
 
 			// Validate amount is not negative
 			if alloc.Amount.IsNegative() {
-				return errors.Wrapf(ErrInvalidParam, "period %d, allocation %d: amount cannot be negative", i, j)
+				return errors.Wrapf(ErrInvalidParam, "amount cannot be negative")
 			}
 
 			// Validate amount is not zero (zero allocations don't make sense)
 			if alloc.Amount.IsZero() {
-				return errors.Wrapf(ErrInvalidParam, "period %d, allocation %d: amount cannot be zero", i, j)
+				return errors.Wrapf(ErrInvalidParam, "amount cannot be zero")
 			}
 		}
 
 		// Validate that all non-Community clearing accounts are present in this period
 		for _, expectedAccount := range nonCommunityClearingAccounts {
 			if !seenClearingAccounts[expectedAccount] {
-				return errors.Wrapf(
-					ErrInvalidParam,
-					"period %d: missing allocation for required non-Community PSE clearing account '%s'",
-					i, expectedAccount,
-				)
+				return errors.Wrapf(ErrInvalidParam, "missing allocation for required non-Community PSE clearing account")
 			}
 		}
 	}

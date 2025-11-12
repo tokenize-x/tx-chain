@@ -209,12 +209,12 @@ func TestUpdateClearingMappings_Authority(t *testing.T) {
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	// Must include all eligible clearing accounts
-	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr1},
+	var mappings []types.ClearingAccountMapping
+	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
+		mappings = append(mappings, types.ClearingAccountMapping{
+			ClearingAccount:  clearingAccount,
+			RecipientAddress: addr1,
+		})
 	}
 
 	// Test with wrong authority

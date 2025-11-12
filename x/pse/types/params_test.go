@@ -195,13 +195,14 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 // Helper function to create valid allocations for all eligible PSE clearing accounts
 // (excludes Community which is not eligible for distribution).
 func createAllModuleAllocations(amount sdkmath.Int) []ClearingAccountAllocation {
-	return []ClearingAccountAllocation{
-		{ClearingAccount: ClearingAccountFoundation, Amount: amount},
-		{ClearingAccount: ClearingAccountAlliance, Amount: amount},
-		{ClearingAccount: ClearingAccountPartnership, Amount: amount},
-		{ClearingAccount: ClearingAccountInvestors, Amount: amount},
-		{ClearingAccount: ClearingAccountTeam, Amount: amount},
+	var allocations []ClearingAccountAllocation
+	for _, clearingAccount := range GetNonCommunityClearingAccounts() {
+		allocations = append(allocations, ClearingAccountAllocation{
+			ClearingAccount: clearingAccount,
+			Amount:          amount,
+		})
 	}
+	return allocations
 }
 
 // Helper function to generate test timestamps
@@ -265,7 +266,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "is not a non-Community PSE clearing account",
+			errMsg:    "non-Community clearing account not found",
 		},
 		{
 			name: "invalid_zero_timestamp",
@@ -366,7 +367,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "is not a non-Community PSE clearing account",
+			errMsg:    "non-Community clearing account not found",
 		},
 		{
 			name: "invalid_duplicate_clearing_account_in_period",

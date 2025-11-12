@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/samber/lo"
 
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -33,7 +33,7 @@ func (k Keeper) UpdateExcludedAddresses(
 	addressesToAdd, addressesToRemove []string,
 ) error {
 	if k.authority != authority {
-		return errors.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
 	// Get current params
@@ -73,7 +73,7 @@ func (k Keeper) UpdateClearingMappings(
 	mappings []types.ClearingAccountMapping,
 ) error {
 	if k.authority != authority {
-		return errors.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
 	// Get all eligible (non-excluded) clearing accounts that must be present
@@ -94,7 +94,7 @@ func (k Keeper) UpdateClearingMappings(
 	}
 
 	if len(missingAccounts) > 0 {
-		return errors.Wrapf(types.ErrInvalidInput,
+		return errorsmod.Wrapf(types.ErrInvalidInput,
 			"there are missing non-Community clearing accounts in the mappings")
 	}
 
@@ -114,13 +114,13 @@ func (k Keeper) UpdateClearingMappings(
 	}
 
 	if len(extraAccounts) > 0 {
-		return errors.Wrapf(types.ErrInvalidInput,
+		return errorsmod.Wrapf(types.ErrInvalidInput,
 			"mappings contain invalid non-Community clearing accounts")
 	}
 
 	// Verify that the number of mappings matches the number of eligible accounts
 	if len(mappings) != len(eligibleAccounts) {
-		return errors.Wrapf(types.ErrInvalidInput,
+		return errorsmod.Wrapf(types.ErrInvalidInput,
 			"expected exact number of mappings (one for each non-Community clearing account)")
 	}
 

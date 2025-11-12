@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"cosmossdk.io/core/appmodule"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -13,7 +14,6 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/tokenize-x/tx-chain/v6/x/pse/client/cli"
@@ -52,7 +52,7 @@ func (amb AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingConfig, bz json.RawMessage) error {
 	var genesis types.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genesis); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal %s genesis state", types.ModuleName)
+		return errorsmod.Wrapf(err, "failed to unmarshal %s genesis state", types.ModuleName)
 	}
 	return genesis.Validate()
 }
@@ -113,7 +113,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 	cdc.MustUnmarshalJSON(data, &genesis)
 
 	if err := am.keeper.InitGenesis(ctx, genesis); err != nil {
-		panic(errors.Wrap(err, "failed to initialize genesis state"))
+		panic(errorsmod.Wrap(err, "failed to initialize genesis state"))
 	}
 }
 
@@ -121,7 +121,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, data json.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	genState, err := am.keeper.ExportGenesis(ctx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to export genesis state"))
+		panic(errorsmod.Wrap(err, "failed to export genesis state"))
 	}
 	return cdc.MustMarshalJSON(genState)
 }

@@ -133,13 +133,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	}
 
 	// Fund all non-Community clearing accounts
-	for _, clearingAccount := range []string{
-		types.ClearingAccountFoundation,
-		types.ClearingAccountAlliance,
-		types.ClearingAccountPartnership,
-		types.ClearingAccountInvestors,
-		types.ClearingAccountTeam,
-	} {
+	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
 		err = testApp1.BankKeeper.MintCoins(ctx1, types.ModuleName, fundAmount)
 		requireT.NoError(err)
@@ -208,13 +202,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	ctx2 = ctx2.WithBlockHeight(200)
 
 	// Fund non-Community clearing accounts on new chain before processing
-	for _, clearingAccount := range []string{
-		types.ClearingAccountFoundation,
-		types.ClearingAccountAlliance,
-		types.ClearingAccountPartnership,
-		types.ClearingAccountInvestors,
-		types.ClearingAccountTeam,
-	} {
+	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
 		err = testApp2.BankKeeper.MintCoins(ctx2, types.ModuleName, fundAmount)
 		requireT.NoError(err)
@@ -318,7 +306,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 					},
 				}
 			},
-			expectError: "is not a non-Community PSE clearing account",
+			expectError: "non-Community clearing account not found",
 		},
 		{
 			name: "missing_mappings_for_allocations",
