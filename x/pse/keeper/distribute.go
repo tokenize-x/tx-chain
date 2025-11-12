@@ -14,7 +14,7 @@ import (
 
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
 func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkmath.Int) error {
-	var allDelegationTimeEntryKeys []collections.Pair[sdk.ValAddress, sdk.AccAddress]
+	var allDelegationTimeEntry []collections.KeyValue[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
 	// iterate all delegation time entries and calculate uncalculated score.
 	var finalScoreMap = newScoreMap(k.addressCodec)
 	delegationTimeEntriesIterator, err := k.DelegationTimeEntries.Iterate(ctx, nil)
@@ -28,7 +28,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 		if err != nil {
 			return err
 		}
-		allDelegationTimeEntryKeys = append(allDelegationTimeEntryKeys, kv.Key)
+		allDelegationTimeEntry = append(allDelegationTimeEntry, kv)
 		valAddr := kv.Key.K1()
 		delAddr := kv.Key.K2()
 		delegationTimeEntry := kv.Value
@@ -103,10 +103,10 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 
 	// set all delegation time entries to the current block time.
 	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
-	for _, key := range allDelegationTimeEntryKeys {
-		err = k.DelegationTimeEntries.Set(ctx, key, types.DelegationTimeEntry{
+	for _, kv := range allDelegationTimeEntry {
+		err = k.DelegationTimeEntries.Set(ctx, kv.Key, types.DelegationTimeEntry{
 			LastChangedUnixSec: blockTimeUnixSeconds,
-			Shares:             sdkmath.LegacyNewDec(0),
+			Shares:             kv.Value.Shares,
 		})
 		if err != nil {
 			return err

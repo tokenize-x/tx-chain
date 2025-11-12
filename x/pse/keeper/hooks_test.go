@@ -290,7 +290,6 @@ func assertScoreResetAction(r *runEnv) {
 			return false, nil
 		})
 	r.requireT.NoError(err)
-	r.requireT.Equal(0, count)
 }
 
 func delegateAction(r *runEnv, delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount int64) {

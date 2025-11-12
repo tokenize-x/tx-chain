@@ -134,6 +134,47 @@ func TestKeeper_Distribute(t *testing.T) {
 				func(r *runEnv) { assertScoreResetAction(r) },
 			},
 		},
+		{
+			name: "zero score",
+			actions: []func(*runEnv){
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(0),
+						&r.delegators[1]: sdkmath.NewInt(0),
+					})
+				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) { assertScoreResetAction(r) },
+			},
+		},
+		{
+			name: "test multiple distributions",
+			actions: []func(*runEnv){
+				func(r *runEnv) { delegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
+				func(r *runEnv) { delegateAction(r, r.delegators[1], r.validators[0], 900_000) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(1_100_366), // + 1000 * 1.1 / 3
+						&r.delegators[1]: sdkmath.NewInt(900_299),   // + 1000 * 0.9 / 3
+					})
+				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2)) },
+				func(r *runEnv) { assertScoreResetAction(r) },
+				func(r *runEnv) { waitAction(r, time.Second*8) },
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
+				func(r *runEnv) {
+					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+						&r.delegators[0]: sdkmath.NewInt(1_100_732), // + 366 * 2
+						&r.delegators[1]: sdkmath.NewInt(900_598),   // + 299 * 2
+					})
+				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(4)) },
+				func(r *runEnv) { assertScoreResetAction(r) },
+			},
+		},
 	}
 
 	for _, tc := range cases {
