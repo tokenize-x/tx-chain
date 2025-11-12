@@ -2,7 +2,6 @@ package v6
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	errorsmod "cosmossdk.io/errors"
@@ -10,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/samber/lo"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
@@ -69,18 +67,6 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 	}
 }
 
-// FilterNonCommunityAllocations returns only the fund allocations for clearing accounts
-// all of the clearing accounts except for Community.
-func FilterNonCommunityAllocations(fundAllocations []InitialFundAllocation) []InitialFundAllocation {
-	var distributionAllocations []InitialFundAllocation
-	for _, allocation := range fundAllocations {
-		if lo.Contains(psetypes.GetNonCommunityClearingAccounts(), allocation.ClearingAccount) {
-			distributionAllocations = append(distributionAllocations, allocation)
-		}
-	}
-	return distributionAllocations
-}
-
 // DefaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.
 // Community clearing account is not included in the mappings.
 // TODO: Replace placeholder addresses with actual recipient addresses provided by management.
@@ -95,7 +81,7 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 	case string(constant.ChainIDDev):
 		recipientAddress = "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
 	default:
-		return nil, fmt.Errorf("unknown chain id: %s", chainID)
+		return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
 	}
 
 	// Create mappings for all non-Community clearing accounts
@@ -123,7 +109,7 @@ func InitPSEAllocationsAndSchedule(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Initialize parameters using predefined constants
-	fundAllocations := DefaultInitialFundAllocations()
+	allocations := DefaultInitialFundAllocations()
 	scheduleStartTime := uint64(DefaultDistributionStartTime)
 	totalMintAmount := sdkmath.NewInt(InitialTotalMint)
 
@@ -134,14 +120,14 @@ func InitPSEAllocationsAndSchedule(
 	}
 
 	// Ensure fund allocation percentages are valid and sum to exactly 100%
-	if err := validateFundAllocations(fundAllocations); err != nil {
+	if err := validateFundAllocations(allocations); err != nil {
 		return errorsmod.Wrap(err, "invalid fund allocations")
 	}
 
 	// Step 1: Validate all module account names
 	// All accounts (including non-Community clearing accounts) can receive tokens
 	// but only non-Community clearing accounts will be in the distribution schedule
-	for _, allocation := range fundAllocations {
+	for _, allocation := range allocations {
 		perms := psetypes.GetClearingAccountPerms()
 		if _, exists := perms[allocation.ClearingAccount]; !exists {
 			return errorsmod.Wrapf(psetypes.ErrInvalidInput, "invalid module account: %s", allocation.ClearingAccount)
@@ -162,31 +148,27 @@ func InitPSEAllocationsAndSchedule(
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to create clearing account mappings: %v", err)
 	}
 
-	// Step 3: Filter to only non-Community clearing accounts (for schedule and mappings)
-	distributionAllocations := FilterNonCommunityAllocations(fundAllocations)
-
-	// Step 4: Generate the n-month distribution schedule (only for non-Community clearing accounts)
-	// This defines when and how much each non-Community clearing account will distribute to recipients
-	schedule, err := CreateDistributionSchedule(distributionAllocations, totalMintAmount, scheduleStartTime)
+	// Step 3: Generate the n-month distribution schedule for all clearing accounts
+	// This defines when and how much each clearing account will distribute to recipients
+	schedule, err := CreateDistributionSchedule(allocations, totalMintAmount, scheduleStartTime)
 	if err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 5: Persist the schedule to blockchain state
+	// Step 4: Persist the schedule to blockchain state
 	if err := pseKeeper.SaveDistributionSchedule(ctx, schedule); err != nil {
 		return errorsmod.Wrapf(psetypes.ErrScheduleCreationFailed, "%v", err)
 	}
 
-	// Step 6: Mint and fund clearing accounts (all accounts, including non-Community clearing accounts)
-	if err := MintAndFundClearingAccounts(ctx, bankKeeper, fundAllocations, totalMintAmount, bondDenom); err != nil {
+	// Step 5: Mint and fund clearing accounts (all accounts, including non-Community clearing accounts)
+	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, bondDenom); err != nil {
 		return err
 	}
 
 	sdkCtx.Logger().Info("initialization completed",
 		"minted", totalMintAmount.String(),
 		"denom", bondDenom,
-		"fund_allocations", len(fundAllocations),
-		"distribution_allocations", len(distributionAllocations),
+		"fund_allocations", len(allocations),
 		"periods", len(schedule),
 	)
 

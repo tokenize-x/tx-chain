@@ -105,18 +105,21 @@ func (k Keeper) distributeAllocatedTokens(
 
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
-		// Skip Community clearing account - tokens remain in clearing account for alternative distribution
+		// Community clearing account has different distribution logic
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
-			sdkCtx.Logger().Info("skipping Community clearing account distribution",
-				"clearing_account", allocation.ClearingAccount,
-				"amount", allocation.Amount.String(),
-			)
+			if err := k.distributeCommunityAllocation(ctx, bondDenom, allocation); err != nil {
+				return errorsmod.Wrapf(
+					types.ErrTransferFailed,
+					"failed to distribute Community clearing account allocation: %v",
+					err,
+				)
+			}
 			continue
 		}
 
 		// Find the recipient address mapped to this clearing account
-		// Note: Excluded clearing accounts (like Community) are skipped above and don't need mappings.
-		// Mappings are validated on update and genesis, so we can assume they exist for non-excluded accounts.
+		// Note: Community clearing account is handled above and doesn't need a mapping.
+		// Mappings are validated on update and genesis, so we can assume they exist for non-Community accounts.
 		var recipientAddr string
 		for _, mapping := range clearingAccountMappings {
 			if mapping.ClearingAccount == allocation.ClearingAccount {
@@ -199,4 +202,17 @@ func (k Keeper) GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDis
 	// Note: Collections map iterates in ascending order of keys (timestamps),
 	// so the schedule is already sorted. No need to sort again.
 	return schedule, nil
+}
+
+// distributeCommunityAllocation handles the distribution logic for Community clearing account.
+// Community uses score-based distribution to delegators instead of direct recipient transfers.
+// TODO: Implement Community-specific distribution logic.
+func (k Keeper) distributeCommunityAllocation(
+	_ context.Context,
+	_ string,
+	_ types.ClearingAccountAllocation,
+) error {
+	// TODO: Implement Community distribution logic
+	// This will use score-based distribution (DistributeCommunityPSE) instead of direct transfer
+	return nil
 }

@@ -61,12 +61,11 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	}
 
 	// Step 3: Verify module accounts have correct balances
-	fundAllocations := v6.DefaultInitialFundAllocations()
-	scheduleAllocations := v6.FilterNonCommunityAllocations(fundAllocations)
+	allocations := v6.DefaultInitialFundAllocations()
 	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
 
 	totalVerified := sdkmath.ZeroInt()
-	for _, allocation := range fundAllocations {
+	for _, allocation := range allocations {
 		expectedAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 		totalVerified = totalVerified.Add(expectedAmount)
 
@@ -121,13 +120,13 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 
 	// Step 7: Verify each period has allocations for all PSE module accounts
 	for i, period := range allocationSchedule {
-		requireT.Len(period.Allocations, len(scheduleAllocations),
-			"period %d should have allocations for all %d modules", i, len(scheduleAllocations))
+		requireT.Len(period.Allocations, len(allocations),
+			"period %d should have allocations for all %d modules", i, len(allocations))
 
 		// Verify each module's monthly amount
 		for _, allocation := range period.Allocations {
 			var expectedTotal sdkmath.Int
-			for _, initialAlloc := range scheduleAllocations {
+			for _, initialAlloc := range allocations {
 				if initialAlloc.ClearingAccount == allocation.ClearingAccount {
 					expectedTotal = initialAlloc.Percentage.MulInt(totalMintAmount).TruncateInt()
 					break
