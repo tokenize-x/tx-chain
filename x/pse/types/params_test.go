@@ -212,6 +212,16 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			expectErr: true,
 			errMsg:    "invalid address",
 		},
+		{
+			name: "invalid_community_account_with_mapping",
+			params: Params{
+				ClearingAccountMappings: []ClearingAccountMapping{
+					{ClearingAccount: ClearingAccountCommunity, RecipientAddresses: []string{addr1}},
+				},
+			},
+			expectErr: true,
+			errMsg:    "Community clearing account cannot have recipient mappings",
+		},
 	}
 
 	for _, tc := range testCases {

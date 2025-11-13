@@ -55,7 +55,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	for _, mapping := range params.ClearingAccountMappings {
 		requireT.NotEmpty(mapping.RecipientAddresses,
 			"mapping for %s should have recipient addresses", mapping.ClearingAccount)
-		requireT.Greater(len(mapping.RecipientAddresses), 0,
+		requireT.NotEmpty(mapping.RecipientAddresses,
 			"mapping for %s should have at least one recipient address", mapping.ClearingAccount)
 		// Verify Community is not in mappings
 		requireT.NotEqual(types.ClearingAccountCommunity, mapping.ClearingAccount,

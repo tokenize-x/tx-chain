@@ -87,6 +87,12 @@ func validateClearingAccountMappings(mappings []ClearingAccountMapping) error {
 			return errorsmod.Wrapf(ErrInvalidParam, "mapping %d: clearing_account cannot be empty", i)
 		}
 
+		// Community clearing account should NOT have recipient mappings
+		// It uses score-based distribution logic instead
+		if mapping.ClearingAccount == ClearingAccountCommunity {
+			return errorsmod.Wrapf(ErrInvalidParam, "mapping %d: community clearing account cannot have recipient mappings", i)
+		}
+
 		// Validate that there is at least one recipient address
 		if len(mapping.RecipientAddresses) == 0 {
 			return errorsmod.Wrapf(ErrInvalidParam, "mapping %d: must have at least one recipient address", i)
