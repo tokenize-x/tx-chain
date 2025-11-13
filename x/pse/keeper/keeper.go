@@ -13,11 +13,13 @@ import (
 
 // Keeper of the module.
 type Keeper struct {
-	addressCodec    addresscodec.Codec
-	authority       string
+	storeService sdkstore.KVStoreService
+	authority    string
+
+	// codec
 	cdc             codec.BinaryCodec
+	addressCodec    addresscodec.Codec
 	valAddressCodec addresscodec.Codec
-	storeService    sdkstore.KVStoreService
 
 	// keepers
 	accountKeeper      types.AccountKeeper
@@ -30,6 +32,7 @@ type Keeper struct {
 	Params                collections.Item[types.Params]
 	DelegationTimeEntries collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
 	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
+	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: timestamp -> ScheduledDistribution
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -37,25 +40,25 @@ func NewKeeper(
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
 	authority string,
-	stakingKeeper types.StakingQuerier,
-	distributionKeeper types.DistributionKeeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
+	distributionKeeper types.DistributionKeeper,
+	stakingKeeper types.StakingQuerier,
 	addressCodec addresscodec.Codec,
 	valAddressCodec addresscodec.Codec,
+
 ) Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
 	k := Keeper{
-		storeService:    storeService,
-		cdc:             cdc,
-		authority:       authority,
-		addressCodec:    addressCodec,
-		valAddressCodec: valAddressCodec,
-
-		stakingKeeper:      stakingKeeper,
-		distributionKeeper: distributionKeeper,
+		storeService:       storeService,
+		cdc:                cdc,
+		addressCodec:       addressCodec,
+		valAddressCodec:    valAddressCodec,
+		authority:          authority,
 		accountKeeper:      accountKeeper,
 		bankKeeper:         bankKeeper,
+		distributionKeeper: distributionKeeper,
+		stakingKeeper:      stakingKeeper,
 
 		Params: collections.NewItem(
 			sb,
@@ -76,6 +79,13 @@ func NewKeeper(
 			"account_score",
 			sdk.AccAddressKey,
 			sdk.IntValue,
+		),
+		AllocationSchedule: collections.NewMap(
+			sb,
+			types.AllocationScheduleKey,
+			"allocation_schedule",
+			collections.Uint64Key,
+			codec.CollValue[types.ScheduledDistribution](cdc),
 		),
 	}
 

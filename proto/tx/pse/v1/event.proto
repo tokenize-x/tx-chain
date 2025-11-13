@@ -1,0 +1,21 @@
+syntax = "proto3";
+package tx.pse.v1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+
+// EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
+message EventAllocationDistributed {
+  // clearing_account is the source clearing account name from which tokens are allocated.
+  string clearing_account = 1;
+  // recipient_address is the destination recipient address receiving the tokens.
+  string recipient_address = 2;
+  // scheduled_at is the Unix timestamp when the allocation was scheduled to occur.
+  uint64 scheduled_at = 3;
+  // amount is the amount of tokens allocated.
+  string amount = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}

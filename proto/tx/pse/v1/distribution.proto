@@ -1,0 +1,55 @@
+syntax = "proto3";
+package tx.pse.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+
+option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+
+// ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipient (sub account multisig wallet).
+// This mapping can be modified via governance proposals.
+message ClearingAccountMapping {
+  // clearing_account is the name of the clearing account holding the tokens to be distributed.
+  string clearing_account = 1 [
+    (gogoproto.moretags) = "yaml:\"clearing_account\""
+  ];
+
+  // recipient_address is the multisig wallet address that will receive the token distributions.
+  string recipient_address = 2 [
+    (cosmos_proto.scalar) = "cosmos.AddressString",
+    (gogoproto.moretags) = "yaml:\"sub_account_address\""
+  ];
+}
+
+// ClearingAccountAllocation defines the amount to be allocated from a specific clearing account (module account).
+message ClearingAccountAllocation {
+  // clearing_account is the name of the clearing account (module account).
+  string clearing_account = 1 [
+    (gogoproto.moretags) = "yaml:\"clearing_account\""
+  ];
+
+  // amount is the number of tokens to allocate from this clearing account.
+  // This amount is for the allocation denom (see AllocationDenom constant).
+  string amount = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"amount\""
+  ];
+}
+
+// ScheduledDistribution defines a single allocation event at a specific timestamp.
+// Multiple clearing accounts can allocate tokens at the same time.
+message ScheduledDistribution {
+  // timestamp is when this allocation should occur (Unix timestamp in seconds).
+  uint64 timestamp = 1 [
+    (gogoproto.moretags) = "yaml:\"timestamp\""
+  ];
+
+  // allocations is the list of amounts to allocate from each clearing account at this time.
+  repeated ClearingAccountAllocation allocations = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"allocations\""
+  ];
+}
+

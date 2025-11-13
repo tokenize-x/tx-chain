@@ -354,7 +354,7 @@ func waitAction(r *runEnv, duration time.Duration) {
 }
 
 func distributeAction(r *runEnv, amount sdkmath.Int) {
-	mintAndSendToPSECommunityModuleAccount(r, amount)
+	mintAndSendToPSECommunityClearingAccount(r, amount)
 	err := r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, amount)
 	r.requireT.NoError(err)
 }
@@ -368,12 +368,12 @@ func mintAndSendCoin(r *runEnv, recipient sdk.AccAddress, coins sdk.Coins) {
 	)
 }
 
-func mintAndSendToPSECommunityModuleAccount(r *runEnv, amount sdkmath.Int) {
+func mintAndSendToPSECommunityClearingAccount(r *runEnv, amount sdkmath.Int) {
 	bondDenom, err := r.testApp.StakingKeeper.BondDenom(r.ctx)
 	r.requireT.NoError(err)
 	distributeCoin := sdk.NewCoin(bondDenom, amount)
-	// TODO: fix the hardcoded module name.
-	macc := r.testApp.AccountKeeper.GetModuleAccount(r.ctx, "pse_community")
+
+	macc := r.testApp.AccountKeeper.GetModuleAccount(r.ctx, types.ClearingAccountCommunity)
 
 	r.requireT.NoError(r.testApp.BankKeeper.MintCoins(
 		r.ctx, minttypes.ModuleName, sdk.NewCoins(distributeCoin),

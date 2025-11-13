@@ -270,6 +270,14 @@
   
     - [Msg](#coreum.feemodel.v1.Msg)
   
+- [tx/pse/v1/distribution.proto](#tx/pse/v1/distribution.proto)
+    - [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation)
+    - [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping)
+    - [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution)
+  
+- [tx/pse/v1/event.proto](#tx/pse/v1/event.proto)
+    - [EventAllocationDistributed](#tx.pse.v1.EventAllocationDistributed)
+  
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [GenesisState](#tx.pse.v1.GenesisState)
   
@@ -5699,6 +5707,122 @@ Msg defines the Msg service.
 
 
 
+<a name="tx/pse/v1/distribution.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tx/pse/v1/distribution.proto
+
+
+
+<a name="tx.pse.v1.ClearingAccountAllocation"></a>
+
+### ClearingAccountAllocation
+
+```
+ClearingAccountAllocation defines the amount to be allocated from a specific clearing account (module account).
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account (module account).`  |
+| `amount` | [string](#string) |  |  `amount is the number of tokens to allocate from this clearing account. This amount is for the allocation denom (see AllocationDenom constant).`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.ClearingAccountMapping"></a>
+
+### ClearingAccountMapping
+
+```
+ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipient (sub account multisig wallet).
+This mapping can be modified via governance proposals.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account holding the tokens to be distributed.`  |
+| `recipient_address` | [string](#string) |  |  `recipient_address is the multisig wallet address that will receive the token distributions.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.ScheduledDistribution"></a>
+
+### ScheduledDistribution
+
+```
+ScheduledDistribution defines a single allocation event at a specific timestamp.
+Multiple clearing accounts can allocate tokens at the same time.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `timestamp` | [uint64](#uint64) |  |  `timestamp is when this allocation should occur (Unix timestamp in seconds).`  |
+| `allocations` | [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation) | repeated |  `allocations is the list of amounts to allocate from each clearing account at this time.`  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="tx/pse/v1/event.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## tx/pse/v1/event.proto
+
+
+
+<a name="tx.pse.v1.EventAllocationDistributed"></a>
+
+### EventAllocationDistributed
+
+```
+EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the source clearing account name from which tokens are allocated.`  |
+| `recipient_address` | [string](#string) |  |  `recipient_address is the destination recipient address receiving the tokens.`  |
+| `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
+| `amount` | [string](#string) |  |  `amount is the amount of tokens allocated.`  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="tx/pse/v1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -5718,7 +5842,8 @@ GenesisState defines the module's genesis state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `params` | [Params](#tx.pse.v1.Params) |  |  `params contains all gov-manageable parameters including distribution schedule.`  |
+| `params` | [Params](#tx.pse.v1.Params) |  |  `params contains all gov-manageable parameters.`  |
+| `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all scheduled distributions (both past and pending). Stored as a list for genesis import/export, but will be stored as a map in state. Must be sorted by timestamp in ascending order. Completed allocations are removed from the map after processing.`  |
 
 
 
@@ -5754,6 +5879,7 @@ Params store gov manageable parameters.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
+| `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
 
 
 

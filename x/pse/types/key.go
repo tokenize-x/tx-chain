@@ -12,7 +12,8 @@ const (
 
 // KVStore keys.
 var (
-	ParamsKey       = collections.NewPrefix(0)
-	StakingTimeKey  = collections.NewPrefix(1)
-	AccountScoreKey = collections.NewPrefix(2)
+	ParamsKey             = collections.NewPrefix(0)
+	StakingTimeKey        = collections.NewPrefix(1)
+	AccountScoreKey       = collections.NewPrefix(2)
+	AllocationScheduleKey = collections.NewPrefix(3) // Map: timestamp -> ScheduledDistribution
 )
