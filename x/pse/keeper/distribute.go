@@ -91,7 +91,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 
 	// send leftover to CommunityPool.
 	if leftover.IsPositive() {
-		pseModuleAddress := k.accountKeeper.GetModuleAddress(k.getCommunityPSEClearingAccount())
+		pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
 		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
 		if err != nil {
 			return err
@@ -175,10 +175,6 @@ func (m *scoreMap) Walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) e
 	return nil
 }
 
-func (k Keeper) getCommunityPSEClearingAccount() string {
-	return types.ClearingAccountCommunity
-}
-
 func (k Keeper) distributeToDelegator(
 	ctx context.Context, delAddr sdk.AccAddress, amount sdkmath.Int, bondDenom string,
 ) (sdkmath.Int, error) {
@@ -209,7 +205,7 @@ func (k Keeper) distributeToDelegator(
 
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
-		k.getCommunityPSEClearingAccount(),
+		types.ClearingAccountCommunity,
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
