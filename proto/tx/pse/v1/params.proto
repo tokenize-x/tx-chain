@@ -3,6 +3,7 @@ package tx.pse.v1;
 
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+import "tx/pse/v1/distribution.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
@@ -14,5 +15,12 @@ message Params {
   repeated string excluded_addresses = 1 [
     (cosmos_proto.scalar) = "cosmos.AddressString",
     (gogoproto.moretags) = "yaml:\"excluded_addresses\""
+  ];
+
+  // clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets).
+  // These mappings can be modified via governance proposals.
+  repeated ClearingAccountMapping clearing_account_mappings = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"clearing_account_mappings\""
   ];
 }

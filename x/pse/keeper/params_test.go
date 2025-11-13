@@ -196,3 +196,33 @@ func TestUpdateExcludedAddresses(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateClearingMappings_Authority(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	correctAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	wrongAuthority := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+
+	// Must include all eligible clearing accounts
+	var mappings []types.ClearingAccountMapping
+	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
+		mappings = append(mappings, types.ClearingAccountMapping{
+			ClearingAccount:  clearingAccount,
+			RecipientAddress: addr1,
+		})
+	}
+
+	// Test with wrong authority
+	err := pseKeeper.UpdateClearingMappings(ctx, wrongAuthority, mappings)
+	requireT.Error(err, "should reject wrong authority")
+	requireT.Contains(err.Error(), "invalid authority")
+
+	// Test with correct authority
+	err = pseKeeper.UpdateClearingMappings(ctx, correctAuthority, mappings)
+	requireT.NoError(err, "should accept correct authority")
+}

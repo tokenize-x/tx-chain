@@ -66,7 +66,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 	totalPSEScore := finalScoreMap.totalScore
 
 	// leftover is the amount of pse coin that is not distributed to any delegator.
-	// It will be sent to community module account.
+	// It will be sent to CommunityPool.
 	// there are 2 sources of leftover:
 	// 1. rounding errors due to division.
 	// 2. some delegators have no delegation.
@@ -86,9 +86,9 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 		}
 	}
 
-	// send leftover to community module account.
+	// send leftover to CommunityPool.
 	if leftover.IsPositive() {
-		pseModuleAddress := k.accountKeeper.GetModuleAddress(k.getCommunityPSEModuleAccount())
+		pseModuleAddress := k.accountKeeper.GetModuleAddress(k.getCommunityPSEClearingAccount())
 		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
 		if err != nil {
 			return err
@@ -172,9 +172,8 @@ func (m *scoreMap) Walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) e
 	return nil
 }
 
-// TODO: fix the hardcoded module name.
-func (k Keeper) getCommunityPSEModuleAccount() string {
-	return "pse_community"
+func (k Keeper) getCommunityPSEClearingAccount() string {
+	return types.ClearingAccountCommunity
 }
 
 func (k Keeper) distributeToDelegator(
@@ -207,7 +206,7 @@ func (k Keeper) distributeToDelegator(
 
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
-		k.getCommunityPSEModuleAccount(),
+		k.getCommunityPSEClearingAccount(),
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
@@ -216,7 +215,7 @@ func (k Keeper) distributeToDelegator(
 	deliveredAmount := sdkmath.NewInt(0)
 	for _, delegation := range delegations {
 		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
-		// the sum of all rounding errors will be sent to community module account.
+		// the sum of all rounding errors will be sent to CommunityPool
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 		if err != nil {
