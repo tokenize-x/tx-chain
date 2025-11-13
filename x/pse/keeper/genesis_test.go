@@ -27,10 +27,36 @@ func TestGenesis(t *testing.T) {
 	// Generate addresses after setting up test app (which sets the correct bech32 config)
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	valAddr1 := sdk.ValAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	genesisState.Params.ExcludedAddresses = []string{
 		addr1,
 		addr2,
+	}
+	now := time.Now()
+	genesisState.DelegationTimeEntries = []types.DelegationTimeEntryExport{
+		{
+			ValidatorAddress:   valAddr1,
+			DelegatorAddress:   addr1,
+			Shares:             sdkmath.LegacyNewDec(432),
+			LastChangedUnixSec: now.Unix(),
+		},
+		{
+			ValidatorAddress:   valAddr1,
+			DelegatorAddress:   addr2,
+			Shares:             sdkmath.LegacyNewDec(832),
+			LastChangedUnixSec: now.Unix(),
+		},
+	}
+	genesisState.AccountScores = []types.AccountScore{
+		{
+			Address: addr1,
+			Score:   sdkmath.NewInt(1234),
+		},
+		{
+			Address: addr2,
+			Score:   sdkmath.NewInt(5678),
+		},
 	}
 
 	err := pseKeeper.InitGenesis(ctx, genesisState)
