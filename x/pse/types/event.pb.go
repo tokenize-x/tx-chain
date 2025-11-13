@@ -74,10 +74,7 @@ func (m *RecipientDistribution) GetAddress() string {
 }
 
 // EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
-// If multiple recipients exist, the amount is split equally among them.
-// Distribution always allocates 100% of the total amount with no tokens lost to rounding:
-// - Base amount per recipient: total_amount / num_recipients (integer division)
-// - Any remainder from division goes to the first recipient
+// The total amount is distributed among recipients, and the sum of all recipient amounts equals total_amount.
 type EventAllocationDistributed struct {
 	// clearing_account is the source clearing account name from which tokens are allocated.
 	ClearingAccount string `protobuf:"bytes,1,opt,name=clearing_account,json=clearingAccount,proto3" json:"clearing_account,omitempty"`

@@ -20,10 +20,7 @@ message RecipientDistribution {
 }
 
 // EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
-// If multiple recipients exist, the amount is split equally among them.
-// Distribution always allocates 100% of the total amount with no tokens lost to rounding:
-// - Base amount per recipient: total_amount / num_recipients (integer division)
-// - Any remainder from division goes to the first recipient
+// The total amount is distributed among recipients, and the sum of all recipient amounts equals total_amount.
 message EventAllocationDistributed {
   // clearing_account is the source clearing account name from which tokens are allocated.
   string clearing_account = 1;

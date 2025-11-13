@@ -220,7 +220,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "Community clearing account cannot have recipient mappings",
+			errMsg:    "community clearing account cannot have recipient mappings",
 		},
 	}
 
