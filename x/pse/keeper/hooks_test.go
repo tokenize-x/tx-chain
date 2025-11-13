@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/collections"
 	sdkmath "cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -262,6 +263,33 @@ func assertDistributionAction(r *runEnv, balances map[*sdk.AccAddress]sdkmath.In
 		}
 		r.requireT.Equal(expectedBalance, totalDelegationAmount)
 	}
+}
+
+func assertCommunityPoolBalanceAction(r *runEnv, expectedBalance sdkmath.Int) {
+	communityPool, err := r.testApp.DistrKeeper.FeePool.Get(r.ctx)
+	r.requireT.NoError(err)
+	communityPoolBalance := communityPool.CommunityPool.AmountOf(sdk.DefaultBondDenom)
+	r.requireT.Equal(expectedBalance, communityPoolBalance.TruncateInt())
+}
+
+func assertScoreResetAction(r *runEnv) {
+	count := 0
+	err := r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, nil,
+		func(key sdk.AccAddress, value sdkmath.Int) (bool, error) {
+			count++
+			return false, nil
+		})
+	r.requireT.NoError(err)
+	r.requireT.Equal(0, count)
+
+	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
+	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil,
+		func(
+			key collections.Pair[sdk.ValAddress, sdk.AccAddress], value types.DelegationTimeEntry) (bool, error) {
+			r.requireT.Equal(blockTimeUnixSeconds, value.LastChangedUnixSec)
+			return false, nil
+		})
+	r.requireT.NoError(err)
 }
 
 func delegateAction(r *runEnv, delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount int64) {
