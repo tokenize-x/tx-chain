@@ -53,8 +53,10 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT.Len(params.ClearingAccountMappings, 5, "should have mappings for 5 non-excluded clearing accounts")
 	// Verify all mappings have recipient addresses (placeholder in production, valid test addresses in tests)
 	for _, mapping := range params.ClearingAccountMappings {
-		requireT.NotEmpty(mapping.RecipientAddress,
-			"mapping for %s should have a recipient address", mapping.ClearingAccount)
+		requireT.NotEmpty(mapping.RecipientAddresses,
+			"mapping for %s should have recipient addresses", mapping.ClearingAccount)
+		requireT.Greater(len(mapping.RecipientAddresses), 0,
+			"mapping for %s should have at least one recipient address", mapping.ClearingAccount)
 		// Verify Community is not in mappings
 		requireT.NotEqual(types.ClearingAccountCommunity, mapping.ClearingAccount,
 			"Community should not have a mapping")
@@ -435,19 +437,21 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	// Step 1: Set up sub-account mappings
+	// Step 1: Set up sub-account mappings with both single and multiple recipients
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	// Must include all non-Community clearing accounts
+	// Mix single and multiple recipients to test both scenarios
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr2},
-		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr3},
+		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{addr2, addr4}},      // 2 recipients
+		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr1, addr2, addr3}}, // 3 recipients
+		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr1}},            // 1 recipient
+		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr1}},              // 1 recipient
+		{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr3}},                   // 1 recipient
 	}
 
 	err = pseKeeper.UpdateClearingMappings(ctx, authority, mappings)
@@ -456,12 +460,15 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	// Step 2: Create a distribution schedule manually for testing
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix()) // 1 hour ago (already due)
 
-	// Create allocations and calculate total mint amount
+	// Create allocations for ALL clearing accounts to ensure they're properly funded
 	totalMint := sdkmath.NewInt(200_000_000_000) // 200B total
 	allocations := []v6.InitialFundAllocation{
-		{ClearingAccount: types.ClearingAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.50")},  // 100B
-		{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")}, // 50B
-		{ClearingAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.25")},       // 50B
+		{ClearingAccount: types.ClearingAccountCommunity, Percentage: sdkmath.LegacyMustNewDecFromStr("0.40")},   // 80B
+		{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("0.20")},  // 40B
+		{ClearingAccount: types.ClearingAccountAlliance, Percentage: sdkmath.LegacyMustNewDecFromStr("0.15")},    // 30B
+		{ClearingAccount: types.ClearingAccountPartnership, Percentage: sdkmath.LegacyMustNewDecFromStr("0.10")}, // 20B
+		{ClearingAccount: types.ClearingAccountInvestors, Percentage: sdkmath.LegacyMustNewDecFromStr("0.10")},   // 20B
+		{ClearingAccount: types.ClearingAccountTeam, Percentage: sdkmath.LegacyMustNewDecFromStr("0.05")},        // 10B
 	}
 
 	// Mint and fund clearing accounts for distribution
@@ -490,37 +497,79 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	err = pseKeeper.ProcessNextDistribution(ctx)
 	requireT.NoError(err)
 
-	// Step 5: Verify allocations transferred funds to recipient accounts (excluding Community)
+	// Step 5: Verify Community account still has ALL tokens (doesn't distribute)
+	communityAddr := testApp.AccountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
+	communityBalance := bankKeeper.GetBalance(ctx, communityAddr, bondDenom)
+	requireT.False(communityBalance.Amount.IsZero(),
+		"Community clearing account should still have tokens")
+
+	// Verify non-Community clearing accounts have distributed the scheduled amount
+	// (not empty because schedule spreads over TotalAllocationMonths periods)
 	for _, allocation := range firstDist.Allocations {
-		// Check if this is the Community account
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
-			// Community account should NOT transfer to recipients
-			moduleAddr := testApp.AccountKeeper.GetModuleAddress(allocation.ClearingAccount)
-			moduleBalance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
-			requireT.False(moduleBalance.Amount.IsZero(),
-				"excluded account %s should still have tokens", allocation.ClearingAccount)
 			continue
 		}
+		moduleAddr := testApp.AccountKeeper.GetModuleAddress(allocation.ClearingAccount)
+		moduleBalance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
 
-		// Find the recipient address for this allocation
-		var recipientAddr string
-		for _, mapping := range mappings {
-			if mapping.ClearingAccount == allocation.ClearingAccount {
-				recipientAddr = mapping.RecipientAddress
+		// Balance should have decreased by the allocated amount
+		var initialBalance sdkmath.Int
+		for _, alloc := range allocations {
+			if alloc.ClearingAccount == allocation.ClearingAccount {
+				initialBalance = alloc.Percentage.MulInt(totalMint).TruncateInt()
 				break
 			}
 		}
-		requireT.NotEmpty(recipientAddr, "should have recipient address for %s", allocation.ClearingAccount)
-
-		recipient := sdk.MustAccAddressFromBech32(recipientAddr)
-		recipientBalance := bankKeeper.GetBalance(ctx, recipient, bondDenom)
-
-		// Non-excluded accounts should transfer to recipients
-		requireT.Equal(allocation.Amount.String(), recipientBalance.Amount.String(),
-			"recipient should have received allocation amount from %s", allocation.ClearingAccount)
+		expectedRemaining := initialBalance.Sub(allocation.Amount)
+		requireT.Equal(expectedRemaining.String(), moduleBalance.Amount.String(),
+			"clearing account %s should have correct remaining balance", allocation.ClearingAccount)
 	}
 
-	// Step 6: Verify allocation schedule count decreased (first period removed)
+	// Step 6: Verify recipient balances (accounting for multiple sources and remainder logic)
+	// Build expected balances for each recipient
+	expectedBalances := make(map[string]sdkmath.Int)
+
+	for _, allocation := range firstDist.Allocations {
+		if allocation.ClearingAccount == types.ClearingAccountCommunity {
+			continue
+		}
+
+		var recipientAddrs []string
+		for _, mapping := range mappings {
+			if mapping.ClearingAccount == allocation.ClearingAccount {
+				recipientAddrs = mapping.RecipientAddresses
+				break
+			}
+		}
+
+		numRecipients := sdkmath.NewInt(int64(len(recipientAddrs)))
+		baseAmount := allocation.Amount.Quo(numRecipients)
+		remainder := allocation.Amount.Mod(numRecipients)
+
+		for i, recipientAddr := range recipientAddrs {
+			amount := baseAmount
+			// First recipient gets the remainder
+			if i == 0 && !remainder.IsZero() {
+				amount = amount.Add(remainder)
+			}
+
+			if current, exists := expectedBalances[recipientAddr]; exists {
+				expectedBalances[recipientAddr] = current.Add(amount)
+			} else {
+				expectedBalances[recipientAddr] = amount
+			}
+		}
+	}
+
+	// Verify actual balances match expected
+	for addr, expectedAmount := range expectedBalances {
+		recipient := sdk.MustAccAddressFromBech32(addr)
+		actualBalance := bankKeeper.GetBalance(ctx, recipient, bondDenom)
+		requireT.Equal(expectedAmount.String(), actualBalance.Amount.String(),
+			"recipient %s should have received correct total amount", addr)
+	}
+
+	// Step 7: Verify allocation schedule count decreased (first period removed)
 	allocationScheduleAfter, err := pseKeeper.GetAllocationSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Empty(allocationScheduleAfter, "should have 0 remaining allocations")

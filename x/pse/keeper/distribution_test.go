@@ -36,8 +36,8 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	var mappings []types.ClearingAccountMapping
 	for i, clearingAccount := range types.GetNonCommunityClearingAccounts() {
 		mappings = append(mappings, types.ClearingAccountMapping{
-			ClearingAccount:  clearingAccount,
-			RecipientAddress: addrs[i%len(addrs)],
+			ClearingAccount:    clearingAccount,
+			RecipientAddresses: []string{addrs[i%len(addrs)]},
 		})
 	}
 
@@ -127,4 +127,122 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Len(allocationSchedule2, 1, "should have 1 remaining allocation (time2)")
 	requireT.Equal(time2, allocationSchedule2[0].Timestamp)
+}
+
+func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
+	pseKeeper := testApp.PSEKeeper
+	bankKeeper := testApp.BankKeeper
+
+	// Get bond denom
+	bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Create multiple recipient addresses
+	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+
+	// Set up mappings with multiple recipients
+	mappings := []types.ClearingAccountMapping{
+		// 3 recipients - will test remainder handling
+		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{addr1, addr2, addr3}},
+		// 2 recipients
+		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr1, addr4}},
+		// Single recipient (baseline)
+		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr1}},
+		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr1}},
+		{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr1}},
+	}
+
+	params, err := pseKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	params.ClearingAccountMappings = mappings
+	err = pseKeeper.SetParams(ctx, params)
+	requireT.NoError(err)
+
+	// Use amount that doesn't divide evenly by 3
+	allocationAmount := sdkmath.NewInt(1000) // 1000 / 3 = 333 remainder 1
+
+	// Fund the clearing accounts
+	for _, mapping := range mappings {
+		if mapping.ClearingAccount == types.ClearingAccountCommunity {
+			continue
+		}
+		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocationAmount))
+		err = bankKeeper.MintCoins(ctx, types.ModuleName, coins)
+		requireT.NoError(err)
+		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mapping.ClearingAccount, coins)
+		requireT.NoError(err)
+	}
+
+	// Create and save distribution schedule
+	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
+	schedule := []types.ScheduledDistribution{
+		{
+			Timestamp: startTime,
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: allocationAmount},
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
+				{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},
+				{ClearingAccount: types.ClearingAccountPartnership, Amount: allocationAmount},
+				{ClearingAccount: types.ClearingAccountInvestors, Amount: allocationAmount},
+				{ClearingAccount: types.ClearingAccountTeam, Amount: allocationAmount},
+			},
+		},
+	}
+
+	err = pseKeeper.SaveDistributionSchedule(ctx, schedule)
+	requireT.NoError(err)
+
+	// Process distribution
+	ctx = ctx.WithBlockTime(time.Unix(int64(startTime)+10, 0))
+	err = pseKeeper.ProcessNextDistribution(ctx)
+	requireT.NoError(err)
+
+	// Test Case 1: Foundation with 3 recipients (1000 / 3 = 333 remainder 1)
+	// First recipient should get 334, others get 333
+	recipient1Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr1), bondDenom)
+	recipient2Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr2), bondDenom)
+	recipient3Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr3), bondDenom)
+
+	// addr1 gets distributions from Foundation (334), Alliance (500), Partnership (1000), Investors (1000), Team (1000)
+	// = 334 + 500 + 1000 + 1000 + 1000 = 3834
+	expectedAddr1 := sdkmath.NewInt(334 + 500 + 1000 + 1000 + 1000)
+	requireT.Equal(expectedAddr1.String(), recipient1Balance.Amount.String(),
+		"addr1 should get correct total including remainders")
+
+	// addr2 gets only from Foundation (333)
+	requireT.Equal("333", recipient2Balance.Amount.String(),
+		"addr2 (Foundation recipient 2) should get base amount")
+
+	// addr3 gets only from Foundation (333)
+	requireT.Equal("333", recipient3Balance.Amount.String(),
+		"addr3 (Foundation recipient 3) should get base amount")
+
+	// addr4 gets only from Alliance (500) - it's the second recipient so gets base amount
+	recipient4Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr4), bondDenom)
+	requireT.Equal("500", recipient4Balance.Amount.String(),
+		"addr4 (Alliance recipient 2) should get base amount")
+
+	// Verify total distributed from Foundation = original allocation (no dust)
+	totalFoundationDistributed := recipient1Balance.Amount.Add(recipient2Balance.Amount).Add(recipient3Balance.Amount).
+		Sub(sdkmath.NewInt(500 + 1000 + 1000 + 1000)) // Subtract other allocations to addr1
+	requireT.Equal(allocationAmount.String(), totalFoundationDistributed.String(),
+		"total Foundation distribution should equal allocation (no precision loss)")
+
+	// Verify clearing accounts are empty (all distributed)
+	for _, mapping := range mappings {
+		if mapping.ClearingAccount == types.ClearingAccountCommunity {
+			continue // Community doesn't distribute
+		}
+		moduleAddr := testApp.AccountKeeper.GetModuleAddress(mapping.ClearingAccount)
+		moduleBalance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
+		requireT.True(moduleBalance.Amount.IsZero(),
+			"clearing account %s should be empty after distribution", mapping.ClearingAccount)
+	}
 }

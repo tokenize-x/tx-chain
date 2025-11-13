@@ -277,6 +277,7 @@
   
 - [tx/pse/v1/event.proto](#tx/pse/v1/event.proto)
     - [EventAllocationDistributed](#tx.pse.v1.EventAllocationDistributed)
+    - [RecipientDistribution](#tx.pse.v1.RecipientDistribution)
   
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [GenesisState](#tx.pse.v1.GenesisState)
@@ -5739,8 +5740,10 @@ ClearingAccountAllocation defines the amount to be allocated from a specific cle
 ### ClearingAccountMapping
 
 ```
-ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipient (sub account multisig wallet).
+ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipients (sub account multisig wallets).
 This mapping can be modified via governance proposals.
+Each clearing account must have at least one recipient address.
+During distribution, the allocated amount is split equally among all recipients.
 ```
 
 
@@ -5748,7 +5751,7 @@ This mapping can be modified via governance proposals.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account holding the tokens to be distributed.`  |
-| `recipient_address` | [string](#string) |  |  `recipient_address is the multisig wallet address that will receive the token distributions.`  |
+| `recipient_addresses` | [string](#string) | repeated |  `recipient_addresses is the list of multisig wallet addresses that will receive the token distributions. Must have at least one address. Distribution amount is split equally among all recipients.`  |
 
 
 
@@ -5798,6 +5801,10 @@ Multiple clearing accounts can allocate tokens at the same time.
 
 ```
 EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
+If multiple recipients exist, the amount is split equally among them.
+Distribution always allocates 100% of the total amount with no tokens lost to rounding:
+- Base amount per recipient: total_amount / num_recipients (integer division)
+- Any remainder from division goes to the first recipient
 ```
 
 
@@ -5805,9 +5812,29 @@ EventAllocationDistributed is emitted when a scheduled allocation is successfull
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `clearing_account` | [string](#string) |  |  `clearing_account is the source clearing account name from which tokens are allocated.`  |
-| `recipient_address` | [string](#string) |  |  `recipient_address is the destination recipient address receiving the tokens.`  |
+| `recipients` | [RecipientDistribution](#tx.pse.v1.RecipientDistribution) | repeated |  `recipients contains the list of recipients and the exact amount each received. The sum of all recipient amounts equals total_amount.`  |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
-| `amount` | [string](#string) |  |  `amount is the amount of tokens allocated.`  |
+| `total_amount` | [string](#string) |  |  `total_amount is the total amount of tokens distributed across all recipients.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.RecipientDistribution"></a>
+
+### RecipientDistribution
+
+```
+RecipientDistribution represents a single recipient and the amount they received.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  `address is the recipient's account address.`  |
+| `amount` | [string](#string) |  |  `amount is the exact amount sent to this recipient.`  |
 
 
 

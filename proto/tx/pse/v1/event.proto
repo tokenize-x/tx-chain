@@ -2,19 +2,40 @@ syntax = "proto3";
 package tx.pse.v1;
 
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
+// RecipientDistribution represents a single recipient and the amount they received.
+message RecipientDistribution {
+  // address is the recipient's account address.
+  string address = 1 [
+    (cosmos_proto.scalar) = "cosmos.AddressString"
+  ];
+  // amount is the exact amount sent to this recipient.
+  string amount = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
+
 // EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
+// If multiple recipients exist, the amount is split equally among them.
+// Distribution always allocates 100% of the total amount with no tokens lost to rounding:
+// - Base amount per recipient: total_amount / num_recipients (integer division)
+// - Any remainder from division goes to the first recipient
 message EventAllocationDistributed {
   // clearing_account is the source clearing account name from which tokens are allocated.
   string clearing_account = 1;
-  // recipient_address is the destination recipient address receiving the tokens.
-  string recipient_address = 2;
+  // recipients contains the list of recipients and the exact amount each received.
+  // The sum of all recipient amounts equals total_amount.
+  repeated RecipientDistribution recipients = 2 [
+    (gogoproto.nullable) = false
+  ];
   // scheduled_at is the Unix timestamp when the allocation was scheduled to occur.
   uint64 scheduled_at = 3;
-  // amount is the amount of tokens allocated.
-  string amount = 4 [
+  // total_amount is the total amount of tokens distributed across all recipients.
+  string total_amount = 4 [
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];

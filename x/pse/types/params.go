@@ -87,9 +87,24 @@ func validateClearingAccountMappings(mappings []ClearingAccountMapping) error {
 			return errorsmod.Wrapf(ErrInvalidParam, "mapping %d: clearing_account cannot be empty", i)
 		}
 
-		// Validate sub account address
-		if _, err := sdk.AccAddressFromBech32(mapping.RecipientAddress); err != nil {
-			return errorsmod.Wrapf(err, "mapping %d: invalid sub account address", i)
+		// Validate that there is at least one recipient address
+		if len(mapping.RecipientAddresses) == 0 {
+			return errorsmod.Wrapf(ErrInvalidParam, "mapping %d: must have at least one recipient address", i)
+		}
+
+		// Validate each recipient address and check for duplicates within the same clearing account
+		seenRecipients := make(map[string]bool)
+		for j, addr := range mapping.RecipientAddresses {
+			// Validate address format
+			if _, err := sdk.AccAddressFromBech32(addr); err != nil {
+				return errorsmod.Wrapf(err, "mapping %d, recipient %d: invalid address %s", i, j, addr)
+			}
+
+			// Check for duplicate recipients within the same clearing account
+			if seenRecipients[addr] {
+				return errorsmod.Wrapf(ErrInvalidParam, "mapping %d, recipient %d: duplicate recipient address %s", i, j, addr)
+			}
+			seenRecipients[addr] = true
 		}
 
 		// Check for duplicate clearing accounts
