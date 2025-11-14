@@ -135,7 +135,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 		requireT.NoError(err)
 	}
 
-	// Fund all non-Community clearing accounts
+	// Fund all clearing accounts
 	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
 		err = testApp1.BankKeeper.MintCoins(ctx1, types.ModuleName, fundAmount)
