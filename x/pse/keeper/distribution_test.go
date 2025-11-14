@@ -205,16 +205,16 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	requireT.NoError(err)
 
 	// Test Case 1: Foundation with 3 recipients (1000 / 3 = 333 remainder 1)
-	// First recipient should get 334, others get 333
+	// Each recipient gets equal amount (333), remainder (1) goes to community pool
 	recipient1Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr1), bondDenom)
 	recipient2Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr2), bondDenom)
 	recipient3Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr3), bondDenom)
 
-	// addr1 gets distributions from Foundation (334), Alliance (500), Partnership (1000), Investors (1000), Team (1000)
-	// = 334 + 500 + 1000 + 1000 + 1000 = 3834
-	expectedAddr1 := sdkmath.NewInt(334 + 500 + 1000 + 1000 + 1000)
+	// addr1 gets distributions from Foundation (333), Alliance (500), Partnership (1000), Investors (1000), Team (1000)
+	// = 333 + 500 + 1000 + 1000 + 1000 = 3833
+	expectedAddr1 := sdkmath.NewInt(333 + 500 + 1000 + 1000 + 1000)
 	requireT.Equal(expectedAddr1.String(), recipient1Balance.Amount.String(),
-		"addr1 should get correct total including remainders")
+		"addr1 should get correct total without remainders")
 
 	// addr2 gets only from Foundation (333)
 	requireT.Equal("333", recipient2Balance.Amount.String(),
@@ -224,18 +224,18 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	requireT.Equal("333", recipient3Balance.Amount.String(),
 		"addr3 (Foundation recipient 3) should get base amount")
 
-	// addr4 gets only from Alliance (500) - it's the second recipient so gets base amount
+	// addr4 gets only from Alliance (500)
 	recipient4Balance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(addr4), bondDenom)
 	requireT.Equal("500", recipient4Balance.Amount.String(),
 		"addr4 (Alliance recipient 2) should get base amount")
 
-	// Verify total distributed from Foundation = original allocation (no dust)
-	totalFoundationDistributed := recipient1Balance.Amount.Add(recipient2Balance.Amount).Add(recipient3Balance.Amount).
-		Sub(sdkmath.NewInt(500 + 1000 + 1000 + 1000)) // Subtract other allocations to addr1
-	requireT.Equal(allocationAmount.String(), totalFoundationDistributed.String(),
-		"total Foundation distribution should equal allocation (no precision loss)")
+	// Verify total distributed from Foundation to recipients = 999 (333 * 3)
+	// Remainder of 1 goes to community pool, not to recipients
+	totalFoundationDistributed := sdkmath.NewInt(333 + 333 + 333)
+	requireT.Equal("999", totalFoundationDistributed.String(),
+		"total Foundation distribution to recipients should be 999 (remainder goes to community pool)")
 
-	// Verify clearing accounts are empty (all distributed)
+	// Verify clearing accounts are empty (all distributed: recipients + remainder to community pool)
 	for _, mapping := range mappings {
 		if mapping.ClearingAccount == types.ClearingAccountCommunity {
 			continue // Community doesn't distribute
@@ -245,4 +245,15 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 		requireT.True(moduleBalance.Amount.IsZero(),
 			"clearing account %s should be empty after distribution", mapping.ClearingAccount)
 	}
+
+	// Verify community pool received the remainders
+	// Foundation: 1000 / 3 = 333 remainder 1
+	// Alliance: 1000 / 2 = 500 remainder 0
+	// Total expected remainder = 1
+	communityPoolCoins, err := testApp.DistrKeeper.FeePool.Get(ctx)
+	requireT.NoError(err)
+	communityPoolBalance := communityPoolCoins.CommunityPool.AmountOf(bondDenom)
+	expectedRemainder := sdkmath.LegacyNewDec(1) // Only Foundation has remainder of 1
+	requireT.Equal(expectedRemainder.String(), communityPoolBalance.String(),
+		"community pool should have received the distribution remainders")
 }

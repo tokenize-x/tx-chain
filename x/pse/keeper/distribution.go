@@ -131,38 +131,22 @@ func (k Keeper) distributeAllocatedTokens(
 
 		// Distribution Precision Handling:
 		// The allocation amount is split equally among all recipients using integer division.
-		// To ensure 100% of tokens are distributed with no loss to rounding:
-		// - Each recipient receives: allocation.Amount / numRecipients (base amount)
-		// - Any remainder from division goes to the first recipient
-		// This guarantees: sum(recipient_allocations) == allocation.Amount
+		// Any remainder from division is sent to the community pool to ensure:
+		// - Each recipient receives exactly: allocation.Amount / numRecipients (base amount)
+		// - Remainder (if any) goes to community pool for ecosystem benefit
+		// This guarantees fair distribution and no tokens are lost
 		numRecipients := sdkmath.NewInt(int64(len(recipientAddrs)))
 		amountPerRecipient := allocation.Amount.Quo(numRecipients)
 		remainder := allocation.Amount.Mod(numRecipients)
 
-		// Track actual amounts sent to each recipient for event emission
-		recipientDistributions := make([]types.RecipientDistribution, len(recipientAddrs))
-
 		// Transfer tokens to each recipient
-		for i, recipientAddr := range recipientAddrs {
+		for _, recipientAddr := range recipientAddrs {
 			// Convert recipient address string to SDK account address
 			// Safe to use Must* because addresses are validated at genesis/update time
 			recipient := sdk.MustAccAddressFromBech32(recipientAddr)
 
-			// Calculate amount for this recipient
-			// First recipient gets the base amount plus any remainder to avoid dust
-			amountToSend := amountPerRecipient
-			if i == 0 && !remainder.IsZero() {
-				amountToSend = amountToSend.Add(remainder)
-			}
-
-			// Record recipient distribution for event
-			recipientDistributions[i] = types.RecipientDistribution{
-				Address: recipientAddr,
-				Amount:  amountToSend,
-			}
-
-			// Prepare coins to transfer
-			coinsToSend := sdk.NewCoins(sdk.NewCoin(bondDenom, amountToSend))
+			// Each recipient gets equal base amount
+			coinsToSend := sdk.NewCoins(sdk.NewCoin(bondDenom, amountPerRecipient))
 
 			// Transfer tokens from clearing account to recipient
 			if err := k.bankKeeper.SendCoinsFromModuleToAccount(
@@ -181,12 +165,32 @@ func (k Keeper) distributeAllocatedTokens(
 			}
 		}
 
-		// Emit single allocation completed event with all recipients and their actual amounts
+		// Send any remainder to community pool
+		if !remainder.IsZero() {
+			clearingAccountAddr := k.accountKeeper.GetModuleAddress(allocation.ClearingAccount)
+			remainderCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, remainder))
+			if err := k.distributionKeeper.FundCommunityPool(ctx, remainderCoins, clearingAccountAddr); err != nil {
+				return errorsmod.Wrapf(
+					types.ErrTransferFailed,
+					"failed to send remainder to community pool from clearing account '%s': %v",
+					allocation.ClearingAccount,
+					err,
+				)
+			}
+
+			sdkCtx.Logger().Info("sent distribution remainder to community pool",
+				"clearing_account", allocation.ClearingAccount,
+				"remainder", remainder.String())
+		}
+
+		// Emit single allocation completed event with recipient list, per-recipient amount, and community pool amount
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventAllocationDistributed{
-			ClearingAccount: allocation.ClearingAccount,
-			Recipients:      recipientDistributions,
-			ScheduledAt:     timestamp,
-			TotalAmount:     allocation.Amount,
+			ClearingAccount:     allocation.ClearingAccount,
+			RecipientAddresses:  recipientAddrs,
+			AmountPerRecipient:  amountPerRecipient,
+			CommunityPoolAmount: remainder,
+			ScheduledAt:         timestamp,
+			TotalAmount:         allocation.Amount,
 		}); err != nil {
 			sdkCtx.Logger().Error("failed to emit allocation completed event", "error", err)
 		}
@@ -195,7 +199,8 @@ func (k Keeper) distributeAllocatedTokens(
 			"clearing_account", allocation.ClearingAccount,
 			"recipients", recipientAddrs,
 			"total_amount", allocation.Amount.String(),
-			"amount_per_recipient", amountPerRecipient.String())
+			"amount_per_recipient", amountPerRecipient.String(),
+			"community_pool_amount", remainder.String())
 	}
 
 	return nil

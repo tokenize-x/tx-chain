@@ -6,33 +6,35 @@ import "cosmos_proto/cosmos.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
-// RecipientDistribution represents a single recipient and the amount they received.
-message RecipientDistribution {
-  // address is the recipient's account address.
-  string address = 1 [
-    (cosmos_proto.scalar) = "cosmos.AddressString"
-  ];
-  // amount is the exact amount sent to this recipient.
-  string amount = 2 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false
-  ];
-}
-
 // EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
-// The total amount is distributed among recipients, and the sum of all recipient amounts equals total_amount.
+// The total amount is split equally among recipients using integer division.
+// Any remainder from division is sent to the community pool.
 message EventAllocationDistributed {
   // clearing_account is the source clearing account name from which tokens are allocated.
   string clearing_account = 1;
-  // recipients contains the list of recipients and the exact amount each received.
-  // The sum of all recipient amounts equals total_amount.
-  repeated RecipientDistribution recipients = 2 [
+  // recipient_addresses contains the list of recipient addresses.
+  // Each recipient receives the same amount specified in amount_per_recipient.
+  repeated string recipient_addresses = 2 [
+    (cosmos_proto.scalar) = "cosmos.AddressString"
+  ];
+  // amount_per_recipient is the amount each recipient received.
+  // This is calculated as: total_amount / num_recipients (integer division).
+  string amount_per_recipient = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  // community_pool_amount is the remainder sent to the community pool.
+  // This is calculated as: total_amount % num_recipients.
+  // Will be zero if total_amount is evenly divisible by num_recipients.
+  string community_pool_amount = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
   // scheduled_at is the Unix timestamp when the allocation was scheduled to occur.
-  uint64 scheduled_at = 3;
-  // total_amount is the total amount of tokens distributed across all recipients.
-  string total_amount = 4 [
+  uint64 scheduled_at = 5;
+  // total_amount is the total amount allocated from the clearing account.
+  // This equals: (amount_per_recipient * num_recipients) + community_pool_amount.
+  string total_amount = 6 [
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];

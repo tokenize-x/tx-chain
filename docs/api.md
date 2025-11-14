@@ -277,7 +277,6 @@
   
 - [tx/pse/v1/event.proto](#tx/pse/v1/event.proto)
     - [EventAllocationDistributed](#tx.pse.v1.EventAllocationDistributed)
-    - [RecipientDistribution](#tx.pse.v1.RecipientDistribution)
   
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [GenesisState](#tx.pse.v1.GenesisState)
@@ -5801,7 +5800,8 @@ Multiple clearing accounts can allocate tokens at the same time.
 
 ```
 EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
-The total amount is distributed among recipients, and the sum of all recipient amounts equals total_amount.
+The total amount is split equally among recipients using integer division.
+Any remainder from division is sent to the community pool.
 ```
 
 
@@ -5809,29 +5809,11 @@ The total amount is distributed among recipients, and the sum of all recipient a
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `clearing_account` | [string](#string) |  |  `clearing_account is the source clearing account name from which tokens are allocated.`  |
-| `recipients` | [RecipientDistribution](#tx.pse.v1.RecipientDistribution) | repeated |  `recipients contains the list of recipients and the exact amount each received. The sum of all recipient amounts equals total_amount.`  |
+| `recipient_addresses` | [string](#string) | repeated |  `recipient_addresses contains the list of recipient addresses. Each recipient receives the same amount specified in amount_per_recipient.`  |
+| `amount_per_recipient` | [string](#string) |  |  `amount_per_recipient is the amount each recipient received. This is calculated as: total_amount / num_recipients (integer division).`  |
+| `community_pool_amount` | [string](#string) |  |  `community_pool_amount is the remainder sent to the community pool. This is calculated as: total_amount % num_recipients. Will be zero if total_amount is evenly divisible by num_recipients.`  |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
-| `total_amount` | [string](#string) |  |  `total_amount is the total amount of tokens distributed across all recipients.`  |
-
-
-
-
-
-
-<a name="tx.pse.v1.RecipientDistribution"></a>
-
-### RecipientDistribution
-
-```
-RecipientDistribution represents a single recipient and the amount they received.
-```
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `address` | [string](#string) |  |  `address is the recipient's account address.`  |
-| `amount` | [string](#string) |  |  `amount is the exact amount sent to this recipient.`  |
+| `total_amount` | [string](#string) |  |  `total_amount is the total amount allocated from the clearing account. This equals: (amount_per_recipient * num_recipients) + community_pool_amount.`  |
 
 
 
