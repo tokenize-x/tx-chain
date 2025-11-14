@@ -107,7 +107,7 @@ func (k Keeper) distributeAllocatedTokens(
 	for _, allocation := range scheduledDistribution.Allocations {
 		// Community clearing account has different distribution logic
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
-			if err := k.distributeCommunityAllocation(ctx, bondDenom, allocation); err != nil {
+			if err := k.DistributeCommunityPSE(ctx, bondDenom, allocation.Amount); err != nil {
 				return errorsmod.Wrapf(
 					types.ErrTransferFailed,
 					"failed to distribute Community clearing account allocation: %v",
@@ -203,14 +203,4 @@ func (k Keeper) GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDis
 	// Note: Collections map iterates in ascending order of keys (timestamps),
 	// so the schedule is already sorted. No need to sort again.
 	return schedule, nil
-}
-
-// distributeCommunityAllocation handles the distribution logic for Community clearing account.
-// Community uses score-based distribution to delegators instead of direct recipient transfers.
-func (k Keeper) distributeCommunityAllocation(
-	ctx context.Context,
-	bondDenom string,
-	allocation types.ClearingAccountAllocation,
-) error {
-	return k.DistributeCommunityPSE(ctx, bondDenom, allocation.Amount)
 }
