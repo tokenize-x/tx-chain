@@ -15,7 +15,7 @@ import (
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
 func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkmath.Int) error {
 	var allDelegationTimeEntry []collections.KeyValue[
-		collections.Pair[sdk.ValAddress, sdk.AccAddress],
+		collections.Pair[sdk.AccAddress, sdk.ValAddress],
 		types.DelegationTimeEntry,
 	]
 	// iterate all delegation time entries and calculate uncalculated score.
@@ -32,8 +32,8 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 			return err
 		}
 		allDelegationTimeEntry = append(allDelegationTimeEntry, kv)
-		valAddr := kv.Key.K1()
-		delAddr := kv.Key.K2()
+		delAddr := kv.Key.K1()
+		valAddr := kv.Key.K2()
 		delegationTimeEntry := kv.Value
 		delegationScore, err := calculateAddedScore(ctx, k, valAddr, delegationTimeEntry)
 		if err != nil {

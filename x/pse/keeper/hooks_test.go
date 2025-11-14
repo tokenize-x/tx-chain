@@ -285,7 +285,7 @@ func assertScoreResetAction(r *runEnv) {
 	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
 	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil,
 		func(
-			key collections.Pair[sdk.ValAddress, sdk.AccAddress], value types.DelegationTimeEntry) (bool, error) {
+			key collections.Pair[sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry) (bool, error) {
 			r.requireT.Equal(blockTimeUnixSeconds, value.LastChangedUnixSec)
 			return false, nil
 		})
