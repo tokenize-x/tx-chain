@@ -73,11 +73,11 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr2},
-		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr3},
-		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr4},
-		{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr5},
+		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr2}},
+		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr3}},
+		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr4}},
+		{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr5}},
 	}
 
 	// Setup params with mappings

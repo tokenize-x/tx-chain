@@ -125,8 +125,8 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
 					{
-						ClearingAccount:  ClearingAccountFoundation,
-						RecipientAddress: addr1,
+						ClearingAccount:    ClearingAccountFoundation,
+						RecipientAddresses: []string{addr1},
 					},
 				},
 			},
@@ -136,8 +136,8 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			name: "valid_multiple_mappings",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
-					{ClearingAccount: ClearingAccountTeam, RecipientAddress: addr2},
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+					{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr2}},
 				},
 			},
 			expectErr: false,
@@ -146,7 +146,7 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			name: "invalid_empty_clearing_account",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: "", RecipientAddress: addr1},
+					{ClearingAccount: "", RecipientAddresses: []string{addr1}},
 				},
 			},
 			expectErr: true,
@@ -156,22 +156,71 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			name: "invalid_malformed_sub_account_address",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: "invalid"},
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{"invalid"}},
 				},
 			},
 			expectErr: true,
-			errMsg:    "invalid sub account address",
+			errMsg:    "invalid address",
 		},
 		{
 			name: "invalid_duplicate_clearing_account",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr2},
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr2}},
 				},
 			},
 			expectErr: true,
 			errMsg:    "duplicate clearing account",
+		},
+		{
+			name: "invalid_empty_recipient_list",
+			params: Params{
+				ClearingAccountMappings: []ClearingAccountMapping{
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{}},
+				},
+			},
+			expectErr: true,
+			errMsg:    "must have at least one recipient address",
+		},
+		{
+			name: "invalid_duplicate_recipients_in_same_mapping",
+			params: Params{
+				ClearingAccountMappings: []ClearingAccountMapping{
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1, addr1}},
+				},
+			},
+			expectErr: true,
+			errMsg:    "duplicate recipient address",
+		},
+		{
+			name: "valid_multiple_recipients",
+			params: Params{
+				ClearingAccountMappings: []ClearingAccountMapping{
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1, addr2}},
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "invalid_one_valid_one_invalid_recipient",
+			params: Params{
+				ClearingAccountMappings: []ClearingAccountMapping{
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1, "invalid"}},
+				},
+			},
+			expectErr: true,
+			errMsg:    "invalid address",
+		},
+		{
+			name: "invalid_community_account_with_mapping",
+			params: Params{
+				ClearingAccountMappings: []ClearingAccountMapping{
+					{ClearingAccount: ClearingAccountCommunity, RecipientAddresses: []string{addr1}},
+				},
+			},
+			expectErr: true,
+			errMsg:    "Community clearing account cannot have recipient mappings",
 		},
 	}
 
@@ -490,8 +539,8 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "valid_schedule_with_all_mappings",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
-				{ClearingAccount: ClearingAccountTeam, RecipientAddress: addr2},
+				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+				{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr2}},
 			},
 			schedule: []ScheduledDistribution{
 				{
@@ -507,7 +556,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "valid_empty_schedule",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
+				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
 			},
 			schedule:  []ScheduledDistribution{},
 			expectErr: false,
@@ -515,8 +564,8 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "valid_extra_mappings_not_in_schedule",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
-				{ClearingAccount: ClearingAccountTeam, RecipientAddress: addr2},
+				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+				{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr2}},
 			},
 			schedule: []ScheduledDistribution{
 				{
@@ -531,7 +580,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "invalid_schedule_without_mapping",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
+				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
 			},
 			schedule: []ScheduledDistribution{
 				{
@@ -547,7 +596,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "invalid_multiple_modules_one_missing_mapping",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
+				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
 			},
 			schedule: []ScheduledDistribution{
 				{
@@ -578,7 +627,7 @@ func TestValidateScheduleMappingConsistency(t *testing.T) {
 		{
 			name: "valid_community_excluded_no_mapping_required",
 			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
+				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
 			},
 			schedule: []ScheduledDistribution{
 				{
@@ -623,7 +672,7 @@ func TestParamsValidation_ClearingAccountNames(t *testing.T) {
 			name: "valid_module_name_in_mapping",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
 				},
 			},
 			expectErr: false,
@@ -632,7 +681,7 @@ func TestParamsValidation_ClearingAccountNames(t *testing.T) {
 			name: "valid_custom_module_name",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: "my_custom_module", RecipientAddress: addr1},
+					{ClearingAccount: "my_custom_module", RecipientAddresses: []string{addr1}},
 				},
 			},
 			expectErr: false,
@@ -641,7 +690,7 @@ func TestParamsValidation_ClearingAccountNames(t *testing.T) {
 			name: "invalid_bech32_address_as_clearing_account_in_mapping",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: addr1, RecipientAddress: addr1}, // Using bech32 address as module name
+					{ClearingAccount: addr1, RecipientAddresses: []string{addr1}}, // Using bech32 address as module name
 				},
 			},
 			expectErr: false, // No validation against bech32 - just non-empty string
@@ -681,8 +730,8 @@ func TestParamsValidation_CompleteScenarios(t *testing.T) {
 			params: Params{
 				ExcludedAddresses: []string{addr1},
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr2},
-					{ClearingAccount: ClearingAccountTeam, RecipientAddress: addr3},
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr2}},
+					{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr3}},
 				},
 			},
 			expectErr: false,
@@ -691,9 +740,9 @@ func TestParamsValidation_CompleteScenarios(t *testing.T) {
 			name: "valid_multiple_modules_all_mapped",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddress: addr1},
-					{ClearingAccount: ClearingAccountPartnership, RecipientAddress: addr2},
-					{ClearingAccount: ClearingAccountTeam, RecipientAddress: addr3},
+					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+					{ClearingAccount: ClearingAccountPartnership, RecipientAddresses: []string{addr2}},
+					{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr3}},
 				},
 			},
 			expectErr: false,

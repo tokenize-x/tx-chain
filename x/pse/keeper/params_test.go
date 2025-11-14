@@ -212,8 +212,8 @@ func TestUpdateClearingMappings_Authority(t *testing.T) {
 	var mappings []types.ClearingAccountMapping
 	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
 		mappings = append(mappings, types.ClearingAccountMapping{
-			ClearingAccount:  clearingAccount,
-			RecipientAddress: addr1,
+			ClearingAccount:    clearingAccount,
+			RecipientAddresses: []string{addr1},
 		})
 	}
 

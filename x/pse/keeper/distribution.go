@@ -4,6 +4,7 @@ import (
 	"context"
 
 	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -117,53 +118,89 @@ func (k Keeper) distributeAllocatedTokens(
 			continue
 		}
 
-		// Find the recipient address mapped to this clearing account
+		// Find the recipient addresses mapped to this clearing account
 		// Note: Community clearing account is handled above and doesn't need a mapping.
 		// Mappings are validated on update and genesis, so they are guaranteed to exist.
-		var recipientAddr string
+		var recipientAddrs []string
 		for _, mapping := range clearingAccountMappings {
 			if mapping.ClearingAccount == allocation.ClearingAccount {
-				recipientAddr = mapping.RecipientAddress
+				recipientAddrs = mapping.RecipientAddresses
 				break
 			}
 		}
 
-		// Convert recipient address string to SDK account address
-		// Safe to use Must* because addresses are validated at genesis/update time
-		recipient := sdk.MustAccAddressFromBech32(recipientAddr)
+		// Distribution Precision Handling:
+		// The allocation amount is split equally among all recipients using integer division.
+		// Any remainder from division is sent to the community pool to ensure:
+		// - Each recipient receives exactly: allocation.Amount / numRecipients (base amount)
+		// - Remainder (if any) goes to community pool for ecosystem benefit
+		// This guarantees fair distribution and no tokens are lost
+		numRecipients := sdkmath.NewInt(int64(len(recipientAddrs)))
+		amountPerRecipient := allocation.Amount.Quo(numRecipients)
+		remainder := allocation.Amount.Mod(numRecipients)
 
-		// Prepare coins to transfer
-		coinsToSend := sdk.NewCoins(sdk.NewCoin(bondDenom, allocation.Amount))
+		// Transfer tokens to each recipient
+		for _, recipientAddr := range recipientAddrs {
+			// Convert recipient address string to SDK account address
+			// Safe to use Must* because addresses are validated at genesis/update time
+			recipient := sdk.MustAccAddressFromBech32(recipientAddr)
 
-		// Transfer tokens from clearing account to recipient
-		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
-			ctx,
-			allocation.ClearingAccount,
-			recipient,
-			coinsToSend,
-		); err != nil {
-			return errorsmod.Wrapf(
-				types.ErrTransferFailed,
-				"failed to transfer from clearing account '%s': %v",
+			// Each recipient gets equal base amount
+			coinsToSend := sdk.NewCoins(sdk.NewCoin(bondDenom, amountPerRecipient))
+
+			// Transfer tokens from clearing account to recipient
+			if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+				ctx,
 				allocation.ClearingAccount,
-				err,
-			)
+				recipient,
+				coinsToSend,
+			); err != nil {
+				return errorsmod.Wrapf(
+					types.ErrTransferFailed,
+					"failed to transfer from clearing account '%s' to recipient '%s': %v",
+					allocation.ClearingAccount,
+					recipientAddr,
+					err,
+				)
+			}
 		}
 
-		// Emit allocation completed event
+		// Send any remainder to community pool
+		if !remainder.IsZero() {
+			clearingAccountAddr := k.accountKeeper.GetModuleAddress(allocation.ClearingAccount)
+			remainderCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, remainder))
+			if err := k.distributionKeeper.FundCommunityPool(ctx, remainderCoins, clearingAccountAddr); err != nil {
+				return errorsmod.Wrapf(
+					types.ErrTransferFailed,
+					"failed to send remainder to community pool from clearing account '%s': %v",
+					allocation.ClearingAccount,
+					err,
+				)
+			}
+
+			sdkCtx.Logger().Info("sent distribution remainder to community pool",
+				"clearing_account", allocation.ClearingAccount,
+				"remainder", remainder.String())
+		}
+
+		// Emit single allocation completed event with recipient list, per-recipient amount, and community pool amount
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventAllocationDistributed{
-			ClearingAccount:  allocation.ClearingAccount,
-			RecipientAddress: recipientAddr,
-			ScheduledAt:      timestamp,
-			Amount:           allocation.Amount,
+			ClearingAccount:     allocation.ClearingAccount,
+			RecipientAddresses:  recipientAddrs,
+			AmountPerRecipient:  amountPerRecipient,
+			CommunityPoolAmount: remainder,
+			ScheduledAt:         timestamp,
+			TotalAmount:         allocation.Amount,
 		}); err != nil {
 			sdkCtx.Logger().Error("failed to emit allocation completed event", "error", err)
 		}
 
 		sdkCtx.Logger().Info("allocated tokens",
 			"clearing_account", allocation.ClearingAccount,
-			"recipient", recipientAddr,
-			"amount", allocation.Amount.String())
+			"recipients", recipientAddrs,
+			"total_amount", allocation.Amount.String(),
+			"amount_per_recipient", amountPerRecipient.String(),
+			"community_pool_amount", remainder.String())
 	}
 
 	return nil
