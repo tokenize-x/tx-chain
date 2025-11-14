@@ -21,12 +21,12 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"scheduled_distributions\""
   ];
-  
+
   repeated DelegationTimeEntryExport delegation_time_entries = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"delegation_time_entries\""
   ];
-  
+
   repeated AccountScore account_scores = 4 [
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"account_scores\""
