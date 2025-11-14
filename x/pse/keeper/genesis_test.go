@@ -224,7 +224,11 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	// Verify we can export the same state again (round-trip test)
 	reexportedGenesis, err := pseKeeper2.ExportGenesis(ctx2)
 	requireT.NoError(err)
-	requireT.EqualExportedValues(exportedGenesis, reexportedGenesis, "re-exported genesis should match")
+
+	// since test app has a default validator, the exported genesis will contain an staking snapshot,
+	// so AccountScores and DelegationTimeEntries cannot be compared directly.
+	requireT.EqualExportedValues(exportedGenesis.ScheduledDistributions, reexportedGenesis.ScheduledDistributions, "re-exported genesis should match")
+	requireT.EqualExportedValues(exportedGenesis.Params, reexportedGenesis.Params, "re-exported genesis should match")
 
 	// Process next distribution on new chain (time2)
 	ctx2 = ctx2.WithBlockTime(time.Unix(int64(time2)+10, 0))
@@ -287,7 +291,10 @@ func TestGenesis_EmptyState(t *testing.T) {
 	if exported.ScheduledDistributions == nil {
 		exported.ScheduledDistributions = []types.ScheduledDistribution{}
 	}
-	requireT.EqualExportedValues(defaultGenesis, exported, "exported should match default")
+	// since test app has a default validator, the exported genesis will contain an staking snapshot,
+	// so AccountScores and DelegationTimeEntries cannot be compared directly.
+	requireT.EqualValues(defaultGenesis.ScheduledDistributions, exported.ScheduledDistributions)
+	requireT.EqualValues(defaultGenesis.Params, exported.Params)
 }
 
 // TestGenesis_InvalidState tests that invalid genesis state is rejected.
