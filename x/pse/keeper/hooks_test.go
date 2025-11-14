@@ -355,7 +355,9 @@ func waitAction(r *runEnv, duration time.Duration) {
 
 func distributeAction(r *runEnv, amount sdkmath.Int) {
 	mintAndSendToPSECommunityClearingAccount(r, amount)
-	err := r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, amount)
+	bondDenom, err := r.testApp.StakingKeeper.BondDenom(r.ctx)
+	r.requireT.NoError(err)
+	err = r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, bondDenom, amount)
 	r.requireT.NoError(err)
 }
 

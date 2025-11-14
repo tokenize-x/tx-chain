@@ -13,7 +13,7 @@ import (
 )
 
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
-func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkmath.Int) error {
+func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdkmath.Int) error {
 	var allDelegationTimeEntry []collections.KeyValue[
 		collections.Pair[sdk.ValAddress, sdk.AccAddress],
 		types.DelegationTimeEntry,
@@ -58,11 +58,6 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 		score := kv.Value
 		delAddr := kv.Key
 		finalScoreMap.AddScore(delAddr, score)
-	}
-
-	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
-	if err != nil {
-		return err
 	}
 
 	// distribute total pse coin based on per delegator score.

@@ -41,8 +41,8 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 		})
 	}
 
-	// Fund all non-Community clearing accounts
-	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
+	// Fund all clearing accounts
+	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(5000)))
 		err = testApp.BankKeeper.MintCoins(ctx, types.ModuleName, fundAmount)
 		requireT.NoError(err)
