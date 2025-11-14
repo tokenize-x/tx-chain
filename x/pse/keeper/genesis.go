@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/collections"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
@@ -113,6 +114,9 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 			})
 			return false, nil
 		})
+	if err != nil {
+		return nil, err
+	}
 
 	return genesis, nil
 }
