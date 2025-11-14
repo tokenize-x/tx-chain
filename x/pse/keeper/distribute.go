@@ -11,7 +11,7 @@ import (
 )
 
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
-func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkmath.Int) error {
+func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdkmath.Int) error {
 	// iterate all delegation time entries and calculate uncalculated score.
 	var finalScoreMap = newScoreMap(k.addressCodec)
 	allDelegationTimeEntry, err := finalScoreMap.iterateDelegationTimeEntries(ctx, k)
@@ -23,11 +23,6 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 	// it calculates the score from the last delegation time entry up to the current block time, which
 	// is not included in the score snapshot calculations.
 	err = finalScoreMap.iterateAccountScoreSnapshot(ctx, k)
-	if err != nil {
-		return err
-	}
-
-	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
 	if err != nil {
 		return err
 	}
