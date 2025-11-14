@@ -207,13 +207,10 @@ func (k Keeper) GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDis
 
 // distributeCommunityAllocation handles the distribution logic for Community clearing account.
 // Community uses score-based distribution to delegators instead of direct recipient transfers.
-// TODO: Implement Community-specific distribution logic.
 func (k Keeper) distributeCommunityAllocation(
-	_ context.Context,
-	_ string,
-	_ types.ClearingAccountAllocation,
+	ctx context.Context,
+	bondDenom string,
+	allocation types.ClearingAccountAllocation,
 ) error {
-	// TODO: Implement Community distribution logic
-	// This will use score-based distribution (DistributeCommunityPSE) instead of direct transfer
-	return nil
+	return k.DistributeCommunityPSE(ctx, bondDenom, allocation.Amount)
 }
