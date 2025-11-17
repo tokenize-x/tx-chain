@@ -5,9 +5,7 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -91,7 +89,7 @@ func TestQueryScore_WithActiveDelegation(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator, err := createValidator(ctx, testApp, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator, err := testApp.AddValidator(ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
 	requireT.NoError(err)
 	valAddr := sdk.MustValAddressFromBech32(validator.GetOperator())
 
@@ -146,7 +144,7 @@ func TestQueryScore_AccumulatedPlusCurrentPeriod(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator, err := createValidator(ctx, testApp, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator, err := testApp.AddValidator(ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
 	requireT.NoError(err)
 	valAddr := sdk.MustValAddressFromBech32(validator.GetOperator())
 
@@ -199,7 +197,7 @@ func TestQueryScore_MultipleDelegations(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator1, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator1, err := createValidator(ctx, testApp, validatorOperator1, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator1, err := testApp.AddValidator(ctx, validatorOperator1, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
 	requireT.NoError(err)
 	valAddr1 := sdk.MustValAddressFromBech32(validator1.GetOperator())
 
@@ -207,7 +205,7 @@ func TestQueryScore_MultipleDelegations(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator2, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator2, err := createValidator(ctx, testApp, validatorOperator2, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator2, err := testApp.AddValidator(ctx, validatorOperator2, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
 	requireT.NoError(err)
 	valAddr2 := sdk.MustValAddressFromBech32(validator2.GetOperator())
 
@@ -263,43 +261,4 @@ func TestQueryScore_InvalidAddress(t *testing.T) {
 		Address: "invalid_address",
 	})
 	requireT.Error(err, "should return error for invalid address")
-}
-
-// Helper function to create a validator - matching the pattern from hooks_test.go.
-func createValidator(
-	ctx sdk.Context,
-	testApp *simapp.App,
-	operator sdk.AccAddress,
-	value sdk.Coin,
-) (val stakingtypes.Validator, err error) {
-	stakingKeeper := testApp.StakingKeeper
-	privKey := secp256k1.GenPrivKey()
-	pubKey := privKey.PubKey()
-	valAddr := sdk.ValAddress(operator)
-
-	pkAny, err := codectypes.NewAnyWithValue(pubKey)
-	if err != nil {
-		return stakingtypes.Validator{}, err
-	}
-	msg := &stakingtypes.MsgCreateValidator{
-		Description: stakingtypes.Description{
-			Moniker: "Validator power",
-		},
-		Commission: stakingtypes.CommissionRates{
-			Rate:          sdkmath.LegacyMustNewDecFromStr("0.1"),
-			MaxRate:       sdkmath.LegacyMustNewDecFromStr("0.2"),
-			MaxChangeRate: sdkmath.LegacyMustNewDecFromStr("0.01"),
-		},
-		MinSelfDelegation: sdkmath.OneInt(),
-		DelegatorAddress:  operator.String(),
-		ValidatorAddress:  valAddr.String(),
-		Pubkey:            pkAny,
-		Value:             value,
-	}
-	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).CreateValidator(ctx, msg)
-	if err != nil {
-		return stakingtypes.Validator{}, err
-	}
-
-	return stakingKeeper.GetValidator(ctx, valAddr)
 }
