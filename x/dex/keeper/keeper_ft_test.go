@@ -9,11 +9,8 @@ import (
 	sdkmath "cosmossdk.io/math"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/docker/distribution/uuid"
 	"github.com/samber/lo"
@@ -397,7 +394,7 @@ func TestKeeper_PlaceOrderWithStaking(t *testing.T) {
 	denomToStake := sdk.DefaultBondDenom
 
 	require.NoError(t, testApp.FundAccount(sdkCtx, validatorOwner, sdk.NewCoins(sdk.NewInt64Coin(denomToStake, 10))))
-	err := addValidator(sdkCtx, testApp.StakingKeeper, validatorOwner, sdk.NewInt64Coin(denomToStake, 10))
+	_, err := testApp.AddValidator(sdkCtx, validatorOwner, sdk.NewInt64Coin(denomToStake, 10))
 	require.NoError(t, err)
 	val, err := testApp.StakingKeeper.GetValidators(sdkCtx, 1)
 	require.NoError(t, err)
@@ -476,7 +473,7 @@ func TestKeeper_PlaceOrderWithStaking(t *testing.T) {
 	require.NoError(t, testApp.FundAccount(sdkCtx, validatorOwner2, sdk.NewCoins(orderLockedBalance)))
 	fundOrderReserve(t, testApp, sdkCtx, validatorOwner2)
 	require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
-	err = addValidator(sdkCtx, testApp.StakingKeeper, validatorOwner2, orderLockedBalance)
+	_, err = testApp.AddValidator(sdkCtx, validatorOwner2, orderLockedBalance)
 	require.ErrorContains(t, err, "does not have enough stake tokens to delegate")
 }
 
@@ -573,32 +570,4 @@ func TestKeeper_PlaceOrderWithCommissionRate(t *testing.T) {
 	require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
 	balanceAfterPlaceOrder := testApp.BankKeeper.GetBalance(sdkCtx, acc, denomWithCommissionRate)
 	require.Equal(t, balanceBeforePlaceOrder, balanceAfterPlaceOrder)
-}
-
-func addValidator(ctx sdk.Context, stakingKeeper *stakingkeeper.Keeper, owner sdk.AccAddress, value sdk.Coin) error {
-	privKey := secp256k1.GenPrivKey()
-	pubKey := privKey.PubKey()
-	valAddr := sdk.ValAddress(owner)
-
-	pkAny, err := codectypes.NewAnyWithValue(pubKey)
-	if err != nil {
-		return err
-	}
-	msg := &stakingtypes.MsgCreateValidator{
-		Description: stakingtypes.Description{
-			Moniker: "Validator power",
-		},
-		Commission: stakingtypes.CommissionRates{
-			Rate:          sdkmath.LegacyMustNewDecFromStr("0.1"),
-			MaxRate:       sdkmath.LegacyMustNewDecFromStr("0.2"),
-			MaxChangeRate: sdkmath.LegacyMustNewDecFromStr("0.01"),
-		},
-		MinSelfDelegation: sdkmath.OneInt(),
-		DelegatorAddress:  owner.String(),
-		ValidatorAddress:  valAddr.String(),
-		Pubkey:            pkAny,
-		Value:             value,
-	}
-	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).CreateValidator(ctx, msg)
-	return err
 }

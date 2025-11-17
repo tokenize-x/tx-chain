@@ -170,9 +170,6 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 
 	// Fund the clearing accounts
 	for _, mapping := range mappings {
-		if mapping.ClearingAccount == types.ClearingAccountCommunity {
-			continue
-		}
 		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocationAmount))
 		err = bankKeeper.MintCoins(ctx, types.ModuleName, coins)
 		requireT.NoError(err)
@@ -181,12 +178,13 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	}
 
 	// Create and save distribution schedule
+	// Note: Community is excluded from this test since it has different distribution logic
+	// and is tested separately in other tests
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
 	schedule := []types.ScheduledDistribution{
 		{
 			Timestamp: startTime,
 			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ClearingAccountCommunity, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: allocationAmount},

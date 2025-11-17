@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
 	pruningtypes "cosmossdk.io/store/pruning/types"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -26,6 +27,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -35,6 +37,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -263,6 +267,46 @@ func (s *App) FundAccount(ctx sdk.Context, address sdk.AccAddress, balances sdk.
 	}
 
 	return nil
+}
+
+// AddValidator creates a new validator in the simapp and returns the validator object.
+// This is a helper function for testing purposes that creates a validator with standard commission rates.
+func (s *App) AddValidator(
+	ctx sdk.Context,
+	operator sdk.AccAddress,
+	value sdk.Coin,
+) (stakingtypes.Validator, error) {
+	privKey := secp256k1.GenPrivKey()
+	pubKey := privKey.PubKey()
+	valAddr := sdk.ValAddress(operator)
+
+	pkAny, err := codectypes.NewAnyWithValue(pubKey)
+	if err != nil {
+		return stakingtypes.Validator{}, err
+	}
+
+	msg := &stakingtypes.MsgCreateValidator{
+		Description: stakingtypes.Description{
+			Moniker: "Validator power",
+		},
+		Commission: stakingtypes.CommissionRates{
+			Rate:          sdkmath.LegacyMustNewDecFromStr("0.1"),
+			MaxRate:       sdkmath.LegacyMustNewDecFromStr("0.2"),
+			MaxChangeRate: sdkmath.LegacyMustNewDecFromStr("0.01"),
+		},
+		MinSelfDelegation: sdkmath.OneInt(),
+		DelegatorAddress:  operator.String(),
+		ValidatorAddress:  valAddr.String(),
+		Pubkey:            pkAny,
+		Value:             value,
+	}
+
+	_, err = stakingkeeper.NewMsgServerImpl(s.StakingKeeper).CreateValidator(ctx, msg)
+	if err != nil {
+		return stakingtypes.Validator{}, err
+	}
+
+	return s.StakingKeeper.GetValidator(ctx, valAddr)
 }
 
 // SendTx sends the tx to the simApp.
