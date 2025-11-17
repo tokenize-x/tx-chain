@@ -285,6 +285,8 @@
     - [Params](#tx.pse.v1.Params)
   
 - [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
+    - [QueryAllocationScheduleRequest](#tx.pse.v1.QueryAllocationScheduleRequest)
+    - [QueryAllocationScheduleResponse](#tx.pse.v1.QueryAllocationScheduleResponse)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
     - [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest)
@@ -5910,6 +5912,39 @@ Params store gov manageable parameters.
 
 
 
+<a name="tx.pse.v1.QueryAllocationScheduleRequest"></a>
+
+### QueryAllocationScheduleRequest
+
+```
+QueryAllocationScheduleRequest defines the request type for querying future allocation schedules.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryAllocationScheduleResponse"></a>
+
+### QueryAllocationScheduleResponse
+
+```
+QueryAllocationScheduleResponse defines the response type for querying future allocation schedules.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `schedules` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `schedules contains all future distribution schedules sorted by timestamp in ascending order. Past schedules are automatically removed after processing, so all returned schedules are future schedules.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.QueryParamsRequest"></a>
 
 ### QueryParamsRequest
@@ -6000,6 +6035,7 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
 | `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
+| `AllocationSchedule` | [QueryAllocationScheduleRequest](#tx.pse.v1.QueryAllocationScheduleRequest) | [QueryAllocationScheduleResponse](#tx.pse.v1.QueryAllocationScheduleResponse) | `AllocationSchedule queries all future allocation schedules.` | GET|/tx/pse/v1/allocation_schedule |
 
  <!-- end services -->
 

@@ -50,3 +50,18 @@ func (qs QueryService) Score(ctx context.Context, req *types.QueryScoreRequest) 
 		Score: score,
 	}, nil
 }
+
+// AllocationSchedule returns all future allocation schedules.
+// Past schedules are automatically removed after processing, so all schedules in storage are future schedules.
+func (qs QueryService) AllocationSchedule(
+	ctx context.Context, req *types.QueryAllocationScheduleRequest,
+) (*types.QueryAllocationScheduleResponse, error) {
+	schedules, err := qs.keeper.GetAllocationSchedule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryAllocationScheduleResponse{
+		Schedules: schedules,
+	}, nil
+}

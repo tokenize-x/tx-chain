@@ -262,3 +262,112 @@ func TestQueryScore_InvalidAddress(t *testing.T) {
 	})
 	requireT.Error(err, "should return error for invalid address")
 }
+
+func TestQueryAllocationSchedule(t *testing.T) {
+	t.Run("empty schedule", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false).WithBlockTime(time.Now())
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+		requireT.Empty(resp.Schedules)
+	})
+
+	t.Run("multiple schedules with single allocation", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		// Create schedules at different future times
+		schedule1 := types.ScheduledDistribution{
+			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
+			},
+		}
+		schedule2 := types.ScheduledDistribution{
+			Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()),
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(3000)},
+			},
+		}
+
+		err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{schedule1, schedule2})
+		requireT.NoError(err)
+
+		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		requireT.NoError(err)
+		requireT.Len(resp.Schedules, 2)
+		requireT.Equal(schedule1.Timestamp, resp.Schedules[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.Schedules[1].Timestamp)
+	})
+
+	t.Run("schedule with multiple allocations", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		schedule := types.ScheduledDistribution{
+			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
+				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(3000)},
+			},
+		}
+
+		err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{schedule})
+		requireT.NoError(err)
+
+		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		requireT.NoError(err)
+		requireT.Len(resp.Schedules, 1)
+		requireT.Len(resp.Schedules[0].Allocations, 3)
+	})
+
+	t.Run("schedules sorted by timestamp", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		// Save schedules in non-chronological order
+		schedule3 := types.ScheduledDistribution{
+			Timestamp: uint64(currentTime.Add(3 * time.Hour).Unix()),
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(3000)},
+			},
+		}
+		schedule1 := types.ScheduledDistribution{
+			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(1000)},
+			},
+		}
+		schedule2 := types.ScheduledDistribution{
+			Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()),
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(2000)},
+			},
+		}
+
+		err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{schedule3, schedule1, schedule2})
+		requireT.NoError(err)
+
+		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		requireT.NoError(err)
+		requireT.Len(resp.Schedules, 3)
+		// Verify schedules are sorted by timestamp in ascending order
+		requireT.Equal(schedule1.Timestamp, resp.Schedules[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.Schedules[1].Timestamp)
+		requireT.Equal(schedule3.Timestamp, resp.Schedules[2].Timestamp)
+	})
+}

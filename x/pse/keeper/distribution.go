@@ -220,6 +220,7 @@ func (k Keeper) SaveDistributionSchedule(ctx context.Context, schedule []types.S
 // GetAllocationSchedule returns the complete allocation schedule as a sorted list.
 // The schedule is sorted by timestamp in ascending order.
 // Returns an empty slice if no allocations are scheduled.
+// Note: Past schedules are removed after processing, so this only contains future schedules.
 func (k Keeper) GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {
 	var schedule []types.ScheduledDistribution
 

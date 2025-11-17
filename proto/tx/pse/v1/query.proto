@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/query/v1/query.proto";
 import "tx/pse/v1/params.proto";
+import "tx/pse/v1/distribution.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
@@ -21,6 +22,12 @@ service Query {
   rpc Score(QueryScoreRequest) returns (QueryScoreResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/score/{address}";
+  }
+  
+  // AllocationSchedule queries all future allocation schedules.
+  rpc AllocationSchedule(QueryAllocationScheduleRequest) returns (QueryAllocationScheduleResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/tx/pse/v1/allocation_schedule";
   }
 }
 
@@ -50,5 +57,18 @@ message QueryScoreResponse {
   string score = 1 [
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
+  ];
+}
+
+// QueryAllocationScheduleRequest defines the request type for querying future allocation schedules.
+message QueryAllocationScheduleRequest {}
+
+// QueryAllocationScheduleResponse defines the response type for querying future allocation schedules.
+message QueryAllocationScheduleResponse {
+  // schedules contains all future distribution schedules sorted by timestamp in ascending order.
+  // Past schedules are automatically removed after processing, so all returned schedules are future schedules.
+  repeated ScheduledDistribution schedules = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"schedules\""
   ];
 }
