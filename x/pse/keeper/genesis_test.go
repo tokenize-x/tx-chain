@@ -99,11 +99,11 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddress: addr1},
-		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddress: addr2},
-		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddress: addr3},
-		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddress: addr4},
-		{ClearingAccount: types.ClearingAccountTeam, RecipientAddress: addr5},
+		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr2}},
+		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr3}},
+		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr4}},
+		{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr5}},
 	}
 
 	// Setup params with mappings
@@ -161,8 +161,8 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 		requireT.NoError(err)
 	}
 
-	// Fund all non-Community clearing accounts
-	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
+	// Fund all clearing accounts
+	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
 		err = testApp1.BankKeeper.MintCoins(ctx1, types.ModuleName, fundAmount)
 		requireT.NoError(err)
@@ -243,7 +243,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	ctx2 = ctx2.WithBlockHeight(200)
 
 	// Fund non-Community clearing accounts on new chain before processing
-	for _, clearingAccount := range types.GetNonCommunityClearingAccounts() {
+	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
 		err = testApp2.BankKeeper.MintCoins(ctx2, types.ModuleName, fundAmount)
 		requireT.NoError(err)

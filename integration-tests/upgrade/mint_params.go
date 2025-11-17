@@ -24,6 +24,9 @@ func (m *mint) Before(t *testing.T) {
 	oldMaxInflation, err := params.Params.InflationMax.Float64()
 	requireT.NoError(err)
 	requireT.InDelta(float64(0.20), oldMaxInflation, 0.01)
+	oldInflationRateChange, err := params.Params.InflationRateChange.Float64()
+	requireT.NoError(err)
+	requireT.InDelta(float64(0.13), oldInflationRateChange, 0.0001)
 	requireT.EqualValues(17_900_000, params.Params.BlocksPerYear)
 
 	inflation, err := client.Inflation(ctx, &minttypes.QueryInflationRequest{})
@@ -42,12 +45,15 @@ func (m *mint) After(t *testing.T) {
 	requireT.NoError(err)
 	newMaxInflation, err := params.Params.InflationMax.Float64()
 	requireT.NoError(err)
-	requireT.InDelta(float64(0.30), newMaxInflation, 0.01)
+	requireT.InDelta(float64(0.20), newMaxInflation, 0.01)
+	newInflationRateChange, err := params.Params.InflationRateChange.Float64()
+	requireT.NoError(err)
+	requireT.InDelta(float64(0.04), newInflationRateChange, 0.0001)
 
 	inflation, err := client.Inflation(ctx, &minttypes.QueryInflationRequest{})
 	requireT.NoError(err)
 	inflationFloat, err := inflation.Inflation.Float64()
 	requireT.NoError(err)
-	requireT.InDelta(float64(0.29), inflationFloat, 0.01)
+	requireT.InDelta(float64(0.001), inflationFloat, 0.0001)
 	requireT.EqualValues(30_000_000, params.Params.BlocksPerYear)
 }
