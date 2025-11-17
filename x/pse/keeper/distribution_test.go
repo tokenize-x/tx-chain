@@ -169,14 +169,11 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	allocationAmount := sdkmath.NewInt(1000) // 1000 / 3 = 333 remainder 1
 
 	// Fund the clearing accounts
-	for _, mapping := range mappings {
-		if mapping.ClearingAccount == types.ClearingAccountCommunity {
-			continue
-		}
+	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocationAmount))
 		err = bankKeeper.MintCoins(ctx, types.ModuleName, coins)
 		requireT.NoError(err)
-		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, mapping.ClearingAccount, coins)
+		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, clearingAccount, coins)
 		requireT.NoError(err)
 	}
 
@@ -253,7 +250,8 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	communityPoolCoins, err := testApp.DistrKeeper.FeePool.Get(ctx)
 	requireT.NoError(err)
 	communityPoolBalance := communityPoolCoins.CommunityPool.AmountOf(bondDenom)
-	expectedRemainder := sdkmath.LegacyNewDec(1) // Only Foundation has remainder of 1
+	// Only Foundation has remainder of 1 + CommunityClearingAccount
+	expectedRemainder := sdkmath.LegacyNewDec(1001)
 	requireT.Equal(expectedRemainder.String(), communityPoolBalance.String(),
 		"community pool should have received the distribution remainders")
 }
