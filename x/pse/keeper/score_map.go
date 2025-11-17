@@ -91,9 +91,9 @@ func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) er
 }
 
 func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
-	[]collections.KeyValue[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry], error) {
+	[]collections.KeyValue[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry], error) {
 	var allDelegationTimeEntry []collections.KeyValue[
-		collections.Pair[sdk.ValAddress, sdk.AccAddress],
+		collections.Pair[sdk.AccAddress, sdk.ValAddress],
 		types.DelegationTimeEntry,
 	]
 
@@ -109,8 +109,8 @@ func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
 			return nil, err
 		}
 		allDelegationTimeEntry = append(allDelegationTimeEntry, kv)
-		valAddr := kv.Key.K1()
-		delAddr := kv.Key.K2()
+		delAddr := kv.Key.K1()
+		valAddr := kv.Key.K2()
 		delegationTimeEntry := kv.Value
 		delegationScore, err := calculateAddedScore(ctx, k, valAddr, delegationTimeEntry)
 		if err != nil {

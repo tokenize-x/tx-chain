@@ -16,6 +16,12 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/params";
   }
+  
+  // Score queries the current total score of an account (delegator).
+  rpc Score(QueryScoreRequest) returns (QueryScoreResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/tx/pse/v1/score/{address}";
+  }
 }
 
 // QueryParamsRequest defines the request type for querying moduleparameters.
@@ -27,5 +33,22 @@ message QueryParamsResponse {
   Params params = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"params\""
+  ];
+}
+
+// QueryScoreRequest defines the request type for querying an account's current score.
+message QueryScoreRequest {
+  // address is the delegator address to query the score for.
+  string address = 1;
+}
+
+// QueryScoreResponse defines the response type for querying an account's current score.
+message QueryScoreResponse {
+  // score is the current total score for the delegator.
+  // This includes both the accumulated score snapshot and uncalculated scores
+  // from active delegations since the last distribution.
+  string score = 1 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
   ];
 }

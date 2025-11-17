@@ -30,7 +30,7 @@ type Keeper struct {
 	// collections
 	Schema                collections.Schema
 	Params                collections.Item[types.Params]
-	DelegationTimeEntries collections.Map[collections.Pair[sdk.ValAddress, sdk.AccAddress], types.DelegationTimeEntry]
+	DelegationTimeEntries collections.Map[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry]
 	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
 	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: timestamp -> ScheduledDistribution
 }
@@ -70,7 +70,7 @@ func NewKeeper(
 			sb,
 			types.StakingTimeKey,
 			"delegation_time_entries",
-			collections.PairKeyCodec(sdk.ValAddressKey, sdk.AccAddressKey),
+			collections.PairKeyCodec(sdk.AccAddressKey, sdk.ValAddressKey),
 			codec.CollValue[types.DelegationTimeEntry](cdc),
 		),
 		AccountScoreSnapshot: collections.NewMap(

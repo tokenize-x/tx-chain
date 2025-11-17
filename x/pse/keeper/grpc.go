@@ -29,3 +29,24 @@ func (qs QueryService) Params(ctx context.Context, req *types.QueryParamsRequest
 		Params: params,
 	}, nil
 }
+
+// Score returns the current total score for a delegator.
+// This includes both the accumulated score snapshot and any uncalculated score
+// from active delegations since the last distribution.
+func (qs QueryService) Score(ctx context.Context, req *types.QueryScoreRequest) (*types.QueryScoreResponse, error) {
+	// Convert address string to account address
+	delAddr, err := qs.keeper.addressCodec.StringToBytes(req.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate current score
+	score, err := qs.keeper.CalculateDelegatorScore(ctx, delAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryScoreResponse{
+		Score: score,
+	}, nil
+}
