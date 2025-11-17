@@ -285,6 +285,9 @@
     - [Params](#tx.pse.v1.Params)
   
 - [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
+    - [ClearingAccountBalance](#tx.pse.v1.ClearingAccountBalance)
+    - [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest)
+    - [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
     - [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest)
@@ -5910,6 +5913,59 @@ Params store gov manageable parameters.
 
 
 
+<a name="tx.pse.v1.ClearingAccountBalance"></a>
+
+### ClearingAccountBalance
+
+```
+ClearingAccountBalance represents the balance of a single clearing account.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account.`  |
+| `balance` | [string](#string) |  |  `balance is the current balance of the clearing account in the bond denom.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryClearingAccountBalancesRequest"></a>
+
+### QueryClearingAccountBalancesRequest
+
+```
+QueryClearingAccountBalancesRequest defines the request type for querying clearing account balances.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryClearingAccountBalancesResponse"></a>
+
+### QueryClearingAccountBalancesResponse
+
+```
+QueryClearingAccountBalancesResponse defines the response type for querying clearing account balances.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `balances` | [ClearingAccountBalance](#tx.pse.v1.ClearingAccountBalance) | repeated |  `balances contains the current balances of all PSE clearing accounts in the bond denom.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.QueryParamsRequest"></a>
 
 ### QueryParamsRequest
@@ -6000,6 +6056,7 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
 | `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
+| `ClearingAccountBalances` | [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest) | [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse) | `ClearingAccountBalances queries the current balances of all PSE clearing accounts.` | GET|/tx/pse/v1/clearing_account_balances |
 
  <!-- end services -->
 

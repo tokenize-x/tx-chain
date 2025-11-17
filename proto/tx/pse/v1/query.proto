@@ -4,6 +4,7 @@ package tx.pse.v1;
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/query/v1/query.proto";
+import "cosmos_proto/cosmos.proto";
 import "tx/pse/v1/params.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
@@ -21,6 +22,12 @@ service Query {
   rpc Score(QueryScoreRequest) returns (QueryScoreResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/score/{address}";
+  }
+  
+  // ClearingAccountBalances queries the current balances of all PSE clearing accounts.
+  rpc ClearingAccountBalances(QueryClearingAccountBalancesRequest) returns (QueryClearingAccountBalancesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/tx/pse/v1/clearing_account_balances";
   }
 }
 
@@ -50,5 +57,33 @@ message QueryScoreResponse {
   string score = 1 [
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
+  ];
+}
+
+// QueryClearingAccountBalancesRequest defines the request type for querying clearing account balances.
+message QueryClearingAccountBalancesRequest {}
+
+// ClearingAccountBalance represents the balance of a single clearing account.
+message ClearingAccountBalance {
+  // clearing_account is the name of the clearing account.
+  string clearing_account = 1 [
+    (gogoproto.moretags) = "yaml:\"clearing_account\""
+  ];
+  
+  // balance is the current balance of the clearing account in the bond denom.
+  string balance = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"balance\""
+  ];
+}
+
+// QueryClearingAccountBalancesResponse defines the response type for querying clearing account balances.
+message QueryClearingAccountBalancesResponse {
+  // balances contains the current balances of all PSE clearing accounts in the bond denom.
+  repeated ClearingAccountBalance balances = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"balances\""
   ];
 }
