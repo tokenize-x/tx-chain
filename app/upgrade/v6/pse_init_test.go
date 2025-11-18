@@ -527,12 +527,12 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	// Build expected balances for each recipient and track total remainders
 	expectedBalances := make(map[string]sdkmath.Int)
 	totalRemainder := sdkmath.ZeroInt()
-	communityAllocationAmount := sdkmath.ZeroInt()
+	communityAllocation := sdkmath.ZeroInt()
 
 	for _, allocation := range firstDist.Allocations {
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
-			// Community allocation goes to community pool as leftover when no delegators exist
-			communityAllocationAmount = allocation.Amount
+			// Community allocation goes to community pool
+			communityAllocation = allocation.Amount
 			continue
 		}
 
@@ -569,15 +569,13 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 			"recipient %s should have received correct total amount", addr)
 	}
 
-	// Step 6b: Verify community pool received:
-	// 1. Remainders from non-Community clearing account distributions
-	// 2. Leftover from Community clearing account (full amount when no delegators)
+	// Step 6b: Verify community pool received Community allocation plus all remainders
 	communityPoolCoins, err := testApp.DistrKeeper.FeePool.Get(ctx)
 	requireT.NoError(err)
 	communityPoolBalance := communityPoolCoins.CommunityPool.AmountOf(bondDenom)
-	expectedCommunityPoolTotal := sdkmath.LegacyNewDecFromInt(totalRemainder.Add(communityAllocationAmount))
+	expectedCommunityPoolTotal := sdkmath.LegacyNewDecFromInt(communityAllocation.Add(totalRemainder))
 	requireT.Equal(expectedCommunityPoolTotal.String(), communityPoolBalance.String(),
-		"community pool should have received all distribution remainders and Community leftover")
+		"community pool should have received Community allocation plus all distribution remainders")
 
 	// Step 7: Verify allocation schedule count decreased (first period removed)
 	allocationScheduleAfter, err := pseKeeper.GetAllocationSchedule(ctx)

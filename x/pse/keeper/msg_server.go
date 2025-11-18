@@ -36,3 +36,35 @@ func (ms MsgServer) UpdateExcludedAddresses(
 	}
 	return &types.EmptyResponse{}, nil
 }
+
+// UpdateClearingAccountMappings is a governance operation that updates clearing account mappings.
+func (ms MsgServer) UpdateClearingAccountMappings(
+	goCtx context.Context,
+	req *types.MsgUpdateClearingAccountMappings,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.UpdateClearingMappings(
+		goCtx,
+		req.Authority,
+		req.Mappings,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &types.EmptyResponse{}, nil
+}
+
+// UpdateAllocationSchedule is a governance operation that updates the allocation schedule.
+func (ms MsgServer) UpdateAllocationSchedule(
+	goCtx context.Context,
+	req *types.MsgUpdateAllocationSchedule,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.UpdateAllocationSchedule(
+		goCtx,
+		req.Authority,
+		req.Schedule,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &types.EmptyResponse{}, nil
+}

@@ -125,11 +125,6 @@ func validateClearingAccountMappings(mappings []ClearingAccountMapping) error {
 
 // ValidateAllocationSchedule validates the allocation schedule.
 func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
-	if len(schedule) == 0 {
-		// Empty schedule is valid (e.g., at genesis before initialization)
-		return nil
-	}
-
 	// All clearing accounts (including Community) should be in the schedule
 	allClearingAccounts := GetAllClearingAccounts()
 
@@ -160,76 +155,73 @@ func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
 		}
 
 		// Validate individual allocations within the period
+		// Build allowed clearing accounts set for explicit validation
+		allowedClearingAccounts := make(map[string]bool)
+		for _, account := range allClearingAccounts {
+			allowedClearingAccounts[account] = true
+		}
+
 		seenClearingAccounts := make(map[string]bool)
-		for _, alloc := range period.Allocations {
+		for j, alloc := range period.Allocations {
 			// Validate clearing_account is not empty
 			if alloc.ClearingAccount == "" {
-				return errorsmod.Wrapf(ErrInvalidParam, "clearing_account cannot be empty")
+				return errorsmod.Wrapf(ErrInvalidParam, "period %d, allocation %d: clearing_account cannot be empty", i, j)
 			}
 
-			// Validate clearing account is one of the PSE clearing accounts
-			if !lo.Contains(allClearingAccounts, alloc.ClearingAccount) {
-				return errorsmod.Wrapf(ErrInvalidParam, "clearing account not found")
+			// Explicitly validate clearing account is one of the PSE clearing accounts
+			// Only these accounts are allowed, no other module accounts
+			if !allowedClearingAccounts[alloc.ClearingAccount] {
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d, allocation %d: invalid clearing account '%s'. Only PSE clearing accounts are allowed: %v",
+					i, j, alloc.ClearingAccount, allClearingAccounts)
 			}
 
 			// Check for duplicate clearing accounts in the same period
 			if seenClearingAccounts[alloc.ClearingAccount] {
-				return errorsmod.Wrapf(ErrInvalidParam, "duplicate clearing account in the same period")
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d, allocation %d: duplicate clearing account '%s' in the same period",
+					i, j, alloc.ClearingAccount)
 			}
 			seenClearingAccounts[alloc.ClearingAccount] = true
 
 			// Validate amount is not nil (should be enforced by proto, but double-check)
 			if alloc.Amount.IsNil() {
-				return errorsmod.Wrapf(ErrInvalidParam, "amount cannot be nil")
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d, allocation %d (%s): amount cannot be nil",
+					i, j, alloc.ClearingAccount)
 			}
 
 			// Validate amount is not negative
 			if alloc.Amount.IsNegative() {
-				return errorsmod.Wrapf(ErrInvalidParam, "amount cannot be negative")
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d, allocation %d (%s): amount cannot be negative",
+					i, j, alloc.ClearingAccount)
 			}
 
 			// Validate amount is not zero (zero allocations don't make sense)
 			if alloc.Amount.IsZero() {
-				return errorsmod.Wrapf(ErrInvalidParam, "amount cannot be zero")
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d, allocation %d (%s): amount cannot be zero",
+					i, j, alloc.ClearingAccount)
 			}
 		}
 
-		// Validate that all PSE clearing accounts are present in this period
-		for _, expectedAccount := range allClearingAccounts {
-			if !seenClearingAccounts[expectedAccount] {
-				return errorsmod.Wrapf(ErrInvalidParam, "missing allocation for required PSE clearing account")
+		// Explicitly validate that ALL PSE clearing accounts are present in this period
+		// Each period must have exactly one allocation for each clearing account
+		for _, requiredAccount := range allClearingAccounts {
+			if !seenClearingAccounts[requiredAccount] {
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d (timestamp %d): missing allocation for required clearing account '%s'. "+
+						"All clearing accounts must be present",
+					i, period.Timestamp, requiredAccount)
 			}
 		}
-	}
 
-	return nil
-}
-
-// ValidateScheduleMappingConsistency ensures all PSE clearing accounts in the schedule
-// have corresponding mappings. Community clearing account uses score-based distribution
-// and doesn't need recipient mappings.
-func ValidateScheduleMappingConsistency(schedule []ScheduledDistribution, mappings []ClearingAccountMapping) error {
-	// Build a set of available clearing accounts from mappings
-	availableAccounts := make(map[string]bool)
-	for _, mapping := range mappings {
-		availableAccounts[mapping.ClearingAccount] = true
-	}
-
-	// Check that every non-Community clearing account in the schedule has a mapping
-	// Community uses score-based distribution and doesn't need recipient mappings
-	for i, period := range schedule {
-		for j, alloc := range period.Allocations {
-			// Skip Community clearing account - it uses score-based distribution
-			if alloc.ClearingAccount == ClearingAccountCommunity {
-				continue
-			}
-			if !availableAccounts[alloc.ClearingAccount] {
-				return errorsmod.Wrapf(
-					ErrInvalidParam,
-					"period %d, allocation %d: no recipient mapping found for clearing account '%s'",
-					i, j, alloc.ClearingAccount,
-				)
-			}
+		// Verify exact count (should match after all validations)
+		if len(period.Allocations) != len(allClearingAccounts) {
+			return errorsmod.Wrapf(ErrInvalidParam,
+				"period %d (timestamp %d): expected %d allocations (one per clearing account), got %d",
+				i, period.Timestamp, len(allClearingAccounts), len(period.Allocations))
 		}
 	}
 

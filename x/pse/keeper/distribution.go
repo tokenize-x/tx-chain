@@ -242,3 +242,25 @@ func (k Keeper) GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDis
 	// so the schedule is already sorted. No need to sort again.
 	return schedule, nil
 }
+
+// UpdateAllocationSchedule updates the entire allocation schedule via governance.
+// This clears all existing distributions and replaces them with the new schedule.
+// The new schedule is validated for consistency with existing clearing account mappings.
+func (k Keeper) UpdateAllocationSchedule(
+	ctx context.Context,
+	authority string,
+	newSchedule []types.ScheduledDistribution,
+) error {
+	// Check authority
+	if k.authority != authority {
+		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+	}
+
+	// Clear all existing schedule entries
+	if err := k.AllocationSchedule.Clear(ctx, nil); err != nil {
+		return errorsmod.Wrap(err, "failed to clear existing allocation schedule")
+	}
+
+	// Save the new schedule
+	return k.SaveDistributionSchedule(ctx, newSchedule)
+}
