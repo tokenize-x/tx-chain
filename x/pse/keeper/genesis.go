@@ -79,12 +79,12 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	// Export delegation time entries from genesis state
 	delegationTimeEntriesExported := make([]types.DelegationTimeEntryExport, 0)
 	err = k.DelegationTimeEntries.Walk(ctx, nil,
-		func(key collections.Pair[sdk.ValAddress, sdk.AccAddress], value types.DelegationTimeEntry) (stop bool, err error) {
-			valAddr, err := k.valAddressCodec.BytesToString(key.K1())
+		func(key collections.Pair[sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry) (stop bool, err error) {
+			delAddr, err := k.addressCodec.BytesToString(key.K1())
 			if err != nil {
 				return false, err
 			}
-			delAddr, err := k.addressCodec.BytesToString(key.K2())
+			valAddr, err := k.valAddressCodec.BytesToString(key.K2())
 			if err != nil {
 				return false, err
 			}
