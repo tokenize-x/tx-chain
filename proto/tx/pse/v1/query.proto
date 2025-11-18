@@ -23,7 +23,7 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/score/{address}";
   }
-  
+
   // ClearingAccountBalances queries the current balances of all PSE clearing accounts.
   rpc ClearingAccountBalances(QueryClearingAccountBalancesRequest) returns (QueryClearingAccountBalancesResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -69,7 +69,7 @@ message ClearingAccountBalance {
   string clearing_account = 1 [
     (gogoproto.moretags) = "yaml:\"clearing_account\""
   ];
-  
+
   // balance is the current balance of the clearing account in the bond denom.
   string balance = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
