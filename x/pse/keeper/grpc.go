@@ -62,6 +62,6 @@ func (qs QueryService) AllocationSchedule(
 	}
 
 	return &types.QueryAllocationScheduleResponse{
-		Schedules: schedules,
+		Schedule: schedules,
 	}, nil
 }

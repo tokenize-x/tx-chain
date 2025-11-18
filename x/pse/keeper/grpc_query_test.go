@@ -273,7 +273,7 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
 		requireT.NotNil(resp)
-		requireT.Empty(resp.Schedules)
+		requireT.Empty(resp.Schedule)
 	})
 
 	t.Run("multiple schedules with single allocation", func(t *testing.T) {
@@ -302,9 +302,9 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedules, 2)
-		requireT.Equal(schedule1.Timestamp, resp.Schedules[0].Timestamp)
-		requireT.Equal(schedule2.Timestamp, resp.Schedules[1].Timestamp)
+		requireT.Len(resp.Schedule, 2)
+		requireT.Equal(schedule1.Timestamp, resp.Schedule[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.Schedule[1].Timestamp)
 	})
 
 	t.Run("schedule with multiple allocations", func(t *testing.T) {
@@ -328,8 +328,8 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedules, 1)
-		requireT.Len(resp.Schedules[0].Allocations, 3)
+		requireT.Len(resp.Schedule, 1)
+		requireT.Len(resp.Schedule[0].Allocations, 3)
 	})
 
 	t.Run("schedules sorted by timestamp", func(t *testing.T) {
@@ -364,10 +364,10 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedules, 3)
+		requireT.Len(resp.Schedule, 3)
 		// Verify schedules are sorted by timestamp in ascending order
-		requireT.Equal(schedule1.Timestamp, resp.Schedules[0].Timestamp)
-		requireT.Equal(schedule2.Timestamp, resp.Schedules[1].Timestamp)
-		requireT.Equal(schedule3.Timestamp, resp.Schedules[2].Timestamp)
+		requireT.Equal(schedule1.Timestamp, resp.Schedule[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.Schedule[1].Timestamp)
+		requireT.Equal(schedule3.Timestamp, resp.Schedule[2].Timestamp)
 	})
 }
