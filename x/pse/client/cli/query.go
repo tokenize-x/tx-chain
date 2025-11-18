@@ -25,6 +25,7 @@ func GetQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(CmdQueryParams())
+	cmd.AddCommand(CmdQueryScore())
 
 	return cmd
 }
@@ -53,6 +54,34 @@ $ %[1]s query %s params
 
 			params := &types.QueryParamsRequest{}
 			res, err := queryClient.Params(cmd.Context(), params)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func CmdQueryScore() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "score [address]",
+		Short: "Query the score of an address",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+			params := &types.QueryScoreRequest{
+				Address: args[0],
+			}
+			res, err := queryClient.Score(cmd.Context(), params)
 			if err != nil {
 				return err
 			}
