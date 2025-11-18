@@ -289,6 +289,8 @@
 - [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
+    - [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest)
+    - [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse)
   
     - [Query](#tx.pse.v1.Query)
   
@@ -5978,6 +5980,44 @@ QueryParamsResponse defines the response type for querying module parameters.
 
 
 
+
+<a name="tx.pse.v1.QueryScoreRequest"></a>
+
+### QueryScoreRequest
+
+```
+QueryScoreRequest defines the request type for querying an account's current score.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  `address is the delegator address to query the score for.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryScoreResponse"></a>
+
+### QueryScoreResponse
+
+```
+QueryScoreResponse defines the response type for querying an account's current score.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `score` | [string](#string) |  |  `score is the current total score for the delegator. This includes both the accumulated score snapshot and uncalculated scores from active delegations since the last distribution.`  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -5997,6 +6037,7 @@ Query defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
+| `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
 
  <!-- end services -->
 

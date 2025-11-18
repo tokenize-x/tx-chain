@@ -195,8 +195,8 @@ func TestKeeper_Distribute(t *testing.T) {
 				requireT.NoError(testApp.FundAccount(
 					ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000)))),
 				)
-				validator, err := addValidator(
-					ctx, testApp, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10),
+				validator, err := testApp.AddValidator(
+					ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10),
 				)
 				requireT.NoError(err)
 				runContext.validators = append(
