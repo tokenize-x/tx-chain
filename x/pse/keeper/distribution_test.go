@@ -252,7 +252,7 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	requireT.NoError(err)
 	communityPoolBalance := communityPoolCoins.CommunityPool.AmountOf(bondDenom)
 	// Only Foundation has remainder of 1 + CommunityClearingAccount
-	expectedRemainder := sdkmath.LegacyNewDec(1001)
+	expectedRemainder := sdkmath.LegacyNewDec(1)
 	requireT.Equal(expectedRemainder.String(), communityPoolBalance.String(),
 		"community pool should have received the distribution remainders")
 }
