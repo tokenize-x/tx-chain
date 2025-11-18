@@ -4,7 +4,9 @@
 package types
 
 import (
+	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
@@ -31,7 +33,9 @@ type GenesisState struct {
 	// Stored as a list for genesis import/export, but will be stored as a map in state.
 	// Must be sorted by timestamp in ascending order.
 	// Completed allocations are removed from the map after processing.
-	ScheduledDistributions []ScheduledDistribution `protobuf:"bytes,2,rep,name=scheduled_distributions,json=scheduledDistributions,proto3" json:"scheduled_distributions" yaml:"scheduled_distributions"`
+	ScheduledDistributions []ScheduledDistribution     `protobuf:"bytes,2,rep,name=scheduled_distributions,json=scheduledDistributions,proto3" json:"scheduled_distributions" yaml:"scheduled_distributions"`
+	DelegationTimeEntries  []DelegationTimeEntryExport `protobuf:"bytes,3,rep,name=delegation_time_entries,json=delegationTimeEntries,proto3" json:"delegation_time_entries" yaml:"delegation_time_entries"`
+	AccountScores          []AccountScore              `protobuf:"bytes,4,rep,name=account_scores,json=accountScores,proto3" json:"account_scores" yaml:"account_scores"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -81,32 +85,176 @@ func (m *GenesisState) GetScheduledDistributions() []ScheduledDistribution {
 	return nil
 }
 
+func (m *GenesisState) GetDelegationTimeEntries() []DelegationTimeEntryExport {
+	if m != nil {
+		return m.DelegationTimeEntries
+	}
+	return nil
+}
+
+func (m *GenesisState) GetAccountScores() []AccountScore {
+	if m != nil {
+		return m.AccountScores
+	}
+	return nil
+}
+
+type DelegationTimeEntryExport struct {
+	ValidatorAddress   string                      `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty" yaml:"validator_address"`
+	DelegatorAddress   string                      `protobuf:"bytes,2,opt,name=delegator_address,json=delegatorAddress,proto3" json:"delegator_address,omitempty" yaml:"delegator_address"`
+	Shares             cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=shares,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"shares" yaml:"shares"`
+	LastChangedUnixSec int64                       `protobuf:"varint,4,opt,name=last_changed_unix_sec,json=lastChangedUnixSec,proto3" json:"last_changed_unix_sec,omitempty" yaml:"last_changed_unix_sec"`
+}
+
+func (m *DelegationTimeEntryExport) Reset()         { *m = DelegationTimeEntryExport{} }
+func (m *DelegationTimeEntryExport) String() string { return proto.CompactTextString(m) }
+func (*DelegationTimeEntryExport) ProtoMessage()    {}
+func (*DelegationTimeEntryExport) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d215b1db402695da, []int{1}
+}
+func (m *DelegationTimeEntryExport) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DelegationTimeEntryExport) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DelegationTimeEntryExport.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DelegationTimeEntryExport) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationTimeEntryExport.Merge(m, src)
+}
+func (m *DelegationTimeEntryExport) XXX_Size() int {
+	return m.Size()
+}
+func (m *DelegationTimeEntryExport) XXX_DiscardUnknown() {
+	xxx_messageInfo_DelegationTimeEntryExport.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DelegationTimeEntryExport proto.InternalMessageInfo
+
+func (m *DelegationTimeEntryExport) GetValidatorAddress() string {
+	if m != nil {
+		return m.ValidatorAddress
+	}
+	return ""
+}
+
+func (m *DelegationTimeEntryExport) GetDelegatorAddress() string {
+	if m != nil {
+		return m.DelegatorAddress
+	}
+	return ""
+}
+
+func (m *DelegationTimeEntryExport) GetLastChangedUnixSec() int64 {
+	if m != nil {
+		return m.LastChangedUnixSec
+	}
+	return 0
+}
+
+type AccountScore struct {
+	Address string                `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty" yaml:"address"`
+	Score   cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=score,proto3,customtype=cosmossdk.io/math.Int" json:"score" yaml:"score"`
+}
+
+func (m *AccountScore) Reset()         { *m = AccountScore{} }
+func (m *AccountScore) String() string { return proto.CompactTextString(m) }
+func (*AccountScore) ProtoMessage()    {}
+func (*AccountScore) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d215b1db402695da, []int{2}
+}
+func (m *AccountScore) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AccountScore) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AccountScore.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AccountScore) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AccountScore.Merge(m, src)
+}
+func (m *AccountScore) XXX_Size() int {
+	return m.Size()
+}
+func (m *AccountScore) XXX_DiscardUnknown() {
+	xxx_messageInfo_AccountScore.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AccountScore proto.InternalMessageInfo
+
+func (m *AccountScore) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*GenesisState)(nil), "tx.pse.v1.GenesisState")
+	proto.RegisterType((*DelegationTimeEntryExport)(nil), "tx.pse.v1.DelegationTimeEntryExport")
+	proto.RegisterType((*AccountScore)(nil), "tx.pse.v1.AccountScore")
 }
 
 func init() { proto.RegisterFile("tx/pse/v1/genesis.proto", fileDescriptor_d215b1db402695da) }
 
 var fileDescriptor_d215b1db402695da = []byte{
-	// 280 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2f, 0xa9, 0xd0, 0x2f,
-	0x28, 0x4e, 0xd5, 0x2f, 0x33, 0xd4, 0x4f, 0x4f, 0xcd, 0x4b, 0x2d, 0xce, 0x2c, 0xd6, 0x2b, 0x28,
-	0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x2c, 0xa9, 0xd0, 0x2b, 0x28, 0x4e, 0xd5, 0x2b, 0x33, 0x94, 0x12,
-	0x49, 0xcf, 0x4f, 0xcf, 0x07, 0x8b, 0xea, 0x83, 0x58, 0x10, 0x05, 0x52, 0x62, 0x08, 0x9d, 0x05,
-	0x89, 0x45, 0x89, 0xb9, 0x50, 0x8d, 0x52, 0x32, 0x08, 0xf1, 0x94, 0xcc, 0xe2, 0x92, 0xa2, 0xcc,
-	0xa4, 0xd2, 0x92, 0xcc, 0xfc, 0x3c, 0x88, 0xac, 0xd2, 0x61, 0x46, 0x2e, 0x1e, 0x77, 0x88, 0x45,
-	0xc1, 0x25, 0x89, 0x25, 0xa9, 0x42, 0xfa, 0x5c, 0x6c, 0x10, 0xed, 0x12, 0x8c, 0x0a, 0x8c, 0x1a,
-	0xdc, 0x46, 0x82, 0x7a, 0x70, 0x8b, 0xf5, 0x02, 0xc0, 0x12, 0x4e, 0x2c, 0x27, 0xee, 0xc9, 0x33,
-	0x04, 0x41, 0x95, 0x09, 0x35, 0x32, 0x72, 0x89, 0x17, 0x27, 0x67, 0xa4, 0xa6, 0x94, 0xe6, 0xa4,
-	0xa6, 0xc4, 0x23, 0x5b, 0x51, 0x2c, 0xc1, 0xa4, 0xc0, 0xac, 0xc1, 0x6d, 0xa4, 0x80, 0x64, 0x44,
-	0x30, 0x4c, 0xa5, 0x0b, 0x92, 0x42, 0x27, 0x35, 0x90, 0x89, 0x9f, 0xee, 0xc9, 0xcb, 0x55, 0x26,
-	0xe6, 0xe6, 0x58, 0x29, 0xe1, 0x30, 0x4e, 0x29, 0x48, 0xac, 0x18, 0x9b, 0xf6, 0x62, 0x27, 0xf7,
-	0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc2, 0x63, 0x39,
-	0x86, 0x0b, 0x8f, 0xe5, 0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88, 0xd2, 0x4d, 0xcf, 0x2c, 0xc9, 0x28,
-	0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x2f, 0xc9, 0xcf, 0x4e, 0xcd, 0xcb, 0xac, 0x4a, 0xd5, 0xad,
-	0xd0, 0x2f, 0xa9, 0xd0, 0x4d, 0xce, 0x48, 0xcc, 0xcc, 0xd3, 0x2f, 0x33, 0xd3, 0x87, 0x04, 0x4f,
-	0x49, 0x65, 0x41, 0x6a, 0x71, 0x12, 0x1b, 0x38, 0x54, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff,
-	0x42, 0x0c, 0xcd, 0x61, 0x87, 0x01, 0x00, 0x00,
+	// 629 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0xcf, 0x6e, 0xd3, 0x4e,
+	0x10, 0x8e, 0x9b, 0xfe, 0xfa, 0x53, 0xb7, 0x7f, 0x44, 0xad, 0xa6, 0x49, 0x4b, 0xb1, 0x23, 0x0b,
+	0xa1, 0x0a, 0x29, 0xb6, 0x5a, 0x10, 0x07, 0x38, 0xd5, 0xa4, 0xaa, 0x2a, 0x71, 0x00, 0x07, 0x2e,
+	0x95, 0x90, 0xb5, 0x5d, 0x8f, 0x9c, 0x55, 0xe3, 0xdd, 0xc8, 0xbb, 0x89, 0x1c, 0x6e, 0x48, 0x3c,
+	0x00, 0xe2, 0x25, 0x10, 0x77, 0x1e, 0xa2, 0xc7, 0x8a, 0x13, 0xe2, 0x60, 0xa1, 0xf6, 0x0d, 0xf2,
+	0x04, 0xc8, 0x5e, 0x27, 0x75, 0x9b, 0x16, 0x6e, 0xde, 0x6f, 0xbe, 0xf9, 0xbe, 0xd9, 0x99, 0xf1,
+	0xa2, 0xba, 0x4c, 0x9c, 0xbe, 0x00, 0x67, 0xb8, 0xeb, 0x84, 0xc0, 0x40, 0x50, 0x61, 0xf7, 0x63,
+	0x2e, 0xb9, 0xbe, 0x28, 0x13, 0xbb, 0x2f, 0xc0, 0x1e, 0xee, 0x6e, 0xad, 0x87, 0x3c, 0xe4, 0x39,
+	0xea, 0x64, 0x5f, 0x8a, 0xb0, 0xb5, 0x49, 0xb8, 0x88, 0xb8, 0xf0, 0x55, 0x40, 0x1d, 0x8a, 0xd0,
+	0xc6, 0x95, 0x68, 0x1f, 0xc7, 0x38, 0x9a, 0xe0, 0xdb, 0x57, 0x78, 0x40, 0x85, 0x8c, 0xe9, 0xc9,
+	0x40, 0x52, 0xce, 0x54, 0xd4, 0xfa, 0x56, 0x45, 0xcb, 0x87, 0xaa, 0x86, 0x8e, 0xc4, 0x12, 0x74,
+	0x07, 0x2d, 0xa8, 0xf4, 0x86, 0xd6, 0xd4, 0x76, 0x96, 0xf6, 0xd6, 0xec, 0x69, 0x4d, 0xf6, 0xeb,
+	0x3c, 0xe0, 0xce, 0x9f, 0xa5, 0x66, 0xc5, 0x2b, 0x68, 0xfa, 0x47, 0x0d, 0xd5, 0x05, 0xe9, 0x42,
+	0x30, 0xe8, 0x41, 0xe0, 0x97, 0x2d, 0x44, 0x63, 0xae, 0x59, 0xdd, 0x59, 0xda, 0x6b, 0x96, 0x24,
+	0x3a, 0x13, 0x66, 0xbb, 0x44, 0x74, 0x1f, 0x65, 0x8a, 0xe3, 0xd4, 0x34, 0x46, 0x38, 0xea, 0x3d,
+	0xb7, 0xee, 0x90, 0xb3, 0xbc, 0x0d, 0x71, 0x5b, 0xba, 0xd0, 0x3f, 0x69, 0xa8, 0x1e, 0x40, 0x0f,
+	0x42, 0x9c, 0x9d, 0x7d, 0x49, 0x23, 0xf0, 0x81, 0xc9, 0x98, 0x82, 0x68, 0x54, 0xf3, 0x1a, 0x1e,
+	0x96, 0x6a, 0x68, 0x4f, 0x99, 0x6f, 0x69, 0x04, 0x07, 0x4c, 0xc6, 0xa3, 0x83, 0xa4, 0xcf, 0x63,
+	0x79, 0xb3, 0x8e, 0x3b, 0x24, 0x2d, 0xaf, 0x16, 0xcc, 0x48, 0x50, 0x10, 0xfa, 0x7b, 0xb4, 0x8a,
+	0x09, 0xe1, 0x03, 0x26, 0x7d, 0x41, 0x78, 0x0c, 0xa2, 0x31, 0x9f, 0x9b, 0xd7, 0x4b, 0xe6, 0xfb,
+	0x8a, 0xd0, 0xc9, 0xe2, 0xee, 0x83, 0xc2, 0xaf, 0xa6, 0xfc, 0xae, 0x27, 0x5b, 0xde, 0x0a, 0x2e,
+	0x91, 0x85, 0xf5, 0xa5, 0x8a, 0x36, 0xef, 0xac, 0x5d, 0xc7, 0x68, 0x6d, 0x88, 0x7b, 0x34, 0xc0,
+	0x92, 0xc7, 0x3e, 0x0e, 0x82, 0x18, 0x84, 0x9a, 0xe1, 0xa2, 0xfb, 0x74, 0x9c, 0x9a, 0x0d, 0x65,
+	0x31, 0x43, 0xb1, 0x7e, 0x7c, 0x6f, 0xad, 0x17, 0x8b, 0xb4, 0xaf, 0xa0, 0x8e, 0x8c, 0x29, 0x0b,
+	0xbd, 0x7b, 0x53, 0x6e, 0x81, 0x67, 0x16, 0xc5, 0xc5, 0x4b, 0x16, 0x73, 0x37, 0x2d, 0x66, 0x28,
+	0x7f, 0xb1, 0x98, 0x72, 0x27, 0x16, 0xc7, 0x68, 0x41, 0x74, 0x71, 0x9c, 0xcf, 0x2d, 0xd3, 0x75,
+	0xb3, 0x0e, 0xfd, 0x4a, 0xcd, 0xfb, 0x2a, 0x5f, 0x04, 0xa7, 0x36, 0xe5, 0x4e, 0x84, 0x65, 0xd7,
+	0x7e, 0x05, 0x21, 0x26, 0xa3, 0x36, 0x90, 0x71, 0x6a, 0xae, 0x14, 0x8b, 0x93, 0xa7, 0x66, 0x7e,
+	0xa8, 0xf0, 0x6b, 0x03, 0xf1, 0x0a, 0x45, 0xbd, 0x83, 0x6a, 0x3d, 0x2c, 0xa4, 0x4f, 0xba, 0x98,
+	0x85, 0x10, 0xf8, 0x03, 0x46, 0x13, 0x5f, 0x00, 0x69, 0xcc, 0x37, 0xb5, 0x9d, 0xaa, 0xdb, 0x1c,
+	0xa7, 0xe6, 0xb6, 0xd2, 0xb9, 0x95, 0x66, 0x79, 0x7a, 0x86, 0xbf, 0x54, 0xf0, 0x3b, 0x46, 0x93,
+	0x0e, 0x10, 0xeb, 0xab, 0x86, 0x96, 0xcb, 0x33, 0xd5, 0xdb, 0xe8, 0xff, 0xeb, 0xdd, 0x7f, 0x3c,
+	0x4e, 0xcd, 0xd5, 0x62, 0xc0, 0xff, 0x6a, 0xc8, 0x24, 0x55, 0x7f, 0x83, 0xfe, 0xcb, 0xb7, 0xa0,
+	0x68, 0xef, 0x8b, 0xa2, 0x0d, 0xb5, 0xd9, 0x36, 0x1c, 0x31, 0x39, 0x4e, 0xcd, 0xe5, 0xc9, 0x9f,
+	0xc3, 0x63, 0x28, 0xdf, 0xff, 0x88, 0x49, 0x4f, 0x29, 0xb9, 0x87, 0x67, 0x17, 0x86, 0x76, 0x7e,
+	0x61, 0x68, 0xbf, 0x2f, 0x0c, 0xed, 0xf3, 0xa5, 0x51, 0x39, 0xbf, 0x34, 0x2a, 0x3f, 0x2f, 0x8d,
+	0xca, 0x71, 0x2b, 0xa4, 0xb2, 0x3b, 0x38, 0xb1, 0x09, 0x8f, 0x1c, 0xc9, 0x4f, 0x81, 0xd1, 0x0f,
+	0xd0, 0x4a, 0x1c, 0x99, 0xb4, 0x48, 0x17, 0x53, 0xe6, 0x0c, 0x9f, 0x39, 0xea, 0x0d, 0x91, 0xa3,
+	0x3e, 0x88, 0x93, 0x85, 0xfc, 0xe9, 0x78, 0xf2, 0x27, 0x00, 0x00, 0xff, 0xff, 0x65, 0xfb, 0x06,
+	0x52, 0xc7, 0x04, 0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -129,6 +277,34 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.AccountScores) > 0 {
+		for iNdEx := len(m.AccountScores) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.AccountScores[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.DelegationTimeEntries) > 0 {
+		for iNdEx := len(m.DelegationTimeEntries) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.DelegationTimeEntries[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
 	if len(m.ScheduledDistributions) > 0 {
 		for iNdEx := len(m.ScheduledDistributions) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -153,6 +329,98 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *DelegationTimeEntryExport) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DelegationTimeEntryExport) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DelegationTimeEntryExport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.LastChangedUnixSec != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.LastChangedUnixSec))
+		i--
+		dAtA[i] = 0x20
+	}
+	{
+		size := m.Shares.Size()
+		i -= size
+		if _, err := m.Shares.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	if len(m.DelegatorAddress) > 0 {
+		i -= len(m.DelegatorAddress)
+		copy(dAtA[i:], m.DelegatorAddress)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.DelegatorAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ValidatorAddress) > 0 {
+		i -= len(m.ValidatorAddress)
+		copy(dAtA[i:], m.ValidatorAddress)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.ValidatorAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AccountScore) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AccountScore) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AccountScore) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.Score.Size()
+		i -= size
+		if _, err := m.Score.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Address) > 0 {
+		i -= len(m.Address)
+		copy(dAtA[i:], m.Address)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Address)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -181,6 +449,55 @@ func (m *GenesisState) Size() (n int) {
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
+	if len(m.DelegationTimeEntries) > 0 {
+		for _, e := range m.DelegationTimeEntries {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	if len(m.AccountScores) > 0 {
+		for _, e := range m.AccountScores {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *DelegationTimeEntryExport) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ValidatorAddress)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = len(m.DelegatorAddress)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = m.Shares.Size()
+	n += 1 + l + sovGenesis(uint64(l))
+	if m.LastChangedUnixSec != 0 {
+		n += 1 + sovGenesis(uint64(m.LastChangedUnixSec))
+	}
+	return n
+}
+
+func (m *AccountScore) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Address)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = m.Score.Size()
+	n += 1 + l + sovGenesis(uint64(l))
 	return n
 }
 
@@ -283,6 +600,357 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			}
 			m.ScheduledDistributions = append(m.ScheduledDistributions, ScheduledDistribution{})
 			if err := m.ScheduledDistributions[len(m.ScheduledDistributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DelegationTimeEntries", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DelegationTimeEntries = append(m.DelegationTimeEntries, DelegationTimeEntryExport{})
+			if err := m.DelegationTimeEntries[len(m.DelegationTimeEntries)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccountScores", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccountScores = append(m.AccountScores, AccountScore{})
+			if err := m.AccountScores[len(m.AccountScores)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DelegationTimeEntryExport) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DelegationTimeEntryExport: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DelegationTimeEntryExport: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ValidatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DelegatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DelegatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Shares", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Shares.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastChangedUnixSec", wireType)
+			}
+			m.LastChangedUnixSec = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LastChangedUnixSec |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AccountScore) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AccountScore: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AccountScore: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Score", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Score.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
