@@ -273,17 +273,17 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
 		requireT.NotNil(resp)
-		requireT.Empty(resp.Schedules)
+		requireT.Empty(resp.Schedule)
 	})
 
-	t.Run("multiple schedules with single allocation", func(t *testing.T) {
+	t.Run("multiple schedule allocation with single allocation", func(t *testing.T) {
 		requireT := require.New(t)
 		testApp := simapp.New()
 		currentTime := time.Now()
 		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
 		queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
-		// Create schedules at different future times
+		// Create schedule allocations at different future times
 		schedule1 := types.ScheduledDistribution{
 			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
@@ -302,9 +302,9 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedules, 2)
-		requireT.Equal(schedule1.Timestamp, resp.Schedules[0].Timestamp)
-		requireT.Equal(schedule2.Timestamp, resp.Schedules[1].Timestamp)
+		requireT.Len(resp.Schedule, 2)
+		requireT.Equal(schedule1.Timestamp, resp.Schedule[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.Schedule[1].Timestamp)
 	})
 
 	t.Run("schedule with multiple allocations", func(t *testing.T) {
@@ -328,18 +328,18 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedules, 1)
-		requireT.Len(resp.Schedules[0].Allocations, 3)
+		requireT.Len(resp.Schedule, 1)
+		requireT.Len(resp.Schedule[0].Allocations, 3)
 	})
 
-	t.Run("schedules sorted by timestamp", func(t *testing.T) {
+	t.Run("schedule sorted by timestamp", func(t *testing.T) {
 		requireT := require.New(t)
 		testApp := simapp.New()
 		currentTime := time.Now()
 		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
 		queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
-		// Save schedules in non-chronological order
+		// Save schedule item in non-chronological order
 		schedule3 := types.ScheduledDistribution{
 			Timestamp: uint64(currentTime.Add(3 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
@@ -364,10 +364,10 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedules, 3)
-		// Verify schedules are sorted by timestamp in ascending order
-		requireT.Equal(schedule1.Timestamp, resp.Schedules[0].Timestamp)
-		requireT.Equal(schedule2.Timestamp, resp.Schedules[1].Timestamp)
-		requireT.Equal(schedule3.Timestamp, resp.Schedules[2].Timestamp)
+		requireT.Len(resp.Schedule, 3)
+		// Verify schedule are sorted by timestamp in ascending order
+		requireT.Equal(schedule1.Timestamp, resp.Schedule[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.Schedule[1].Timestamp)
+		requireT.Equal(schedule3.Timestamp, resp.Schedule[2].Timestamp)
 	})
 }

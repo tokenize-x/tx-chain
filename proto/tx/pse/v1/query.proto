@@ -65,10 +65,11 @@ message QueryAllocationScheduleRequest {}
 
 // QueryAllocationScheduleResponse defines the response type for querying future allocation schedules.
 message QueryAllocationScheduleResponse {
-  // schedules contains all future distribution schedules sorted by timestamp in ascending order.
-  // Past schedules are automatically removed after processing, so all returned schedules are future schedules.
-  repeated ScheduledDistribution schedules = 1 [
+  // schedule contains all future distribution schedule sorted by timestamp in ascending order.
+  // Past schedule allocation list are automatically removed after processing, 
+  // so all returned schedule allocations are future schedule allocations.
+  repeated ScheduledDistribution schedule = 1 [
     (gogoproto.nullable) = false,
-    (gogoproto.moretags) = "yaml:\"schedules\""
+    (gogoproto.moretags) = "yaml:\"schedule\""
   ];
 }

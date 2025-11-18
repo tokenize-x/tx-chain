@@ -5938,7 +5938,7 @@ QueryAllocationScheduleResponse defines the response type for querying future al
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `schedules` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `schedules contains all future distribution schedules sorted by timestamp in ascending order. Past schedules are automatically removed after processing, so all returned schedules are future schedules.`  |
+| `schedule` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `schedule contains all future distribution schedule sorted by timestamp in ascending order. Past schedule allocation list are automatically removed after processing,  so all returned schedule allocations are future schedule allocations.`  |
 
 
 
