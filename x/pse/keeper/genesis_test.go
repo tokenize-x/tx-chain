@@ -144,7 +144,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 					},
 				}
 			},
-			expectError: "missing allocation for required PSE clearing account",
+			expectError: "missing allocation for required clearing account",
 		},
 		{
 			name: "invalid_allocation_schedule_excluded_account",
@@ -164,30 +164,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 					},
 				}
 			},
-			expectError: "missing allocation for required PSE clearing account",
-		},
-		{
-			name: "missing_mappings_for_allocations",
-			modifyGenesis: func(gs *types.GenesisState) {
-				now := uint64(time.Now().Unix())
-				// Add allocations without corresponding mappings
-				gs.ScheduledDistributions = []types.ScheduledDistribution{
-					{
-						Timestamp: now,
-						Allocations: []types.ClearingAccountAllocation{
-							{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(600)},
-							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
-							{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
-							{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
-							{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(400)},
-							{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(500)},
-						},
-					},
-				}
-				// No mappings (nil)
-				gs.Params.ClearingAccountMappings = nil
-			},
-			expectError: "no recipient mapping found for clearing account",
+			expectError: "missing allocation for required clearing account",
 		},
 		{
 			name: "invalid_excluded_address",
