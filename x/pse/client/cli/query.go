@@ -67,6 +67,7 @@ $ %[1]s query %s params
 	return cmd
 }
 
+// CmdQueryScore implements a command to fetch pse score of an address.
 func CmdQueryScore() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "score [address]",
