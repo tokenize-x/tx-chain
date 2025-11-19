@@ -45,7 +45,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 	// 2. some delegators have no delegation.
 	leftover := totalPSEAmount
 	if totalPSEScore.IsPositive() {
-		err = finalScoreMap.Walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
+		err = finalScoreMap.walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
 			userAmount := totalPSEAmount.Mul(score).Quo(totalPSEScore)
 			deliveredAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
 			if err != nil {

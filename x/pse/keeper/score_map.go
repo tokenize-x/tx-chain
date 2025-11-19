@@ -43,7 +43,7 @@ func newScoreMap(addressCodec addresscodec.Codec, excludedAddressesStr []string)
 	}, nil
 }
 
-func (m *scoreMap) AddScore(addr sdk.AccAddress, value sdkmath.Int) error {
+func (m *scoreMap) addScore(addr sdk.AccAddress, value sdkmath.Int) error {
 	if value.IsZero() {
 		return nil
 	}
@@ -69,7 +69,7 @@ func (m *scoreMap) AddScore(addr sdk.AccAddress, value sdkmath.Int) error {
 	return nil
 }
 
-func (m *scoreMap) Walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) error {
+func (m *scoreMap) walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) error {
 	for _, pair := range m.items {
 		if m.isExcludedAddress(pair.addr) {
 			continue
@@ -97,7 +97,7 @@ func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) er
 		if m.isExcludedAddress(delAddr) {
 			continue
 		}
-		err = m.AddScore(delAddr, score)
+		err = m.addScore(delAddr, score)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
 		if err != nil {
 			return nil, err
 		}
-		err = m.AddScore(delAddr, delegationScore)
+		err = m.addScore(delAddr, delegationScore)
 		if err != nil {
 			return nil, err
 		}
