@@ -191,13 +191,13 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 
 	testCases := []struct {
 		name      string
-		msg       *types.MsgUpdateAllocationSchedule
+		msg       *types.MsgUpdateDistributionSchedule
 		expectErr bool
 		errMsg    string
 	}{
 		{
 			name: "valid - single period schedule",
-			msg: &types.MsgUpdateAllocationSchedule{
+			msg: &types.MsgUpdateDistributionSchedule{
 				Authority: authority,
 				Schedule:  createValidSchedule(1, sdkmath.NewInt(1000000)),
 			},
@@ -205,7 +205,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 		},
 		{
 			name: "valid - multiple periods schedule",
-			msg: &types.MsgUpdateAllocationSchedule{
+			msg: &types.MsgUpdateDistributionSchedule{
 				Authority: authority,
 				Schedule:  createValidSchedule(5, sdkmath.NewInt(2000000)),
 			},
@@ -213,7 +213,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 		},
 		{
 			name: "valid - empty schedule (clears all distributions)",
-			msg: &types.MsgUpdateAllocationSchedule{
+			msg: &types.MsgUpdateDistributionSchedule{
 				Authority: authority,
 				Schedule:  []types.ScheduledDistribution{},
 			},
@@ -221,7 +221,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 		},
 		{
 			name: "valid - different amounts per account",
-			msg: &types.MsgUpdateAllocationSchedule{
+			msg: &types.MsgUpdateDistributionSchedule{
 				Authority: authority,
 				Schedule: []types.ScheduledDistribution{
 					{
@@ -241,7 +241,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 		},
 		{
 			name: "invalid - wrong authority (keeper check)",
-			msg: &types.MsgUpdateAllocationSchedule{
+			msg: &types.MsgUpdateDistributionSchedule{
 				Authority: invalidAuthority,
 				Schedule:  createValidSchedule(1, sdkmath.NewInt(1000000)),
 			},
@@ -254,7 +254,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			requireT := require.New(t)
 
-			resp, err := msgServer.UpdateAllocationSchedule(ctx, tc.msg)
+			resp, err := msgServer.UpdateDistributionSchedule(ctx, tc.msg)
 
 			if tc.expectErr {
 				requireT.Error(err)

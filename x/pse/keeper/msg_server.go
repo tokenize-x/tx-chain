@@ -42,7 +42,7 @@ func (ms MsgServer) UpdateClearingAccountMappings(
 	goCtx context.Context,
 	req *types.MsgUpdateClearingAccountMappings,
 ) (*types.EmptyResponse, error) {
-	err := ms.keeper.UpdateClearingMappings(
+	err := ms.keeper.UpdateClearingAccountMappings(
 		goCtx,
 		req.Authority,
 		req.Mappings,
@@ -53,12 +53,12 @@ func (ms MsgServer) UpdateClearingAccountMappings(
 	return &types.EmptyResponse{}, nil
 }
 
-// UpdateAllocationSchedule is a governance operation that updates the allocation schedule.
-func (ms MsgServer) UpdateAllocationSchedule(
+// UpdateDistributionSchedule is a governance operation that updates the distribution schedule.
+func (ms MsgServer) UpdateDistributionSchedule(
 	goCtx context.Context,
-	req *types.MsgUpdateAllocationSchedule,
+	req *types.MsgUpdateDistributionSchedule,
 ) (*types.EmptyResponse, error) {
-	err := ms.keeper.UpdateAllocationSchedule(
+	err := ms.keeper.UpdateDistributionSchedule(
 		goCtx,
 		req.Authority,
 		req.Schedule,

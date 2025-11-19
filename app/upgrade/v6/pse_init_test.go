@@ -452,7 +452,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 		{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr3}},                   // 1 recipient
 	}
 
-	err = pseKeeper.UpdateClearingMappings(ctx, authority, mappings)
+	err = pseKeeper.UpdateClearingAccountMappings(ctx, authority, mappings)
 	requireT.NoError(err)
 
 	// Create a distribution schedule manually for testing

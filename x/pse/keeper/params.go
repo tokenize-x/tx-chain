@@ -65,11 +65,11 @@ func (k Keeper) UpdateExcludedAddresses(
 	return k.SetParams(ctx, params)
 }
 
-// UpdateClearingMappings updates the sub account mappings in params via governance.
+// UpdateClearingAccountMappings updates the recipient mappings in params via governance.
 // The mappings must contain exactly all eligible (non-excluded) clearing accounts - no more, no less.
 // Note: All validation is performed in MsgUpdateClearingAccountMappings.ValidateBasic()
 // before the proposal is stored. This keeper method only handles authority check and state updates.
-func (k Keeper) UpdateClearingMappings(
+func (k Keeper) UpdateClearingAccountMappings(
 	ctx context.Context,
 	authority string,
 	mappings []types.ClearingAccountMapping,
@@ -85,7 +85,7 @@ func (k Keeper) UpdateClearingMappings(
 		return err
 	}
 
-	// Update sub account mappings
+	// Update recipient mappings
 	// All validation is already done in ValidateBasic to prevent invalid proposals from being stored
 	params.ClearingAccountMappings = mappings
 

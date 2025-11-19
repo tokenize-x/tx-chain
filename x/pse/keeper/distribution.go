@@ -242,10 +242,10 @@ func (k Keeper) GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDis
 	return schedule, nil
 }
 
-// UpdateAllocationSchedule updates the entire allocation schedule via governance.
+// UpdateDistributionSchedule updates the entire distribution schedule via governance.
 // This clears all existing distributions and replaces them with the new schedule.
 // The new schedule is validated for consistency with existing clearing account mappings.
-func (k Keeper) UpdateAllocationSchedule(
+func (k Keeper) UpdateDistributionSchedule(
 	ctx context.Context,
 	authority string,
 	newSchedule []types.ScheduledDistribution,

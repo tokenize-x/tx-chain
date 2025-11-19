@@ -123,8 +123,8 @@ func validateClearingAccountMappings(mappings []ClearingAccountMapping) error {
 	return nil
 }
 
-// ValidateAllocationSchedule validates the allocation schedule.
-func ValidateAllocationSchedule(schedule []ScheduledDistribution) error {
+// ValidateDistributionSchedule validates the allocation schedule.
+func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 	// All clearing accounts (including Community) should be in the schedule
 	allClearingAccounts := GetAllClearingAccounts()
 

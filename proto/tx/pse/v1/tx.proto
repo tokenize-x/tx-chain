@@ -19,8 +19,8 @@ service Msg {
   // UpdateClearingAccountMappings is a governance operation to update clearing account to recipient mappings.
   rpc UpdateClearingAccountMappings(MsgUpdateClearingAccountMappings) returns (EmptyResponse);
   
-  // UpdateAllocationSchedule is a governance operation to update the distribution schedule.
-  rpc UpdateAllocationSchedule(MsgUpdateAllocationSchedule) returns (EmptyResponse);
+  // UpdateDistributionSchedule is a governance operation to update the distribution schedule.
+  rpc UpdateDistributionSchedule(MsgUpdateDistributionSchedule) returns (EmptyResponse);
 }
 
 
@@ -62,12 +62,12 @@ message MsgUpdateClearingAccountMappings {
   ];
 }
 
-// MsgUpdateAllocationSchedule is a governance operation to replace the distribution schedule.
-// This completely replaces the existing schedule with the new one provided.
-// All existing distributions are removed and replaced with the provided schedule.
-message MsgUpdateAllocationSchedule {
+// MsgUpdateDistributionSchedule is a governance operation to replace the distribution schedule.
+// This completely replaces the existing distribution schedule with the new one provided.
+// All existing distributions are removed and replaced with the provided distribution schedule.
+message MsgUpdateDistributionSchedule {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "pse/MsgUpdateAllocationSchedule";
+  option (amino.name) = "pse/MsgUpdateDistributionSchedule";
 
   // authority is the address authorized to update the schedule (governance module address).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];

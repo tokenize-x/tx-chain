@@ -22,14 +22,9 @@ func (m *GenesisState) Validate() error {
 	}
 
 	// Validate allocation schedule (includes all 6 clearing accounts validation)
-	if err := ValidateAllocationSchedule(m.ScheduledDistributions); err != nil {
+	if err := ValidateDistributionSchedule(m.ScheduledDistributions); err != nil {
 		return errorsmod.Wrapf(err, "invalid allocation schedule")
 	}
-
-	// Note: No need for ValidateScheduleMappingConsistency since:
-	// - Params validation ensures all 5 non-Community accounts have mappings
-	// - Schedule validation ensures all 6 accounts are in schedule
-	// - Therefore, all non-Community accounts in schedule automatically have mappings
 
 	// Validate delegation time entries
 	for _, delegationTimeEntry := range m.DelegationTimeEntries {

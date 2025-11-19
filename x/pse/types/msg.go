@@ -15,14 +15,14 @@ type extendedMsg interface {
 var (
 	_ extendedMsg = &MsgUpdateExcludedAddresses{}
 	_ extendedMsg = &MsgUpdateClearingAccountMappings{}
-	_ extendedMsg = &MsgUpdateAllocationSchedule{}
+	_ extendedMsg = &MsgUpdateDistributionSchedule{}
 )
 
 // RegisterLegacyAminoCodec registers the amino types and interfaces.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateExcludedAddresses{}, ModuleName+"/MsgUpdateExcludedAddresses")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateClearingAccountMappings{}, ModuleName+"/MsgUpdateClearingAccountMappings")
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateAllocationSchedule{}, ModuleName+"/MsgUpdateAllocationSchedule")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateDistributionSchedule{}, ModuleName+"/MsgUpdateDistributionSchedule")
 }
 
 // ValidateBasic checks that message fields are valid.
@@ -114,11 +114,11 @@ func (m *MsgUpdateClearingAccountMappings) ValidateBasic() error {
 }
 
 // ValidateBasic checks that message fields are valid.
-func (m *MsgUpdateAllocationSchedule) ValidateBasic() error {
+func (m *MsgUpdateDistributionSchedule) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
 		return cosmoserrors.ErrInvalidAddress.Wrapf("invalid authority address: %s", err)
 	}
 
 	// Validate the schedule (includes all clearing account validation)
-	return ValidateAllocationSchedule(m.Schedule)
+	return ValidateDistributionSchedule(m.Schedule)
 }

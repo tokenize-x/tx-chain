@@ -546,7 +546,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			requireT := require.New(t)
 
-			err := ValidateAllocationSchedule(tc.schedule)
+			err := ValidateDistributionSchedule(tc.schedule)
 			if tc.expectErr {
 				requireT.Error(err)
 				if tc.errMsg != "" {
