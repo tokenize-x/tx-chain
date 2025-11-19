@@ -201,22 +201,22 @@ func (m *QueryScoreResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryScoreResponse proto.InternalMessageInfo
 
-// QueryAllocationScheduleRequest defines the request type for querying future allocation schedules.
-type QueryAllocationScheduleRequest struct {
+// QueryScheduledDistributionsRequest defines the request type for querying future scheduled distributions.
+type QueryScheduledDistributionsRequest struct {
 }
 
-func (m *QueryAllocationScheduleRequest) Reset()         { *m = QueryAllocationScheduleRequest{} }
-func (m *QueryAllocationScheduleRequest) String() string { return proto.CompactTextString(m) }
-func (*QueryAllocationScheduleRequest) ProtoMessage()    {}
-func (*QueryAllocationScheduleRequest) Descriptor() ([]byte, []int) {
+func (m *QueryScheduledDistributionsRequest) Reset()         { *m = QueryScheduledDistributionsRequest{} }
+func (m *QueryScheduledDistributionsRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryScheduledDistributionsRequest) ProtoMessage()    {}
+func (*QueryScheduledDistributionsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1bf0a69d5178bfb9, []int{4}
 }
-func (m *QueryAllocationScheduleRequest) XXX_Unmarshal(b []byte) error {
+func (m *QueryScheduledDistributionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryAllocationScheduleRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryScheduledDistributionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryAllocationScheduleRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryScheduledDistributionsRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -226,38 +226,38 @@ func (m *QueryAllocationScheduleRequest) XXX_Marshal(b []byte, deterministic boo
 		return b[:n], nil
 	}
 }
-func (m *QueryAllocationScheduleRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryAllocationScheduleRequest.Merge(m, src)
+func (m *QueryScheduledDistributionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryScheduledDistributionsRequest.Merge(m, src)
 }
-func (m *QueryAllocationScheduleRequest) XXX_Size() int {
+func (m *QueryScheduledDistributionsRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryAllocationScheduleRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryAllocationScheduleRequest.DiscardUnknown(m)
+func (m *QueryScheduledDistributionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryScheduledDistributionsRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryAllocationScheduleRequest proto.InternalMessageInfo
+var xxx_messageInfo_QueryScheduledDistributionsRequest proto.InternalMessageInfo
 
-// QueryAllocationScheduleResponse defines the response type for querying future allocation schedules.
-type QueryAllocationScheduleResponse struct {
-	// schedule contains all future distribution schedule sorted by timestamp in ascending order.
-	// Past schedule allocation list are automatically removed after processing,
-	// so all returned schedule allocations are future schedule allocations.
-	Schedule []ScheduledDistribution `protobuf:"bytes,1,rep,name=schedule,proto3" json:"schedule" yaml:"schedule"`
+// QueryScheduledDistributionsResponse defines the response type for querying future scheduled distributions.
+type QueryScheduledDistributionsResponse struct {
+	// scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order.
+	// Past scheduled distributions list are automatically removed after processing,
+	// so all returned scheduled distributions are future scheduled distributions.
+	ScheduledDistributions []ScheduledDistribution `protobuf:"bytes,1,rep,name=scheduled_distributions,json=scheduledDistributions,proto3" json:"scheduled_distributions" yaml:"schedule_distributions"`
 }
 
-func (m *QueryAllocationScheduleResponse) Reset()         { *m = QueryAllocationScheduleResponse{} }
-func (m *QueryAllocationScheduleResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryAllocationScheduleResponse) ProtoMessage()    {}
-func (*QueryAllocationScheduleResponse) Descriptor() ([]byte, []int) {
+func (m *QueryScheduledDistributionsResponse) Reset()         { *m = QueryScheduledDistributionsResponse{} }
+func (m *QueryScheduledDistributionsResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryScheduledDistributionsResponse) ProtoMessage()    {}
+func (*QueryScheduledDistributionsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1bf0a69d5178bfb9, []int{5}
 }
-func (m *QueryAllocationScheduleResponse) XXX_Unmarshal(b []byte) error {
+func (m *QueryScheduledDistributionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QueryAllocationScheduleResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QueryScheduledDistributionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QueryAllocationScheduleResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QueryScheduledDistributionsResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -267,21 +267,21 @@ func (m *QueryAllocationScheduleResponse) XXX_Marshal(b []byte, deterministic bo
 		return b[:n], nil
 	}
 }
-func (m *QueryAllocationScheduleResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryAllocationScheduleResponse.Merge(m, src)
+func (m *QueryScheduledDistributionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryScheduledDistributionsResponse.Merge(m, src)
 }
-func (m *QueryAllocationScheduleResponse) XXX_Size() int {
+func (m *QueryScheduledDistributionsResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *QueryAllocationScheduleResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryAllocationScheduleResponse.DiscardUnknown(m)
+func (m *QueryScheduledDistributionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryScheduledDistributionsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryAllocationScheduleResponse proto.InternalMessageInfo
+var xxx_messageInfo_QueryScheduledDistributionsResponse proto.InternalMessageInfo
 
-func (m *QueryAllocationScheduleResponse) GetSchedule() []ScheduledDistribution {
+func (m *QueryScheduledDistributionsResponse) GetScheduledDistributions() []ScheduledDistribution {
 	if m != nil {
-		return m.Schedule
+		return m.ScheduledDistributions
 	}
 	return nil
 }
@@ -291,47 +291,47 @@ func init() {
 	proto.RegisterType((*QueryParamsResponse)(nil), "tx.pse.v1.QueryParamsResponse")
 	proto.RegisterType((*QueryScoreRequest)(nil), "tx.pse.v1.QueryScoreRequest")
 	proto.RegisterType((*QueryScoreResponse)(nil), "tx.pse.v1.QueryScoreResponse")
-	proto.RegisterType((*QueryAllocationScheduleRequest)(nil), "tx.pse.v1.QueryAllocationScheduleRequest")
-	proto.RegisterType((*QueryAllocationScheduleResponse)(nil), "tx.pse.v1.QueryAllocationScheduleResponse")
+	proto.RegisterType((*QueryScheduledDistributionsRequest)(nil), "tx.pse.v1.QueryScheduledDistributionsRequest")
+	proto.RegisterType((*QueryScheduledDistributionsResponse)(nil), "tx.pse.v1.QueryScheduledDistributionsResponse")
 }
 
 func init() { proto.RegisterFile("tx/pse/v1/query.proto", fileDescriptor_1bf0a69d5178bfb9) }
 
 var fileDescriptor_1bf0a69d5178bfb9 = []byte{
-	// 525 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0xc1, 0x8b, 0xd3, 0x40,
-	0x14, 0xc6, 0x9b, 0x95, 0x56, 0x77, 0x16, 0x91, 0xce, 0x6e, 0xb5, 0xc4, 0x76, 0x5a, 0xe6, 0xe2,
-	0xba, 0xd2, 0x0c, 0xdb, 0x05, 0x0f, 0x9e, 0xb4, 0x08, 0xb2, 0x37, 0xed, 0x22, 0x82, 0x17, 0x99,
-	0x26, 0x43, 0x1a, 0x36, 0xc9, 0x64, 0x33, 0x93, 0x92, 0x2a, 0x5e, 0x3c, 0x79, 0x14, 0xbc, 0xf8,
-	0x67, 0xf8, 0x67, 0xec, 0x71, 0xc1, 0x8b, 0x78, 0x28, 0xd2, 0x0a, 0xde, 0x3d, 0x7a, 0x92, 0x64,
-	0x26, 0x6d, 0xec, 0x52, 0xd8, 0x5b, 0xfb, 0xde, 0xf7, 0x7e, 0xdf, 0xcb, 0xf7, 0x12, 0xd0, 0x90,
-	0x29, 0x89, 0x04, 0x23, 0x93, 0x43, 0x72, 0x96, 0xb0, 0x78, 0x6a, 0x45, 0x31, 0x97, 0x1c, 0x6e,
-	0xcb, 0xd4, 0x8a, 0x04, 0xb3, 0x26, 0x87, 0xe6, 0x9e, 0xcb, 0x5d, 0x9e, 0x57, 0x49, 0xf6, 0x4b,
-	0x09, 0xcc, 0x96, 0xcb, 0xb9, 0xeb, 0x33, 0x42, 0x23, 0x8f, 0xd0, 0x30, 0xe4, 0x92, 0x4a, 0x8f,
-	0x87, 0x42, 0x77, 0xef, 0xda, 0x5c, 0x04, 0x5c, 0x28, 0xe4, 0x1a, 0xdb, 0xbc, 0xbd, 0xb2, 0x8c,
-	0x68, 0x4c, 0x83, 0x62, 0xa8, 0xb5, 0xaa, 0x3b, 0x9e, 0x90, 0xb1, 0x37, 0x4a, 0x32, 0xa6, 0xea,
-	0xe2, 0x3d, 0x00, 0x5f, 0x64, 0x90, 0xe7, 0xf9, 0xc8, 0x90, 0x9d, 0x25, 0x4c, 0x48, 0xfc, 0x0a,
-	0xec, 0xfe, 0x57, 0x15, 0x11, 0x0f, 0x05, 0x83, 0x8f, 0x41, 0x4d, 0xa1, 0x9b, 0x46, 0xd7, 0xd8,
-	0xdf, 0xe9, 0xd7, 0xad, 0xe5, 0xf3, 0x58, 0x4a, 0x3a, 0x68, 0x9c, 0xcf, 0x3a, 0x95, 0x3f, 0xb3,
-	0xce, 0xcd, 0x29, 0x0d, 0xfc, 0x47, 0x58, 0xc9, 0xf1, 0x50, 0xcf, 0xe1, 0x1e, 0xa8, 0xe7, 0xe0,
-	0x13, 0x9b, 0xc7, 0x4c, 0xbb, 0xc1, 0x26, 0xb8, 0x4e, 0x1d, 0x27, 0x66, 0x42, 0x71, 0xb7, 0x87,
-	0xc5, 0x5f, 0x7c, 0xac, 0xb7, 0xd3, 0x72, 0xbd, 0xc6, 0x11, 0xa8, 0x8a, 0xac, 0xa0, 0xd4, 0x83,
-	0x76, 0x66, 0xf9, 0x63, 0xd6, 0x69, 0xa8, 0x74, 0x84, 0x73, 0x6a, 0x79, 0x9c, 0x04, 0x54, 0x8e,
-	0xad, 0xe3, 0x50, 0x0e, 0x95, 0x16, 0x77, 0x01, 0xca, 0x51, 0x4f, 0x7c, 0x9f, 0xdb, 0x79, 0xaa,
-	0x27, 0xf6, 0x98, 0x39, 0x89, 0x5f, 0xac, 0x81, 0x53, 0xd0, 0xd9, 0xa8, 0xd0, 0xce, 0x2f, 0xc1,
-	0x0d, 0xa1, 0x6b, 0x4d, 0xa3, 0x7b, 0x6d, 0x7f, 0xa7, 0xdf, 0x2d, 0x45, 0x50, 0xc8, 0x9d, 0xa7,
-	0xa5, 0x9c, 0x07, 0x77, 0x74, 0x22, 0xb7, 0x54, 0x22, 0xc5, 0x3c, 0x1e, 0x2e, 0x51, 0xfd, 0xbf,
-	0x5b, 0xa0, 0x9a, 0x5b, 0x43, 0x17, 0xd4, 0x54, 0x90, 0xb0, 0x5d, 0x02, 0x5f, 0xbe, 0x90, 0x89,
-	0x36, 0xb5, 0xd5, 0xa6, 0x18, 0x7d, 0xfc, 0xfd, 0xf5, 0xc0, 0xf8, 0xf0, 0xed, 0xd7, 0xe7, 0xad,
-	0x5d, 0x58, 0x27, 0xeb, 0xef, 0x06, 0x0c, 0x40, 0x35, 0x0f, 0x15, 0xb6, 0xd6, 0x41, 0xe5, 0xd3,
-	0x98, 0xed, 0x0d, 0x5d, 0xed, 0x72, 0x6f, 0xe5, 0xd2, 0x82, 0x66, 0xc9, 0x25, 0xcf, 0x9c, 0xbc,
-	0xd3, 0x77, 0x7c, 0x0f, 0xbf, 0x18, 0x00, 0x5e, 0xce, 0x15, 0xde, 0x5f, 0xc7, 0x6f, 0xbc, 0x8e,
-	0x79, 0x70, 0x15, 0xa9, 0x5e, 0xeb, 0xc1, 0x6a, 0xad, 0x2e, 0x44, 0xa5, 0xb5, 0xe8, 0x72, 0xe6,
-	0x4d, 0x11, 0xfe, 0xe0, 0xd9, 0xf9, 0x1c, 0x19, 0x17, 0x73, 0x64, 0xfc, 0x9c, 0x23, 0xe3, 0xd3,
-	0x02, 0x55, 0x2e, 0x16, 0xa8, 0xf2, 0x7d, 0x81, 0x2a, 0xaf, 0x7b, 0xae, 0x27, 0xc7, 0xc9, 0xc8,
-	0xb2, 0x79, 0x40, 0x24, 0x3f, 0x65, 0xa1, 0xf7, 0x96, 0xf5, 0x52, 0x22, 0xd3, 0x9e, 0x3d, 0xa6,
-	0x5e, 0x48, 0x26, 0x0f, 0x89, 0x22, 0xcb, 0x69, 0xc4, 0xc4, 0xa8, 0x96, 0x7f, 0x51, 0x47, 0xff,
-	0x02, 0x00, 0x00, 0xff, 0xff, 0x5d, 0x27, 0x10, 0x26, 0xfc, 0x03, 0x00, 0x00,
+	// 526 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x41, 0x6b, 0x13, 0x4f,
+	0x1c, 0xcd, 0xfc, 0x4b, 0xf2, 0xa7, 0x53, 0x3c, 0x64, 0xda, 0xc4, 0xb2, 0x26, 0x9b, 0x32, 0x56,
+	0x2c, 0xc2, 0xce, 0xd0, 0x14, 0x3c, 0x78, 0x92, 0x20, 0x48, 0x6f, 0xba, 0x1e, 0x04, 0x2f, 0x32,
+	0xc9, 0x0e, 0x9b, 0xa5, 0xd9, 0x9d, 0xed, 0xce, 0x6c, 0x48, 0x14, 0x41, 0x3c, 0x89, 0x27, 0xc1,
+	0x2f, 0xd1, 0xa3, 0x1f, 0xa3, 0xc7, 0x82, 0x17, 0xf1, 0x10, 0x24, 0x11, 0xbc, 0xfb, 0x09, 0x64,
+	0x77, 0x26, 0xcd, 0x26, 0x4d, 0x8b, 0xb7, 0xe4, 0xf7, 0x7b, 0xf3, 0xde, 0xfb, 0xbd, 0x97, 0xc0,
+	0x9a, 0x1a, 0xd1, 0x58, 0x72, 0x3a, 0x3c, 0xa4, 0xa7, 0x29, 0x4f, 0xc6, 0x24, 0x4e, 0x84, 0x12,
+	0x68, 0x53, 0x8d, 0x48, 0x2c, 0x39, 0x19, 0x1e, 0x5a, 0x3b, 0xbe, 0xf0, 0x45, 0x3e, 0xa5, 0xd9,
+	0x27, 0x0d, 0xb0, 0x1a, 0xbe, 0x10, 0xfe, 0x80, 0x53, 0x16, 0x07, 0x94, 0x45, 0x91, 0x50, 0x4c,
+	0x05, 0x22, 0x92, 0x66, 0x7b, 0xa7, 0x27, 0x64, 0x28, 0xa4, 0xa6, 0x5c, 0xe1, 0xb6, 0xea, 0x0b,
+	0xc9, 0x98, 0x25, 0x2c, 0x9c, 0x3f, 0x6a, 0x2c, 0xe6, 0x5e, 0x20, 0x55, 0x12, 0x74, 0xd3, 0x8c,
+	0x53, 0x6f, 0xf1, 0x0e, 0x44, 0xcf, 0x33, 0x92, 0x67, 0xf9, 0x13, 0x97, 0x9f, 0xa6, 0x5c, 0x2a,
+	0xfc, 0x12, 0x6e, 0x2f, 0x4d, 0x65, 0x2c, 0x22, 0xc9, 0xd1, 0x63, 0x58, 0xd1, 0xd4, 0xbb, 0x60,
+	0x0f, 0x1c, 0x6c, 0xb5, 0xab, 0xe4, 0xf2, 0x1e, 0xa2, 0xa1, 0x9d, 0xda, 0xf9, 0xa4, 0x55, 0xfa,
+	0x33, 0x69, 0xdd, 0x1a, 0xb3, 0x70, 0xf0, 0x08, 0x6b, 0x38, 0x76, 0xcd, 0x3b, 0xec, 0xc0, 0x6a,
+	0x4e, 0xfc, 0xa2, 0x27, 0x12, 0x6e, 0xd4, 0xd0, 0x2e, 0xfc, 0x9f, 0x79, 0x5e, 0xc2, 0xa5, 0xe6,
+	0xdd, 0x74, 0xe7, 0x5f, 0xf1, 0xb1, 0x71, 0x67, 0xe0, 0xc6, 0xc6, 0x11, 0x2c, 0xcb, 0x6c, 0xa0,
+	0xd1, 0x9d, 0x66, 0x26, 0xf9, 0x63, 0xd2, 0xaa, 0xe9, 0x74, 0xa4, 0x77, 0x42, 0x02, 0x41, 0x43,
+	0xa6, 0xfa, 0xe4, 0x38, 0x52, 0xae, 0xc6, 0xe2, 0x7d, 0x88, 0x0d, 0x55, 0x9f, 0x7b, 0xe9, 0x80,
+	0x7b, 0x4f, 0x0a, 0x61, 0x5c, 0x1e, 0x7e, 0x06, 0xe0, 0xdd, 0x1b, 0x61, 0xc6, 0xc2, 0x7b, 0x00,
+	0x6f, 0xcb, 0x39, 0xe4, 0x75, 0x31, 0xd7, 0xec, 0x86, 0x8d, 0x83, 0xad, 0xf6, 0x5e, 0x21, 0x9b,
+	0xb5, 0x64, 0x9d, 0x7b, 0x26, 0xaa, 0xa6, 0x8e, 0x6a, 0x4e, 0xb7, 0xcc, 0x86, 0xdd, 0xba, 0x5c,
+	0x6b, 0xa5, 0xfd, 0x69, 0x03, 0x96, 0x73, 0xab, 0xc8, 0x87, 0x15, 0x9d, 0x3e, 0x6a, 0x16, 0x44,
+	0xaf, 0xd6, 0x6a, 0xd9, 0xd7, 0xad, 0xf5, 0x55, 0xd8, 0xfe, 0xf8, 0xfb, 0xeb, 0x03, 0xf0, 0xe1,
+	0xdb, 0xaf, 0x2f, 0xff, 0x6d, 0xa3, 0x2a, 0x5d, 0xfd, 0x41, 0xa1, 0x10, 0x96, 0xf3, 0x26, 0x50,
+	0x63, 0x95, 0xa8, 0xd8, 0xa7, 0xd5, 0xbc, 0x66, 0x6b, 0x54, 0xee, 0x2f, 0x54, 0x1a, 0xc8, 0x2a,
+	0xa8, 0xe4, 0x45, 0xd1, 0xb7, 0xa6, 0xfc, 0x77, 0xe8, 0x0c, 0xc0, 0xfa, 0xfa, 0x1e, 0x90, 0x73,
+	0x55, 0xe2, 0x86, 0x5a, 0x2d, 0xf2, 0xaf, 0x70, 0x63, 0x91, 0x2e, 0x2c, 0xee, 0x23, 0xbc, 0x64,
+	0x71, 0x6d, 0xe7, 0x9d, 0xa7, 0xe7, 0x53, 0x1b, 0x5c, 0x4c, 0x6d, 0xf0, 0x73, 0x6a, 0x83, 0xcf,
+	0x33, 0xbb, 0x74, 0x31, 0xb3, 0x4b, 0xdf, 0x67, 0x76, 0xe9, 0x95, 0xe3, 0x07, 0xaa, 0x9f, 0x76,
+	0x49, 0x4f, 0x84, 0x54, 0x89, 0x13, 0x1e, 0x05, 0x6f, 0xb8, 0x33, 0xa2, 0x6a, 0xe4, 0xf4, 0xfa,
+	0x2c, 0x88, 0xe8, 0xf0, 0x21, 0xd5, 0xec, 0x6a, 0x1c, 0x73, 0xd9, 0xad, 0xe4, 0x7f, 0xcb, 0xa3,
+	0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x3a, 0x99, 0x40, 0xd3, 0x41, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -350,8 +350,8 @@ type QueryClient interface {
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// Score queries the current total score of an account (delegator).
 	Score(ctx context.Context, in *QueryScoreRequest, opts ...grpc.CallOption) (*QueryScoreResponse, error)
-	// AllocationSchedule queries all future allocation schedules.
-	AllocationSchedule(ctx context.Context, in *QueryAllocationScheduleRequest, opts ...grpc.CallOption) (*QueryAllocationScheduleResponse, error)
+	// ScheduledDistributions queries all future scheduled distributions.
+	ScheduledDistributions(ctx context.Context, in *QueryScheduledDistributionsRequest, opts ...grpc.CallOption) (*QueryScheduledDistributionsResponse, error)
 }
 
 type queryClient struct {
@@ -380,9 +380,9 @@ func (c *queryClient) Score(ctx context.Context, in *QueryScoreRequest, opts ...
 	return out, nil
 }
 
-func (c *queryClient) AllocationSchedule(ctx context.Context, in *QueryAllocationScheduleRequest, opts ...grpc.CallOption) (*QueryAllocationScheduleResponse, error) {
-	out := new(QueryAllocationScheduleResponse)
-	err := c.cc.Invoke(ctx, "/tx.pse.v1.Query/AllocationSchedule", in, out, opts...)
+func (c *queryClient) ScheduledDistributions(ctx context.Context, in *QueryScheduledDistributionsRequest, opts ...grpc.CallOption) (*QueryScheduledDistributionsResponse, error) {
+	out := new(QueryScheduledDistributionsResponse)
+	err := c.cc.Invoke(ctx, "/tx.pse.v1.Query/ScheduledDistributions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -395,8 +395,8 @@ type QueryServer interface {
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// Score queries the current total score of an account (delegator).
 	Score(context.Context, *QueryScoreRequest) (*QueryScoreResponse, error)
-	// AllocationSchedule queries all future allocation schedules.
-	AllocationSchedule(context.Context, *QueryAllocationScheduleRequest) (*QueryAllocationScheduleResponse, error)
+	// ScheduledDistributions queries all future scheduled distributions.
+	ScheduledDistributions(context.Context, *QueryScheduledDistributionsRequest) (*QueryScheduledDistributionsResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -409,8 +409,8 @@ func (*UnimplementedQueryServer) Params(ctx context.Context, req *QueryParamsReq
 func (*UnimplementedQueryServer) Score(ctx context.Context, req *QueryScoreRequest) (*QueryScoreResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Score not implemented")
 }
-func (*UnimplementedQueryServer) AllocationSchedule(ctx context.Context, req *QueryAllocationScheduleRequest) (*QueryAllocationScheduleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AllocationSchedule not implemented")
+func (*UnimplementedQueryServer) ScheduledDistributions(ctx context.Context, req *QueryScheduledDistributionsRequest) (*QueryScheduledDistributionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ScheduledDistributions not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -453,20 +453,20 @@ func _Query_Score_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_AllocationSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryAllocationScheduleRequest)
+func _Query_ScheduledDistributions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryScheduledDistributionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).AllocationSchedule(ctx, in)
+		return srv.(QueryServer).ScheduledDistributions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tx.pse.v1.Query/AllocationSchedule",
+		FullMethod: "/tx.pse.v1.Query/ScheduledDistributions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).AllocationSchedule(ctx, req.(*QueryAllocationScheduleRequest))
+		return srv.(QueryServer).ScheduledDistributions(ctx, req.(*QueryScheduledDistributionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -484,8 +484,8 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Score_Handler,
 		},
 		{
-			MethodName: "AllocationSchedule",
-			Handler:    _Query_AllocationSchedule_Handler,
+			MethodName: "ScheduledDistributions",
+			Handler:    _Query_ScheduledDistributions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -611,7 +611,7 @@ func (m *QueryScoreResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryAllocationScheduleRequest) Marshal() (dAtA []byte, err error) {
+func (m *QueryScheduledDistributionsRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -621,12 +621,12 @@ func (m *QueryAllocationScheduleRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryAllocationScheduleRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryScheduledDistributionsRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryAllocationScheduleRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryScheduledDistributionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -634,7 +634,7 @@ func (m *QueryAllocationScheduleRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *QueryAllocationScheduleResponse) Marshal() (dAtA []byte, err error) {
+func (m *QueryScheduledDistributionsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -644,20 +644,20 @@ func (m *QueryAllocationScheduleResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QueryAllocationScheduleResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *QueryScheduledDistributionsResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QueryAllocationScheduleResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QueryScheduledDistributionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Schedule) > 0 {
-		for iNdEx := len(m.Schedule) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.ScheduledDistributions) > 0 {
+		for iNdEx := len(m.ScheduledDistributions) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Schedule[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.ScheduledDistributions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -726,7 +726,7 @@ func (m *QueryScoreResponse) Size() (n int) {
 	return n
 }
 
-func (m *QueryAllocationScheduleRequest) Size() (n int) {
+func (m *QueryScheduledDistributionsRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -735,14 +735,14 @@ func (m *QueryAllocationScheduleRequest) Size() (n int) {
 	return n
 }
 
-func (m *QueryAllocationScheduleResponse) Size() (n int) {
+func (m *QueryScheduledDistributionsResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.Schedule) > 0 {
-		for _, e := range m.Schedule {
+	if len(m.ScheduledDistributions) > 0 {
+		for _, e := range m.ScheduledDistributions {
 			l = e.Size()
 			n += 1 + l + sovQuery(uint64(l))
 		}
@@ -1055,7 +1055,7 @@ func (m *QueryScoreResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryAllocationScheduleRequest) Unmarshal(dAtA []byte) error {
+func (m *QueryScheduledDistributionsRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1078,10 +1078,10 @@ func (m *QueryAllocationScheduleRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryAllocationScheduleRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryScheduledDistributionsRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryAllocationScheduleRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryScheduledDistributionsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -1105,7 +1105,7 @@ func (m *QueryAllocationScheduleRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QueryAllocationScheduleResponse) Unmarshal(dAtA []byte) error {
+func (m *QueryScheduledDistributionsResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1128,15 +1128,15 @@ func (m *QueryAllocationScheduleResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QueryAllocationScheduleResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: QueryScheduledDistributionsResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QueryAllocationScheduleResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QueryScheduledDistributionsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Schedule", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ScheduledDistributions", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1163,8 +1163,8 @@ func (m *QueryAllocationScheduleResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Schedule = append(m.Schedule, ScheduledDistribution{})
-			if err := m.Schedule[len(m.Schedule)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.ScheduledDistributions = append(m.ScheduledDistributions, ScheduledDistribution{})
+			if err := m.ScheduledDistributions[len(m.ScheduledDistributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

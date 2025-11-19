@@ -10,24 +10,23 @@ import "tx/pse/v1/distribution.proto";
 option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 
 // Query defines the gRPC querier service.
-service Query {
-    
+service Query {    
   // Params queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/params";
   }
-  
+
   // Score queries the current total score of an account (delegator).
   rpc Score(QueryScoreRequest) returns (QueryScoreResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/score/{address}";
   }
-  
-  // AllocationSchedule queries all future allocation schedules.
-  rpc AllocationSchedule(QueryAllocationScheduleRequest) returns (QueryAllocationScheduleResponse) {
+
+  // ScheduledDistributions queries all future scheduled distributions.
+  rpc ScheduledDistributions(QueryScheduledDistributionsRequest) returns (QueryScheduledDistributionsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/tx/pse/v1/allocation_schedule";
+    option (google.api.http).get = "/tx/pse/v1/scheduled_distributions";
   }
 }
 
@@ -60,16 +59,16 @@ message QueryScoreResponse {
   ];
 }
 
-// QueryAllocationScheduleRequest defines the request type for querying future allocation schedules.
-message QueryAllocationScheduleRequest {}
+// QueryScheduledDistributionsRequest defines the request type for querying future scheduled distributions.
+message QueryScheduledDistributionsRequest {}
 
-// QueryAllocationScheduleResponse defines the response type for querying future allocation schedules.
-message QueryAllocationScheduleResponse {
-  // schedule contains all future distribution schedule sorted by timestamp in ascending order.
-  // Past schedule allocation list are automatically removed after processing, 
-  // so all returned schedule allocations are future schedule allocations.
-  repeated ScheduledDistribution schedule = 1 [
+// QueryScheduledDistributionsResponse defines the response type for querying future scheduled distributions.
+message QueryScheduledDistributionsResponse {
+  // scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order.
+  // Past scheduled distributions list are automatically removed after processing, 
+  // so all returned scheduled distributions are future scheduled distributions.
+  repeated ScheduledDistribution scheduled_distributions = 1 [
     (gogoproto.nullable) = false,
-    (gogoproto.moretags) = "yaml:\"schedule\""
+    (gogoproto.moretags) = "yaml:\"schedule_distributions\""
   ];
 }

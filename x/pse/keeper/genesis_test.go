@@ -184,7 +184,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	requireT.NoError(err, "InitGenesis should succeed with valid exported state")
 
 	// Verify allocation schedule was properly imported
-	importedSchedule, err := pseKeeper2.GetAllocationSchedule(ctx2)
+	importedSchedule, err := pseKeeper2.GetDistributionSchedule(ctx2)
 	requireT.NoError(err)
 	requireT.Len(importedSchedule, 2, "imported schedule should have 2 allocations")
 	requireT.Equal(time2, importedSchedule[0].Timestamp)
@@ -217,7 +217,7 @@ func TestGenesis_HardForkWithAllocations(t *testing.T) {
 	requireT.NoError(err, "should process time2 distribution on new chain")
 
 	// Verify only time3 remains
-	finalSchedule, err := pseKeeper2.GetAllocationSchedule(ctx2)
+	finalSchedule, err := pseKeeper2.GetDistributionSchedule(ctx2)
 	requireT.NoError(err)
 	requireT.Len(finalSchedule, 1, "should have 1 remaining allocation")
 	requireT.Equal(time3, finalSchedule[0].Timestamp)

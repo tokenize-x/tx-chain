@@ -285,10 +285,10 @@
     - [Params](#tx.pse.v1.Params)
   
 - [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
-    - [QueryAllocationScheduleRequest](#tx.pse.v1.QueryAllocationScheduleRequest)
-    - [QueryAllocationScheduleResponse](#tx.pse.v1.QueryAllocationScheduleResponse)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
+    - [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest)
+    - [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse)
     - [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest)
     - [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse)
   
@@ -5912,39 +5912,6 @@ Params store gov manageable parameters.
 
 
 
-<a name="tx.pse.v1.QueryAllocationScheduleRequest"></a>
-
-### QueryAllocationScheduleRequest
-
-```
-QueryAllocationScheduleRequest defines the request type for querying future allocation schedules.
-```
-
-
-
-
-
-
-
-<a name="tx.pse.v1.QueryAllocationScheduleResponse"></a>
-
-### QueryAllocationScheduleResponse
-
-```
-QueryAllocationScheduleResponse defines the response type for querying future allocation schedules.
-```
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `schedule` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `schedule contains all future distribution schedule sorted by timestamp in ascending order. Past schedule allocation list are automatically removed after processing,  so all returned schedule allocations are future schedule allocations.`  |
-
-
-
-
-
-
 <a name="tx.pse.v1.QueryParamsRequest"></a>
 
 ### QueryParamsRequest
@@ -5972,6 +5939,39 @@ QueryParamsResponse defines the response type for querying module parameters.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tx.pse.v1.Params) |  |  `params holds all the parameters of this module.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryScheduledDistributionsRequest"></a>
+
+### QueryScheduledDistributionsRequest
+
+```
+QueryScheduledDistributionsRequest defines the request type for querying future scheduled distributions.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryScheduledDistributionsResponse"></a>
+
+### QueryScheduledDistributionsResponse
+
+```
+QueryScheduledDistributionsResponse defines the response type for querying future scheduled distributions.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order. Past scheduled distributions list are automatically removed after processing,  so all returned scheduled distributions are future scheduled distributions.`  |
 
 
 
@@ -6035,7 +6035,7 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
 | `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
-| `AllocationSchedule` | [QueryAllocationScheduleRequest](#tx.pse.v1.QueryAllocationScheduleRequest) | [QueryAllocationScheduleResponse](#tx.pse.v1.QueryAllocationScheduleResponse) | `AllocationSchedule queries all future allocation schedules.` | GET|/tx/pse/v1/allocation_schedule |
+| `ScheduledDistributions` | [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest) | [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse) | `ScheduledDistributions queries all future scheduled distributions.` | GET|/tx/pse/v1/scheduled_distributions |
 
  <!-- end services -->
 

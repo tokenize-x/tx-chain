@@ -270,10 +270,10 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 		queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
-		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		resp, err := queryService.ScheduledDistributions(ctx, &types.QueryScheduledDistributionsRequest{})
 		requireT.NoError(err)
 		requireT.NotNil(resp)
-		requireT.Empty(resp.Schedule)
+		requireT.Empty(resp.ScheduledDistributions)
 	})
 
 	t.Run("multiple schedule allocation with single allocation", func(t *testing.T) {
@@ -300,11 +300,11 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{schedule1, schedule2})
 		requireT.NoError(err)
 
-		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		resp, err := queryService.ScheduledDistributions(ctx, &types.QueryScheduledDistributionsRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedule, 2)
-		requireT.Equal(schedule1.Timestamp, resp.Schedule[0].Timestamp)
-		requireT.Equal(schedule2.Timestamp, resp.Schedule[1].Timestamp)
+		requireT.Len(resp.ScheduledDistributions, 2)
+		requireT.Equal(schedule1.Timestamp, resp.ScheduledDistributions[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.ScheduledDistributions[1].Timestamp)
 	})
 
 	t.Run("schedule with multiple allocations", func(t *testing.T) {
@@ -326,10 +326,10 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{schedule})
 		requireT.NoError(err)
 
-		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		resp, err := queryService.ScheduledDistributions(ctx, &types.QueryScheduledDistributionsRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedule, 1)
-		requireT.Len(resp.Schedule[0].Allocations, 3)
+		requireT.Len(resp.ScheduledDistributions, 1)
+		requireT.Len(resp.ScheduledDistributions[0].Allocations, 3)
 	})
 
 	t.Run("schedule sorted by timestamp", func(t *testing.T) {
@@ -362,12 +362,12 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{schedule3, schedule1, schedule2})
 		requireT.NoError(err)
 
-		resp, err := queryService.AllocationSchedule(ctx, &types.QueryAllocationScheduleRequest{})
+		resp, err := queryService.ScheduledDistributions(ctx, &types.QueryScheduledDistributionsRequest{})
 		requireT.NoError(err)
-		requireT.Len(resp.Schedule, 3)
+		requireT.Len(resp.ScheduledDistributions, 3)
 		// Verify schedule are sorted by timestamp in ascending order
-		requireT.Equal(schedule1.Timestamp, resp.Schedule[0].Timestamp)
-		requireT.Equal(schedule2.Timestamp, resp.Schedule[1].Timestamp)
-		requireT.Equal(schedule3.Timestamp, resp.Schedule[2].Timestamp)
+		requireT.Equal(schedule1.Timestamp, resp.ScheduledDistributions[0].Timestamp)
+		requireT.Equal(schedule2.Timestamp, resp.ScheduledDistributions[1].Timestamp)
+		requireT.Equal(schedule3.Timestamp, resp.ScheduledDistributions[2].Timestamp)
 	})
 }

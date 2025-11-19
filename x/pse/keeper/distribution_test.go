@@ -123,7 +123,7 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify allocation schedule only contains time2 since time1 was already processed
-	allocationSchedule2, err := pseKeeper2.GetAllocationSchedule(ctx2)
+	allocationSchedule2, err := pseKeeper2.GetDistributionSchedule(ctx2)
 	requireT.NoError(err)
 	requireT.Len(allocationSchedule2, 1, "should have 1 remaining allocation (time2)")
 	requireT.Equal(time2, allocationSchedule2[0].Timestamp)
