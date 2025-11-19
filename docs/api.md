@@ -279,6 +279,8 @@
     - [EventAllocationDistributed](#tx.pse.v1.EventAllocationDistributed)
   
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
+    - [AccountScore](#tx.pse.v1.AccountScore)
+    - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
     - [GenesisState](#tx.pse.v1.GenesisState)
   
 - [tx/pse/v1/params.proto](#tx/pse/v1/params.proto)
@@ -5838,6 +5840,40 @@ Any remainder from division is sent to the community pool.
 
 
 
+<a name="tx.pse.v1.AccountScore"></a>
+
+### AccountScore
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |    |
+| `score` | [string](#string) |  |    |
+
+
+
+
+
+
+<a name="tx.pse.v1.DelegationTimeEntryExport"></a>
+
+### DelegationTimeEntryExport
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator_address` | [string](#string) |  |    |
+| `delegator_address` | [string](#string) |  |    |
+| `shares` | [string](#string) |  |    |
+| `last_changed_unix_sec` | [int64](#int64) |  |    |
+
+
+
+
+
+
 <a name="tx.pse.v1.GenesisState"></a>
 
 ### GenesisState
@@ -5852,6 +5888,8 @@ GenesisState defines the module's genesis state.
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tx.pse.v1.Params) |  |  `params contains all gov-manageable parameters.`  |
 | `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all scheduled distributions (both past and pending). Stored as a list for genesis import/export, but will be stored as a map in state. Must be sorted by timestamp in ascending order. Completed allocations are removed from the map after processing.`  |
+| `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
+| `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 
 
 
