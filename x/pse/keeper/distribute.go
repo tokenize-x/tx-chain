@@ -13,7 +13,15 @@ import (
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
 func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdkmath.Int) error {
 	// iterate all delegation time entries and calculate uncalculated score.
-	var finalScoreMap = newScoreMap(k.addressCodec)
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	finalScoreMap, err := newScoreMap(k.addressCodec, params.ExcludedAddresses)
+	if err != nil {
+		return err
+	}
+
 	allDelegationTimeEntry, err := finalScoreMap.iterateDelegationTimeEntries(ctx, k)
 	if err != nil {
 		return err
@@ -37,7 +45,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 	// 2. some delegators have no delegation.
 	leftover := totalPSEAmount
 	if totalPSEScore.IsPositive() {
-		err = finalScoreMap.Walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
+		err = finalScoreMap.walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
 			userAmount := totalPSEAmount.Mul(score).Quo(totalPSEScore)
 			deliveredAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
 			if err != nil {
