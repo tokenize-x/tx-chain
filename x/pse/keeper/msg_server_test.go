@@ -267,7 +267,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 				requireT.NotNil(resp)
 
 				// Verify schedule was persisted to state
-				savedSchedule, err := testApp.PSEKeeper.GetAllocationSchedule(ctx)
+				savedSchedule, err := testApp.PSEKeeper.GetDistributionSchedule(ctx)
 				requireT.NoError(err)
 				requireT.Len(savedSchedule, len(tc.msg.Schedule))
 

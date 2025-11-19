@@ -86,7 +86,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		"sum of allocations should equal total mint amount")
 
 	// Step 5: Verify allocation schedule was created with n months
-	allocationSchedule, err := pseKeeper.GetAllocationSchedule(ctx)
+	allocationSchedule, err := pseKeeper.GetDistributionSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Len(allocationSchedule, v6.TotalAllocationMonths,
 		"should have n monthly allocations")
@@ -483,7 +483,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify schedule was saved
-	allocationSchedule, err := pseKeeper.GetAllocationSchedule(ctx)
+	allocationSchedule, err := pseKeeper.GetDistributionSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Len(allocationSchedule, 1, "should have 1 allocation")
 
@@ -571,7 +571,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 		"community pool should have received Community allocation plus all distribution remainders")
 
 	// Verify allocation schedule count decreased (first period removed)
-	allocationScheduleAfter, err := pseKeeper.GetAllocationSchedule(ctx)
+	allocationScheduleAfter, err := pseKeeper.GetDistributionSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Empty(allocationScheduleAfter, "should have 0 remaining allocations")
 }
