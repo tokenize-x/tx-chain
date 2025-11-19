@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-
 	"github.com/stretchr/testify/require"
+
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 )

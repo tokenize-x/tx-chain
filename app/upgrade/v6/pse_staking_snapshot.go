@@ -11,6 +11,7 @@ import (
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
+// SnapshotPSEStaking snapshots the staking data into pse keeper.
 func SnapshotPSEStaking(
 	ctx context.Context,
 	stakingKeeper stakingkeeper.Querier,

@@ -25,16 +25,16 @@ func (pss *pseStakingSnapshot) Before(t *testing.T) {
 		Status: stakingtypes.Bonded.String(),
 	})
 	requireT.NoError(err)
-	requireT.Greater(len(validators.Validators), 0)
+	requireT.NotEmpty(validators.Validators)
 
 	delegationsResponse, err := stakingClient.ValidatorDelegations(ctx, &stakingtypes.QueryValidatorDelegationsRequest{
 		ValidatorAddr: validators.Validators[0].OperatorAddress,
 	})
 	requireT.NoError(err)
-	requireT.Greater(len(delegationsResponse.DelegationResponses), 0)
+	requireT.NotEmpty(delegationsResponse.DelegationResponses)
 	delegators := make([]string, 0)
 	for _, delegator := range delegationsResponse.DelegationResponses {
-		requireT.Greater(delegator.Balance.Amount.Int64(), int64(0))
+		requireT.Positive(delegator.Balance.Amount.Int64())
 		delegators = append(delegators, delegator.Delegation.DelegatorAddress)
 	}
 	pss.delegatorAddresses = delegators
@@ -53,6 +53,6 @@ func (pss *pseStakingSnapshot) After(t *testing.T) {
 	for _, delegatorAddr := range pss.delegatorAddresses {
 		score, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{Address: delegatorAddr})
 		requireT.NoError(err)
-		requireT.Greater(score.Score.Int64(), int64(0), "account: %s", delegatorAddr)
+		requireT.Positive(score.Score.Int64(), "account: %s", delegatorAddr)
 	}
 }
