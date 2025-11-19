@@ -287,6 +287,8 @@
 - [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
+    - [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest)
+    - [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse)
   
     - [Query](#tx.pse.v1.Query)
   
@@ -5739,8 +5741,10 @@ ClearingAccountAllocation defines the amount to be allocated from a specific cle
 ### ClearingAccountMapping
 
 ```
-ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipient (sub account multisig wallet).
+ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipients (sub account multisig wallets).
 This mapping can be modified via governance proposals.
+Each clearing account must have at least one recipient address.
+During distribution, the allocated amount is split equally among all recipients.
 ```
 
 
@@ -5748,7 +5752,7 @@ This mapping can be modified via governance proposals.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account holding the tokens to be distributed.`  |
-| `recipient_address` | [string](#string) |  |  `recipient_address is the multisig wallet address that will receive the token distributions.`  |
+| `recipient_addresses` | [string](#string) | repeated |  `recipient_addresses is the list of multisig wallet addresses that will receive the token distributions. Must have at least one address. Distribution amount is split equally among all recipients.`  |
 
 
 
@@ -5798,6 +5802,8 @@ Multiple clearing accounts can allocate tokens at the same time.
 
 ```
 EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
+The total amount is split equally among recipients using integer division.
+Any remainder from division is sent to the community pool.
 ```
 
 
@@ -5805,9 +5811,11 @@ EventAllocationDistributed is emitted when a scheduled allocation is successfull
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `clearing_account` | [string](#string) |  |  `clearing_account is the source clearing account name from which tokens are allocated.`  |
-| `recipient_address` | [string](#string) |  |  `recipient_address is the destination recipient address receiving the tokens.`  |
+| `recipient_addresses` | [string](#string) | repeated |  `recipient_addresses contains the list of recipient addresses. Each recipient receives the same amount specified in amount_per_recipient.`  |
+| `amount_per_recipient` | [string](#string) |  |  `amount_per_recipient is the amount each recipient received. This is calculated as: total_amount / num_recipients (integer division).`  |
+| `community_pool_amount` | [string](#string) |  |  `community_pool_amount is the remainder sent to the community pool. This is calculated as: total_amount % num_recipients. Will be zero if total_amount is evenly divisible by num_recipients.`  |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
-| `amount` | [string](#string) |  |  `amount is the amount of tokens allocated.`  |
+| `total_amount` | [string](#string) |  |  `total_amount is the total amount allocated from the clearing account. This equals: (amount_per_recipient * num_recipients) + community_pool_amount.`  |
 
 
 
@@ -5934,6 +5942,44 @@ QueryParamsResponse defines the response type for querying module parameters.
 
 
 
+
+<a name="tx.pse.v1.QueryScoreRequest"></a>
+
+### QueryScoreRequest
+
+```
+QueryScoreRequest defines the request type for querying an account's current score.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |  `address is the delegator address to query the score for.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryScoreResponse"></a>
+
+### QueryScoreResponse
+
+```
+QueryScoreResponse defines the response type for querying an account's current score.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `score` | [string](#string) |  |  `score is the current total score for the delegator. This includes both the accumulated score snapshot and uncalculated scores from active delegations since the last distribution.`  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -5953,6 +5999,7 @@ Query defines the gRPC querier service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
+| `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
 
  <!-- end services -->
 

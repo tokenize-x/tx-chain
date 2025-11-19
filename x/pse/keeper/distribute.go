@@ -3,8 +3,6 @@ package keeper
 import (
 	"context"
 
-	"cosmossdk.io/collections"
-	addresscodec "cosmossdk.io/core/address"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -13,51 +11,18 @@ import (
 )
 
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
-func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkmath.Int) error {
-	var allDelegationTimeEntryKeys []collections.Pair[sdk.ValAddress, sdk.AccAddress]
+func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdkmath.Int) error {
 	// iterate all delegation time entries and calculate uncalculated score.
 	var finalScoreMap = newScoreMap(k.addressCodec)
-	delegationTimeEntriesIterator, err := k.DelegationTimeEntries.Iterate(ctx, nil)
+	allDelegationTimeEntry, err := finalScoreMap.iterateDelegationTimeEntries(ctx, k)
 	if err != nil {
 		return err
-	}
-	defer delegationTimeEntriesIterator.Close()
-
-	for ; delegationTimeEntriesIterator.Valid(); delegationTimeEntriesIterator.Next() {
-		kv, err := delegationTimeEntriesIterator.KeyValue()
-		if err != nil {
-			return err
-		}
-		allDelegationTimeEntryKeys = append(allDelegationTimeEntryKeys, kv.Key)
-		valAddr := kv.Key.K1()
-		delAddr := kv.Key.K2()
-		delegationTimeEntry := kv.Value
-		delegationScore, err := calculateAddedScore(ctx, k, valAddr, delegationTimeEntry)
-		if err != nil {
-			return err
-		}
-		finalScoreMap.AddScore(delAddr, delegationScore)
 	}
 
 	// add uncalculated score to account score snapshot and total score per delegator.
 	// it calculates the score from the last delegation time entry up to the current block time, which
 	// is not included in the score snapshot calculations.
-	iter, err := k.AccountScoreSnapshot.Iterate(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		if err != nil {
-			return err
-		}
-		score := kv.Value
-		delAddr := kv.Key
-		finalScoreMap.AddScore(delAddr, score)
-	}
-
-	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+	err = finalScoreMap.iterateAccountScoreSnapshot(ctx, k)
 	if err != nil {
 		return err
 	}
@@ -88,7 +53,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 
 	// send leftover to CommunityPool.
 	if leftover.IsPositive() {
-		pseModuleAddress := k.accountKeeper.GetModuleAddress(k.getCommunityPSEClearingAccount())
+		pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
 		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
 		if err != nil {
 			return err
@@ -103,10 +68,10 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 
 	// set all delegation time entries to the current block time.
 	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
-	for _, key := range allDelegationTimeEntryKeys {
-		err = k.DelegationTimeEntries.Set(ctx, key, types.DelegationTimeEntry{
+	for _, kv := range allDelegationTimeEntry {
+		err = k.DelegationTimeEntries.Set(ctx, kv.Key, types.DelegationTimeEntry{
 			LastChangedUnixSec: blockTimeUnixSeconds,
-			Shares:             sdkmath.LegacyNewDec(0),
+			Shares:             kv.Value.Shares,
 		})
 		if err != nil {
 			return err
@@ -114,66 +79,6 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, totalPSEAmount sdkma
 	}
 
 	return nil
-}
-
-type scoreMap struct {
-	items []struct {
-		addr  sdk.AccAddress
-		score sdkmath.Int
-	}
-	indexMap     map[string]int
-	addressCodec addresscodec.Codec
-	totalScore   sdkmath.Int
-}
-
-func newScoreMap(addressCodec addresscodec.Codec) *scoreMap {
-	return &scoreMap{
-		items: make([]struct {
-			addr  sdk.AccAddress
-			score sdkmath.Int
-		}, 0),
-		indexMap:     make(map[string]int),
-		addressCodec: addressCodec,
-		totalScore:   sdkmath.NewInt(0),
-	}
-}
-
-func (m *scoreMap) AddScore(addr sdk.AccAddress, value sdkmath.Int) {
-	if value.IsZero() {
-		return
-	}
-	key, err := m.addressCodec.BytesToString(addr)
-	if err != nil {
-		return
-	}
-	idx, found := m.indexMap[key]
-	if !found {
-		m.items = append(m.items, struct {
-			addr  sdk.AccAddress
-			score sdkmath.Int
-		}{
-			addr:  addr,
-			score: value,
-		})
-		m.indexMap[key] = len(m.items) - 1
-	} else {
-		m.items[idx].score = m.items[idx].score.Add(value)
-	}
-
-	m.totalScore = m.totalScore.Add(value)
-}
-
-func (m *scoreMap) Walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) error {
-	for _, pair := range m.items {
-		if err := fn(pair.addr, pair.score); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (k Keeper) getCommunityPSEClearingAccount() string {
-	return types.ClearingAccountCommunity
 }
 
 func (k Keeper) distributeToDelegator(
@@ -206,16 +111,15 @@ func (k Keeper) distributeToDelegator(
 
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
-		k.getCommunityPSEClearingAccount(),
+		types.ClearingAccountCommunity,
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
 		return sdkmath.NewInt(0), err
 	}
-	deliveredAmount := sdkmath.NewInt(0)
 	for _, delegation := range delegations {
 		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
-		// the sum of all rounding errors will be sent to CommunityPool
+		// if that one subunit exists, it will remain in user balance as undelegated.
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 		if err != nil {
@@ -231,7 +135,6 @@ func (k Keeper) distributeToDelegator(
 		if err != nil {
 			return sdkmath.NewInt(0), err
 		}
-		deliveredAmount = deliveredAmount.Add(delegationAmount)
 	}
-	return deliveredAmount, nil
+	return amount, nil
 }
