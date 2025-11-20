@@ -151,7 +151,7 @@ func (am AppModule) EndBlock(c context.Context) error {
 	cacheCtx, writeCache := ctx.CacheContext()
 	err = am.keeper.ProcessNextDistribution(cacheCtx) //nolint:contextcheck // this is correct context passing
 	if err != nil {
-		ctx.Logger().Error("failed to process next distribution, skippint all future distributions", "error", err)
+		ctx.Logger().Error("failed to process next distribution, skipping all future distributions", "error", err)
 		return am.keeper.SkippedDistributions.Set(c, true)
 	}
 	writeCache()
