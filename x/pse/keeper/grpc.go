@@ -61,8 +61,21 @@ func (qs QueryService) ScheduledDistributions(
 	if err != nil {
 		return nil, err
 	}
-
 	return &types.QueryScheduledDistributionsResponse{
 		ScheduledDistributions: scheduledDistributions,
+	}, nil
+}
+
+// ClearingAccountBalances returns the current balances of all PSE clearing accounts.
+func (qs QueryService) ClearingAccountBalances(
+	ctx context.Context,
+	req *types.QueryClearingAccountBalancesRequest,
+) (*types.QueryClearingAccountBalancesResponse, error) {
+	balances, err := qs.keeper.GetClearingAccountBalances(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &types.QueryClearingAccountBalancesResponse{
+		Balances: balances,
 	}, nil
 }

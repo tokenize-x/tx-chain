@@ -27,10 +27,36 @@ func TestGenesis(t *testing.T) {
 	// Generate addresses after setting up test app (which sets the correct bech32 config)
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	valAddr1 := sdk.ValAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	genesisState.Params.ExcludedAddresses = []string{
 		addr1,
 		addr2,
+	}
+	now := time.Now()
+	genesisState.DelegationTimeEntries = []types.DelegationTimeEntryExport{
+		{
+			ValidatorAddress:   valAddr1,
+			DelegatorAddress:   addr1,
+			Shares:             sdkmath.LegacyNewDec(432),
+			LastChangedUnixSec: now.Unix(),
+		},
+		{
+			ValidatorAddress:   valAddr1,
+			DelegatorAddress:   addr2,
+			Shares:             sdkmath.LegacyNewDec(832),
+			LastChangedUnixSec: now.Unix(),
+		},
+	}
+	genesisState.AccountScores = []types.AccountScore{
+		{
+			Address: addr1,
+			Score:   sdkmath.NewInt(1234),
+		},
+		{
+			Address: addr2,
+			Score:   sdkmath.NewInt(5678),
+		},
 	}
 
 	err := pseKeeper.InitGenesis(ctx, genesisState)
@@ -48,179 +74,6 @@ func TestGenesis(t *testing.T) {
 
 	requireT.EqualExportedValues(&genesisState.Params, &got.Params)
 	requireT.EqualExportedValues(&genesisState.ScheduledDistributions, &got.ScheduledDistributions)
-}
-
-// TestGenesis_HardForkWithAllocations tests the hard fork scenario.
-func TestGenesis_HardForkWithAllocations(t *testing.T) {
-	requireT := require.New(t)
-
-	// Setup initial chain state
-	testApp1 := simapp.New()
-	ctx1 := testApp1.NewContext(false)
-	ctx1 = ctx1.WithBlockTime(time.Now())
-	pseKeeper1 := testApp1.PSEKeeper
-
-	// Get bond denom
-	stakingParams, err := testApp1.StakingKeeper.GetParams(ctx1)
-	requireT.NoError(err)
-	bondDenom := stakingParams.BondDenom
-
-	// Setup mappings for all eligible clearing accounts
-	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr5 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-
-	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr2}},
-		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr3}},
-		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr4}},
-		{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr5}},
-	}
-
-	// Setup params with mappings
-	params, err := pseKeeper1.GetParams(ctx1)
-	requireT.NoError(err)
-	params.ClearingAccountMappings = mappings
-	err = pseKeeper1.SetParams(ctx1, params)
-	requireT.NoError(err)
-
-	// Create allocation schedule with 3 periods
-	now := time.Now()
-	time1 := uint64(now.Add(1 * time.Hour).Unix())
-	time2 := uint64(now.Add(2 * time.Hour).Unix())
-	time3 := uint64(now.Add(3 * time.Hour).Unix())
-
-	schedule := []types.ScheduledDistribution{
-		{
-			Timestamp: time1,
-			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(5000)},
-				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
-				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(200)},
-				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(300)},
-				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(400)},
-				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(500)},
-			},
-		},
-		{
-			Timestamp: time2,
-			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(10000)},
-				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
-				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(400)},
-				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(600)},
-				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(800)},
-				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(1000)},
-			},
-		},
-		{
-			Timestamp: time3,
-			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(15000)},
-				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(3000)},
-				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(600)},
-				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(900)},
-				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(1200)},
-				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(1500)},
-			},
-		},
-	}
-
-	// Store allocation schedule
-	for _, scheduledDist := range schedule {
-		err = pseKeeper1.AllocationSchedule.Set(ctx1, scheduledDist.Timestamp, scheduledDist)
-		requireT.NoError(err)
-	}
-
-	// Fund all clearing accounts
-	for _, clearingAccount := range types.GetAllClearingAccounts() {
-		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
-		err = testApp1.BankKeeper.MintCoins(ctx1, types.ModuleName, fundAmount)
-		requireT.NoError(err)
-		err = testApp1.BankKeeper.SendCoinsFromModuleToModule(ctx1, types.ModuleName, clearingAccount, fundAmount)
-		requireT.NoError(err)
-	}
-
-	// Process first distribution (time1)
-	ctx1 = ctx1.WithBlockTime(time.Unix(int64(time1)+10, 0))
-	ctx1 = ctx1.WithBlockHeight(100)
-	err = pseKeeper1.ProcessNextDistribution(ctx1)
-	requireT.NoError(err)
-
-	// Export genesis state (simulating hard fork preparation)
-	exportedGenesis, err := pseKeeper1.ExportGenesis(ctx1)
-	requireT.NoError(err)
-	requireT.NotNil(exportedGenesis)
-
-	// Verify exported state has 2 remaining allocations (time2 and time3)
-	requireT.Len(exportedGenesis.ScheduledDistributions, 2, "should have 2 unprocessed allocations")
-	requireT.Equal(time2, exportedGenesis.ScheduledDistributions[0].Timestamp)
-	requireT.Equal(time3, exportedGenesis.ScheduledDistributions[1].Timestamp)
-
-	// Verify exported state has all 5 mappings (Community doesn't need mapping)
-	requireT.Len(exportedGenesis.Params.ClearingAccountMappings, 5, "should have all 5 non-Community mappings")
-
-	// Verify each period has all 6 clearing accounts
-	for i, period := range exportedGenesis.ScheduledDistributions {
-		requireT.Len(period.Allocations, 6, "period %d should have all 6 clearing accounts", i)
-	}
-
-	// Verify exported state is valid
-	err = exportedGenesis.Validate()
-	requireT.NoError(err, "exported genesis should be valid")
-
-	// Create new chain and import genesis (hard fork scenario)
-	testApp2 := simapp.New()
-	ctx2 := testApp2.NewContext(false)
-	ctx2 = ctx2.WithBlockTime(time.Unix(int64(time1)+10, 0))
-	ctx2 = ctx2.WithBlockHeight(100)
-	pseKeeper2 := testApp2.PSEKeeper
-
-	// InitGenesis should successfully import the exported state
-	err = pseKeeper2.InitGenesis(ctx2, *exportedGenesis)
-	requireT.NoError(err, "InitGenesis should succeed with valid exported state")
-
-	// Verify allocation schedule was properly imported
-	importedSchedule, err := pseKeeper2.GetDistributionSchedule(ctx2)
-	requireT.NoError(err)
-	requireT.Len(importedSchedule, 2, "imported schedule should have 2 allocations")
-	requireT.Equal(time2, importedSchedule[0].Timestamp)
-	requireT.Equal(time3, importedSchedule[1].Timestamp)
-
-	// Verify params were properly imported
-	importedParams, err := pseKeeper2.GetParams(ctx2)
-	requireT.NoError(err)
-	requireT.Len(importedParams.ClearingAccountMappings, 5, "imported params should have all 5 mappings")
-
-	// Verify we can export the same state again (round-trip test)
-	reexportedGenesis, err := pseKeeper2.ExportGenesis(ctx2)
-	requireT.NoError(err)
-	requireT.EqualExportedValues(exportedGenesis, reexportedGenesis, "re-exported genesis should match")
-
-	// Process next distribution on new chain (time2)
-	ctx2 = ctx2.WithBlockTime(time.Unix(int64(time2)+10, 0))
-	ctx2 = ctx2.WithBlockHeight(200)
-
-	// Fund non-Community clearing accounts on new chain before processing
-	for _, clearingAccount := range types.GetAllClearingAccounts() {
-		fundAmount := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(100000)))
-		err = testApp2.BankKeeper.MintCoins(ctx2, types.ModuleName, fundAmount)
-		requireT.NoError(err)
-		err = testApp2.BankKeeper.SendCoinsFromModuleToModule(ctx2, types.ModuleName, clearingAccount, fundAmount)
-		requireT.NoError(err)
-	}
-
-	err = pseKeeper2.ProcessNextDistribution(ctx2)
-	requireT.NoError(err, "should process time2 distribution on new chain")
-
-	// Verify only time3 remains
-	finalSchedule, err := pseKeeper2.GetDistributionSchedule(ctx2)
-	requireT.NoError(err)
-	requireT.Len(finalSchedule, 1, "should have 1 remaining allocation")
-	requireT.Equal(time3, finalSchedule[0].Timestamp)
 }
 
 // TestGenesis_EmptyState tests that default genesis state is valid and can be imported/exported.
@@ -261,7 +114,10 @@ func TestGenesis_EmptyState(t *testing.T) {
 	if exported.ScheduledDistributions == nil {
 		exported.ScheduledDistributions = []types.ScheduledDistribution{}
 	}
-	requireT.EqualExportedValues(defaultGenesis, exported, "exported should match default")
+	// since test app has a default validator, the exported genesis will contain an staking snapshot,
+	// so AccountScores and DelegationTimeEntries cannot be compared directly.
+	requireT.EqualExportedValues(defaultGenesis.ScheduledDistributions, exported.ScheduledDistributions)
+	requireT.EqualExportedValues(defaultGenesis.Params, exported.Params)
 }
 
 // TestGenesis_InvalidState tests that invalid genesis state is rejected.

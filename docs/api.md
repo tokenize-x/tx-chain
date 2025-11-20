@@ -279,12 +279,17 @@
     - [EventAllocationDistributed](#tx.pse.v1.EventAllocationDistributed)
   
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
+    - [AccountScore](#tx.pse.v1.AccountScore)
+    - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
     - [GenesisState](#tx.pse.v1.GenesisState)
   
 - [tx/pse/v1/params.proto](#tx/pse/v1/params.proto)
     - [Params](#tx.pse.v1.Params)
   
 - [tx/pse/v1/query.proto](#tx/pse/v1/query.proto)
+    - [ClearingAccountBalance](#tx.pse.v1.ClearingAccountBalance)
+    - [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest)
+    - [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
     - [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest)
@@ -5840,6 +5845,40 @@ Any remainder from division is sent to the community pool.
 
 
 
+<a name="tx.pse.v1.AccountScore"></a>
+
+### AccountScore
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |    |
+| `score` | [string](#string) |  |    |
+
+
+
+
+
+
+<a name="tx.pse.v1.DelegationTimeEntryExport"></a>
+
+### DelegationTimeEntryExport
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `validator_address` | [string](#string) |  |    |
+| `delegator_address` | [string](#string) |  |    |
+| `shares` | [string](#string) |  |    |
+| `last_changed_unix_sec` | [int64](#int64) |  |    |
+
+
+
+
+
+
 <a name="tx.pse.v1.GenesisState"></a>
 
 ### GenesisState
@@ -5854,6 +5893,8 @@ GenesisState defines the module's genesis state.
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#tx.pse.v1.Params) |  |  `params contains all gov-manageable parameters.`  |
 | `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all scheduled distributions (both past and pending). Stored as a list for genesis import/export, but will be stored as a map in state. Must be sorted by timestamp in ascending order. Completed allocations are removed from the map after processing.`  |
+| `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
+| `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 
 
 
@@ -5909,6 +5950,59 @@ Params store gov manageable parameters.
 <p align="right"><a href="#top">Top</a></p>
 
 ## tx/pse/v1/query.proto
+
+
+
+<a name="tx.pse.v1.ClearingAccountBalance"></a>
+
+### ClearingAccountBalance
+
+```
+ClearingAccountBalance represents the balance of a single clearing account.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `clearing_account` | [string](#string) |  |  `clearing_account is the name of the clearing account.`  |
+| `balance` | [string](#string) |  |  `balance is the current balance of the clearing account in the bond denom.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryClearingAccountBalancesRequest"></a>
+
+### QueryClearingAccountBalancesRequest
+
+```
+QueryClearingAccountBalancesRequest defines the request type for querying clearing account balances.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryClearingAccountBalancesResponse"></a>
+
+### QueryClearingAccountBalancesResponse
+
+```
+QueryClearingAccountBalancesResponse defines the response type for querying clearing account balances.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `balances` | [ClearingAccountBalance](#tx.pse.v1.ClearingAccountBalance) | repeated |  `balances contains the current balances of all PSE clearing accounts in the bond denom.`  |
+
+
+
 
 
 
@@ -6036,6 +6130,7 @@ Query defines the gRPC querier service.
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
 | `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
 | `ScheduledDistributions` | [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest) | [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse) | `ScheduledDistributions queries all future scheduled distributions.` | GET|/tx/pse/v1/scheduled_distributions |
+| `ClearingAccountBalances` | [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest) | [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse) | `ClearingAccountBalances queries the current balances of all PSE clearing accounts.` | GET|/tx/pse/v1/clearing_account_balances |
 
  <!-- end services -->
 
