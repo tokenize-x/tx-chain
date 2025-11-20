@@ -369,7 +369,6 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		requireT.Equal(schedule1.Timestamp, resp.ScheduledDistributions[0].Timestamp)
 		requireT.Equal(schedule2.Timestamp, resp.ScheduledDistributions[1].Timestamp)
 		requireT.Equal(schedule3.Timestamp, resp.ScheduledDistributions[2].Timestamp)
-
 	})
 }
 

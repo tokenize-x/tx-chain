@@ -51,7 +51,7 @@ func (qs QueryService) Score(ctx context.Context, req *types.QueryScoreRequest) 
 	}, nil
 }
 
-// AllocationSchedule returns all future allocation schedules.
+// ScheduledDistributions returns all future allocation schedules.
 // Past scheduled distributions are automatically removed after processing,
 // so all scheduled distributions in storage are future scheduled distributions.
 func (qs QueryService) ScheduledDistributions(
