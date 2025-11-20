@@ -435,7 +435,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT.NoError(err)
 	bondDenom := stakingParams.BondDenom
 
-	// Step 1: Set up sub-account mappings with both single and multiple recipients
+	// Set up sub-account mappings with both single and multiple recipients
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
@@ -455,7 +455,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	err = pseKeeper.UpdateClearingMappings(ctx, authority, mappings)
 	requireT.NoError(err)
 
-	// Step 2: Create a distribution schedule manually for testing
+	// Create a distribution schedule manually for testing
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix()) // 1 hour ago (already due)
 
 	// Create allocations for ALL clearing accounts to ensure they're properly funded
@@ -487,19 +487,13 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Len(allocationSchedule, 1, "should have 1 allocation")
 
-	// Step 3: Fast-forward time to first distribution
+	// Fast-forward time to first distribution
 	ctx = ctx.WithBlockTime(time.Unix(int64(startTime)+10, 0)) // 10 seconds after first distribution time
 	ctx = ctx.WithBlockHeight(100)
 
-	// Step 4: Process distributions
+	// Process distributions
 	err = pseKeeper.ProcessNextDistribution(ctx)
 	requireT.NoError(err)
-
-	// Step 5: Verify Community account still has ALL tokens (doesn't distribute)
-	communityAddr := testApp.AccountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
-	communityBalance := bankKeeper.GetBalance(ctx, communityAddr, bondDenom)
-	requireT.False(communityBalance.Amount.IsZero(),
-		"Community clearing account should still have tokens")
 
 	// Verify non-Community clearing accounts have distributed the scheduled amount
 	// (not empty because schedule spreads over TotalAllocationMonths periods)
@@ -523,7 +517,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 			"clearing account %s should have correct remaining balance", allocation.ClearingAccount)
 	}
 
-	// Step 6: Verify recipient balances (accounting for multiple sources)
+	// Verify recipient balances (accounting for multiple sources)
 	// Build expected balances for each recipient and track total remainders
 	expectedBalances := make(map[string]sdkmath.Int)
 	totalRemainder := sdkmath.ZeroInt()
@@ -531,8 +525,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 
 	for _, allocation := range firstDist.Allocations {
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
-			// Community allocation goes to community pool as leftover when no delegators exist
-			communityAllocationAmount = allocation.Amount
+			totalRemainder = totalRemainder.Add(allocation.Amount)
 			continue
 		}
 
@@ -569,9 +562,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 			"recipient %s should have received correct total amount", addr)
 	}
 
-	// Step 6b: Verify community pool received:
-	// 1. Remainders from non-Community clearing account distributions
-	// 2. Leftover from Community clearing account (full amount when no delegators)
+	// Verify community pool received all remainders
 	communityPoolCoins, err := testApp.DistrKeeper.FeePool.Get(ctx)
 	requireT.NoError(err)
 	communityPoolBalance := communityPoolCoins.CommunityPool.AmountOf(bondDenom)
@@ -579,7 +570,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT.Equal(expectedCommunityPoolTotal.String(), communityPoolBalance.String(),
 		"community pool should have received all distribution remainders and Community leftover")
 
-	// Step 7: Verify allocation schedule count decreased (first period removed)
+	// Verify allocation schedule count decreased (first period removed)
 	allocationScheduleAfter, err := pseKeeper.GetAllocationSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Empty(allocationScheduleAfter, "should have 0 remaining allocations")

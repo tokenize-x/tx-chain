@@ -16,24 +16,34 @@ type scoreMap struct {
 		addr  sdk.AccAddress
 		score sdkmath.Int
 	}
-	indexMap     map[string]int
-	addressCodec addresscodec.Codec
-	totalScore   sdkmath.Int
+	indexMap          map[string]int
+	addressCodec      addresscodec.Codec
+	totalScore        sdkmath.Int
+	excludedAddresses []sdk.AccAddress
 }
 
-func newScoreMap(addressCodec addresscodec.Codec) *scoreMap {
+func newScoreMap(addressCodec addresscodec.Codec, excludedAddressesStr []string) (*scoreMap, error) {
+	excludedAddresses := make([]sdk.AccAddress, len(excludedAddressesStr))
+	for i, addr := range excludedAddressesStr {
+		var err error
+		excludedAddresses[i], err = addressCodec.StringToBytes(addr)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &scoreMap{
 		items: make([]struct {
 			addr  sdk.AccAddress
 			score sdkmath.Int
 		}, 0),
-		indexMap:     make(map[string]int),
-		addressCodec: addressCodec,
-		totalScore:   sdkmath.NewInt(0),
-	}
+		indexMap:          make(map[string]int),
+		addressCodec:      addressCodec,
+		totalScore:        sdkmath.NewInt(0),
+		excludedAddresses: excludedAddresses,
+	}, nil
 }
 
-func (m *scoreMap) AddScore(addr sdk.AccAddress, value sdkmath.Int) error {
+func (m *scoreMap) addScore(addr sdk.AccAddress, value sdkmath.Int) error {
 	if value.IsZero() {
 		return nil
 	}
@@ -59,8 +69,11 @@ func (m *scoreMap) AddScore(addr sdk.AccAddress, value sdkmath.Int) error {
 	return nil
 }
 
-func (m *scoreMap) Walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) error {
+func (m *scoreMap) walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) error {
 	for _, pair := range m.items {
+		if m.isExcludedAddress(pair.addr) {
+			continue
+		}
 		if err := fn(pair.addr, pair.score); err != nil {
 			return err
 		}
@@ -81,7 +94,10 @@ func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) er
 		}
 		score := kv.Value
 		delAddr := kv.Key
-		err = m.AddScore(delAddr, score)
+		if m.isExcludedAddress(delAddr) {
+			continue
+		}
+		err = m.addScore(delAddr, score)
 		if err != nil {
 			return err
 		}
@@ -111,16 +127,29 @@ func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
 		allDelegationTimeEntry = append(allDelegationTimeEntry, kv)
 		delAddr := kv.Key.K1()
 		valAddr := kv.Key.K2()
+		if m.isExcludedAddress(delAddr) {
+			continue
+		}
+
 		delegationTimeEntry := kv.Value
 		delegationScore, err := calculateAddedScore(ctx, k, valAddr, delegationTimeEntry)
 		if err != nil {
 			return nil, err
 		}
-		err = m.AddScore(delAddr, delegationScore)
+		err = m.addScore(delAddr, delegationScore)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return allDelegationTimeEntry, nil
+}
+
+func (m *scoreMap) isExcludedAddress(addr sdk.AccAddress) bool {
+	for _, excludedAddress := range m.excludedAddresses {
+		if excludedAddress.Equals(addr) {
+			return true
+		}
+	}
+	return false
 }
