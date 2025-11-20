@@ -57,6 +57,10 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
+	if err := k.SkippedDistributions.Set(ctx, false); err != nil {
+		return err
+	}
+
 	return nil
 }
 

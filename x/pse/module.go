@@ -139,8 +139,23 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // updates.
 func (am AppModule) EndBlock(c context.Context) error {
 	// Process periodic distributions
-	// TODO: make decision to panic or not
-	return am.keeper.ProcessNextDistribution(c)
+	ctx := sdk.UnwrapSDKContext(c)
+	skipped, err := am.keeper.SkippedDistributions.Get(ctx)
+	if err != nil {
+		return err
+	}
+	if skipped {
+		ctx.Logger().Info("skipping distribution because it was marked as skipped")
+		return nil
+	}
+	cacheCtx, writeCache := ctx.CacheContext()
+	err = am.keeper.ProcessNextDistribution(cacheCtx)
+	if err != nil {
+		ctx.Logger().Error("failed to process next distribution, skippint all future distributions", "error", err)
+		return am.keeper.SkippedDistributions.Set(ctx, true)
+	}
+	writeCache()
+	return nil
 }
 
 // AppModuleSimulation functions
