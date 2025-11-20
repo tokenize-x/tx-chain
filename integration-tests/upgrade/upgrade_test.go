@@ -54,6 +54,7 @@ func upgradeV5ToV6(t *testing.T) {
 	tests := []upgradeTest{
 		&denomSymbol{},
 		&mint{},
+		&pseStakingSnapshot{},
 	}
 
 	for _, test := range tests {
