@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"context"
+
 	"cosmossdk.io/collections"
 	addresscodec "cosmossdk.io/core/address"
 	sdkstore "cosmossdk.io/core/store"
@@ -96,4 +98,38 @@ func NewKeeper(
 	k.Schema = schema
 
 	return k
+}
+
+// GetClearingAccountBalances returns the current balances of all PSE clearing accounts in the bond denom.
+func (k Keeper) GetClearingAccountBalances(ctx context.Context) ([]types.ClearingAccountBalance, error) {
+	// Get bond denom from staking params
+	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all clearing accounts
+	clearingAccounts := types.GetAllClearingAccounts()
+	balances := make([]types.ClearingAccountBalance, 0, len(clearingAccounts))
+
+	// Query balance for each clearing account
+	for _, account := range clearingAccounts {
+		moduleAddr := k.accountKeeper.GetModuleAddress(account)
+		if moduleAddr == nil {
+			// Module account not found, set balance to zero
+			balances = append(balances, types.ClearingAccountBalance{
+				ClearingAccount: account,
+				Balance:         sdkmath.ZeroInt(),
+			})
+			continue
+		}
+
+		balance := k.bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
+		balances = append(balances, types.ClearingAccountBalance{
+			ClearingAccount: account,
+			Balance:         balance.Amount,
+		})
+	}
+
+	return balances, nil
 }

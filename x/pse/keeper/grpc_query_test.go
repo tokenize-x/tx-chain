@@ -262,3 +262,71 @@ func TestQueryScore_InvalidAddress(t *testing.T) {
 	})
 	requireT.Error(err, "should return error for invalid address")
 }
+
+func TestQueryClearingAccountBalances(t *testing.T) {
+	t.Run("all accounts with zero balance", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		resp, err := queryService.ClearingAccountBalances(ctx, &types.QueryClearingAccountBalancesRequest{})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+
+		// Should return all 6 clearing accounts
+		requireT.Len(resp.Balances, 6)
+
+		// Verify all accounts are present and have zero balance
+		accounts := types.GetAllClearingAccounts()
+		for i, balance := range resp.Balances {
+			requireT.Equal(accounts[i], balance.ClearingAccount)
+			requireT.True(balance.Balance.IsZero())
+		}
+	})
+
+	t.Run("accounts with non-zero balances", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		// Fund some clearing accounts by sending from PSE module
+		foundationAmount := sdk.NewInt64Coin(sdk.DefaultBondDenom, 1000000)
+		teamAmount := sdk.NewInt64Coin(sdk.DefaultBondDenom, 2000000)
+		communityAmount := sdk.NewInt64Coin(sdk.DefaultBondDenom, 3000000)
+
+		// Calculate total to mint
+		totalAmountInt := foundationAmount.Amount.Add(teamAmount.Amount).Add(communityAmount.Amount)
+		totalAmount := sdk.NewCoin(sdk.DefaultBondDenom, totalAmountInt)
+
+		// Mint total coins to PSE module
+		requireT.NoError(testApp.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(totalAmount)))
+
+		// Send to clearing accounts
+		requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+			ctx, types.ModuleName, types.ClearingAccountFoundation, sdk.NewCoins(foundationAmount)))
+		requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+			ctx, types.ModuleName, types.ClearingAccountTeam, sdk.NewCoins(teamAmount)))
+		requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+			ctx, types.ModuleName, types.ClearingAccountCommunity, sdk.NewCoins(communityAmount)))
+
+		resp, err := queryService.ClearingAccountBalances(ctx, &types.QueryClearingAccountBalancesRequest{})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+		requireT.Len(resp.Balances, 6)
+
+		// Verify balances
+		balanceMap := make(map[string]sdkmath.Int)
+		for _, balance := range resp.Balances {
+			balanceMap[balance.ClearingAccount] = balance.Balance
+		}
+
+		requireT.Equal(communityAmount.Amount, balanceMap[types.ClearingAccountCommunity])
+		requireT.Equal(foundationAmount.Amount, balanceMap[types.ClearingAccountFoundation])
+		requireT.Equal(teamAmount.Amount, balanceMap[types.ClearingAccountTeam])
+		requireT.True(balanceMap[types.ClearingAccountAlliance].IsZero())
+		requireT.True(balanceMap[types.ClearingAccountPartnership].IsZero())
+		requireT.True(balanceMap[types.ClearingAccountInvestors].IsZero())
+	})
+}

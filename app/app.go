@@ -1200,6 +1200,8 @@ func New(
 			app.MintKeeper,
 			app.StakingKeeper,
 			app.PSEKeeper,
+			app.AccountKeeper.AddressCodec(),
+			app.StakingKeeper.ValidatorAddressCodec(),
 		),
 	}
 
