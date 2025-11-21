@@ -14,25 +14,21 @@ option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
 service Query {    
   // Params queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/params";
   }
 
   // Score queries the current total score of an account (delegator).
   rpc Score(QueryScoreRequest) returns (QueryScoreResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/score/{address}";
   }
 
   // ScheduledDistributions queries all future scheduled distributions.
   rpc ScheduledDistributions(QueryScheduledDistributionsRequest) returns (QueryScheduledDistributionsResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/scheduled_distributions";
   }
 
   // ClearingAccountBalances queries the current balances of all PSE clearing accounts.
   rpc ClearingAccountBalances(QueryClearingAccountBalancesRequest) returns (QueryClearingAccountBalancesResponse) {
-    option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/tx/pse/v1/clearing_account_balances";
   }
 }
