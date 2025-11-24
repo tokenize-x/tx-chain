@@ -51,6 +51,21 @@ func (qs QueryService) Score(ctx context.Context, req *types.QueryScoreRequest) 
 	}, nil
 }
 
+// ScheduledDistributions returns all future allocation schedules.
+// Past scheduled distributions are automatically removed after processing,
+// so all scheduled distributions in storage are future scheduled distributions.
+func (qs QueryService) ScheduledDistributions(
+	ctx context.Context, req *types.QueryScheduledDistributionsRequest,
+) (*types.QueryScheduledDistributionsResponse, error) {
+	scheduledDistributions, err := qs.keeper.GetDistributionSchedule(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &types.QueryScheduledDistributionsResponse{
+		ScheduledDistributions: scheduledDistributions,
+	}, nil
+}
+
 // ClearingAccountBalances returns the current balances of all PSE clearing accounts.
 func (qs QueryService) ClearingAccountBalances(
 	ctx context.Context,
@@ -60,7 +75,6 @@ func (qs QueryService) ClearingAccountBalances(
 	if err != nil {
 		return nil, err
 	}
-
 	return &types.QueryClearingAccountBalancesResponse{
 		Balances: balances,
 	}, nil
