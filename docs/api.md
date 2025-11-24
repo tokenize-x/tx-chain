@@ -5893,6 +5893,7 @@ GenesisState defines the module's genesis state.
 | `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all scheduled distributions (both past and pending). Stored as a list for genesis import/export, but will be stored as a map in state. Must be sorted by timestamp in ascending order. Completed allocations are removed from the map after processing.`  |
 | `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
+| `skip_distributions` | [bool](#bool) |  |    |
 
 
 
