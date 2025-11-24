@@ -3,6 +3,7 @@ package v6
 import (
 	"context"
 
+	addresscodec "cosmossdk.io/core/address"
 	store "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -26,6 +27,8 @@ func New(
 	mintKeeper mintkeeper.Keeper,
 	stakingKeeper *stakingkeeper.Keeper,
 	pseKeeper pskeeper.Keeper,
+	addressCodec addresscodec.Codec,
+	valAddressCodec addresscodec.Codec,
 ) upgrade.Upgrade {
 	return upgrade.Upgrade{
 		Name: Name,
@@ -62,6 +65,15 @@ func New(
 				return nil, err
 			}
 
+			if err := SnapshotPSEStaking(
+				ctx,
+				stakingkeeper.NewQuerier(stakingKeeper),
+				pseKeeper,
+				addressCodec,
+				valAddressCodec,
+			); err != nil {
+				return nil, err
+			}
 			return vmap, nil
 		},
 	}
