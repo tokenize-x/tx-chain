@@ -71,7 +71,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	// Export allocation schedule using keeper method (already sorted by timestamp)
-	genesis.ScheduledDistributions, err = k.GetAllocationSchedule(ctx)
+	genesis.ScheduledDistributions, err = k.GetDistributionSchedule(ctx)
 	if err != nil {
 		return nil, err
 	}
