@@ -3,7 +3,6 @@ package tx.pse.v1;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "tx/pse/v1/params.proto";
 import "tx/pse/v1/distribution.proto";
