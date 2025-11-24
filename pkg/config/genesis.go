@@ -45,6 +45,7 @@ type GenesisInitConfig struct {
 	GovConfig          GenesisInitGovConfig          `json:"gov_config"`
 	CustomParamsConfig GenesisInitCustomParamsConfig `json:"custom_params_config"`
 	BankBalances       []banktypes.Balance           `json:"bank_balances"`
+	ModuleBalances     []ModuleBalance               `json:"module_balances"`
 	Validators         []GenesisInitValidator        `json:"validators"`
 	DEXConfig          GenesisDEXConfig              `json:"dex_config"`
 	GenTxs             []json.RawMessage             `json:"gen_txs"`
@@ -81,6 +82,14 @@ type GenesisInitValidator struct {
 //nolint:tagliatelle
 type GenesisDEXConfig struct {
 	MaxOrdersPerDenom uint64 `json:"max_orders_per_denom"`
+}
+
+// ModuleBalance defines a module account with its initial balance for genesis.
+//
+//nolint:tagliatelle
+type ModuleBalance struct {
+	ModuleName string    `json:"module_name"`
+	Coins      sdk.Coins `json:"coins"`
 }
 
 // GenDocFromInput generates genesis doc from genesis init config.
@@ -319,6 +328,24 @@ func defaultAuthAndBankParams(
 		accountAddress := sdk.MustAccAddressFromBech32(bb.Address)
 		accounts = append(accounts, authtypes.NewBaseAccount(accountAddress, nil, 0, 0))
 		bankGenesis.Supply = bankGenesis.Supply.Add(bb.Coins...)
+	}
+
+	// Add module accounts with balances
+	// Note: Module accounts are created without permissions here. The app's AccountKeeper
+	// will assign proper permissions when the accounts are loaded during InitGenesis.
+	for _, mb := range cfg.ModuleBalances {
+		moduleAddress := authtypes.NewModuleAddress(mb.ModuleName)
+
+		// Create empty module account (permissions will be set by the app's AccountKeeper)
+		moduleAccount := authtypes.NewEmptyModuleAccount(mb.ModuleName)
+		accounts = append(accounts, moduleAccount)
+
+		// Add balance for this module account
+		bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
+			Address: moduleAddress.String(),
+			Coins:   mb.Coins,
+		})
+		bankGenesis.Supply = bankGenesis.Supply.Add(mb.Coins...)
 	}
 
 	packedAccounts, err := authtypes.PackAccounts(authtypes.SanitizeGenesisAccounts(accounts))
