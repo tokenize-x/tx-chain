@@ -17,11 +17,6 @@ import (
 )
 
 const (
-	// DefaultDistributionStartTime is the default start time for the distribution schedule
-	// This is Dec 1, 2025, 00:00:00 UTC.
-	// TODO: Confirm the start time.
-	DefaultDistributionStartTime = 1764547200
-
 	// InitialTotalMint is the total amount to mint during initialization
 	// 100 billion tokens (in base denomination units).
 	InitialTotalMint = 100_000_000_000_000_000
@@ -114,7 +109,16 @@ func InitPSEAllocationsAndSchedule(
 
 	// Initialize parameters using predefined constants
 	allocations := DefaultInitialFundAllocations()
-	scheduleStartTime := uint64(DefaultDistributionStartTime)
+	// Use the upgrade date at 00:00:00 UTC as the distribution start time
+	// This ensures distributions happen at midnight UTC on the same day as the upgrade
+	upgradeBlockTime := sdkCtx.BlockTime()
+	scheduleStartTime := uint64(time.Date(
+		upgradeBlockTime.Year(),
+		upgradeBlockTime.Month(),
+		upgradeBlockTime.Day(),
+		0, 0, 0, 0,
+		time.UTC,
+	).Unix())
 	totalMintAmount := sdkmath.NewInt(InitialTotalMint)
 
 	// Retrieve the chain's native token denomination from staking params

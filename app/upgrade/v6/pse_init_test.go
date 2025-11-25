@@ -92,19 +92,43 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		"should have n monthly allocations")
 
 	// Step 6: Verify first and last timestamps (schedule uses actual months, not fixed 30-day intervals)
-	requireT.Equal(uint64(v6.DefaultDistributionStartTime), allocationSchedule[0].Timestamp,
-		"first period should start at default distribution start time")
-	requireT.Greater(allocationSchedule[v6.TotalAllocationMonths-1].Timestamp, uint64(v6.DefaultDistributionStartTime),
+	// The distribution should start at 00:00:00 UTC on the same day as the upgrade
+	upgradeBlockTime := ctx.BlockTime()
+	expectedStartTime := uint64(time.Date(
+		upgradeBlockTime.Year(),
+		upgradeBlockTime.Month(),
+		upgradeBlockTime.Day(),
+		0, 0, 0, 0,
+		time.UTC,
+	).Unix())
+	requireT.Equal(expectedStartTime, allocationSchedule[0].Timestamp,
+		"first period should start at 00:00:00 UTC on upgrade day")
+	requireT.Greater(allocationSchedule[v6.TotalAllocationMonths-1].Timestamp, expectedStartTime,
 		"last period should be after start time")
 
-	// Step 6b: Verify each distribution is on the first day of month and months increment correctly
+	// Step 6b: Verify each distribution happens on the same day of the month at 00:00:00 UTC
+	// (or properly normalized for month-end dates)
+	upgradeTime := ctx.BlockTime()
+	// Start from midnight UTC on the upgrade day
+	startTime := time.Date(
+		upgradeTime.Year(),
+		upgradeTime.Month(),
+		upgradeTime.Day(),
+		0, 0, 0, 0,
+		time.UTC,
+	)
 	var prevTime time.Time
 	for i, period := range allocationSchedule {
 		currentTime := time.Unix(int64(period.Timestamp), 0).UTC()
 
-		// Verify it's the first day of the month
-		requireT.Equal(1, currentTime.Day(),
-			"period %d should be on the first day of the month, got day %d", i, currentTime.Day())
+		// Verify the schedule follows AddDate behavior (adds months while preserving day, or normalizing)
+		// All distributions should be at 00:00:00 UTC
+		expectedTime := startTime.AddDate(0, i, 0)
+		requireT.Equal(expectedTime.Unix(), currentTime.Unix(),
+			"period %d should be %d months after upgrade date at 00:00:00 UTC", i, i)
+		requireT.Equal(0, currentTime.Hour(), "period %d should be at hour 00", i)
+		requireT.Equal(0, currentTime.Minute(), "period %d should be at minute 00", i)
+		requireT.Equal(0, currentTime.Second(), "period %d should be at second 00", i)
 
 		// Verify month increases by exactly 1 from previous (accounting for year rollover)
 		if i > 0 {
