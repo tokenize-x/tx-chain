@@ -31,6 +31,10 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"account_scores\""
   ];
+
+  bool skip_distributions = 5 [
+    (gogoproto.moretags) = "yaml:\"skip_distributions\""
+  ];
 }
 
 message DelegationTimeEntryExport {
