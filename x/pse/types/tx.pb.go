@@ -93,6 +93,123 @@ func (m *MsgUpdateExcludedAddresses) GetAddressesToRemove() []string {
 	return nil
 }
 
+// MsgUpdateClearingAccountMappings is a governance operation to update the clearing account to recipient mappings.
+// This replaces all existing mappings with the new ones provided.
+// Must include all non-Community clearing accounts (Foundation, Alliance, Partnership, Investors, Team).
+// Community clearing account uses score-based distribution and should not have recipient mappings.
+type MsgUpdateClearingAccountMappings struct {
+	// authority is the address authorized to update mappings (governance module address).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// mappings is the complete list of clearing account to recipient mappings.
+	// This replaces all existing mappings. Must include all non-Community clearing accounts.
+	Mappings []ClearingAccountMapping `protobuf:"bytes,2,rep,name=mappings,proto3" json:"mappings" yaml:"mappings"`
+}
+
+func (m *MsgUpdateClearingAccountMappings) Reset()         { *m = MsgUpdateClearingAccountMappings{} }
+func (m *MsgUpdateClearingAccountMappings) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateClearingAccountMappings) ProtoMessage()    {}
+func (*MsgUpdateClearingAccountMappings) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7fbcd921f59054cd, []int{1}
+}
+func (m *MsgUpdateClearingAccountMappings) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateClearingAccountMappings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateClearingAccountMappings.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateClearingAccountMappings) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateClearingAccountMappings.Merge(m, src)
+}
+func (m *MsgUpdateClearingAccountMappings) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateClearingAccountMappings) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateClearingAccountMappings.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateClearingAccountMappings proto.InternalMessageInfo
+
+func (m *MsgUpdateClearingAccountMappings) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgUpdateClearingAccountMappings) GetMappings() []ClearingAccountMapping {
+	if m != nil {
+		return m.Mappings
+	}
+	return nil
+}
+
+// MsgUpdateDistributionSchedule is a governance operation to replace the distribution schedule.
+// This completely replaces the existing distribution schedule with the new one provided.
+// All existing distributions are removed and replaced with the provided distribution schedule.
+type MsgUpdateDistributionSchedule struct {
+	// authority is the address authorized to update the schedule (governance module address).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// schedule is the complete list of distributions that will replace the existing schedule.
+	// All existing distributions are removed and replaced with this schedule.
+	Schedule []ScheduledDistribution `protobuf:"bytes,2,rep,name=schedule,proto3" json:"schedule" yaml:"schedule"`
+}
+
+func (m *MsgUpdateDistributionSchedule) Reset()         { *m = MsgUpdateDistributionSchedule{} }
+func (m *MsgUpdateDistributionSchedule) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateDistributionSchedule) ProtoMessage()    {}
+func (*MsgUpdateDistributionSchedule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7fbcd921f59054cd, []int{2}
+}
+func (m *MsgUpdateDistributionSchedule) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateDistributionSchedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateDistributionSchedule.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateDistributionSchedule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateDistributionSchedule.Merge(m, src)
+}
+func (m *MsgUpdateDistributionSchedule) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateDistributionSchedule) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateDistributionSchedule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateDistributionSchedule proto.InternalMessageInfo
+
+func (m *MsgUpdateDistributionSchedule) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgUpdateDistributionSchedule) GetSchedule() []ScheduledDistribution {
+	if m != nil {
+		return m.Schedule
+	}
+	return nil
+}
+
 type EmptyResponse struct {
 }
 
@@ -100,7 +217,7 @@ func (m *EmptyResponse) Reset()         { *m = EmptyResponse{} }
 func (m *EmptyResponse) String() string { return proto.CompactTextString(m) }
 func (*EmptyResponse) ProtoMessage()    {}
 func (*EmptyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7fbcd921f59054cd, []int{1}
+	return fileDescriptor_7fbcd921f59054cd, []int{3}
 }
 func (m *EmptyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -131,38 +248,51 @@ var xxx_messageInfo_EmptyResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*MsgUpdateExcludedAddresses)(nil), "tx.pse.v1.MsgUpdateExcludedAddresses")
+	proto.RegisterType((*MsgUpdateClearingAccountMappings)(nil), "tx.pse.v1.MsgUpdateClearingAccountMappings")
+	proto.RegisterType((*MsgUpdateDistributionSchedule)(nil), "tx.pse.v1.MsgUpdateDistributionSchedule")
 	proto.RegisterType((*EmptyResponse)(nil), "tx.pse.v1.EmptyResponse")
 }
 
 func init() { proto.RegisterFile("tx/pse/v1/tx.proto", fileDescriptor_7fbcd921f59054cd) }
 
 var fileDescriptor_7fbcd921f59054cd = []byte{
-	// 400 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0x4d, 0xab, 0xda, 0x40,
-	0x14, 0x86, 0x8d, 0xd2, 0x42, 0x06, 0xfa, 0x61, 0x2a, 0x98, 0x66, 0x11, 0x25, 0x50, 0x10, 0x21,
-	0x19, 0xac, 0xe0, 0xc2, 0x9d, 0x82, 0x74, 0xe5, 0xc6, 0xb6, 0x1b, 0xa1, 0x48, 0xcc, 0x4c, 0x27,
-	0xa1, 0x4e, 0x26, 0x64, 0xc6, 0x90, 0x74, 0x55, 0xba, 0xec, 0xaa, 0x3f, 0xc5, 0x45, 0x7f, 0x44,
-	0x57, 0x45, 0xba, 0xea, 0x4a, 0x8a, 0x2e, 0xdc, 0xfb, 0x0b, 0x2e, 0xf9, 0xb8, 0x7e, 0x5c, 0x6e,
-	0x36, 0xe1, 0x9c, 0xbc, 0x4f, 0xde, 0x97, 0x9c, 0x73, 0x80, 0x22, 0x62, 0x18, 0x70, 0x0c, 0xa3,
-	0x1e, 0x14, 0xb1, 0x15, 0x84, 0x4c, 0x30, 0x45, 0x4e, 0x2b, 0x8e, 0xad, 0xa8, 0xa7, 0xd5, 0x6d,
-	0xea, 0xf9, 0x0c, 0x66, 0xcf, 0x5c, 0xd5, 0x1a, 0x84, 0x11, 0x96, 0x95, 0x30, 0xad, 0x8a, 0xb7,
-	0xaf, 0x1d, 0xc6, 0x29, 0xe3, 0x8b, 0x5c, 0xc8, 0x9b, 0x42, 0x6a, 0xe6, 0x1d, 0xa4, 0x9c, 0xa4,
-	0x31, 0x94, 0x93, 0x5c, 0x30, 0xfe, 0x54, 0x81, 0x36, 0xe5, 0xe4, 0x63, 0x80, 0x6c, 0x81, 0x27,
-	0xb1, 0xb3, 0x5a, 0x23, 0x8c, 0x46, 0x08, 0x85, 0x98, 0x73, 0xcc, 0x95, 0x01, 0x90, 0xed, 0xb5,
-	0x70, 0x59, 0xe8, 0x89, 0x44, 0x95, 0xda, 0x52, 0x47, 0x1e, 0xab, 0x7f, 0x7f, 0x99, 0x8d, 0xc2,
-	0xbc, 0x00, 0xdf, 0x8b, 0xd0, 0xf3, 0xc9, 0xec, 0x82, 0x2a, 0x9f, 0xc0, 0x4b, 0xfb, 0xde, 0x64,
-	0x21, 0xd8, 0xc2, 0x46, 0x48, 0xad, 0xb6, 0x6b, 0x1d, 0x79, 0xdc, 0x3f, 0xed, 0x5a, 0xcd, 0xc4,
-	0xa6, 0xab, 0xa1, 0xf1, 0x90, 0x30, 0x4a, 0x9d, 0x9f, 0x9f, 0xd1, 0x0f, 0x6c, 0x84, 0x90, 0xf2,
-	0x19, 0xbc, 0xba, 0xf9, 0x38, 0xc4, 0x94, 0x45, 0x58, 0xad, 0x65, 0x09, 0x83, 0xd3, 0xae, 0xa5,
-	0x3d, 0x92, 0x90, 0x43, 0xe5, 0x21, 0xf5, 0xab, 0x90, 0x59, 0xc6, 0x0e, 0x7b, 0xdf, 0x8f, 0x9b,
-	0xee, 0xe5, 0xb7, 0x7e, 0x1c, 0x37, 0x5d, 0x3d, 0xdd, 0x54, 0xf9, 0xc4, 0x8c, 0x17, 0xe0, 0xd9,
-	0x84, 0x06, 0x22, 0x99, 0x61, 0x1e, 0x30, 0x9f, 0xe3, 0xb7, 0x2e, 0xa8, 0x4d, 0x39, 0x51, 0xe6,
-	0xa0, 0x59, 0x36, 0xe4, 0x37, 0xd6, 0x79, 0xd9, 0x56, 0xb9, 0xb3, 0xa6, 0x5e, 0x61, 0x37, 0x11,
-	0xda, 0x93, 0x6f, 0xc7, 0x4d, 0x57, 0x1a, 0xbf, 0xfb, 0xbd, 0xd7, 0xa5, 0xed, 0x5e, 0x97, 0xfe,
-	0xef, 0x75, 0xe9, 0xe7, 0x41, 0xaf, 0x6c, 0x0f, 0x7a, 0xe5, 0xdf, 0x41, 0xaf, 0xcc, 0x4d, 0xe2,
-	0x09, 0x77, 0xbd, 0xb4, 0x1c, 0x46, 0xa1, 0x60, 0x5f, 0xb0, 0xef, 0x7d, 0xc5, 0x66, 0x0c, 0x45,
-	0x6c, 0x3a, 0xae, 0xed, 0xf9, 0x30, 0x1a, 0xc0, 0xfc, 0x04, 0x45, 0x12, 0x60, 0xbe, 0x7c, 0x9a,
-	0xdd, 0x46, 0xff, 0x2e, 0x00, 0x00, 0xff, 0xff, 0x57, 0xb0, 0x54, 0x0d, 0x99, 0x02, 0x00, 0x00,
+	// 567 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0x4f, 0x8f, 0xd2, 0x40,
+	0x18, 0xc6, 0x29, 0x44, 0xb3, 0x8c, 0xd1, 0x75, 0xeb, 0x26, 0x60, 0xe3, 0x16, 0xb6, 0xd1, 0x84,
+	0x60, 0x60, 0xc2, 0xae, 0xc1, 0x84, 0x1b, 0xe8, 0xc6, 0x13, 0x17, 0xd6, 0xf5, 0xb0, 0x89, 0xc1,
+	0xd2, 0x99, 0x2d, 0x13, 0x69, 0xa7, 0xe9, 0x4c, 0x09, 0x78, 0x32, 0x1e, 0x3d, 0xf9, 0x51, 0x88,
+	0xf1, 0x43, 0xec, 0xc9, 0x6c, 0x3c, 0x79, 0x22, 0x06, 0x4c, 0x38, 0x78, 0xe3, 0x13, 0x98, 0xfe,
+	0xa1, 0x94, 0xdd, 0x96, 0xc3, 0x5e, 0xc8, 0x0c, 0xef, 0x33, 0xcf, 0xaf, 0xcf, 0xdb, 0xb7, 0x03,
+	0x44, 0x3e, 0x82, 0x16, 0xc3, 0x70, 0x58, 0x83, 0x7c, 0x54, 0xb5, 0x6c, 0xca, 0xa9, 0x98, 0x75,
+	0x57, 0x0c, 0x57, 0x87, 0x35, 0x69, 0x4f, 0x35, 0x88, 0x49, 0xa1, 0xf7, 0xeb, 0x57, 0xa5, 0x7d,
+	0x9d, 0xea, 0xd4, 0x5b, 0x42, 0x77, 0x15, 0xfc, 0xfb, 0x58, 0xa3, 0xcc, 0xa0, 0xac, 0xeb, 0x17,
+	0xfc, 0x4d, 0x50, 0xca, 0xf9, 0x3b, 0x68, 0x30, 0xdd, 0xc5, 0x18, 0x4c, 0x0f, 0x0a, 0x4f, 0xd6,
+	0x6c, 0x44, 0x18, 0xb7, 0x49, 0xcf, 0xe1, 0x84, 0x9a, 0x7e, 0x55, 0xf9, 0x99, 0x06, 0x52, 0x9b,
+	0xe9, 0x67, 0x16, 0x52, 0x39, 0x3e, 0x19, 0x69, 0x03, 0x07, 0x61, 0xd4, 0x44, 0xc8, 0xc6, 0x8c,
+	0x61, 0x26, 0xd6, 0x41, 0x56, 0x75, 0x78, 0x9f, 0xda, 0x84, 0x8f, 0xf3, 0x42, 0x51, 0x28, 0x65,
+	0x5b, 0xf9, 0x5f, 0x3f, 0x2a, 0xfb, 0x01, 0x3a, 0x10, 0x9e, 0x72, 0x9b, 0x98, 0x7a, 0x67, 0x2d,
+	0x15, 0xdf, 0x83, 0x87, 0xea, 0xca, 0xa4, 0xcb, 0x69, 0x57, 0x45, 0x28, 0x9f, 0x2e, 0x66, 0x4a,
+	0xd9, 0xd6, 0xf1, 0x72, 0x5a, 0xc8, 0x8d, 0x55, 0x63, 0xd0, 0x50, 0xae, 0x2b, 0x94, 0x44, 0xe7,
+	0x07, 0xa1, 0xf4, 0x2d, 0x6d, 0x22, 0x24, 0x5e, 0x80, 0x47, 0x1b, 0x87, 0x6d, 0x6c, 0xd0, 0x21,
+	0xce, 0x67, 0x3c, 0x42, 0x7d, 0x39, 0x2d, 0x48, 0x31, 0x04, 0x5f, 0x94, 0x0c, 0xd9, 0x8b, 0x40,
+	0x3a, 0x9e, 0xb6, 0x51, 0xfb, 0xb2, 0x98, 0x94, 0xd7, 0xb1, 0xbe, 0x2e, 0x26, 0x65, 0xd9, 0xed,
+	0x65, 0x72, 0xc7, 0x94, 0x7f, 0x02, 0x28, 0x86, 0xe5, 0x57, 0x03, 0xac, 0xba, 0xde, 0x4d, 0x4d,
+	0xa3, 0x8e, 0xc9, 0xdb, 0xaa, 0x65, 0x11, 0x53, 0xbf, 0x7d, 0x5b, 0xdf, 0x81, 0x1d, 0x23, 0xf0,
+	0xf0, 0xda, 0x79, 0xef, 0xe8, 0xb0, 0x1a, 0x8e, 0x51, 0x35, 0x9e, 0xd6, 0xca, 0x5d, 0x4e, 0x0b,
+	0xa9, 0xe5, 0xb4, 0xb0, 0xeb, 0xf7, 0x64, 0x65, 0xa0, 0x74, 0x42, 0xaf, 0xc6, 0xcb, 0x9b, 0x39,
+	0x9f, 0x6e, 0xe4, 0x4c, 0x08, 0xa2, 0xfc, 0x15, 0xc0, 0x41, 0x28, 0x7a, 0x1d, 0x19, 0xaf, 0x53,
+	0xad, 0x8f, 0x91, 0x33, 0xc0, 0xb7, 0x8e, 0x7a, 0x06, 0x76, 0x58, 0xe0, 0x11, 0x44, 0x2d, 0x46,
+	0xa2, 0xae, 0xec, 0x51, 0x94, 0x79, 0x3d, 0xe9, 0xea, 0xbc, 0xd2, 0x09, 0xad, 0x1a, 0x2f, 0x6e,
+	0x26, 0x3d, 0xdc, 0x48, 0x1a, 0x17, 0x42, 0xd9, 0x05, 0xf7, 0x4f, 0x0c, 0x8b, 0x8f, 0x3b, 0x98,
+	0x59, 0xd4, 0x64, 0xf8, 0xe8, 0x7b, 0x1a, 0x64, 0xda, 0x4c, 0x17, 0xcf, 0x41, 0x2e, 0xe9, 0xd3,
+	0x79, 0x16, 0x79, 0xdc, 0xe4, 0x79, 0x91, 0xf2, 0x11, 0xd9, 0x06, 0x43, 0xbc, 0x00, 0x07, 0xdb,
+	0xa7, 0xe8, 0x79, 0x1c, 0x21, 0x41, 0xbc, 0x85, 0xf3, 0x01, 0x48, 0x5b, 0xde, 0x5f, 0x29, 0x0e,
+	0x12, 0xa7, 0x4c, 0x26, 0x48, 0x77, 0x3e, 0x2f, 0x26, 0x65, 0xa1, 0xf5, 0xe6, 0x72, 0x26, 0x0b,
+	0x57, 0x33, 0x59, 0xf8, 0x33, 0x93, 0x85, 0x6f, 0x73, 0x39, 0x75, 0x35, 0x97, 0x53, 0xbf, 0xe7,
+	0x72, 0xea, 0xbc, 0xa2, 0x13, 0xde, 0x77, 0x7a, 0x55, 0x8d, 0x1a, 0x90, 0xd3, 0x8f, 0xd8, 0x24,
+	0x9f, 0x70, 0x65, 0x04, 0xf9, 0xa8, 0xa2, 0xf5, 0x55, 0x62, 0xc2, 0x61, 0x1d, 0xfa, 0x97, 0x18,
+	0x1f, 0x5b, 0x98, 0xf5, 0xee, 0x7a, 0x77, 0xd7, 0xf1, 0xff, 0x00, 0x00, 0x00, 0xff, 0xff, 0x4e,
+	0xcf, 0xe7, 0x90, 0x57, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -179,6 +309,10 @@ const _ = grpc.SupportPackageIsVersion4
 type MsgClient interface {
 	// UpdateExcludedAddresses is a governance operation to update the list of excluded addresses.
 	UpdateExcludedAddresses(ctx context.Context, in *MsgUpdateExcludedAddresses, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// UpdateClearingAccountMappings is a governance operation to update clearing account to recipient mappings.
+	UpdateClearingAccountMappings(ctx context.Context, in *MsgUpdateClearingAccountMappings, opts ...grpc.CallOption) (*EmptyResponse, error)
+	// UpdateDistributionSchedule is a governance operation to update the distribution schedule.
+	UpdateDistributionSchedule(ctx context.Context, in *MsgUpdateDistributionSchedule, opts ...grpc.CallOption) (*EmptyResponse, error)
 }
 
 type msgClient struct {
@@ -198,10 +332,32 @@ func (c *msgClient) UpdateExcludedAddresses(ctx context.Context, in *MsgUpdateEx
 	return out, nil
 }
 
+func (c *msgClient) UpdateClearingAccountMappings(ctx context.Context, in *MsgUpdateClearingAccountMappings, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, "/tx.pse.v1.Msg/UpdateClearingAccountMappings", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdateDistributionSchedule(ctx context.Context, in *MsgUpdateDistributionSchedule, opts ...grpc.CallOption) (*EmptyResponse, error) {
+	out := new(EmptyResponse)
+	err := c.cc.Invoke(ctx, "/tx.pse.v1.Msg/UpdateDistributionSchedule", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// UpdateExcludedAddresses is a governance operation to update the list of excluded addresses.
 	UpdateExcludedAddresses(context.Context, *MsgUpdateExcludedAddresses) (*EmptyResponse, error)
+	// UpdateClearingAccountMappings is a governance operation to update clearing account to recipient mappings.
+	UpdateClearingAccountMappings(context.Context, *MsgUpdateClearingAccountMappings) (*EmptyResponse, error)
+	// UpdateDistributionSchedule is a governance operation to update the distribution schedule.
+	UpdateDistributionSchedule(context.Context, *MsgUpdateDistributionSchedule) (*EmptyResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -210,6 +366,12 @@ type UnimplementedMsgServer struct {
 
 func (*UnimplementedMsgServer) UpdateExcludedAddresses(ctx context.Context, req *MsgUpdateExcludedAddresses) (*EmptyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateExcludedAddresses not implemented")
+}
+func (*UnimplementedMsgServer) UpdateClearingAccountMappings(ctx context.Context, req *MsgUpdateClearingAccountMappings) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateClearingAccountMappings not implemented")
+}
+func (*UnimplementedMsgServer) UpdateDistributionSchedule(ctx context.Context, req *MsgUpdateDistributionSchedule) (*EmptyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDistributionSchedule not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -234,6 +396,42 @@ func _Msg_UpdateExcludedAddresses_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_UpdateClearingAccountMappings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateClearingAccountMappings)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateClearingAccountMappings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tx.pse.v1.Msg/UpdateClearingAccountMappings",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateClearingAccountMappings(ctx, req.(*MsgUpdateClearingAccountMappings))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdateDistributionSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateDistributionSchedule)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateDistributionSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tx.pse.v1.Msg/UpdateDistributionSchedule",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateDistributionSchedule(ctx, req.(*MsgUpdateDistributionSchedule))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "tx.pse.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
@@ -241,6 +439,14 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateExcludedAddresses",
 			Handler:    _Msg_UpdateExcludedAddresses_Handler,
+		},
+		{
+			MethodName: "UpdateClearingAccountMappings",
+			Handler:    _Msg_UpdateClearingAccountMappings_Handler,
+		},
+		{
+			MethodName: "UpdateDistributionSchedule",
+			Handler:    _Msg_UpdateDistributionSchedule_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -281,6 +487,94 @@ func (m *MsgUpdateExcludedAddresses) MarshalToSizedBuffer(dAtA []byte) (int, err
 			i -= len(m.AddressesToAdd[iNdEx])
 			copy(dAtA[i:], m.AddressesToAdd[iNdEx])
 			i = encodeVarintTx(dAtA, i, uint64(len(m.AddressesToAdd[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdateClearingAccountMappings) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateClearingAccountMappings) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateClearingAccountMappings) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Mappings) > 0 {
+		for iNdEx := len(m.Mappings) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Mappings[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTx(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdateDistributionSchedule) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateDistributionSchedule) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateDistributionSchedule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Schedule) > 0 {
+		for iNdEx := len(m.Schedule) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Schedule[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTx(dAtA, i, uint64(size))
+			}
 			i--
 			dAtA[i] = 0x12
 		}
@@ -348,6 +642,44 @@ func (m *MsgUpdateExcludedAddresses) Size() (n int) {
 	if len(m.AddressesToRemove) > 0 {
 		for _, s := range m.AddressesToRemove {
 			l = len(s)
+			n += 1 + l + sovTx(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *MsgUpdateClearingAccountMappings) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if len(m.Mappings) > 0 {
+		for _, e := range m.Mappings {
+			l = e.Size()
+			n += 1 + l + sovTx(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *MsgUpdateDistributionSchedule) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if len(m.Schedule) > 0 {
+		for _, e := range m.Schedule {
+			l = e.Size()
 			n += 1 + l + sovTx(uint64(l))
 		}
 	}
@@ -493,6 +825,238 @@ func (m *MsgUpdateExcludedAddresses) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AddressesToRemove = append(m.AddressesToRemove, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateClearingAccountMappings) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateClearingAccountMappings: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateClearingAccountMappings: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Mappings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Mappings = append(m.Mappings, ClearingAccountMapping{})
+			if err := m.Mappings[len(m.Mappings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateDistributionSchedule) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateDistributionSchedule: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateDistributionSchedule: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Schedule", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Schedule = append(m.Schedule, ScheduledDistribution{})
+			if err := m.Schedule[len(m.Schedule)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
