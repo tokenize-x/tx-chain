@@ -85,13 +85,13 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT.Equal(totalMintAmount.String(), totalVerified.String(),
 		"sum of allocations should equal total mint amount")
 
-	// Step 5: Verify allocation schedule was created with n months
+	// Step 5: Verify allocation schedule was created with n periods
 	allocationSchedule, err := pseKeeper.GetDistributionSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Len(allocationSchedule, v6.TotalAllocationMonths,
-		"should have n monthly allocations")
+		"should have n distribution periods")
 
-	// Step 6: Verify first and last timestamps (schedule uses actual months, not fixed 30-day intervals)
+	// Step 6: Verify first and last timestamps (schedule uses fixed 30-day intervals)
 	// The distribution should start at 00:00:00 UTC on the same day as the upgrade
 	upgradeBlockTime := ctx.BlockTime()
 	expectedStartTime := uint64(time.Date(
@@ -106,8 +106,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT.Greater(allocationSchedule[v6.TotalAllocationMonths-1].Timestamp, expectedStartTime,
 		"last period should be after start time")
 
-	// Step 6b: Verify each distribution happens on the same day of the month at 00:00:00 UTC
-	// (or properly normalized for month-end dates)
+	// Step 6b: Verify each distribution happens exactly 30 days apart at 00:00:00 UTC
 	upgradeTime := ctx.BlockTime()
 	// Start from midnight UTC on the upgrade day
 	startTime := time.Date(
@@ -121,22 +120,20 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	for i, period := range allocationSchedule {
 		currentTime := time.Unix(int64(period.Timestamp), 0).UTC()
 
-		// Verify the schedule follows AddDate behavior (adds months while preserving day, or normalizing)
+		// Verify each period is exactly 30 days from the start
 		// All distributions should be at 00:00:00 UTC
-		expectedTime := startTime.AddDate(0, i, 0)
+		expectedTime := startTime.AddDate(0, 0, i*30)
 		requireT.Equal(expectedTime.Unix(), currentTime.Unix(),
-			"period %d should be %d months after upgrade date at 00:00:00 UTC", i, i)
+			"period %d should be exactly %d days after upgrade date at 00:00:00 UTC", i, i*30)
 		requireT.Equal(0, currentTime.Hour(), "period %d should be at hour 00", i)
 		requireT.Equal(0, currentTime.Minute(), "period %d should be at minute 00", i)
 		requireT.Equal(0, currentTime.Second(), "period %d should be at second 00", i)
 
-		// Verify month increases by exactly 1 from previous (accounting for year rollover)
+		// Verify each period is exactly 30 days from the previous
 		if i > 0 {
-			expectedTime := prevTime.AddDate(0, 1, 0)
-			requireT.Equal(expectedTime.Year(), currentTime.Year(),
-				"period %d: year should be %d, got %d", i, expectedTime.Year(), currentTime.Year())
-			requireT.Equal(expectedTime.Month(), currentTime.Month(),
-				"period %d: month should be %s, got %s", i, expectedTime.Month(), currentTime.Month())
+			daysDiff := currentTime.Sub(prevTime).Hours() / 24
+			requireT.Equal(float64(30), daysDiff,
+				"period %d should be exactly 30 days after period %d", i, i-1)
 		}
 
 		prevTime = currentTime
@@ -147,7 +144,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		requireT.Len(period.Allocations, len(allocations),
 			"period %d should have allocations for all %d modules", i, len(allocations))
 
-		// Verify each module's monthly amount
+		// Verify each module's per-period amount
 		for _, allocation := range period.Allocations {
 			var expectedTotal sdkmath.Int
 			for _, initialAlloc := range allocations {
@@ -156,15 +153,15 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 					break
 				}
 			}
-			expectedMonthly := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
-			requireT.Equal(expectedMonthly.String(), allocation.Amount.String(),
-				"period %d: monthly amount for %s should be 1/n of total", i, allocation.ClearingAccount)
+			expectedPerPeriod := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
+			requireT.Equal(expectedPerPeriod.String(), allocation.Amount.String(),
+				"period %d: amount for %s should be 1/n of total", i, allocation.ClearingAccount)
 		}
 	}
 
-	// Step 8: Verify all n months are in the schedule
+	// Step 8: Verify all n periods are in the schedule
 	requireT.Len(allocationSchedule, v6.TotalAllocationMonths,
-		"all n months should be in the schedule")
+		"all n periods should be in the schedule")
 }
 
 func TestCreateDistributionSchedule_Success(t *testing.T) {
@@ -195,9 +192,10 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 				schedule []types.ScheduledDistribution, allocations []v6.InitialFundAllocation,
 				totalMint sdkmath.Int,
 			) {
-				// Verify Feb 2025 is properly calculated
-				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
-				req.Equal(expectedFeb2025, schedule[1].Timestamp, "second period should be Feb 1, 2025")
+				// Verify second period is exactly 30 days after start
+				startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+				expected30DaysLater := uint64(startDate.AddDate(0, 0, 30).Unix())
+				req.Equal(expected30DaysLater, schedule[1].Timestamp, "second period should be 30 days after start")
 			},
 		},
 		{
@@ -247,9 +245,9 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 							foundCommunity = true
 							// Verify Community has correct allocation amount
 							communityTotal := allocations[0].Percentage.MulInt(totalMint).TruncateInt()
-							expectedMonthly := communityTotal.QuoRaw(v6.TotalAllocationMonths)
-							req.Equal(expectedMonthly.String(), allocation.Amount.String(),
-								"Community monthly allocation should be correct")
+							expectedPerPeriod := communityTotal.QuoRaw(v6.TotalAllocationMonths)
+							req.Equal(expectedPerPeriod.String(), allocation.Amount.String(),
+								"Community per-period allocation should be correct")
 						}
 					}
 				}
@@ -287,17 +285,17 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 							break
 						}
 					}
-					expectedMonthly := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
-					requireT.Equal(expectedMonthly.String(), periodAlloc.Amount.String(),
-						"period %d: monthly amount for %s should be 1/n of total", i, periodAlloc.ClearingAccount)
+					expectedPerPeriod := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
+					requireT.Equal(expectedPerPeriod.String(), periodAlloc.Amount.String(),
+						"period %d: amount for %s should be 1/n of total", i, periodAlloc.ClearingAccount)
 				}
 			}
 
-			// Verify: Last period is 83 months after start
+			// Verify: Last period is exactly (83 * 30) days after start
 			startDateTime := time.Unix(int64(tc.startTime), 0).UTC()
-			expectedLast := uint64(startDateTime.AddDate(0, 83, 0).Unix())
+			expectedLast := uint64(startDateTime.AddDate(0, 0, 83*30).Unix())
 			requireT.Equal(expectedLast, schedule[83].Timestamp,
-				"last period should be 83 months after start using Gregorian calendar")
+				"last period should be exactly 2490 days (83 * 30) after start")
 
 			// Run test-specific verifications
 			if tc.verifyFn != nil {
@@ -314,25 +312,25 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 		verifyFn  func(*require.Assertions, []types.ScheduledDistribution, time.Time)
 	}{
 		{
-			name:      "leap_year_transition",
+			name:      "exact_30_day_intervals",
 			startTime: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
 			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
-				// Feb 2025 (month 12) should be Feb 1, 2025
-				expectedFeb2025 := uint64(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC).Unix())
-				req.Equal(expectedFeb2025, schedule[12].Timestamp,
-					"12 months after Feb 1, 2024 should be Feb 1, 2025 (leap year handling)")
+				// Period 12 should be exactly 360 days (12 * 30) after start
+				expected360DaysLater := uint64(start.AddDate(0, 0, 360).Unix())
+				req.Equal(expected360DaysLater, schedule[12].Timestamp,
+					"period 12 should be exactly 360 days after start")
 			},
 		},
 		{
-			name:      "month_end_boundaries",
+			name:      "consistent_across_month_boundaries",
 			startTime: time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC),
 			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
-				// Jan 31 + 1 month = Feb 31 (invalid) -> normalizes to Mar 3
-				// This is Go's AddDate behavior for overflow dates
-				expectedMar3 := time.Date(2025, 3, 3, 0, 0, 0, 0, time.UTC)
-				actualSecondMonth := time.Unix(int64(schedule[1].Timestamp), 0).UTC()
-				req.Equal(expectedMar3.Unix(), actualSecondMonth.Unix(),
-					"Jan 31 + 1 month normalizes to Mar 3 (AddDate overflow normalization)")
+				// With 30-day intervals, we don't have month overflow issues
+				// Period 1 should be exactly 30 days after Jan 31
+				expected30DaysLater := start.AddDate(0, 0, 30) // March 2, 2025
+				actualSecondPeriod := time.Unix(int64(schedule[1].Timestamp), 0).UTC()
+				req.Equal(expected30DaysLater.Unix(), actualSecondPeriod.Unix(),
+					"30 days after Jan 31 should be March 2 (consistent 30-day intervals)")
 			},
 		},
 	}
@@ -350,16 +348,198 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 			schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, uint64(tc.startTime.Unix()))
 			requireT.NoError(err)
 
-			// Verify: All timestamps follow Gregorian calendar rules
+			// Verify: All timestamps follow exact 30-day intervals
 			for i, period := range schedule {
-				expectedTime := tc.startTime.AddDate(0, i, 0)
+				expectedTime := tc.startTime.AddDate(0, 0, i*30)
 				requireT.Equal(uint64(expectedTime.Unix()), period.Timestamp,
-					"period %d should be %s", i, expectedTime.Format(time.RFC3339))
+					"period %d should be exactly %d days after start", i, i*30)
 			}
 
 			// Run test-specific verifications
 			if tc.verifyFn != nil {
 				tc.verifyFn(requireT, schedule, tc.startTime)
+			}
+		})
+	}
+}
+
+// Temporary test to compare 30-day intervals with Gregorian calendar months
+func TestCreateDistributionSchedule_SpecialDatesComparison(t *testing.T) {
+	// This test demonstrates why 30-day intervals are superior to Gregorian calendar months
+	// by showing edge cases that would be problematic with month-based scheduling
+	testCases := []struct {
+		name        string
+		startDate   time.Time
+		description string
+		verifyFn    func(*require.Assertions, []types.ScheduledDistribution, time.Time)
+	}{
+		{
+			name:        "start_on_31st_of_month",
+			startDate:   time.Date(2024, 1, 31, 0, 0, 0, 0, time.UTC),
+			description: "If using Gregorian months, Jan 31 + 1 month = Feb 31 (invalid) would normalize to Mar 2/3",
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+				// With 30-day intervals: Jan 31 + 30 days = March 1 (predictable)
+				expected30Days := start.AddDate(0, 0, 30)
+				actual := time.Unix(int64(schedule[1].Timestamp), 0).UTC()
+				req.Equal(expected30Days, actual, "30-day interval gives consistent result")
+				// TODO: Discuss with team - verify these specific dates are acceptable
+				// req.Equal(time.March, actual.Month(), "should be March")
+				// req.Equal(1, actual.Day(), "should be March 1st")
+
+				// Show what would happen with Gregorian months (for comparison)
+				gregorianResult := start.AddDate(0, 1, 0) // Jan 31 + 1 month
+				req.NotEqual(gregorianResult, actual, "Gregorian month addition gives different result")
+				// TODO: Discuss with team - Gregorian calendar behavior
+				// req.Equal(time.March, gregorianResult.Month(), "Gregorian also gives March")
+				// req.Equal(2, gregorianResult.Day(), "but Gregorian gives March 2nd (normalized from Feb 31)")
+			},
+		},
+		{
+			name:        "start_on_29th_non_leap_year",
+			startDate:   time.Date(2025, 1, 29, 0, 0, 0, 0, time.UTC),
+			description: "Jan 29 in non-leap year: Gregorian months would skip to March 1 (Feb has only 28 days)",
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+				// With 30-day intervals: Jan 29 + 30 days = Feb 28 (consistent)
+				expected30Days := start.AddDate(0, 0, 30)
+				actual := time.Unix(int64(schedule[1].Timestamp), 0).UTC()
+				req.Equal(expected30Days, actual)
+				// TODO: Discuss with team - verify these specific dates are acceptable
+				// req.Equal(time.February, actual.Month(), "should be February")
+				// req.Equal(28, actual.Day(), "should be Feb 28")
+
+				// Show what would happen with Gregorian months
+				gregorianResult := start.AddDate(0, 1, 0) // Jan 29 + 1 month
+				req.NotEqual(gregorianResult, actual, "Gregorian gives different result")
+				// TODO: Discuss with team - Gregorian calendar behavior
+				// req.Equal(time.March, gregorianResult.Month(), "Gregorian gives March")
+				// req.Equal(1, gregorianResult.Day(), "Gregorian normalizes to March 1st (Feb 29 invalid in 2025)")
+			},
+		},
+		{
+			name:        "start_on_30th_of_month",
+			startDate:   time.Date(2024, 1, 30, 0, 0, 0, 0, time.UTC),
+			description: "Jan 30 + months would normalize differently in February (28/29 days)",
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+				// With 30-day intervals: Always exactly 30 days
+				for i := 1; i <= 12; i++ {
+					expected := start.AddDate(0, 0, i*30)
+					actual := time.Unix(int64(schedule[i].Timestamp), 0).UTC()
+					req.Equal(expected, actual, "period %d is exactly %d days", i, i*30)
+				}
+
+				// Show Gregorian inconsistency: Jan 30 + 1 month = March 1 (2024 is leap year)
+				// TODO: Discuss with team - Gregorian calendar behavior
+				// gregorianResult := start.AddDate(0, 1, 0)
+				// req.Equal(time.March, gregorianResult.Month(), "Gregorian: Jan 30 + 1 month = March 1 (Feb 30 invalid)")
+				// req.Equal(1, gregorianResult.Day(), "Gregorian normalizes to March 1st")
+			},
+		},
+		{
+			name:        "leap_year_february_29",
+			startDate:   time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC),
+			description: "Starting on leap day: Gregorian months would cause issues in non-leap years",
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+				// With 30-day intervals: predictable every time
+				expected30Days := start.AddDate(0, 0, 30)
+				actual := time.Unix(int64(schedule[1].Timestamp), 0).UTC()
+				req.Equal(expected30Days, actual)
+				// TODO: Discuss with team - verify these specific dates for leap day start
+				// req.Equal(time.March, actual.Month(), "should be March")
+				// req.Equal(30, actual.Day(), "should be March 30")
+
+				// Gregorian: Feb 29, 2024 + 12 months = Feb 29, 2025 (invalid, normalizes to March 1)
+				// TODO: Discuss with team - Gregorian calendar leap year behavior
+				// gregorian12Months := start.AddDate(0, 12, 0)
+				// req.Equal(time.March, gregorian12Months.Month(), "Gregorian: +12 months from leap day lands in March")
+				// req.Equal(1, gregorian12Months.Day(), "normalizes to March 1 (2025 is not leap year)")
+
+				// With 30-day intervals: Feb 29, 2024 + (12 * 30 days) = Feb 23, 2025 (predictable)
+				expected12Periods := start.AddDate(0, 0, 12*30)
+				actual12 := time.Unix(int64(schedule[12].Timestamp), 0).UTC()
+				req.Equal(expected12Periods, actual12)
+				// TODO: Discuss with team - verify 30-day interval results for leap day
+				// req.Equal(time.February, actual12.Month(), "30-day intervals: stays in February")
+				// req.Equal(23, actual12.Day(), "Feb 23, 2025")
+			},
+		},
+		{
+			name:        "varying_month_lengths",
+			startDate:   time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+			description: "Demonstrates consistent intervals vs. variable Gregorian month lengths",
+			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
+				// With 30-day intervals: every period is exactly 30 days
+				var prevTime time.Time
+				for i := 0; i < 12; i++ {
+					currentTime := time.Unix(int64(schedule[i].Timestamp), 0).UTC()
+					if i > 0 {
+						daysDiff := currentTime.Sub(prevTime).Hours() / 24
+						req.Equal(float64(30), daysDiff, "period %d is exactly 30 days from previous", i)
+					}
+					prevTime = currentTime
+				}
+
+				// Show Gregorian variability: months have 28-31 days
+				gregorianDurations := []int{}
+				prevGregorian := start
+				for i := 1; i <= 12; i++ {
+					nextGregorian := start.AddDate(0, i, 0)
+					days := int(nextGregorian.Sub(prevGregorian).Hours() / 24)
+					gregorianDurations = append(gregorianDurations, days)
+					prevGregorian = nextGregorian
+				}
+				// Verify Gregorian months have different durations
+				hasVariety := false
+				firstDuration := gregorianDurations[0]
+				for _, duration := range gregorianDurations {
+					if duration != firstDuration {
+						hasVariety = true
+						break
+					}
+				}
+				req.True(hasVariety, "Gregorian months have varying lengths: %v", gregorianDurations)
+			},
+		},
+	}
+
+	allocations := []v6.InitialFundAllocation{
+		{ClearingAccount: types.ClearingAccountFoundation, Percentage: sdkmath.LegacyMustNewDecFromStr("1.0")},
+	}
+	totalMint := sdkmath.NewInt(8_400_000)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			requireT := require.New(t)
+
+			// Execute: Create schedule with 30-day intervals
+			schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, uint64(tc.startDate.Unix()))
+			requireT.NoError(err)
+			requireT.Len(schedule, v6.TotalAllocationMonths)
+
+			t.Logf("\n=== %s ===", tc.name)
+			t.Logf("Description: %s", tc.description)
+			t.Logf("Start Date: %s", tc.startDate.Format("2006-01-02 (Monday)"))
+			t.Logf("\n30-Day Intervals (Current Implementation):")
+			for i := 0; i < 5; i++ {
+				schedTime := time.Unix(int64(schedule[i].Timestamp), 0).UTC()
+				t.Logf("  Period %2d: %s", i, schedTime.Format("2006-01-02 (Monday)"))
+			}
+			t.Logf("\nGregorian Months (For Comparison):")
+			for i := 0; i < 5; i++ {
+				gregTime := tc.startDate.AddDate(0, i, 0)
+				t.Logf("  Month  %2d: %s", i, gregTime.Format("2006-01-02 (Monday)"))
+			}
+
+			// Verify: All periods are exactly 30 days apart
+			for i := 0; i < len(schedule); i++ {
+				expected := tc.startDate.AddDate(0, 0, i*30)
+				actual := time.Unix(int64(schedule[i].Timestamp), 0).UTC()
+				requireT.Equal(expected.Unix(), actual.Unix(),
+					"period %d should be exactly %d days after start", i, i*30)
+			}
+
+			// Run test-specific verifications
+			if tc.verifyFn != nil {
+				tc.verifyFn(requireT, schedule, tc.startDate)
 			}
 		})
 	}
@@ -393,11 +573,11 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 	}
 	totalMint := sdkmath.NewInt(50) // 50 * tiny percentage = 0 (integer division)
 
-	// Execute: Should fail with zero monthly amount
+	// Execute: Should fail with zero per-period amount
 	schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
-	requireT.Contains(err.Error(), "balance too small to divide into monthly distributions")
+	requireT.Contains(err.Error(), "balance too small to divide into distribution periods")
 }
 
 func TestCreateDistributionSchedule_Deterministic(t *testing.T) {

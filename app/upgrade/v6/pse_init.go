@@ -21,7 +21,9 @@ const (
 	// 100 billion tokens (in base denomination units).
 	InitialTotalMint = 100_000_000_000_000_000
 
-	// TotalAllocationMonths is the total number of months for the allocation schedule.
+	// TotalAllocationMonths is the total number of distribution periods for the allocation schedule.
+	// Each period is exactly 30 days.
+	// 84 periods × 30 days = 2,520 days (approximately 6.9 years).
 	TotalAllocationMonths = 84
 )
 
@@ -183,10 +185,10 @@ func InitPSEAllocationsAndSchedule(
 	return nil
 }
 
-// CreateDistributionSchedule generates a periodic distribution schedule over n months.
+// CreateDistributionSchedule generates a periodic distribution schedule over n periods of exactly 30 days each.
 // All clearing accounts (including Community) are included in the schedule.
 // Each distribution period allocates an equal portion (1/n) of each clearing account's total balance.
-// Timestamps are calculated using Go's AddDate for proper Gregorian calendar handling.
+// Timestamps are calculated by adding exactly 30 days for each period.
 // Returns the schedule without persisting it to state, making this a pure, testable function.
 // Community clearing account uses score-based distribution, others use direct recipient transfers.
 func CreateDistributionSchedule(
@@ -204,10 +206,10 @@ func CreateDistributionSchedule(
 	// Pre-allocate slice with exact capacity for n distribution periods
 	schedule := make([]psetypes.ScheduledDistribution, 0, TotalAllocationMonths)
 
-	for month := range TotalAllocationMonths {
-		// Calculate distribution timestamp by adding months to start time
-		// AddDate handles month length variations and leap years correctly
-		distributionDateTime := startDateTime.AddDate(0, month, 0)
+	for period := range TotalAllocationMonths {
+		// Calculate distribution timestamp by adding exactly 30 days for each period
+		// Each period is exactly 30 days (720 hours) from the start
+		distributionDateTime := startDateTime.AddDate(0, 0, period*30)
 		distributionTime := uint64(distributionDateTime.Unix())
 
 		// Build allocations list for this distribution period
@@ -219,25 +221,25 @@ func CreateDistributionSchedule(
 			totalBalance := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 
 			// Divide total balance equally across all distribution periods using integer division
-			monthlyAmount := totalBalance.QuoRaw(TotalAllocationMonths)
+			periodAmount := totalBalance.QuoRaw(TotalAllocationMonths)
 
 			// Fail if balance is too small to distribute over n periods
-			if monthlyAmount.IsZero() {
+			if periodAmount.IsZero() {
 				return nil, errorsmod.Wrapf(
 					psetypes.ErrInvalidInput,
-					"clearing account %s: balance too small to divide into monthly distributions",
+					"clearing account %s: balance too small to divide into distribution periods",
 					allocation.ClearingAccount,
 				)
 			}
 
 			periodAllocations = append(periodAllocations, psetypes.ClearingAccountAllocation{
 				ClearingAccount: allocation.ClearingAccount,
-				Amount:          monthlyAmount,
+				Amount:          periodAmount,
 			})
 		}
 
 		if len(periodAllocations) == 0 {
-			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "no allocations for distribution period %d", month)
+			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "no allocations for distribution period %d", period)
 		}
 
 		// Add this distribution period to the schedule
