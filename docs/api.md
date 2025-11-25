@@ -304,6 +304,8 @@
   
 - [tx/pse/v1/tx.proto](#tx/pse/v1/tx.proto)
     - [EmptyResponse](#tx.pse.v1.EmptyResponse)
+    - [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings)
+    - [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule)
     - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
   
     - [Msg](#tx.pse.v1.Msg)
@@ -6186,6 +6188,51 @@ Query defines the gRPC querier service.
 
 
 
+<a name="tx.pse.v1.MsgUpdateClearingAccountMappings"></a>
+
+### MsgUpdateClearingAccountMappings
+
+```
+MsgUpdateClearingAccountMappings is a governance operation to update the clearing account to recipient mappings.
+This replaces all existing mappings with the new ones provided.
+Must include all non-Community clearing accounts (Foundation, Alliance, Partnership, Investors, Team).
+Community clearing account uses score-based distribution and should not have recipient mappings.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  `authority is the address authorized to update mappings (governance module address).`  |
+| `mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `mappings is the complete list of clearing account to recipient mappings. This replaces all existing mappings. Must include all non-Community clearing accounts.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.MsgUpdateDistributionSchedule"></a>
+
+### MsgUpdateDistributionSchedule
+
+```
+MsgUpdateDistributionSchedule is a governance operation to replace the distribution schedule.
+This completely replaces the existing distribution schedule with the new one provided.
+All existing distributions are removed and replaced with the provided distribution schedule.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  `authority is the address authorized to update the schedule (governance module address).`  |
+| `schedule` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `schedule is the complete list of distributions that will replace the existing schedule. All existing distributions are removed and replaced with this schedule.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.MsgUpdateExcludedAddresses"></a>
 
 ### MsgUpdateExcludedAddresses
@@ -6221,6 +6268,8 @@ Msg defines the Msg service.
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `UpdateExcludedAddresses` | [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateExcludedAddresses is a governance operation to update the list of excluded addresses.` |  |
+| `UpdateClearingAccountMappings` | [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateClearingAccountMappings is a governance operation to update clearing account to recipient mappings.` |  |
+| `UpdateDistributionSchedule` | [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionSchedule is a governance operation to update the distribution schedule.` |  |
 
  <!-- end services -->
 
