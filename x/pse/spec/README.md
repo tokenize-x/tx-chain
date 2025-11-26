@@ -10,7 +10,7 @@ The PSE module implements a sophisticated token distribution system with the fol
 
 ## Clearing Accounts
 
-The PSE module manages six clearing account modules, each serving a specific purpose in the token distribution ecosystem:
+The PSE module manages six clearing accounts(module accounts), each serving a specific purpose in the token distribution ecosystem:
 
 - **Community** (`pse_community`) - 40% allocation, uses score-based distribution to stakers
 - **Foundation** (`pse_foundation`) - 30% allocation, direct transfers to recipients
@@ -25,8 +25,9 @@ All clearing accounts receive their initial allocation during the v6 upgrade and
 
 The PSE module maintains a time-based distribution schedule that defines when and how much each clearing account should distribute. The schedule is created during the v6 upgrade and operates as follows:
 
-- **Total Duration**: 84 months from the start date (December 1, 2025, 00:00:00 UTC)
-- **Distribution Frequency**: Monthly distributions on the 1st of each month
+- **Total Duration**: 84 months from the start date
+- **Start Date**: Set to 12:00 GMT on the day of the v6 software upgrade, capped at day 28 to ensure all months can accommodate the distribution date
+- **Distribution Frequency**: Monthly distributions on the same day of each month (matching the start date day, capped at 28)
 - **Amount per Period**: Each clearing account distributes an equal portion (1/84) of its total allocation each month
 - **Processing**: Distributions are automatically processed during the `EndBlock` phase when the scheduled timestamp is reached
 
@@ -49,7 +50,7 @@ Where:
 - `Delegated_Tokens` is the amount of tokens delegated to validators (in base denomination units)
 - `Time_Staked` is the duration in seconds that the tokens have been staked
 
-The score accumulates over time and is tracked separately for each delegation to each validator. When delegations are modified (increased, decreased, or removed), the module:
+The score accumulates over a **1-month period** between distributions (since scores reset to zero after each monthly distribution). The score is tracked separately for each delegation to each validator. When delegations are modified (increased, decreased, or removed), the module:
 
 1. Calculates the score earned since the last modification
 2. Adds it to the delegator's account score snapshot
@@ -83,7 +84,7 @@ When a Community distribution is scheduled:
 
 4. **Auto-Delegation**: Distributed tokens are automatically delegated to the delegator's validators in the same proportion as their existing delegations
 5. **Leftover Handling**: Any leftover from rounding errors or delegators with no active delegations is sent to the community pool
-6. **Score Reset**: All scores are reset to zero for the next distribution period
+6. **Score Reset**: All scores are reset to zero for the next 1-month distribution period
 
 ### Excluded Addresses
 
@@ -145,10 +146,10 @@ message DelegationTimeEntry {
 
 ### AccountScoreSnapshot
 
-Stores the accumulated score for each delegator address. This snapshot is updated whenever:
+Stores the accumulated score for each delegator address over the current 1-month period. This snapshot is updated whenever:
 
 - A delegation is modified or removed
-- A Community distribution is processed (reset to zero)
+- A Community distribution is processed (reset to zero for the next month)
 
 ### AllocationSchedule
 
@@ -184,7 +185,7 @@ DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdk
 ### Score Management
 
 ```go
-// GetAccountScore returns the total current score for a delegator.
+// GetAccountScore returns the total current score for a delegator in the current 1-month period.
 // Includes both snapshot score and uncalculated scores from active delegations.
 GetAccountScore(ctx context.Context, address sdk.AccAddress) (sdkmath.Int, error)
 
@@ -301,8 +302,8 @@ txd query pse score [delegator-address]
 
 The returned score includes:
 
-- Accumulated score from previous distributions (snapshot)
-- Uncalculated scores from all active delegations since the last distribution
+- Accumulated score from the current 1-month period (snapshot)
+- Uncalculated scores from all active delegations since the last score update
 
 **Example**:
 
@@ -390,32 +391,20 @@ StoreUpgrades: store.StoreUpgrades{
 
 ### 2. Initial Token Minting and Allocation
 
-Mints 100 billion tokens (in base denomination) and distributes them to clearing accounts according to the predefined percentages:
-
-- Community: 40 billion tokens (40%)
-- Foundation: 30 billion tokens (30%)
-- Alliance: 20 billion tokens (20%)
-- Partnership: 3 billion tokens (3%)
-- Investors: 5 billion tokens (5%)
-- Team: 2 billion tokens (2%)
+Mints 100 billion tokens (in base denomination) and distributes them to the six clearing accounts according to the allocation percentages defined in the [Clearing Accounts](#clearing-accounts) section.
 
 ### 3. Distribution Schedule Creation
 
 Creates an 84-month distribution schedule with:
 
-- Monthly distributions starting December 1, 2025
+- Start date set to 12:00 GMT on the v6 upgrade day, with the day of month capped at 28
+- Monthly distributions occurring on the same day of each month (capped at day 28)
 - Equal allocation amounts per clearing account per month
 - Timestamps calculated using Gregorian calendar month arithmetic
 
 ### 4. Clearing Account Mapping Initialization
 
-Sets up default recipient mappings for non-Community clearing accounts. The recipient addresses are chain-specific:
-
-- **Mainnet** (`core-1`): `core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5`
-- **Testnet** (`core-testnet-1`): `testcore1dm4x48jqunpdh9h8sud30cwmtsghfuqascgqam`
-- **Devnet** (`core-dev-1`): `devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt`
-
-These mappings can be updated via governance after the upgrade.
+Sets up default recipient mappings for non-Community clearing accounts (Foundation, Alliance, Partnership, Investors, and Team). Each clearing account is configured with at least one recipient address that will receive direct token distributions. These mappings are chain-specific and can be updated via governance after the upgrade.
 
 ### 5. Staking Snapshot
 
@@ -494,7 +483,7 @@ The score calculation is designed to be as accurate as possible, but there are a
 
 2. **Rounding Errors**: Integer division during distribution may result in small rounding errors (up to 1 base unit per delegator). These remainders are sent to the community pool.
 
-3. **Score Resets**: All scores are reset to zero after each Community distribution, ensuring a fresh start for each distribution period.
+3. **Score Resets**: All scores are reset to zero after each Community distribution, ensuring a fresh start for each 1-month distribution period.
 
 ### Distribution Timing
 
