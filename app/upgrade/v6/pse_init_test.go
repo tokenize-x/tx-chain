@@ -85,14 +85,14 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	requireT.Equal(totalMintAmount.String(), totalVerified.String(),
 		"sum of allocations should equal total mint amount")
 
-	// Step 5: Verify allocation schedule was created with n periods
+	// Step 5: Verify allocation schedule was created with n months
 	allocationSchedule, err := pseKeeper.GetDistributionSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Len(allocationSchedule, v6.TotalAllocationMonths,
-		"should have n distribution periods")
+		"should have n distribution months")
 
 	// Step 6: Verify first and last timestamps (schedule uses calendar months)
-	// The distribution should start at 12:00:00 GMT on the same day as the upgrade (capped at 27)
+	// The distribution should start at 12:00:00 GMT on the same day as the upgrade (capped at 28)
 	upgradeBlockTime := ctx.BlockTime()
 	distributionDay := upgradeBlockTime.Day()
 	if distributionDay > v6.MaxDistributionDay {
@@ -106,9 +106,9 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		time.UTC,
 	).Unix())
 	requireT.Equal(expectedStartTime, allocationSchedule[0].Timestamp,
-		"first period should start at 12:00:00 GMT on upgrade day (capped at day 28)")
+		"first month should start at 12:00:00 GMT on upgrade day (capped at day 28)")
 	requireT.Greater(allocationSchedule[v6.TotalAllocationMonths-1].Timestamp, expectedStartTime,
-		"last period should be after start time")
+		"last month should be after start time")
 
 	// Step 6b: Verify each distribution happens on the same day every month at 12:00:00 GMT
 	// Start from noon GMT on the upgrade day (capped at 28) - reuse distributionDay from Step 6
@@ -119,27 +119,27 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		12, 0, 0, 0,
 		time.UTC,
 	)
-	for i, period := range allocationSchedule {
-		currentTime := time.Unix(int64(period.Timestamp), 0).UTC()
+	for i, month := range allocationSchedule {
+		currentTime := time.Unix(int64(month.Timestamp), 0).UTC()
 
-		// Verify each period is on the same day of the month
+		// Verify each month is on the same day of the month
 		// All distributions should be at 12:00:00 GMT on the same day every month
 		expectedTime := startTime.AddDate(0, i, 0)
 		requireT.Equal(expectedTime.Unix(), currentTime.Unix(),
-			"period %d should be %d months after upgrade date at 12:00:00 GMT on day %d", i, i, distributionDay)
-		requireT.Equal(distributionDay, currentTime.Day(), "period %d should be on day %d", i, distributionDay)
-		requireT.Equal(12, currentTime.Hour(), "period %d should be at hour 12", i)
-		requireT.Equal(0, currentTime.Minute(), "period %d should be at minute 00", i)
-		requireT.Equal(0, currentTime.Second(), "period %d should be at second 00", i)
+			"month %d should be %d months after upgrade date at 12:00:00 GMT on day %d", i, i, distributionDay)
+		requireT.Equal(distributionDay, currentTime.Day(), "month %d should be on day %d", i, distributionDay)
+		requireT.Equal(12, currentTime.Hour(), "month %d should be at hour 12", i)
+		requireT.Equal(0, currentTime.Minute(), "month %d should be at minute 00", i)
+		requireT.Equal(0, currentTime.Second(), "month %d should be at second 00", i)
 	}
 
-	// Step 7: Verify each period has allocations for all PSE module accounts
-	for i, period := range allocationSchedule {
-		requireT.Len(period.Allocations, len(allocations),
-			"period %d should have allocations for all %d modules", i, len(allocations))
+	// Step 7: Verify each month has allocations for all PSE module accounts
+	for i, month := range allocationSchedule {
+		requireT.Len(month.Allocations, len(allocations),
+			"month %d should have allocations for all %d modules", i, len(allocations))
 
-		// Verify each module's per-period amount
-		for _, allocation := range period.Allocations {
+		// Verify each module's per-month amount
+		for _, allocation := range month.Allocations {
 			var expectedTotal sdkmath.Int
 			for _, initialAlloc := range allocations {
 				if initialAlloc.ClearingAccount == allocation.ClearingAccount {
@@ -147,15 +147,15 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 					break
 				}
 			}
-			expectedPerPeriod := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
-			requireT.Equal(expectedPerPeriod.String(), allocation.Amount.String(),
-				"period %d: amount for %s should be 1/n of total", i, allocation.ClearingAccount)
+			expectedPerMonth := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
+			requireT.Equal(expectedPerMonth.String(), allocation.Amount.String(),
+				"month %d: amount for %s should be 1/n of total", i, allocation.ClearingAccount)
 		}
 	}
 
-	// Step 8: Verify all n periods are in the schedule
+	// Step 8: Verify all n months are in the schedule
 	requireT.Len(allocationSchedule, v6.TotalAllocationMonths,
-		"all n periods should be in the schedule")
+		"all n months should be in the schedule")
 }
 
 func TestCreateDistributionSchedule_Success(t *testing.T) {
@@ -186,10 +186,10 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 				schedule []types.ScheduledDistribution, allocations []v6.InitialFundAllocation,
 				totalMint sdkmath.Int,
 			) {
-				// Verify second period is exactly 1 calendar month after start
+				// Verify second month is exactly 1 calendar month after start
 				startDate := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 				expected1MonthLater := uint64(startDate.AddDate(0, 1, 0).Unix())
-				req.Equal(expected1MonthLater, schedule[1].Timestamp, "second period should be 1 month after start (Feb 1)")
+				req.Equal(expected1MonthLater, schedule[1].Timestamp, "second month should be 1 month after start (Feb 1)")
 			},
 		},
 		{
@@ -207,8 +207,8 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 				totalMint sdkmath.Int,
 			) {
 				// Verify no overflow or precision issues with large numbers
-				for _, period := range schedule {
-					for _, allocation := range period.Allocations {
+				for _, month := range schedule {
+					for _, allocation := range month.Allocations {
 						req.True(allocation.Amount.IsPositive(), "amount should be positive")
 						req.False(allocation.Amount.IsZero(), "amount should not be zero")
 					}
@@ -233,15 +233,15 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 			) {
 				// Verify Community account is included in schedule
 				foundCommunity := false
-				for _, period := range schedule {
-					for _, allocation := range period.Allocations {
+				for _, month := range schedule {
+					for _, allocation := range month.Allocations {
 						if allocation.ClearingAccount == types.ClearingAccountCommunity {
 							foundCommunity = true
 							// Verify Community has correct allocation amount
 							communityTotal := allocations[0].Percentage.MulInt(totalMint).TruncateInt()
-							expectedPerPeriod := communityTotal.QuoRaw(v6.TotalAllocationMonths)
-							req.Equal(expectedPerPeriod.String(), allocation.Amount.String(),
-								"Community per-period allocation should be correct")
+							expectedPerMonth := communityTotal.QuoRaw(v6.TotalAllocationMonths)
+							req.Equal(expectedPerMonth.String(), allocation.Amount.String(),
+								"Community per-month allocation should be correct")
 						}
 					}
 				}
@@ -258,34 +258,34 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 			schedule, err := v6.CreateDistributionSchedule(tc.allocations, tc.totalMint, tc.startTime)
 			requireT.NoError(err)
 
-			// Verify: Should have n periods
+			// Verify: Should have n months
 			requireT.Len(schedule, v6.TotalAllocationMonths)
 
-			// Verify: First period timestamp
+			// Verify: First month timestamp
 			requireT.Equal(tc.startTime, schedule[0].Timestamp)
 
-			// Verify: Each period has allocations for all modules
-			for i, period := range schedule {
-				requireT.Len(period.Allocations, len(tc.allocations),
-					"period %d should have allocations for all modules", i)
+			// Verify: Each month has allocations for all modules
+			for i, month := range schedule {
+				requireT.Len(month.Allocations, len(tc.allocations),
+					"month %d should have allocations for all modules", i)
 
 				// Verify each allocation amount is 1/n of total
-				for _, periodAlloc := range period.Allocations {
+				for _, monthAlloc := range month.Allocations {
 					// Find corresponding initial allocation
 					var expectedTotal sdkmath.Int
 					for _, alloc := range tc.allocations {
-						if alloc.ClearingAccount == periodAlloc.ClearingAccount {
+						if alloc.ClearingAccount == monthAlloc.ClearingAccount {
 							expectedTotal = alloc.Percentage.MulInt(tc.totalMint).TruncateInt()
 							break
 						}
 					}
-					expectedPerPeriod := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
-					requireT.Equal(expectedPerPeriod.String(), periodAlloc.Amount.String(),
-						"period %d: amount for %s should be 1/n of total", i, periodAlloc.ClearingAccount)
+					expectedPerMonth := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
+					requireT.Equal(expectedPerMonth.String(), monthAlloc.Amount.String(),
+						"month %d: amount for %s should be 1/n of total", i, monthAlloc.ClearingAccount)
 				}
 			}
 
-			// Verify: Last period is exactly 83 calendar months after start
+			// Verify: Last month is exactly 83 calendar months after start
 			startDateTime := time.Unix(int64(tc.startTime), 0).UTC()
 			distributionDay := startDateTime.Day()
 			if distributionDay > v6.MaxDistributionDay {
@@ -303,7 +303,7 @@ func TestCreateDistributionSchedule_Success(t *testing.T) {
 			)
 			expectedLast := uint64(baseTime.AddDate(0, 83, 0).Unix())
 			requireT.Equal(expectedLast, schedule[83].Timestamp,
-				"last period should be exactly 83 months after start")
+				"last month should be exactly 83 months after start")
 
 			// Run test-specific verifications
 			if tc.verifyFn != nil {
@@ -325,26 +325,26 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 			name:      "same_day_across_all_months",
 			startTime: time.Date(2024, 1, 28, 12, 0, 0, 0, time.UTC),
 			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
-				// Verify all 84 periods maintain day 28 consistently (max allowed day)
-				for i, period := range schedule {
-					actualTime := time.Unix(int64(period.Timestamp), 0).UTC()
-					req.Equal(28, actualTime.Day(), "period %d should be on day 28", i)
-					req.Equal(12, actualTime.Hour(), "period %d should be at 12:00", i)
+				// Verify all 84 months maintain day 28 consistently (max allowed day)
+				for i, month := range schedule {
+					actualTime := time.Unix(int64(month.Timestamp), 0).UTC()
+					req.Equal(28, actualTime.Day(), "month %d should be on day 28", i)
+					req.Equal(12, actualTime.Hour(), "month %d should be at 12:00", i)
 				}
 				// Verify month arithmetic is correct (12 months = 1 year)
 				expected12MonthsLater := uint64(start.AddDate(0, 12, 0).Unix())
 				req.Equal(expected12MonthsLater, schedule[12].Timestamp,
-					"period 12 should be exactly 12 calendar months after start")
+					"month 12 should be exactly 12 calendar months after start")
 			},
 		},
 		{
 			name:      "leap_year_feb_29_capped_and_consistent",
 			startTime: time.Date(2024, 2, 29, 12, 0, 0, 0, time.UTC),
 			verifyFn: func(req *require.Assertions, schedule []types.ScheduledDistribution, start time.Time) {
-				// Feb 29 (leap year) should be capped to 28 for all periods
-				for i, period := range schedule {
-					actualTime := time.Unix(int64(period.Timestamp), 0).UTC()
-					req.Equal(28, actualTime.Day(), "period %d should be on day 28 (capped from leap day 29)", i)
+				// Feb 29 (leap year) should be capped to 28 for all months
+				for i, month := range schedule {
+					actualTime := time.Unix(int64(month.Timestamp), 0).UTC()
+					req.Equal(28, actualTime.Day(), "month %d should be on day 28 (capped from leap day 29)", i)
 				}
 				// Verify works correctly across leap and non-leap Februaries
 				expectedFeb2025 := time.Date(2025, 2, 28, 12, 0, 0, 0, time.UTC)
@@ -400,10 +400,10 @@ func TestCreateDistributionSchedule_DateHandling(t *testing.T) {
 				tc.startTime.Nanosecond(),
 				time.UTC,
 			)
-			for i, period := range schedule {
+			for i, month := range schedule {
 				expectedTime := baseTime.AddDate(0, i, 0)
-				requireT.Equal(uint64(expectedTime.Unix()), period.Timestamp,
-					"period %d should be exactly %d months after start on day %d", i, i, startDay)
+				requireT.Equal(uint64(expectedTime.Unix()), month.Timestamp,
+					"month %d should be exactly %d months after start on day %d", i, i, startDay)
 			}
 
 			// Run test-specific verifications
@@ -466,25 +466,25 @@ func TestPseInit_DayCapping(t *testing.T) {
 			requireT.NoError(err)
 			requireT.Len(allocationSchedule, v6.TotalAllocationMonths)
 
-			// Verify all periods use the expected day (capped if needed)
-			for i, period := range allocationSchedule {
-				actualTime := time.Unix(int64(period.Timestamp), 0).UTC()
+			// Verify all months use the expected day (capped if needed)
+			for i, month := range allocationSchedule {
+				actualTime := time.Unix(int64(month.Timestamp), 0).UTC()
 				requireT.Equal(tc.expectedDay, actualTime.Day(),
-					"period %d should be on day %d (upgrade was on day %d)", i, tc.expectedDay, tc.upgradeDay)
+					"month %d should be on day %d (upgrade was on day %d)", i, tc.expectedDay, tc.upgradeDay)
 				requireT.Equal(12, actualTime.Hour(),
-					"period %d should be at 12:00 GMT", i)
+					"month %d should be at 12:00 GMT", i)
 				requireT.Equal(0, actualTime.Minute(),
-					"period %d should have 0 minutes", i)
+					"month %d should have 0 minutes", i)
 				requireT.Equal(0, actualTime.Second(),
-					"period %d should have 0 seconds", i)
+					"month %d should have 0 seconds", i)
 			}
 
-			// Verify first period specifically
-			firstPeriod := time.Unix(int64(allocationSchedule[0].Timestamp), 0).UTC()
-			requireT.Equal(upgradeTime.Year(), firstPeriod.Year())
-			requireT.Equal(upgradeTime.Month(), firstPeriod.Month())
-			requireT.Equal(tc.expectedDay, firstPeriod.Day())
-			requireT.Equal(12, firstPeriod.Hour(), "first period should start at 12:00 GMT")
+			// Verify first month specifically
+			firstMonth := time.Unix(int64(allocationSchedule[0].Timestamp), 0).UTC()
+			requireT.Equal(upgradeTime.Year(), firstMonth.Year())
+			requireT.Equal(upgradeTime.Month(), firstMonth.Month())
+			requireT.Equal(tc.expectedDay, firstMonth.Day())
+			requireT.Equal(12, firstMonth.Hour(), "first month should start at 12:00 GMT")
 		})
 	}
 }
@@ -517,11 +517,11 @@ func TestCreateDistributionSchedule_ZeroBalance(t *testing.T) {
 	}
 	totalMint := sdkmath.NewInt(50) // 50 * tiny percentage = 0 (integer division)
 
-	// Execute: Should fail with zero per-period amount
+	// Execute: Should fail with zero per-month amount
 	schedule, err := v6.CreateDistributionSchedule(allocations, totalMint, startTime)
 	requireT.Error(err)
 	requireT.Nil(schedule)
-	requireT.Contains(err.Error(), "balance too small to divide into distribution periods")
+	requireT.Contains(err.Error(), "balance too small to divide into distribution months")
 }
 
 func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
@@ -548,9 +548,9 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 
 	for i := range schedule1 {
 		requireT.Equal(schedule1[i].Timestamp, schedule2[i].Timestamp,
-			"period %d timestamps should match", i)
+			"month %d timestamps should match", i)
 		requireT.Len(schedule2[i].Allocations, len(schedule1[i].Allocations),
-			"period %d should have same number of allocations", i)
+			"month %d should have same number of allocations", i)
 
 		// Note: map iteration order is not guaranteed, so we need to match by clearing account
 		allocs1 := make(map[string]sdkmath.Int)
@@ -564,7 +564,7 @@ func TestCreateDistributionSchedule_Deterministic(t *testing.T) {
 		}
 
 		requireT.Equal(allocs1, allocs2,
-			"period %d allocations should match", i)
+			"month %d allocations should match", i)
 	}
 }
 
@@ -718,7 +718,7 @@ func TestDistribution_DistributeAllocatedTokens(t *testing.T) {
 	requireT.Equal(expectedCommunityPoolTotal.String(), communityPoolBalance.String(),
 		"community pool should have received all distribution remainders and Community leftover")
 
-	// Verify allocation schedule count decreased (first period removed)
+	// Verify allocation schedule count decreased (first month removed)
 	allocationScheduleAfter, err := pseKeeper.GetDistributionSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Empty(allocationScheduleAfter, "should have 0 remaining allocations")
