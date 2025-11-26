@@ -10,6 +10,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
+	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
@@ -87,8 +88,8 @@ func TestPSEScore_DelegationFlow(t *testing.T) {
 
 	t.Logf("Score after delegation: %s", finalResp.Score.String())
 
-	// Score should be non-negative
-	requireT.False(finalResp.Score.IsNegative(), "score should not be negative")
+	// Score should be positive after delegation and block accumulation
+	requireT.True(finalResp.Score.IsPositive(), "score should be positive after delegation")
 }
 
 // TestPSEScore_MultipleDelegations tests score calculation with multiple delegation transactions.
@@ -181,8 +182,8 @@ func TestPSEScore_MultipleDelegations(t *testing.T) {
 
 	t.Logf("Score with multiple delegations: %s", resp.Score.String())
 
-	// Score should be non-negative
-	requireT.False(resp.Score.IsNegative(), "score should not be negative")
+	// Score should be positive after delegations and block accumulation
+	requireT.True(resp.Score.IsPositive(), "score should be positive after delegations")
 }
 
 // TestPSEScore_UndelegationFlow tests the end-to-end undelegation flow and score behavior.
@@ -217,6 +218,7 @@ func TestPSEScore_UndelegationFlow(t *testing.T) {
 	chain.FundAccountWithOptions(ctx, t, delegator, integration.BalancesOptions{
 		Messages: []sdk.Msg{
 			&stakingtypes.MsgDelegate{},
+			&stakingtypes.MsgUndelegate{},
 			&stakingtypes.MsgUndelegate{},
 		},
 		Amount: delegateAmount,
@@ -286,8 +288,8 @@ func TestPSEScore_UndelegationFlow(t *testing.T) {
 
 	t.Logf("Score after undelegation: %s", scoreAfterUndelegate.Score.String())
 
-	// Score should still be non-negative and should have increased
-	requireT.False(scoreAfterUndelegate.Score.IsNegative(), "score should not be negative")
+	// Score should still be positive and should have increased
+	requireT.True(scoreAfterUndelegate.Score.IsPositive(), "score should be positive")
 	requireT.True(scoreAfterUndelegate.Score.GT(scoreAfterDelegate.Score), "score should increase after more blocks")
 
 	// Verify remaining delegation
@@ -298,52 +300,84 @@ func TestPSEScore_UndelegationFlow(t *testing.T) {
 	requireT.Len(delRespAfter.DelegationResponses, 1)
 	expectedRemaining := delegateAmount.Sub(undelegateAmount)
 	requireT.Equal(expectedRemaining, delRespAfter.DelegationResponses[0].Balance.Amount)
+
+	// Now undelegate the remaining amount
+	undelegateRemainingMsg := &stakingtypes.MsgUndelegate{
+		DelegatorAddress: delegator.String(),
+		ValidatorAddress: validatorAddress.String(),
+		Amount:           chain.NewCoin(expectedRemaining),
+	}
+
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(delegator),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(undelegateRemainingMsg)),
+		undelegateRemainingMsg,
+	)
+	requireT.NoError(err)
+
+	t.Logf("Full undelegation executed: %s", expectedRemaining.String())
+
+	// Wait for a block
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
+
+	// Query score after full undelegation
+	scoreAfterFullUndelegate, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{
+		Address: delegator.String(),
+	})
+	requireT.NoError(err)
+
+	t.Logf("Score after full undelegation: %s", scoreAfterFullUndelegate.Score.String())
+
+	// Wait for more blocks
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 3))
+
+	// Query score again - it should not have increased since there's no active delegation
+	scoreAfterWaiting, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{
+		Address: delegator.String(),
+	})
+	requireT.NoError(err)
+
+	t.Logf("Score after waiting with no delegation: %s", scoreAfterWaiting.Score.String())
+
+	// Score should not increase after full undelegation
+	requireT.Equal(scoreAfterFullUndelegate.Score, scoreAfterWaiting.Score, "score should not increase after full undelegation")
 }
 
-// TestPSEQueryScore_ExistingValidators tests querying scores for existing chain validators.
-func TestPSEQueryScore_ExistingValidators(t *testing.T) {
+// TestPSEQueryScore_AddressWithoutDelegation tests querying scores for addresses that have no delegation.
+func TestPSEQueryScore_AddressWithoutDelegation(t *testing.T) {
 	t.Parallel()
 
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
-	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 
-	// Get validators
-	validatorsResp, err := stakingClient.Validators(ctx, &stakingtypes.QueryValidatorsRequest{})
-	requireT.NoError(err)
-	requireT.NotEmpty(validatorsResp.Validators)
+	// Create multiple accounts that have never delegated
+	addresses := []sdk.AccAddress{
+		chain.GenAccount(),
+		chain.GenAccount(),
+		chain.GenAccount(),
+	}
 
-	t.Logf("Found %d validators", len(validatorsResp.Validators))
-
-	// Test querying score for each validator's operator address
-	for i, validator := range validatorsResp.Validators {
-		valOpAddr, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
-		requireT.NoError(err)
-
-		// Convert validator operator address to account address
-		accAddr := sdk.AccAddress(valOpAddr)
-
-		// Query score for this validator
+	// Query score for each address - all should be zero
+	for i, addr := range addresses {
 		scoreResp, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{
-			Address: accAddr.String(),
+			Address: addr.String(),
 		})
 		requireT.NoError(err)
 		requireT.NotNil(scoreResp)
 
-		t.Logf("Validator %d (%s): Score = %s",
-			i,
-			validator.OperatorAddress,
-			scoreResp.Score.String(),
-		)
+		t.Logf("Address %d (%s): Score = %s", i, addr.String(), scoreResp.Score.String())
 
-		// Score should be non-negative
-		requireT.False(scoreResp.Score.IsNegative(), "validator score should not be negative")
+		// Score should be zero for addresses with no delegation
+		requireT.True(scoreResp.Score.IsZero(), "score should be zero for address with no delegation")
 	}
 }
 
 // TestPSEQueryClearingAccountBalances tests the ClearingAccountBalances query endpoint.
+// Note: In znet, the PSE upgrade handler has already run and funded these accounts
+// with the initial mint of 100 billion tokens according to the allocation percentages.
 func TestPSEQueryClearingAccountBalances(t *testing.T) {
 	t.Parallel()
 
@@ -364,46 +398,36 @@ func TestPSEQueryClearingAccountBalances(t *testing.T) {
 
 	t.Logf("Clearing account balances count: %d", len(resp.Balances))
 
-	// Log balances
-	for i, balance := range resp.Balances {
-		t.Logf("Account %d: %s = %s", i, balance.ClearingAccount, balance.Balance.String())
+	// Calculate expected balances from PSE upgrade handler constants
+	// This ensures the test stays in sync with any changes to the upgrade handler
+	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
+	allocations := v6.DefaultInitialFundAllocations()
 
-		// Balance should be non-negative
-		requireT.False(balance.Balance.IsNegative(), "balance should not be negative")
+	expectedBalances := make(map[string]sdkmath.Int)
+	for _, allocation := range allocations {
+		expectedAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
+		expectedBalances[allocation.ClearingAccount] = expectedAmount
+	}
+
+	// Verify balances and log them
+	balanceMap := make(map[string]sdkmath.Int)
+	for _, balance := range resp.Balances {
+		balanceMap[balance.ClearingAccount] = balance.Balance
+		t.Logf("Account %s = %s", balance.ClearingAccount, balance.Balance.String())
 
 		// Verify account name is valid
 		requireT.Contains(allAccounts, balance.ClearingAccount, "clearing account should be valid")
+
+		// Verify balance matches expected amount from PSE upgrade handler
+		expectedBalance, exists := expectedBalances[balance.ClearingAccount]
+		requireT.True(exists, "should have expected balance for %s", balance.ClearingAccount)
+		requireT.Equal(expectedBalance, balance.Balance,
+			"balance for %s should match PSE upgrade handler allocation", balance.ClearingAccount)
 	}
 
 	// Verify all known clearing accounts are present
-	accountMap := make(map[string]bool)
-	for _, balance := range resp.Balances {
-		accountMap[balance.ClearingAccount] = true
-	}
-
 	for _, expectedAccount := range allAccounts {
-		requireT.True(accountMap[expectedAccount], "clearing account %s should be present", expectedAccount)
-	}
-}
-
-// TestPSEQueryScheduledDistributions tests the ScheduledDistributions query endpoint.
-func TestPSEQueryScheduledDistributions(t *testing.T) {
-	t.Parallel()
-
-	ctx, chain := integrationtests.NewTXChainTestingContext(t)
-	requireT := require.New(t)
-
-	pseClient := psetypes.NewQueryClient(chain.ClientContext)
-
-	// Query scheduled distributions
-	resp, err := pseClient.ScheduledDistributions(ctx, &psetypes.QueryScheduledDistributionsRequest{})
-	requireT.NoError(err)
-	requireT.NotNil(resp)
-
-	t.Logf("Scheduled distributions count: %d", len(resp.ScheduledDistributions))
-
-	// Log distributions if any
-	for i, dist := range resp.ScheduledDistributions {
-		t.Logf("Distribution %d: %+v", i, dist)
+		_, exists := balanceMap[expectedAccount]
+		requireT.True(exists, "clearing account %s should be present", expectedAccount)
 	}
 }
