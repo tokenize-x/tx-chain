@@ -162,7 +162,7 @@ func InitPSEAllocationsAndSchedule(
 
 	// Get authority (governance module address)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	if err := pseKeeper.UpdateClearingMappings(ctx, authority, mappings); err != nil {
+	if err := pseKeeper.UpdateClearingAccountMappings(ctx, authority, mappings); err != nil {
 		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to create clearing account mappings: %v", err)
 	}
 

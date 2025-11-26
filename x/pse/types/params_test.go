@@ -16,13 +16,18 @@ func TestDefaultParams(t *testing.T) {
 	params := DefaultParams()
 	requireT.Empty(params.ExcludedAddresses)
 	requireT.Empty(params.ClearingAccountMappings)
-	requireT.NoError(params.ValidateBasic())
+
+	// DefaultParams returns empty mappings - valid for genesis
+	// Tests and actual usage should call UpdateClearingAccountMappings to set proper values
+	err := params.ValidateBasic()
+	requireT.NoError(err)
 }
 
 func TestParamsValidation_ExcludedAddresses(t *testing.T) {
 	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
 
 	testCases := []struct {
 		name      string
@@ -33,28 +38,32 @@ func TestParamsValidation_ExcludedAddresses(t *testing.T) {
 		{
 			name: "valid_empty_excluded_addresses",
 			params: Params{
-				ExcludedAddresses: []string{},
+				ExcludedAddresses:       []string{},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: false,
 		},
 		{
 			name: "valid_one_excluded_address",
 			params: Params{
-				ExcludedAddresses: []string{addr1},
+				ExcludedAddresses:       []string{addr1},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: false,
 		},
 		{
 			name: "valid_multiple_excluded_addresses",
 			params: Params{
-				ExcludedAddresses: []string{addr1, addr2, addr3},
+				ExcludedAddresses:       []string{addr1, addr2, addr3},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: false,
 		},
 		{
 			name: "invalid_malformed_address",
 			params: Params{
-				ExcludedAddresses: []string{"invalid-address"},
+				ExcludedAddresses:       []string{"invalid-address"},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: true,
 			errMsg:    "invalid address",
@@ -62,7 +71,8 @@ func TestParamsValidation_ExcludedAddresses(t *testing.T) {
 		{
 			name: "invalid_duplicate_address",
 			params: Params{
-				ExcludedAddresses: []string{addr1, addr2, addr1},
+				ExcludedAddresses:       []string{addr1, addr2, addr1},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: true,
 			errMsg:    "duplicate address",
@@ -70,7 +80,8 @@ func TestParamsValidation_ExcludedAddresses(t *testing.T) {
 		{
 			name: "invalid_empty_string_in_list",
 			params: Params{
-				ExcludedAddresses: []string{addr1, ""},
+				ExcludedAddresses:       []string{addr1, ""},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: true,
 			errMsg:    "invalid address",
@@ -78,7 +89,8 @@ func TestParamsValidation_ExcludedAddresses(t *testing.T) {
 		{
 			name: "invalid_wrong_prefix",
 			params: Params{
-				ExcludedAddresses: []string{addr1, "cosmos1invalidprefix"},
+				ExcludedAddresses:       []string{addr1, "cosmos1invalidprefix"},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: true,
 			errMsg:    "invalid address",
@@ -86,7 +98,8 @@ func TestParamsValidation_ExcludedAddresses(t *testing.T) {
 		{
 			name: "invalid_duplicate_at_end",
 			params: Params{
-				ExcludedAddresses: []string{addr1, addr2, addr3, addr1},
+				ExcludedAddresses:       []string{addr1, addr2, addr3, addr1},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr4}),
 			},
 			expectErr: true,
 			errMsg:    "duplicate address",
@@ -121,23 +134,17 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 		errMsg    string
 	}{
 		{
-			name: "valid_single_mapping",
+			name: "valid_all_required_mappings",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{
-						ClearingAccount:    ClearingAccountFoundation,
-						RecipientAddresses: []string{addr1},
-					},
-				},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr1, addr2}),
 			},
 			expectErr: false,
 		},
 		{
-			name: "valid_multiple_mappings",
+			name: "valid_partial_mappings_allowed_in_genesis",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
 					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-					{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr2}},
 				},
 			},
 			expectErr: false,
@@ -145,9 +152,10 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 		{
 			name: "invalid_empty_clearing_account",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: "", RecipientAddresses: []string{addr1}},
-				},
+				ClearingAccountMappings: append(
+					createAllClearingAccountMappings([]string{addr1}),
+					ClearingAccountMapping{ClearingAccount: "", RecipientAddresses: []string{addr2}},
+				),
 			},
 			expectErr: true,
 			errMsg:    "clearing_account cannot be empty",
@@ -155,9 +163,11 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 		{
 			name: "invalid_malformed_sub_account_address",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{"invalid"}},
-				},
+				ClearingAccountMappings: func() []ClearingAccountMapping {
+					mappings := createAllClearingAccountMappings([]string{addr1})
+					mappings[0].RecipientAddresses = []string{"invalid"}
+					return mappings
+				}(),
 			},
 			expectErr: true,
 			errMsg:    "invalid address",
@@ -165,10 +175,10 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 		{
 			name: "invalid_duplicate_clearing_account",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr2}},
-				},
+				ClearingAccountMappings: append(
+					createAllClearingAccountMappings([]string{addr1}),
+					ClearingAccountMapping{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr2}},
+				),
 			},
 			expectErr: true,
 			errMsg:    "duplicate clearing account",
@@ -176,9 +186,11 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 		{
 			name: "invalid_empty_recipient_list",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{}},
-				},
+				ClearingAccountMappings: func() []ClearingAccountMapping {
+					mappings := createAllClearingAccountMappings([]string{addr1})
+					mappings[0].RecipientAddresses = []string{}
+					return mappings
+				}(),
 			},
 			expectErr: true,
 			errMsg:    "must have at least one recipient address",
@@ -186,9 +198,11 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 		{
 			name: "invalid_duplicate_recipients_in_same_mapping",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1, addr1}},
-				},
+				ClearingAccountMappings: func() []ClearingAccountMapping {
+					mappings := createAllClearingAccountMappings([]string{addr1})
+					mappings[0].RecipientAddresses = []string{addr1, addr1}
+					return mappings
+				}(),
 			},
 			expectErr: true,
 			errMsg:    "duplicate recipient address",
@@ -196,18 +210,22 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 		{
 			name: "valid_multiple_recipients",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1, addr2}},
-				},
+				ClearingAccountMappings: func() []ClearingAccountMapping {
+					mappings := createAllClearingAccountMappings([]string{addr1})
+					mappings[0].RecipientAddresses = []string{addr1, addr2}
+					return mappings
+				}(),
 			},
 			expectErr: false,
 		},
 		{
 			name: "invalid_one_valid_one_invalid_recipient",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1, "invalid"}},
-				},
+				ClearingAccountMappings: func() []ClearingAccountMapping {
+					mappings := createAllClearingAccountMappings([]string{addr1})
+					mappings[0].RecipientAddresses = []string{addr1, "invalid"}
+					return mappings
+				}(),
 			},
 			expectErr: true,
 			errMsg:    "invalid address",
@@ -239,6 +257,22 @@ func TestValidateClearingAccountMappings(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Helper function to create valid mappings for all non-Community PSE clearing accounts.
+func createAllClearingAccountMappings(addrs []string) []ClearingAccountMapping {
+	nonCommunityAccounts := GetNonCommunityClearingAccounts()
+	mappings := make([]ClearingAccountMapping, 0, len(nonCommunityAccounts))
+
+	for i, account := range nonCommunityAccounts {
+		// Use modulo to cycle through addresses if not enough provided
+		addr := addrs[i%len(addrs)]
+		mappings = append(mappings, ClearingAccountMapping{
+			ClearingAccount:    account,
+			RecipientAddresses: []string{addr},
+		})
+	}
+	return mappings
 }
 
 // Helper function to create valid allocations for all PSE clearing accounts.
@@ -382,7 +416,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "missing allocation for required PSE clearing account",
+			errMsg:    "missing allocation for required clearing account",
 		},
 		{
 			name: "invalid_empty_clearing_account",
@@ -418,7 +452,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "clearing account not found",
+			errMsg:    "invalid clearing account",
 		},
 		{
 			name: "invalid_duplicate_clearing_account_in_period",
@@ -453,7 +487,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "missing allocation for required PSE clearing account",
+			errMsg:    "missing allocation for required clearing account",
 		},
 		{
 			name: "invalid_nil_amount",
@@ -512,141 +546,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			requireT := require.New(t)
 
-			err := ValidateAllocationSchedule(tc.schedule)
-			if tc.expectErr {
-				requireT.Error(err)
-				if tc.errMsg != "" {
-					requireT.Contains(err.Error(), tc.errMsg)
-				}
-			} else {
-				requireT.NoError(err)
-			}
-		})
-	}
-}
-
-func TestValidateScheduleMappingConsistency(t *testing.T) {
-	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-
-	testCases := []struct {
-		name      string
-		schedule  []ScheduledDistribution
-		mappings  []ClearingAccountMapping
-		expectErr bool
-		errMsg    string
-	}{
-		{
-			name: "valid_schedule_with_all_mappings",
-			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-				{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr2}},
-			},
-			schedule: []ScheduledDistribution{
-				{
-					Timestamp: getTestTimestamp(0),
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
-						{ClearingAccount: ClearingAccountTeam, Amount: sdkmath.NewInt(2000)},
-					},
-				},
-			},
-			expectErr: false,
-		},
-		{
-			name: "valid_empty_schedule",
-			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-			},
-			schedule:  []ScheduledDistribution{},
-			expectErr: false,
-		},
-		{
-			name: "valid_extra_mappings_not_in_schedule",
-			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-				{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr2}},
-			},
-			schedule: []ScheduledDistribution{
-				{
-					Timestamp: getTestTimestamp(0),
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
-					},
-				},
-			},
-			expectErr: false,
-		},
-		{
-			name: "invalid_schedule_without_mapping",
-			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-			},
-			schedule: []ScheduledDistribution{
-				{
-					Timestamp: getTestTimestamp(0),
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ClearingAccountTeam, Amount: sdkmath.NewInt(1000)},
-					},
-				},
-			},
-			expectErr: true,
-			errMsg:    "no recipient mapping found for clearing account 'pse_team'",
-		},
-		{
-			name: "invalid_multiple_modules_one_missing_mapping",
-			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-			},
-			schedule: []ScheduledDistribution{
-				{
-					Timestamp: getTestTimestamp(0),
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
-						{ClearingAccount: ClearingAccountTeam, Amount: sdkmath.NewInt(2000)},
-					},
-				},
-			},
-			expectErr: true,
-			errMsg:    "no recipient mapping found for clearing account 'pse_team'",
-		},
-		{
-			name:     "invalid_no_mappings_but_has_schedule",
-			mappings: []ClearingAccountMapping{},
-			schedule: []ScheduledDistribution{
-				{
-					Timestamp: getTestTimestamp(0),
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
-					},
-				},
-			},
-			expectErr: true,
-			errMsg:    "no recipient mapping found for clearing account 'pse_foundation'",
-		},
-		{
-			name: "valid_community_excluded_no_mapping_required",
-			mappings: []ClearingAccountMapping{
-				{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-			},
-			schedule: []ScheduledDistribution{
-				{
-					Timestamp: getTestTimestamp(0),
-					Allocations: []ClearingAccountAllocation{
-						{ClearingAccount: ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},  // Excluded - no mapping needed
-						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)}, // Needs mapping
-					},
-				},
-			},
-			expectErr: false, // Community doesn't need a mapping since it's excluded
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			requireT := require.New(t)
-
-			err := ValidateScheduleMappingConsistency(tc.schedule, tc.mappings)
+			err := ValidateDistributionSchedule(tc.schedule)
 			if tc.expectErr {
 				requireT.Error(err)
 				if tc.errMsg != "" {
@@ -669,16 +569,7 @@ func TestParamsValidation_ClearingAccountNames(t *testing.T) {
 		errMsg    string
 	}{
 		{
-			name: "valid_module_name_in_mapping",
-			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-				},
-			},
-			expectErr: false,
-		},
-		{
-			name: "valid_custom_module_name",
+			name: "valid_custom_module_name_allowed_in_genesis",
 			params: Params{
 				ClearingAccountMappings: []ClearingAccountMapping{
 					{ClearingAccount: "my_custom_module", RecipientAddresses: []string{addr1}},
@@ -687,13 +578,11 @@ func TestParamsValidation_ClearingAccountNames(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name: "invalid_bech32_address_as_clearing_account_in_mapping",
+			name: "valid_all_pse_modules",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: addr1, RecipientAddresses: []string{addr1}}, // Using bech32 address as module name
-				},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr1}),
 			},
-			expectErr: false, // No validation against bech32 - just non-empty string
+			expectErr: false,
 		},
 	}
 
@@ -728,22 +617,15 @@ func TestParamsValidation_CompleteScenarios(t *testing.T) {
 		{
 			name: "valid_complete_configuration",
 			params: Params{
-				ExcludedAddresses: []string{addr1},
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr2}},
-					{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr3}},
-				},
+				ExcludedAddresses:       []string{addr1},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr2, addr3}),
 			},
 			expectErr: false,
 		},
 		{
-			name: "valid_multiple_modules_all_mapped",
+			name: "valid_all_non_community_modules_mapped",
 			params: Params{
-				ClearingAccountMappings: []ClearingAccountMapping{
-					{ClearingAccount: ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-					{ClearingAccount: ClearingAccountPartnership, RecipientAddresses: []string{addr2}},
-					{ClearingAccount: ClearingAccountTeam, RecipientAddresses: []string{addr3}},
-				},
+				ClearingAccountMappings: createAllClearingAccountMappings([]string{addr1, addr2, addr3}),
 			},
 			expectErr: false,
 		},
