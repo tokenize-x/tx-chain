@@ -341,7 +341,9 @@ func TestPSEScore_UndelegationFlow(t *testing.T) {
 	t.Logf("Score after waiting with no delegation: %s", scoreAfterWaiting.Score.String())
 
 	// Score should not increase after full undelegation
-	requireT.Equal(scoreAfterFullUndelegate.Score, scoreAfterWaiting.Score, "score should not increase after full undelegation")
+	requireT.Equal(
+		scoreAfterFullUndelegate.Score.String(), scoreAfterWaiting.Score.String(),
+		"score should not increase after full undelegation")
 }
 
 // TestPSEQueryScore_AddressWithoutDelegation tests querying scores for addresses that have no delegation.
