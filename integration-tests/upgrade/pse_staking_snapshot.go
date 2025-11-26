@@ -47,7 +47,7 @@ func (pss *pseStakingSnapshot) Before(t *testing.T) {
 }
 
 func (pss *pseStakingSnapshot) After(t *testing.T) {
-	// wait for some scores to be accumulated
+	// wait for some time for scores to be accumulated
 	time.Sleep(2 * time.Second)
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
