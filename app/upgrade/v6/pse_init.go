@@ -22,9 +22,13 @@ const (
 	InitialTotalMint = 100_000_000_000_000_000
 
 	// TotalAllocationMonths is the total number of distribution periods for the allocation schedule.
-	// Each period is exactly 30 days.
-	// 84 periods × 30 days = 2,520 days (approximately 6.9 years).
+	// Each period is one calendar month (same day each month).
+	// 84 periods = 84 calendar months (exactly 7 years).
 	TotalAllocationMonths = 84
+
+	// MaxDistributionDay caps the day of month for distributions to ensure consistency
+	// across all months. Set to 28 to guarantee all months (including February) have this day.
+	MaxDistributionDay = 28
 )
 
 // InitialFundAllocation defines the token funding allocation for a module account during initialization.
@@ -111,14 +115,19 @@ func InitPSEAllocationsAndSchedule(
 
 	// Initialize parameters using predefined constants
 	allocations := DefaultInitialFundAllocations()
-	// Use the upgrade date at 00:00:00 UTC as the distribution start time
-	// This ensures distributions happen at midnight UTC on the same day as the upgrade
+	// Use the upgrade date at 12:00:00 GMT as the distribution start time
+	// This ensures distributions happen at noon GMT on the same day every month
+	// Day is capped at 28 to ensure consistency across all months (including February)
 	upgradeBlockTime := sdkCtx.BlockTime()
+	distributionDay := upgradeBlockTime.Day()
+	if distributionDay > 28 {
+		distributionDay = 28
+	}
 	scheduleStartTime := uint64(time.Date(
 		upgradeBlockTime.Year(),
 		upgradeBlockTime.Month(),
-		upgradeBlockTime.Day(),
-		0, 0, 0, 0,
+		distributionDay,
+		12, 0, 0, 0,
 		time.UTC,
 	).Unix())
 	totalMintAmount := sdkmath.NewInt(InitialTotalMint)
@@ -185,10 +194,11 @@ func InitPSEAllocationsAndSchedule(
 	return nil
 }
 
-// CreateDistributionSchedule generates a periodic distribution schedule over n periods of exactly 30 days each.
+// CreateDistributionSchedule generates a periodic distribution schedule over n calendar months.
 // All clearing accounts (including Community) are included in the schedule.
 // Each distribution period allocates an equal portion (1/n) of each clearing account's total balance.
-// Timestamps are calculated by adding exactly 30 days for each period.
+// Timestamps are calculated by adding one calendar month for each period, maintaining the same day of month.
+// The day of month is capped at MaxDistributionDay (27) to ensure all months have this day.
 // Returns the schedule without persisting it to state, making this a pure, testable function.
 // Community clearing account uses score-based distribution, others use direct recipient transfers.
 func CreateDistributionSchedule(
@@ -203,13 +213,28 @@ func CreateDistributionSchedule(
 	// Convert Unix timestamp to time.Time for date arithmetic
 	startDateTime := time.Unix(int64(startTime), 0).UTC()
 
+	// Cap the day to MaxDistributionDay to ensure consistency across all months
+	distributionDay := startDateTime.Day()
+	if distributionDay > MaxDistributionDay {
+		distributionDay = MaxDistributionDay
+	}
+
 	// Pre-allocate slice with exact capacity for n distribution periods
 	schedule := make([]psetypes.ScheduledDistribution, 0, TotalAllocationMonths)
 
 	for period := range TotalAllocationMonths {
-		// Calculate distribution timestamp by adding exactly 30 days for each period
-		// Each period is exactly 30 days (720 hours) from the start
-		distributionDateTime := startDateTime.AddDate(0, 0, period*30)
+		// Calculate distribution timestamp by adding calendar months
+		// AddDate(0, period, 0) adds 'period' months while maintaining the same day
+		distributionDateTime := time.Date(
+			startDateTime.Year(),
+			startDateTime.Month(),
+			distributionDay,
+			startDateTime.Hour(),
+			startDateTime.Minute(),
+			startDateTime.Second(),
+			startDateTime.Nanosecond(),
+			time.UTC,
+		).AddDate(0, period, 0)
 		distributionTime := uint64(distributionDateTime.Unix())
 
 		// Build allocations list for this distribution period
