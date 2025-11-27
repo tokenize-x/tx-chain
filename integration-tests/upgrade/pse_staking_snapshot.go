@@ -4,12 +4,12 @@ package upgrade
 
 import (
 	"testing"
-	"time"
 
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
@@ -47,9 +47,9 @@ func (pss *pseStakingSnapshot) Before(t *testing.T) {
 }
 
 func (pss *pseStakingSnapshot) After(t *testing.T) {
-	// wait for some time for scores to be accumulated
-	time.Sleep(2 * time.Second)
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	// wait for some time for scores to be accumulated
+	client.AwaitNextBlocks(ctx, chain.ClientContext, 1)
 	requireT := require.New(t)
 
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
