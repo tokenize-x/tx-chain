@@ -49,8 +49,8 @@ func (pss *pseStakingSnapshot) Before(t *testing.T) {
 func (pss *pseStakingSnapshot) After(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	// wait for some time for scores to be accumulated
-	client.AwaitNextBlocks(ctx, chain.ClientContext, 1)
 	requireT := require.New(t)
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
 
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	for _, delegatorAddr := range pss.delegatorAddresses {
