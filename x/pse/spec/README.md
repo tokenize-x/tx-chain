@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This document specifies the `pse` module (Proof of Stake Extension). The module is responsible for managing scheduled token distributions from clearing accounts to designated recipients based on a predefined allocation schedule. The Community clearing account uses a special score-based distribution mechanism that rewards stakers proportionally to their staking duration and amount. This module was introduced in the v6 upgrade of TX Blockchain.
+This document specifies the `pse` module (Proof of Support Emission). The module is responsible for managing scheduled token distributions from clearing accounts to designated recipients based on a predefined allocation schedule. The Community clearing account uses a special score-based distribution mechanism that rewards stakers proportionally to their staking duration and amount. This module was introduced in the v6 upgrade of TX Blockchain.
 
 ## Concepts
 
@@ -169,65 +169,27 @@ message ClearingAccountAllocation {
 
 ## Keeper
 
-The PSE module provides a keeper with methods for:
+The PSE module keeper provides functionality across five main areas:
 
 ### Distribution Processing
 
-```go
-// ProcessNextDistribution processes the next due distribution from the schedule.
-// Called automatically during EndBlock.
-ProcessNextDistribution(ctx context.Context) error
-
-// DistributeCommunityPSE distributes Community allocation using score-based mechanism.
-DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdkmath.Int) error
-```
+Handles the automatic processing of scheduled distributions during the `EndBlock` phase. For Community distributions, it finalizes all pending scores, calculates proportional allocations, and auto-delegates tokens to validators. For non-Community distributions, it transfers tokens directly to recipient addresses. Only one distribution is processed per block, ensuring predictable gas usage.
 
 ### Score Management
 
-```go
-// GetAccountScore returns the total current score for a delegator in the current 1-month period.
-// Includes both snapshot score and uncalculated scores from active delegations.
-GetAccountScore(ctx context.Context, address sdk.AccAddress) (sdkmath.Int, error)
-
-// GetDelegationTimeEntry retrieves the time entry for a specific delegation.
-GetDelegationTimeEntry(ctx context.Context, valAddr sdk.ValAddress, delAddr sdk.AccAddress) (types.DelegationTimeEntry, error)
-
-// SetDelegationTimeEntry stores or updates a delegation time entry.
-SetDelegationTimeEntry(ctx context.Context, valAddr sdk.ValAddress, delAddr sdk.AccAddress, entry types.DelegationTimeEntry) error
-```
+Manages the calculation and storage of delegator scores used in Community distributions. Tracks delegation time entries for each (delegator, validator) pair and maintains account score snapshots. Calculates both accumulated scores from snapshots and real-time uncalculated scores from active delegations since the last update.
 
 ### Schedule Management
 
-```go
-// SaveDistributionSchedule persists the distribution schedule to blockchain state.
-SaveDistributionSchedule(ctx context.Context, schedule []types.ScheduledDistribution) error
-
-// GetAllocationSchedule returns the complete allocation schedule as a sorted list.
-GetAllocationSchedule(ctx context.Context) ([]types.ScheduledDistribution, error)
-
-// PeekNextAllocationSchedule returns the earliest scheduled distribution and whether it should be processed.
-PeekNextAllocationSchedule(ctx context.Context) (types.ScheduledDistribution, bool, error)
-```
+Manages the 84-month distribution schedule stored in blockchain state. Provides methods to save, retrieve, and peek at scheduled distributions. The schedule is maintained in chronological order by timestamp, with the earliest pending distribution processed first during `EndBlock`.
 
 ### Parameter Management
 
-```go
-// GetParams retrieves the module parameters.
-GetParams(ctx context.Context) (types.Params, error)
-
-// SetParams updates the module parameters.
-SetParams(ctx context.Context, params types.Params) error
-
-// UpdateClearingMappings updates the recipient mappings for non-Community clearing accounts.
-UpdateClearingMappings(ctx context.Context, authority string, mappings []types.ClearingAccountMapping) error
-```
+Handles module parameter storage and updates, including the excluded addresses list and clearing account recipient mappings. Validates parameter changes to ensure consistency with distribution rules and supports governance-driven updates through authorized transactions.
 
 ### Query Helpers
 
-```go
-// GetClearingAccountBalances returns the current balances of all PSE clearing accounts.
-GetClearingAccountBalances(ctx context.Context) ([]types.ClearingAccountBalance, error)
-```
+Provides utility methods for querying module state, such as retrieving current balances of all clearing accounts. These helpers support both CLI queries and programmatic access to module data for monitoring and auditing purposes.
 
 ## Messages
 
@@ -524,13 +486,6 @@ Governance has the responsibility to:
 - Changes require governance approval
 - Addresses are validated at genesis and during updates
 - It's crucial to verify recipient addresses before submitting governance proposals
-
-### Score Manipulation Prevention
-
-- Scores are calculated automatically by the protocol, not user-submitted
-- Delegation changes trigger immediate score updates
-- Excluded addresses list prevents gaming through exchange deposits
-- Score reset after each distribution prevents accumulation gaming
 
 ### Smart Contract Risk
 
