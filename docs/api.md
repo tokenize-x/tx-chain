@@ -6069,6 +6069,7 @@ QueryScheduledDistributionsResponse defines the response type for querying futur
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order. Past scheduled distributions list are automatically removed after processing,  so all returned scheduled distributions are future scheduled distributions.`  |
+| `skip_distribution` | [bool](#bool) |  |    |
 
 
 
