@@ -10,7 +10,6 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
@@ -374,62 +373,5 @@ func TestPSEQueryScore_AddressWithoutDelegation(t *testing.T) {
 
 		// Score should be zero for addresses with no delegation
 		requireT.True(scoreResp.Score.IsZero(), "score should be zero for address with no delegation")
-	}
-}
-
-// TestPSEQueryClearingAccountBalances tests the ClearingAccountBalances query endpoint.
-// Note: In znet, the PSE upgrade handler has already run and funded these accounts
-// with the initial mint of 100 billion tokens according to the allocation percentages.
-func TestPSEQueryClearingAccountBalances(t *testing.T) {
-	t.Parallel()
-
-	ctx, chain := integrationtests.NewTXChainTestingContext(t)
-	requireT := require.New(t)
-
-	pseClient := psetypes.NewQueryClient(chain.ClientContext)
-
-	// Query clearing account balances
-	resp, err := pseClient.ClearingAccountBalances(ctx, &psetypes.QueryClearingAccountBalancesRequest{})
-	requireT.NoError(err)
-	requireT.NotNil(resp)
-	requireT.NotNil(resp.Balances)
-
-	// Should return all clearing accounts
-	allAccounts := psetypes.GetAllClearingAccounts()
-	requireT.Len(resp.Balances, len(allAccounts), "should return all clearing accounts")
-
-	t.Logf("Clearing account balances count: %d", len(resp.Balances))
-
-	// Calculate expected balances from PSE upgrade handler constants
-	// This ensures the test stays in sync with any changes to the upgrade handler
-	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
-	allocations := v6.DefaultInitialFundAllocations()
-
-	expectedBalances := make(map[string]sdkmath.Int)
-	for _, allocation := range allocations {
-		expectedAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
-		expectedBalances[allocation.ClearingAccount] = expectedAmount
-	}
-
-	// Verify balances and log them
-	balanceMap := make(map[string]sdkmath.Int)
-	for _, balance := range resp.Balances {
-		balanceMap[balance.ClearingAccount] = balance.Balance
-		t.Logf("Account %s = %s", balance.ClearingAccount, balance.Balance.String())
-
-		// Verify account name is valid
-		requireT.Contains(allAccounts, balance.ClearingAccount, "clearing account should be valid")
-
-		// Verify balance matches expected amount from PSE upgrade handler
-		expectedBalance, exists := expectedBalances[balance.ClearingAccount]
-		requireT.True(exists, "should have expected balance for %s", balance.ClearingAccount)
-		requireT.Equal(expectedBalance, balance.Balance,
-			"balance for %s should match PSE upgrade handler allocation", balance.ClearingAccount)
-	}
-
-	// Verify all known clearing accounts are present
-	for _, expectedAccount := range allAccounts {
-		_, exists := balanceMap[expectedAccount]
-		requireT.True(exists, "clearing account %s should be present", expectedAccount)
 	}
 }

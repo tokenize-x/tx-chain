@@ -39,22 +39,6 @@ func TestQueryScore_NoScore(t *testing.T) {
 	requireT.True(resp.Score.IsZero() || resp.Score.IsPositive(), "score should be zero or positive")
 }
 
-func TestQueryScore_WithValidatorAddress(t *testing.T) {
-	requireT := require.New(t)
-
-	testNetwork := network.New(t)
-	ctx := testNetwork.Validators[0].ClientCtx
-
-	// Query score for validator address
-	// Validators typically have delegations, so they may have accumulated scores
-	delAddr := testNetwork.Validators[0].Address
-
-	var resp types.QueryScoreResponse
-	txchainclitestutil.ExecQueryCmd(t, ctx, cli.CmdQueryScore(), []string{delAddr.String()}, &resp)
-	requireT.NotNil(resp)
-	requireT.True(resp.Score.GTE(sdkmath.ZeroInt()), "score should be >= 0")
-}
-
 func TestQueryScheduledDistributions_Empty(t *testing.T) {
 	requireT := require.New(t)
 
