@@ -65,63 +65,18 @@ func (k Keeper) UpdateExcludedAddresses(
 	return k.SetParams(ctx, params)
 }
 
-// UpdateClearingMappings updates the sub account mappings in params via governance.
+// UpdateClearingAccountMappings updates the recipient mappings in params via governance.
 // The mappings must contain exactly all eligible (non-excluded) clearing accounts - no more, no less.
-func (k Keeper) UpdateClearingMappings(
+// Note: All validation is performed in MsgUpdateClearingAccountMappings.ValidateBasic()
+// before the proposal is stored. This keeper method only handles authority check and state updates.
+func (k Keeper) UpdateClearingAccountMappings(
 	ctx context.Context,
 	authority string,
 	mappings []types.ClearingAccountMapping,
 ) error {
+	// Check authority (requires state access to k.authority)
 	if k.authority != authority {
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
-	}
-
-	// Get all eligible (non-excluded) clearing accounts that must be present
-	eligibleAccounts := types.GetNonCommunityClearingAccounts()
-
-	// Build a set of clearing accounts in the new mappings
-	mappingAccounts := make(map[string]bool)
-	for _, mapping := range mappings {
-		mappingAccounts[mapping.ClearingAccount] = true
-	}
-
-	// Check for missing eligible accounts
-	var missingAccounts []string
-	for _, eligibleAccount := range eligibleAccounts {
-		if !mappingAccounts[eligibleAccount] {
-			missingAccounts = append(missingAccounts, eligibleAccount)
-		}
-	}
-
-	if len(missingAccounts) > 0 {
-		return errorsmod.Wrapf(types.ErrInvalidInput,
-			"there are missing non-Community clearing accounts in the mappings")
-	}
-
-	// Check for extra accounts (accounts that are not eligible)
-	// Build a set of eligible accounts for quick lookup
-	eligibleSet := make(map[string]bool)
-	for _, eligibleAccount := range eligibleAccounts {
-		eligibleSet[eligibleAccount] = true
-	}
-
-	var extraAccounts []string
-	for _, mapping := range mappings {
-		// Check if it's not in the eligible list
-		if !eligibleSet[mapping.ClearingAccount] {
-			extraAccounts = append(extraAccounts, mapping.ClearingAccount)
-		}
-	}
-
-	if len(extraAccounts) > 0 {
-		return errorsmod.Wrapf(types.ErrInvalidInput,
-			"mappings contain invalid non-Community clearing accounts")
-	}
-
-	// Verify that the number of mappings matches the number of eligible accounts
-	if len(mappings) != len(eligibleAccounts) {
-		return errorsmod.Wrapf(types.ErrInvalidInput,
-			"expected exact number of mappings (one for each non-Community clearing account)")
 	}
 
 	// Get current params
@@ -130,7 +85,8 @@ func (k Keeper) UpdateClearingMappings(
 		return err
 	}
 
-	// Update sub account mappings
+	// Update recipient mappings
+	// All validation is already done in ValidateBasic to prevent invalid proposals from being stored
 	params.ClearingAccountMappings = mappings
 
 	return k.SetParams(ctx, params)

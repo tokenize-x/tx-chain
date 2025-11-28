@@ -12,11 +12,17 @@ type extendedMsg interface {
 	sdk.HasValidateBasic
 }
 
-var _ extendedMsg = &MsgUpdateExcludedAddresses{}
+var (
+	_ extendedMsg = &MsgUpdateExcludedAddresses{}
+	_ extendedMsg = &MsgUpdateClearingAccountMappings{}
+	_ extendedMsg = &MsgUpdateDistributionSchedule{}
+)
 
 // RegisterLegacyAminoCodec registers the amino types and interfaces.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateExcludedAddresses{}, ModuleName+"/MsgUpdateExcludedAddresses")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateClearingAccountMappings{}, ModuleName+"/MsgUpdateClearingAccountMappings")
+	legacy.RegisterAminoMsg(cdc, &MsgUpdateDistributionSchedule{}, ModuleName+"/MsgUpdateDistributionSchedule")
 }
 
 // ValidateBasic checks that message fields are valid.
@@ -70,4 +76,49 @@ func (m *MsgUpdateExcludedAddresses) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// ValidateBasic checks that message fields are valid.
+func (m *MsgUpdateClearingAccountMappings) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
+		return cosmoserrors.ErrInvalidAddress.Wrapf("invalid authority address: %s", err)
+	}
+
+	// Get required accounts
+	requiredAccounts := GetNonCommunityClearingAccounts()
+
+	// For governance messages, must provide exact count of all non-Community clearing accounts
+	if len(m.Mappings) != len(requiredAccounts) {
+		return cosmoserrors.ErrInvalidRequest.Wrapf(
+			"invalid non-Community clearing accounts: expected %d mappings, got %d",
+			len(requiredAccounts), len(m.Mappings))
+	}
+
+	// Validate individual mappings
+	if err := validateClearingAccountMappings(m.Mappings); err != nil {
+		return err
+	}
+
+	// Check all required accounts are provided
+	seenAccounts := make(map[string]bool)
+	for _, mapping := range m.Mappings {
+		seenAccounts[mapping.ClearingAccount] = true
+	}
+	for _, required := range requiredAccounts {
+		if !seenAccounts[required] {
+			return cosmoserrors.ErrInvalidRequest.Wrapf("missing required clearing account: %s", required)
+		}
+	}
+
+	return nil
+}
+
+// ValidateBasic checks that message fields are valid.
+func (m *MsgUpdateDistributionSchedule) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
+		return cosmoserrors.ErrInvalidAddress.Wrapf("invalid authority address: %s", err)
+	}
+
+	// Validate the schedule (includes all clearing account validation)
+	return ValidateDistributionSchedule(m.Schedule)
 }

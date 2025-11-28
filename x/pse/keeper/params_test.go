@@ -218,11 +218,11 @@ func TestUpdateClearingMappings_Authority(t *testing.T) {
 	}
 
 	// Test with wrong authority
-	err := pseKeeper.UpdateClearingMappings(ctx, wrongAuthority, mappings)
+	err := pseKeeper.UpdateClearingAccountMappings(ctx, wrongAuthority, mappings)
 	requireT.Error(err, "should reject wrong authority")
 	requireT.Contains(err.Error(), "invalid authority")
 
 	// Test with correct authority
-	err = pseKeeper.UpdateClearingMappings(ctx, correctAuthority, mappings)
+	err = pseKeeper.UpdateClearingAccountMappings(ctx, correctAuthority, mappings)
 	requireT.NoError(err, "should accept correct authority")
 }
