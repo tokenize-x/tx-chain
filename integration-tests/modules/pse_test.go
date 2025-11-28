@@ -104,9 +104,9 @@ func TestPSEDistribution(t *testing.T) {
 
 	// ensure distributions are done correctly with correct ratios
 	for i := 2; i >= 0; i-- {
-		client.AwaitNextBlocks(ctx, chain.ClientContext, 3)
+		requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 3))
 		allDelegationAmounts, allDelegatorScores, totalScore := getAllDelegatorInfo(ctx, t, chain)
-		awaitScheduledDistributionCount(ctx, chain, i)
+		requireT.NoError(awaitScheduledDistributionCount(ctx, chain, i))
 		updatedDelegationAmounts, _, _ := getAllDelegatorInfo(ctx, t, chain)
 		for delegator, delegationAmount := range updatedDelegationAmounts {
 			oldDelegationAmount, exists := allDelegationAmounts[delegator]
@@ -131,7 +131,6 @@ func getAllDelegatorInfo(
 	t *testing.T,
 	chain integration.TXChain,
 ) (map[string]sdkmath.Int, map[string]sdkmath.Int, sdkmath.Int) {
-
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	requireT := require.New(t)
@@ -139,6 +138,7 @@ func getAllDelegatorInfo(
 	// fix all queries to a certain height to avoid race conditions
 	header, err := chain.LatestBlockHeader(ctx)
 	requireT.NoError(err)
+	//nolint:staticcheck // it is ok to use grpctypes.GRPCBlockHeightHeader as key
 	ctx = context.WithValue(ctx, grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(header.Height, 10))
 
 	validatorsResponse, err := stakingClient.Validators(
@@ -175,7 +175,7 @@ func getAllDelegatorInfo(
 
 func awaitScheduledDistributionCount(ctx context.Context, chain integration.TXChain, count int) error {
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
-	chain.AwaitState(ctx, func(ctx context.Context) error {
+	return chain.AwaitState(ctx, func(ctx context.Context) error {
 		pseResponse, err := pseClient.ScheduledDistributions(ctx, &psetypes.QueryScheduledDistributionsRequest{})
 		if err != nil {
 			return err
@@ -187,6 +187,4 @@ func awaitScheduledDistributionCount(ctx context.Context, chain integration.TXCh
 	},
 		integration.WithAwaitStateTimeout(40*time.Second),
 	)
-
-	return nil
 }
