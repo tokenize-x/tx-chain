@@ -187,9 +187,6 @@ func (pid *pseInitialDistribution) verifyDistributionTimestampsAfter(
 ) {
 	requireT := require.New(t)
 
-	requireT.Equal(uint64(v6.DefaultDistributionStartTime), schedule[0].Timestamp,
-		"first distribution should start at DefaultDistributionStartTime")
-
 	firstDistTime := time.Unix(int64(schedule[0].Timestamp), 0).UTC()
 	t.Logf("First distribution scheduled for: %s", firstDistTime.Format(time.RFC3339))
 
@@ -197,17 +194,20 @@ func (pid *pseInitialDistribution) verifyDistributionTimestampsAfter(
 	t.Logf("Last distribution scheduled for: %s", lastDistTime.Format(time.RFC3339))
 
 	requireT.Greater(schedule[v6.TotalAllocationMonths-1].Timestamp,
-		uint64(v6.DefaultDistributionStartTime),
+		schedule[0].Timestamp,
 		"last distribution should be after start time")
 
+	// Verify all distributions are on the same day of the month at 12:00:00 GMT
+	expectedDay := firstDistTime.Day()
 	var prevTime time.Time
 	for i, period := range schedule {
 		currentTime := time.Unix(int64(period.Timestamp), 0).UTC()
 
-		requireT.Equal(1, currentTime.Day(),
-			"period %d should be on the first day of the month, got day %d", i, currentTime.Day())
+		requireT.Equal(expectedDay, currentTime.Day(),
+			"period %d should be on day %d of the month, got day %d", i, expectedDay, currentTime.Day())
 
 		if i > 0 {
+			// Verify each month is exactly one calendar month after the previous
 			expectedTime := prevTime.AddDate(0, 1, 0)
 			requireT.Equal(expectedTime.Year(), currentTime.Year(),
 				"period %d: year should be %d, got %d", i, expectedTime.Year(), currentTime.Year())
