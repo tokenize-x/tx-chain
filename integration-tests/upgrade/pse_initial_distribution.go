@@ -20,8 +20,7 @@ import (
 )
 
 type pseInitialDistribution struct {
-	totalSupplyBefore     sdk.Coin
-	clearingAccountBefore map[string]sdk.Coin
+	totalSupplyBefore sdk.Coin
 }
 
 func (pid *pseInitialDistribution) Before(t *testing.T) {
@@ -40,8 +39,7 @@ func (pid *pseInitialDistribution) Before(t *testing.T) {
 	requireT.NoError(err)
 	pid.totalSupplyBefore = supplyResp.Amount
 
-	// Record clearing account balances before upgrade (should be zero or non-existent)
-	pid.clearingAccountBefore = make(map[string]sdk.Coin)
+	// Verify all clearing account balances are zero before upgrade (PSE module doesn't exist yet)
 	clearingAccounts := psetypes.GetAllClearingAccounts()
 	for _, clearingAccount := range clearingAccounts {
 		moduleAddr := authtypes.NewModuleAddress(clearingAccount)
@@ -50,8 +48,9 @@ func (pid *pseInitialDistribution) Before(t *testing.T) {
 			Denom:   bondDenom,
 		})
 		requireT.NoError(err)
-		pid.clearingAccountBefore[clearingAccount] = *balanceResp.Balance
-		t.Logf("Before upgrade - %s balance: %s", clearingAccount, balanceResp.Balance)
+		requireT.True(balanceResp.Balance.IsZero(),
+			"clearing account %s should have zero balance before upgrade, got %s",
+			clearingAccount, balanceResp.Balance)
 	}
 }
 
@@ -68,10 +67,11 @@ func (pid *pseInitialDistribution) After(t *testing.T) {
 	bankClient := banktypes.NewQueryClient(chain.ClientContext)
 
 	pid.verifyTotalSupplyIncreaseAfter(ctx, t, bankClient, bondDenom)
-	allocations := pid.verifyClearingAccountAllocations(ctx, t, bankClient, bondDenom)
 
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	schedule := pid.verifyDistributionScheduleAfter(ctx, t, pseClient)
+
+	allocations := pid.verifyClearingAccountAllocations(ctx, t, bankClient, bondDenom, schedule)
 	pid.verifyDistributionTimestampsAfter(t, schedule)
 	pid.verifyPeriodAllocationsAfter(t, allocations, schedule)
 	pid.verifyClearingAccountMappingsAfter(ctx, t, pseClient)
@@ -106,6 +106,7 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 	t *testing.T,
 	bankClient banktypes.QueryClient,
 	bondDenom string,
+	remainingSchedule []psetypes.ScheduledDistribution,
 ) []v6.InitialFundAllocation {
 	requireT := require.New(t)
 	allocations := v6.DefaultInitialFundAllocations()
@@ -115,8 +116,15 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 		"allocations should match the number of all clearing accounts (%d)", len(allClearingAccounts))
 
 	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
-	totalVerified := sdkmath.ZeroInt()
-	totalActualIncrease := sdkmath.ZeroInt()
+
+	// Calculate how many distributions were already processed
+	// Total months = 84, remaining in schedule = what's left
+	processedDistributions := v6.TotalAllocationMonths - len(remainingSchedule)
+	t.Logf("Total allocation months: %d, Remaining in schedule: %d, Already processed: %d",
+		v6.TotalAllocationMonths, len(remainingSchedule), processedDistributions)
+
+	totalExpectedBalance := sdkmath.ZeroInt()
+	totalActualBalance := sdkmath.ZeroInt()
 
 	for _, allocation := range allocations {
 		// Verify allocation corresponds to a known clearing account
@@ -129,8 +137,19 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 		}
 		requireT.True(found, "allocation for unknown clearing account: %s", allocation.ClearingAccount)
 
-		expectedAmount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
-		totalVerified = totalVerified.Add(expectedAmount)
+		// Calculate expected balance considering processed distributions
+		// 1. Total allocated to this account
+		totalForAccount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
+
+		// 2. Monthly amount (with integer division truncation)
+		monthlyAmount := totalForAccount.QuoRaw(v6.TotalAllocationMonths)
+
+		// 3. Amount already distributed
+		alreadyDistributed := monthlyAmount.MulRaw(int64(processedDistributions))
+
+		// 4. Expected remaining balance
+		expectedBalance := totalForAccount.Sub(alreadyDistributed)
+		totalExpectedBalance = totalExpectedBalance.Add(expectedBalance)
 
 		moduleAddr := authtypes.NewModuleAddress(allocation.ClearingAccount)
 		balanceResp, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
@@ -139,26 +158,24 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 		})
 		requireT.NoError(err)
 
-		prevBalance := pid.clearingAccountBefore[allocation.ClearingAccount].Amount
-		actualIncrease := balanceResp.Balance.Amount.Sub(prevBalance)
-		totalActualIncrease = totalActualIncrease.Add(actualIncrease)
+		// Current balance should equal expected balance (accounting for processed distributions)
+		actualBalance := balanceResp.Balance.Amount
+		totalActualBalance = totalActualBalance.Add(actualBalance)
 
-		requireT.Equal(expectedAmount.String(), actualIncrease.String(),
-			"clearing account %s should have received exactly %s, got increase of %s",
-			allocation.ClearingAccount, expectedAmount, actualIncrease)
+		requireT.Equal(expectedBalance.String(), actualBalance.String(),
+			"clearing account %s should have balance %s (total: %s, monthly: %s, distributed: %s), got %s",
+			allocation.ClearingAccount, expectedBalance, totalForAccount, monthlyAmount, alreadyDistributed, actualBalance)
 
-		t.Logf("Clearing account %s: previous=%s, allocated=%s, current=%s, increase=%s",
-			allocation.ClearingAccount, prevBalance, expectedAmount, balanceResp.Balance.Amount, actualIncrease)
+		t.Logf("Clearing account %s: total_allocated=%s, monthly=%s, already_distributed=%s, expected_balance=%s, actual_balance=%s",
+			allocation.ClearingAccount, totalForAccount, monthlyAmount, alreadyDistributed, expectedBalance, actualBalance)
 	}
 
-	requireT.Equal(totalMintAmount.String(), totalVerified.String(),
-		"sum of allocations should equal total mint amount")
-	requireT.Equal(totalMintAmount.String(), totalActualIncrease.String(),
-		"sum of clearing account increases should equal total mint amount (%s), got %s",
-		totalMintAmount, totalActualIncrease)
+	requireT.Equal(totalExpectedBalance.String(), totalActualBalance.String(),
+		"sum of clearing account balances should equal expected balance after %d distributions (%s), got %s",
+		processedDistributions, totalExpectedBalance, totalActualBalance)
 
-	t.Logf("Total mint amount: %s", totalMintAmount)
-	t.Logf("Total clearing account increase: %s", totalActualIncrease)
+	t.Logf("Total expected balance (after %d distributions): %s", processedDistributions, totalExpectedBalance)
+	t.Logf("Total actual balance: %s", totalActualBalance)
 
 	return allocations
 }
