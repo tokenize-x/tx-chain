@@ -166,8 +166,10 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 			"clearing account %s should have balance %s (total: %s, monthly: %s, distributed: %s), got %s",
 			allocation.ClearingAccount, expectedBalance, totalForAccount, monthlyAmount, alreadyDistributed, actualBalance)
 
-		t.Logf("Clearing account %s: total_allocated=%s, monthly=%s, already_distributed=%s, expected_balance=%s, actual_balance=%s",
-			allocation.ClearingAccount, totalForAccount, monthlyAmount, alreadyDistributed, expectedBalance, actualBalance)
+		t.Logf("Clearing account %s: total_allocated=%s, monthly=%s, already_distributed=%s, "+
+			"expected_balance=%s, actual_balance=%s",
+			allocation.ClearingAccount, totalForAccount, monthlyAmount, alreadyDistributed,
+			expectedBalance, actualBalance)
 	}
 
 	requireT.Equal(totalExpectedBalance.String(), totalActualBalance.String(),
