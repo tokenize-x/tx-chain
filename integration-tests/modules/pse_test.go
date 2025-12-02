@@ -117,7 +117,7 @@ func TestPSEDistribution(t *testing.T) {
 		t.Logf("pse event occurred in height: %d", height)
 		scheduledDistributions, err := getScheduledDistribution(ctx, chain)
 		requireT.NoError(err)
-		requireT.Len(scheduledDistributions, i)
+		requireT.Len(scheduledDistributions, 2-i)
 		delegationAmountsBefore, delegatorScoresBefore, totalScoreBefore := getAllDelegatorInfo(ctx, t, chain, height-1)
 		delegationAmountsAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
 		for delegator, delegationAfter := range delegationAmountsAfter {
