@@ -100,7 +100,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	}
 	expectedStartTime := uint64(time.Date(
 		upgradeBlockTime.Year(),
-		upgradeBlockTime.Month(),
+		upgradeBlockTime.Month()+1,
 		distributionDay,
 		12, 0, 0, 0,
 		time.UTC,
@@ -114,7 +114,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	// Start from noon GMT on the upgrade day (capped at 28) - reuse distributionDay from Step 6
 	startTime := time.Date(
 		upgradeBlockTime.Year(),
-		upgradeBlockTime.Month(),
+		upgradeBlockTime.Month()+1,
 		distributionDay,
 		12, 0, 0, 0,
 		time.UTC,
@@ -482,7 +482,7 @@ func TestPseInit_DayCapping(t *testing.T) {
 			// Verify first month specifically
 			firstMonth := time.Unix(int64(allocationSchedule[0].Timestamp), 0).UTC()
 			requireT.Equal(upgradeTime.Year(), firstMonth.Year())
-			requireT.Equal(upgradeTime.Month(), firstMonth.Month())
+			requireT.Equal(upgradeTime.Month()+1, firstMonth.Month())
 			requireT.Equal(tc.expectedDay, firstMonth.Day())
 			requireT.Equal(12, firstMonth.Hour(), "first month should start at 12:00 GMT")
 		})

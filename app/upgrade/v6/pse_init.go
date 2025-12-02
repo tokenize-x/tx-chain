@@ -125,7 +125,7 @@ func InitPSEAllocationsAndSchedule(
 	}
 	scheduleStartTime := uint64(time.Date(
 		upgradeBlockTime.Year(),
-		upgradeBlockTime.Month(),
+		upgradeBlockTime.Month()+1,
 		distributionDay,
 		12, 0, 0, 0,
 		time.UTC,
