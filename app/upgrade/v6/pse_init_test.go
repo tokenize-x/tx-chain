@@ -126,7 +126,8 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		// All distributions should be at 12:00:00 GMT on the same day every month
 		expectedTime := startTime.AddDate(0, i, 0)
 		requireT.Equal(expectedTime.Unix(), currentTime.Unix(),
-			"month %d should be %d months after start date (next month after upgrade) at 12:00:00 GMT on day %d", i, i, distributionDay)
+			"month %d should be %d months after start date (next month after upgrade) at 12:00:00 GMT on day %d",
+			i, i, distributionDay)
 		requireT.Equal(distributionDay, currentTime.Day(), "month %d should be on day %d", i, distributionDay)
 		requireT.Equal(12, currentTime.Hour(), "month %d should be at hour 12", i)
 		requireT.Equal(0, currentTime.Minute(), "month %d should be at minute 00", i)
