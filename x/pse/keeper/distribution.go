@@ -136,6 +136,13 @@ func (k Keeper) distributeAllocatedTokens(
 		// - Remainder (if any) goes to community pool for ecosystem benefit
 		// This guarantees fair distribution and no tokens are lost
 		numRecipients := sdkmath.NewInt(int64(len(recipientAddrs)))
+		if numRecipients.IsZero() {
+			return errorsmod.Wrapf(
+				types.ErrTransferFailed,
+				"no recipients found for clearing account '%s'",
+				allocation.ClearingAccount,
+			)
+		}
 		amountPerRecipient := allocation.Amount.Quo(numRecipients)
 		remainder := allocation.Amount.Mod(numRecipients)
 

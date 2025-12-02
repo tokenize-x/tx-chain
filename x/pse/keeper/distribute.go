@@ -22,7 +22,7 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 		return err
 	}
 
-	allDelegationTimeEntry, err := finalScoreMap.iterateDelegationTimeEntries(ctx, k)
+	err = finalScoreMap.iterateDelegationTimeEntries(ctx, k)
 	if err != nil {
 		return err
 	}
@@ -31,6 +31,18 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 	// it calculates the score from the last delegation time entry up to the current block time, which
 	// is not included in the score snapshot calculations.
 	err = finalScoreMap.iterateAccountScoreSnapshot(ctx, k)
+	if err != nil {
+		return err
+	}
+
+	// clear all account score snapshot.
+	err = k.AccountScoreSnapshot.Clear(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// clear all delegation time entries.
+	err = k.DelegationTimeEntries.Clear(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -63,24 +75,6 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 	if leftover.IsPositive() {
 		pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
 		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
-		if err != nil {
-			return err
-		}
-	}
-
-	// set all scores to 0.
-	err = k.AccountScoreSnapshot.Clear(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	// set all delegation time entries to the current block time.
-	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
-	for _, kv := range allDelegationTimeEntry {
-		err = k.DelegationTimeEntries.Set(ctx, kv.Key, types.DelegationTimeEntry{
-			LastChangedUnixSec: blockTimeUnixSeconds,
-			Shares:             kv.Value.Shares,
-		})
 		if err != nil {
 			return err
 		}

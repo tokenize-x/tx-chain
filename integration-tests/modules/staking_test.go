@@ -150,7 +150,7 @@ func TestStakingValidatorCRUDAndStaking(t *testing.T) {
 					&stakingtypes.MsgUndelegate{},
 					&stakingtypes.MsgEditValidator{},
 				},
-				NondeterministicMessagesGas: 300_000, // to cover the redelegation
+				NondeterministicMessagesGas: 500_000, // to cover the redelegation
 				Amount:                      delegateAmount,
 			},
 		}, {

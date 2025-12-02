@@ -1053,7 +1053,7 @@ func TestIBCAssetFTTimedOutTransfer(t *testing.T) {
 		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
 	)
 
-	retryCtx, retryCancel := context.WithTimeout(ctx, 5*integration.AwaitStateTimeout)
+	retryCtx, retryCancel := context.WithTimeout(ctx, 5*integration.DefaultAwaitStateTimeout)
 	defer retryCancel()
 
 	// This is the retry loop where we try to trigger a timeout condition for IBC transfer.
@@ -1443,7 +1443,7 @@ func TestIBCTimedOutTransferWithWhitelistingAndFreezing(t *testing.T) {
 		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
 	)
 
-	retryCtx, retryCancel := context.WithTimeout(ctx, 5*integration.AwaitStateTimeout)
+	retryCtx, retryCancel := context.WithTimeout(ctx, 5*integration.DefaultAwaitStateTimeout)
 	defer retryCancel()
 
 	// This is the retry loop where we try to trigger a timeout condition for IBC transfer.
@@ -1755,7 +1755,7 @@ func TestIBCTimedOutTransferWithBurnRateAndSendCommission(t *testing.T) {
 		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
 	)
 
-	retryCtx, retryCancel := context.WithTimeout(ctx, 5*integration.AwaitStateTimeout)
+	retryCtx, retryCancel := context.WithTimeout(ctx, 5*integration.DefaultAwaitStateTimeout)
 	defer retryCancel()
 
 	// This is the retry loop where we try to trigger a timeout condition for IBC transfer.

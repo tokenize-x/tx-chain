@@ -131,6 +131,32 @@ func (g Governance) ProposalFromMsgAndVote(
 	g.ProposeAndVote(ctx, t, proposalMsg, option)
 }
 
+// ExpeditedProposalFromMsgAndVote creates a new expedited proposal from list of sdk.Msg, votes from all
+// staker accounts and awaits for the final status.
+func (g Governance) ExpeditedProposalFromMsgAndVote(
+	ctx context.Context,
+	t *testing.T,
+	proposer sdk.AccAddress,
+	metadata, title, summary string,
+	option govtypesv1.VoteOption,
+	msgs ...sdk.Msg,
+) {
+	t.Helper()
+
+	if len(proposer) == 0 {
+		proposer = g.chainCtx.GenAccount()
+	}
+
+	proposerBalance, err := g.ComputeProposerBalance(ctx, true)
+	require.NoError(t, err)
+	g.faucet.FundAccounts(ctx, t, NewFundedAccount(proposer, proposerBalance))
+
+	proposalMsg, err := g.NewMsgSubmitProposal(ctx, proposer, msgs, metadata, title, summary, true)
+	require.NoError(t, err)
+
+	g.ProposeAndVote(ctx, t, proposalMsg, option)
+}
+
 // Propose creates a new proposal.
 func (g Governance) Propose(ctx context.Context, t *testing.T, msg *govtypesv1.MsgSubmitProposal) (uint64, error) {
 	SkipUnsafe(ctx, t)
