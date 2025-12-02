@@ -271,14 +271,12 @@ func assertCommunityPoolBalanceAction(r *runEnv, expectedBalance sdkmath.Int) {
 }
 
 func assertScoreResetAction(r *runEnv) {
-	count := 0
 	err := r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, nil,
 		func(key sdk.AccAddress, value sdkmath.Int) (bool, error) {
-			count++
+			r.requireT.Equal(sdkmath.NewInt(0), value)
 			return false, nil
 		})
 	r.requireT.NoError(err)
-	r.requireT.Equal(0, count)
 
 	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
 	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil,

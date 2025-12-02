@@ -46,15 +46,17 @@ func generateProtoOpenAPI(ctx context.Context, deps types.DepsFunc) error {
 		return errors.WithStack(err)
 	}
 
-	txPath := filepath.Join(absPath, "proto", "coreum")
+	coreumPath := filepath.Join(absPath, "proto", "coreum")
+	txPath := filepath.Join(absPath, "proto", "tx")
 	cosmosPath := filepath.Join(moduleDirs[cosmosSDKModule], "proto", "cosmos")
 	ibcPath := filepath.Join(moduleDirs[cosmosIBCModule], "proto", "ibc")
 	generateDirs := []string{
-		filepath.Join(txPath, "asset", "ft", "v1"),
-		filepath.Join(txPath, "asset", "nft", "v1"),
-		filepath.Join(txPath, "customparams", "v1"),
-		filepath.Join(txPath, "dex", "v1"),
-		filepath.Join(txPath, "feemodel", "v1"),
+		filepath.Join(txPath, "pse", "v1"),
+		filepath.Join(coreumPath, "asset", "ft", "v1"),
+		filepath.Join(coreumPath, "asset", "nft", "v1"),
+		filepath.Join(coreumPath, "customparams", "v1"),
+		filepath.Join(coreumPath, "dex", "v1"),
+		filepath.Join(coreumPath, "feemodel", "v1"),
 		filepath.Join(cosmosPath, "base", "node", "v1beta1"),
 		filepath.Join(cosmosPath, "base", "tendermint", "v1beta1"),
 		filepath.Join(cosmosPath, "tx", "v1beta1"),

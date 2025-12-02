@@ -81,10 +81,10 @@ func CmdQueryScore() *cobra.Command {
 				return err
 			}
 			queryClient := types.NewQueryClient(clientCtx)
-			params := &types.QueryScoreRequest{
+			scoreRequest := &types.QueryScoreRequest{
 				Address: args[0],
 			}
-			res, err := queryClient.Score(cmd.Context(), params)
+			res, err := queryClient.Score(cmd.Context(), scoreRequest)
 			if err != nil {
 				return err
 			}

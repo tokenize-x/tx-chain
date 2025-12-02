@@ -9598,6 +9598,107 @@
           "Query"
         ]
       }
+    },
+    "/tx/pse/v1/clearing_account_balances": {
+      "get": {
+        "operationId": "GithubComTokenizeXTxChainV6XPseTypesClearingAccountBalances",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tx.pse.v1.QueryClearingAccountBalancesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "summary": "ClearingAccountBalances queries the current balances of all PSE clearing accounts.",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/tx/pse/v1/params": {
+      "get": {
+        "operationId": "GithubComTokenizeXTxChainV6XPseTypesParams",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tx.pse.v1.QueryParamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "summary": "Params queries the parameters of the module.",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/tx/pse/v1/scheduled_distributions": {
+      "get": {
+        "operationId": "GithubComTokenizeXTxChainV6XPseTypesScheduledDistributions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tx.pse.v1.QueryScheduledDistributionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "summary": "ScheduledDistributions queries all future scheduled distributions.",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/tx/pse/v1/score/{address}": {
+      "get": {
+        "operationId": "GithubComTokenizeXTxChainV6XPseTypesScore",
+        "parameters": [
+          {
+            "name": "address",
+            "description": "address is the delegator address to query the score for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tx.pse.v1.QueryScoreResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "summary": "Score queries the current total score of an account (delegator).",
+        "tags": [
+          "Query"
+        ]
+      }
     }
   },
   "definitions": {
@@ -16598,6 +16699,142 @@
         }
       },
       "description": "Consensus captures the consensus rules for processing a block in the blockchain,\nincluding all blockchain data structures and the rules of the application's\nstate transition machine."
+    },
+    "tx.pse.v1.ClearingAccountAllocation": {
+      "type": "object",
+      "properties": {
+        "clearing_account": {
+          "type": "string",
+          "description": "clearing_account is the name of the clearing account (module account)."
+        },
+        "amount": {
+          "type": "string",
+          "description": "amount is the number of tokens to allocate from this clearing account.\nThis amount is for the allocation denom (see AllocationDenom constant)."
+        }
+      },
+      "description": "ClearingAccountAllocation defines the amount to be allocated from a specific clearing account (module account)."
+    },
+    "tx.pse.v1.ClearingAccountBalance": {
+      "type": "object",
+      "properties": {
+        "clearing_account": {
+          "type": "string",
+          "description": "clearing_account is the name of the clearing account."
+        },
+        "balance": {
+          "type": "string",
+          "description": "balance is the current balance of the clearing account in the bond denom."
+        }
+      },
+      "description": "ClearingAccountBalance represents the balance of a single clearing account."
+    },
+    "tx.pse.v1.ClearingAccountMapping": {
+      "type": "object",
+      "properties": {
+        "clearing_account": {
+          "type": "string",
+          "description": "clearing_account is the name of the clearing account holding the tokens to be distributed."
+        },
+        "recipient_addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "recipient_addresses is the list of multisig wallet addresses that will receive the token distributions.\nMust have at least one address. Distribution amount is split equally among all recipients."
+        }
+      },
+      "description": "ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipients (sub account multisig wallets).\nThis mapping can be modified via governance proposals.\nEach clearing account must have at least one recipient address.\nDuring distribution, the allocated amount is split equally among all recipients."
+    },
+    "tx.pse.v1.Params": {
+      "type": "object",
+      "properties": {
+        "excluded_addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "excluded_addresses is a list of addresses excluded from PSE distribution.\nThis list includes account addresses that should not receive PSE rewards.\nCan be modified via governance proposals."
+        },
+        "clearing_account_mappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/tx.pse.v1.ClearingAccountMapping"
+          },
+          "description": "clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets).\nThese mappings can be modified via governance proposals."
+        }
+      },
+      "description": "Params store gov manageable parameters."
+    },
+    "tx.pse.v1.QueryClearingAccountBalancesResponse": {
+      "type": "object",
+      "properties": {
+        "balances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/tx.pse.v1.ClearingAccountBalance"
+          },
+          "description": "balances contains the current balances of all PSE clearing accounts in the bond denom."
+        }
+      },
+      "description": "QueryClearingAccountBalancesResponse defines the response type for querying clearing account balances."
+    },
+    "tx.pse.v1.QueryParamsResponse": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "$ref": "#/definitions/tx.pse.v1.Params",
+          "description": "params holds all the parameters of this module."
+        }
+      },
+      "description": "QueryParamsResponse defines the response type for querying module parameters."
+    },
+    "tx.pse.v1.QueryScheduledDistributionsResponse": {
+      "type": "object",
+      "properties": {
+        "scheduled_distributions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/tx.pse.v1.ScheduledDistribution"
+          },
+          "description": "scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order.\nPast scheduled distributions list are automatically removed after processing, \nso all returned scheduled distributions are future scheduled distributions."
+        },
+        "skip_distribution": {
+          "type": "boolean"
+        }
+      },
+      "description": "QueryScheduledDistributionsResponse defines the response type for querying future scheduled distributions."
+    },
+    "tx.pse.v1.QueryScoreResponse": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "string",
+          "description": "score is the current total score for the delegator.\nThis includes both the accumulated score snapshot and uncalculated scores\nfrom active delegations since the last distribution."
+        }
+      },
+      "description": "QueryScoreResponse defines the response type for querying an account's current score."
+    },
+    "tx.pse.v1.ScheduledDistribution": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "uint64",
+          "description": "timestamp is when this allocation should occur (Unix timestamp in seconds)."
+        },
+        "allocations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/tx.pse.v1.ClearingAccountAllocation"
+          },
+          "description": "allocations is the list of amounts to allocate from each clearing account at this time."
+        }
+      },
+      "description": "ScheduledDistribution defines a single allocation event at a specific timestamp.\nMultiple clearing accounts can allocate tokens at the same time."
     }
   }
 }

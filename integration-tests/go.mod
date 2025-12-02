@@ -32,6 +32,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tokenize-x/tx-chain/v6 v6.0.0-20241002100003-2dcad94c2fbc
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
+	google.golang.org/grpc v1.72.2
 )
 
 require (
@@ -235,7 +236,6 @@ require (
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250528174236-200df99c418a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
-	google.golang.org/grpc v1.72.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
