@@ -92,7 +92,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		"should have n distribution months")
 
 	// Step 6: Verify first and last timestamps (schedule uses calendar months)
-	// The distribution should start at 12:00:00 GMT on the same day as the upgrade (capped at 28)
+	// The distribution should start at 12:00:00 GMT on the same day one month after the upgrade (capped at 28)
 	upgradeBlockTime := ctx.BlockTime()
 	distributionDay := upgradeBlockTime.Day()
 	if distributionDay > v6.MaxDistributionDay {
@@ -100,21 +100,21 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 	}
 	expectedStartTime := uint64(time.Date(
 		upgradeBlockTime.Year(),
-		upgradeBlockTime.Month(),
+		upgradeBlockTime.Month()+1,
 		distributionDay,
 		12, 0, 0, 0,
 		time.UTC,
 	).Unix())
 	requireT.Equal(expectedStartTime, allocationSchedule[0].Timestamp,
-		"first month should start at 12:00:00 GMT on upgrade day (capped at day 28)")
+		"first month should start at 12:00:00 GMT one month after upgrade (capped at day 28)")
 	requireT.Greater(allocationSchedule[v6.TotalAllocationMonths-1].Timestamp, expectedStartTime,
 		"last month should be after start time")
 
 	// Step 6b: Verify each distribution happens on the same day every month at 12:00:00 GMT
-	// Start from noon GMT on the upgrade day (capped at 28) - reuse distributionDay from Step 6
+	// Start from noon GMT one month after the upgrade day (capped at 28) - reuse distributionDay from Step 6
 	startTime := time.Date(
 		upgradeBlockTime.Year(),
-		upgradeBlockTime.Month(),
+		upgradeBlockTime.Month()+1,
 		distributionDay,
 		12, 0, 0, 0,
 		time.UTC,
@@ -126,7 +126,7 @@ func TestPseInit_DefaultAllocations(t *testing.T) {
 		// All distributions should be at 12:00:00 GMT on the same day every month
 		expectedTime := startTime.AddDate(0, i, 0)
 		requireT.Equal(expectedTime.Unix(), currentTime.Unix(),
-			"month %d should be %d months after upgrade date at 12:00:00 GMT on day %d", i, i, distributionDay)
+			"month %d should be %d months after start date (next month after upgrade) at 12:00:00 GMT on day %d", i, i, distributionDay)
 		requireT.Equal(distributionDay, currentTime.Day(), "month %d should be on day %d", i, distributionDay)
 		requireT.Equal(12, currentTime.Hour(), "month %d should be at hour 12", i)
 		requireT.Equal(0, currentTime.Minute(), "month %d should be at minute 00", i)
@@ -482,7 +482,7 @@ func TestPseInit_DayCapping(t *testing.T) {
 			// Verify first month specifically
 			firstMonth := time.Unix(int64(allocationSchedule[0].Timestamp), 0).UTC()
 			requireT.Equal(upgradeTime.Year(), firstMonth.Year())
-			requireT.Equal(upgradeTime.Month(), firstMonth.Month())
+			requireT.Equal(upgradeTime.Month()+1, firstMonth.Month())
 			requireT.Equal(tc.expectedDay, firstMonth.Day())
 			requireT.Equal(12, firstMonth.Hour(), "first month should start at 12:00 GMT")
 		})

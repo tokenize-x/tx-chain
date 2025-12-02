@@ -115,7 +115,7 @@ func InitPSEAllocationsAndSchedule(
 
 	// Initialize parameters using predefined constants
 	allocations := DefaultInitialFundAllocations()
-	// Use the upgrade date at 12:00:00 GMT as the distribution start time
+	// Start distributions one month after the upgrade at 12:00:00 GMT
 	// This ensures distributions happen at noon GMT on the same day every month
 	// Day is capped at 28 to ensure consistency across all months (including February)
 	upgradeBlockTime := sdkCtx.BlockTime()
@@ -125,7 +125,7 @@ func InitPSEAllocationsAndSchedule(
 	}
 	scheduleStartTime := uint64(time.Date(
 		upgradeBlockTime.Year(),
-		upgradeBlockTime.Month(),
+		upgradeBlockTime.Month()+1,
 		distributionDay,
 		12, 0, 0, 0,
 		time.UTC,

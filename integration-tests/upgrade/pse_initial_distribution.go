@@ -117,11 +117,10 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 
 	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
 
-	// Calculate how many distributions were already processed
-	// Total months = 84, remaining in schedule = what's left
-	processedDistributions := v6.TotalAllocationMonths - len(remainingSchedule)
-	t.Logf("Total allocation months: %d, Remaining in schedule: %d, Already processed: %d",
-		v6.TotalAllocationMonths, len(remainingSchedule), processedDistributions)
+	// Verify all scheduled distributions are still pending (none processed yet)
+	// Since distributions start from next month, immediately after upgrade all should remain
+	requireT.Len(remainingSchedule, v6.TotalAllocationMonths,
+		"all %d distributions should still be scheduled (none processed yet)", v6.TotalAllocationMonths)
 
 	totalExpectedBalance := sdkmath.ZeroInt()
 	totalActualBalance := sdkmath.ZeroInt()
@@ -137,18 +136,8 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 		}
 		requireT.True(found, "allocation for unknown clearing account: %s", allocation.ClearingAccount)
 
-		// Calculate expected balance considering processed distributions
-		// 1. Total allocated to this account
-		totalForAccount := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
-
-		// 2. Monthly amount (with integer division truncation)
-		monthlyAmount := totalForAccount.QuoRaw(v6.TotalAllocationMonths)
-
-		// 3. Amount already distributed
-		alreadyDistributed := monthlyAmount.MulRaw(int64(processedDistributions))
-
-		// 4. Expected remaining balance
-		expectedBalance := totalForAccount.Sub(alreadyDistributed)
+		// Calculate expected balance - should be full allocation since no distributions processed yet
+		expectedBalance := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 		totalExpectedBalance = totalExpectedBalance.Add(expectedBalance)
 
 		moduleAddr := authtypes.NewModuleAddress(allocation.ClearingAccount)
@@ -158,25 +147,24 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 		})
 		requireT.NoError(err)
 
-		// Current balance should equal expected balance (accounting for processed distributions)
+		// Current balance should equal full allocation since no distributions processed yet
 		actualBalance := balanceResp.Balance.Amount
 		totalActualBalance = totalActualBalance.Add(actualBalance)
 
 		requireT.Equal(expectedBalance.String(), actualBalance.String(),
-			"clearing account %s should have balance %s (total: %s, monthly: %s, distributed: %s), got %s",
-			allocation.ClearingAccount, expectedBalance, totalForAccount, monthlyAmount, alreadyDistributed, actualBalance)
+			"clearing account %s should have full balance %s (%.2f%% of %s), got %s",
+			allocation.ClearingAccount, expectedBalance, allocation.Percentage.MustFloat64()*100,
+			totalMintAmount, actualBalance)
 
-		t.Logf("Clearing account %s: total_allocated=%s, monthly=%s, already_distributed=%s, "+
-			"expected_balance=%s, actual_balance=%s",
-			allocation.ClearingAccount, totalForAccount, monthlyAmount, alreadyDistributed,
-			expectedBalance, actualBalance)
+		t.Logf("Clearing account %s: allocated=%s (%.2f%%), actual_balance=%s",
+			allocation.ClearingAccount, expectedBalance, allocation.Percentage.MustFloat64()*100, actualBalance)
 	}
 
 	requireT.Equal(totalExpectedBalance.String(), totalActualBalance.String(),
-		"sum of clearing account balances should equal expected balance after %d distributions (%s), got %s",
-		processedDistributions, totalExpectedBalance, totalActualBalance)
+		"sum of clearing account balances should equal total minted amount (%s), got %s",
+		totalExpectedBalance, totalActualBalance)
 
-	t.Logf("Total expected balance (after %d distributions): %s", processedDistributions, totalExpectedBalance)
+	t.Logf("Total expected balance (no distributions processed yet): %s", totalExpectedBalance)
 	t.Logf("Total actual balance: %s", totalActualBalance)
 
 	return allocations
