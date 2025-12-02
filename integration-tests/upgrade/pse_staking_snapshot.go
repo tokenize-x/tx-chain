@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	"github.com/tokenize-x/tx-chain/v6/pkg/client"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
@@ -27,27 +28,29 @@ func (pss *pseStakingSnapshot) Before(t *testing.T) {
 	requireT.NoError(err)
 	requireT.NotEmpty(validators.Validators)
 
-	delegationsResponse, err := stakingClient.ValidatorDelegations(ctx, &stakingtypes.QueryValidatorDelegationsRequest{
-		ValidatorAddr: validators.Validators[0].OperatorAddress,
-	})
-	requireT.NoError(err)
-	requireT.NotEmpty(delegationsResponse.DelegationResponses)
-	delegators := make([]string, 0)
-	for _, delegator := range delegationsResponse.DelegationResponses {
-		requireT.Positive(delegator.Balance.Amount.Int64())
-		delegators = append(delegators, delegator.Delegation.DelegatorAddress)
+	for _, validator := range validators.Validators {
+		delegationsResponse, err := stakingClient.ValidatorDelegations(ctx, &stakingtypes.QueryValidatorDelegationsRequest{
+			ValidatorAddr: validator.OperatorAddress,
+		})
+		requireT.NoError(err)
+		requireT.NotEmpty(delegationsResponse.DelegationResponses)
+		for _, delegator := range delegationsResponse.DelegationResponses {
+			requireT.Positive(delegator.Balance.Amount.Int64())
+			pss.delegatorAddresses = append(pss.delegatorAddresses, delegator.Delegation.DelegatorAddress)
+		}
 	}
-	pss.delegatorAddresses = delegators
 
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
-	_, err = pseClient.Score(ctx, &psetypes.QueryScoreRequest{Address: delegators[0]})
+	_, err = pseClient.Score(ctx, &psetypes.QueryScoreRequest{Address: pss.delegatorAddresses[0]})
 	requireT.Error(err)
 	requireT.Contains(err.Error(), "Unimplemented")
 }
 
 func (pss *pseStakingSnapshot) After(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	// wait for some time for scores to be accumulated
 	requireT := require.New(t)
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
 
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	for _, delegatorAddr := range pss.delegatorAddresses {
