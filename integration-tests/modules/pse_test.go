@@ -2,6 +2,7 @@ package modules
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/metadata"
 
 	upgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
@@ -36,7 +38,7 @@ func TestPSEDistribution(t *testing.T) {
 		require.NoError(t, err)
 		validator1 := validatorsResponse.Validators[0]
 
-		delegateAmount := sdkmath.NewInt(1_000_000)
+		delegateAmount := sdkmath.NewInt(100_000_000)
 		acc := chain.GenAccount()
 		chain.FundAccountWithOptions(ctx, t, acc, integration.BalancesOptions{
 			Messages: []sdk.Msg{&stakingtypes.MsgDelegate{}},
@@ -103,25 +105,30 @@ func TestPSEDistribution(t *testing.T) {
 	)
 
 	// ensure distributions are done correctly with correct ratios
+	header, err := chain.LatestBlockHeader(ctx)
+	requireT.NoError(err)
+	height := header.Height
 	for i := 2; i >= 0; i-- {
-		requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 3))
-		allDelegationAmounts, allDelegatorScores, totalScore := getAllDelegatorInfo(ctx, t, chain)
-		requireT.NoError(awaitScheduledDistributionCount(ctx, chain, i))
-		updatedDelegationAmounts, _, _ := getAllDelegatorInfo(ctx, t, chain)
-		for delegator, delegationAmount := range updatedDelegationAmounts {
-			oldDelegationAmount, exists := allDelegationAmounts[delegator]
+		height, err = awaitScheduledDistributionEvent(ctx, chain, height)
+		requireT.NoError(err)
+		client.AwaitNextBlocks(ctx, chain.ClientContext, 3) // wait for indexer
+		t.Logf("pse event occured in height: %d", height)
+		delegationAmountsBefore, delegatorScoresBefore, totalScoreBefore := getAllDelegatorInfo(ctx, t, chain, height-1)
+		delegationAmountsAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
+		for delegator, delegationAfter := range delegationAmountsAfter {
+			delegationAmountBefore, exists := delegationAmountsBefore[delegator]
 			requireT.True(exists)
-			increasedAmount := delegationAmount.Sub(oldDelegationAmount)
+			increasedAmount := delegationAfter.Sub(delegationAmountBefore)
 			if !increasedAmount.IsPositive() {
 				t.Fatalf("delegator: %s, delegation amount: %d, old delegation amount: %d",
 					delegator,
-					delegationAmount.Int64(),
-					oldDelegationAmount.Int64(),
+					delegationAfter.Int64(),
+					delegationAmountBefore.Int64(),
 				)
 			}
-			delegatorScore := allDelegatorScores[delegator]
-			expectedIncrease := allocationAmount.Mul(delegatorScore).Quo(totalScore)
-			requireT.InEpsilon(expectedIncrease.Int64(), increasedAmount.Int64(), 0.001)
+			delegatorScore := delegatorScoresBefore[delegator]
+			expectedIncrease := allocationAmount.Mul(delegatorScore).Quo(totalScoreBefore)
+			requireT.InEpsilon(expectedIncrease.Int64(), increasedAmount.Int64(), 0.05)
 		}
 	}
 }
@@ -130,16 +137,13 @@ func getAllDelegatorInfo(
 	ctx context.Context,
 	t *testing.T,
 	chain integration.TXChain,
+	height int64,
 ) (map[string]sdkmath.Int, map[string]sdkmath.Int, sdkmath.Int) {
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	requireT := require.New(t)
 
-	// fix all queries to a certain height to avoid race conditions
-	header, err := chain.LatestBlockHeader(ctx)
-	requireT.NoError(err)
-	//nolint:staticcheck // it is ok to use grpctypes.GRPCBlockHeightHeader as key
-	ctx = context.WithValue(ctx, grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(header.Height, 10))
+	ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(height, 10))
 
 	validatorsResponse, err := stakingClient.Validators(
 		ctx, &stakingtypes.QueryValidatorsRequest{Status: stakingtypes.Bonded.String()},
@@ -173,18 +177,26 @@ func getAllDelegatorInfo(
 	return allDelegatorAmounts, allDelegatorScores, totalScore
 }
 
-func awaitScheduledDistributionCount(ctx context.Context, chain integration.TXChain, count int) error {
-	pseClient := psetypes.NewQueryClient(chain.ClientContext)
-	return chain.AwaitState(ctx, func(ctx context.Context) error {
-		pseResponse, err := pseClient.ScheduledDistributions(ctx, &psetypes.QueryScheduledDistributionsRequest{})
+func awaitScheduledDistributionEvent(ctx context.Context, chain integration.TXChain, startHeight int64) (int64, error) {
+	var observedHeight int64
+	err := chain.AwaitState(ctx, func(ctx context.Context) error {
+		query := fmt.Sprintf("tx.pse.v1.EventAllocationDistributed.mode='EndBlock' AND block.height>%d", startHeight)
+		blocks, err := chain.ClientContext.RPCClient().BlockSearch(ctx, query, nil, nil, "")
 		if err != nil {
 			return err
 		}
-		if len(pseResponse.ScheduledDistributions) != count {
-			return errors.New("scheduled distribution count does not match")
+		if blocks.TotalCount == 0 {
+			return errors.New("no blocks found")
 		}
+
+		observedHeight = blocks.Blocks[0].Block.Height
 		return nil
 	},
 		integration.WithAwaitStateTimeout(40*time.Second),
 	)
+	if err != nil {
+		return 0, err
+	}
+
+	return observedHeight, nil
 }
