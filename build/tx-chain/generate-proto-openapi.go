@@ -120,9 +120,6 @@ func executeOpenAPIProtocCommand(ctx context.Context, deps types.DepsFunc, inclu
 	}
 
 	for _, dir := range generateDirs {
-		// if _, err := os.Stat(dir); err != nil {
-		// 	return err
-		// }
 		var processed bool
 		for _, protoFile := range []string{"query.proto", "service.proto"} {
 			pf := filepath.Join(dir, protoFile)

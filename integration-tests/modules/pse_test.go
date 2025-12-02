@@ -31,14 +31,14 @@ func TestPSEDistribution(t *testing.T) {
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 
 	// create 3 new delegations
-	for range 3 {
+	for i := 0; i < 3; i++ {
 		validatorsResponse, err := stakingClient.Validators(
 			ctx, &stakingtypes.QueryValidatorsRequest{Status: stakingtypes.Bonded.String()},
 		)
 		require.NoError(t, err)
 		validator1 := validatorsResponse.Validators[0]
 
-		delegateAmount := sdkmath.NewInt(100_000_000)
+		delegateAmount := sdkmath.NewInt(100_000_000 * int64(i+1))
 		acc := chain.GenAccount()
 		chain.FundAccountWithOptions(ctx, t, acc, integration.BalancesOptions{
 			Messages: []sdk.Msg{&stakingtypes.MsgDelegate{}},
@@ -112,6 +112,9 @@ func TestPSEDistribution(t *testing.T) {
 		height, err = awaitScheduledDistributionEvent(ctx, chain, height)
 		requireT.NoError(err)
 		t.Logf("pse event occurred in height: %d", height)
+		scheduledDistributions, err := getScheduledDistribution(ctx, chain)
+		requireT.NoError(err)
+		requireT.Equal(i, len(scheduledDistributions))
 		delegationAmountsBefore, delegatorScoresBefore, totalScoreBefore := getAllDelegatorInfo(ctx, t, chain, height-1)
 		delegationAmountsAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
 		for delegator, delegationAfter := range delegationAmountsAfter {
@@ -198,4 +201,13 @@ func awaitScheduledDistributionEvent(ctx context.Context, chain integration.TXCh
 	}
 
 	return observedHeight, nil
+}
+
+func getScheduledDistribution(ctx context.Context, chain integration.TXChain) ([]psetypes.ScheduledDistribution, error) {
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
+	pseResponse, err := pseClient.ScheduledDistributions(ctx, &psetypes.QueryScheduledDistributionsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return pseResponse.ScheduledDistributions, nil
 }
