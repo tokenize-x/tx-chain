@@ -111,8 +111,7 @@ func TestPSEDistribution(t *testing.T) {
 	for i := 2; i >= 0; i-- {
 		height, err = awaitScheduledDistributionEvent(ctx, chain, height)
 		requireT.NoError(err)
-		client.AwaitNextBlocks(ctx, chain.ClientContext, 3) // wait for indexer
-		t.Logf("pse event occured in height: %d", height)
+		t.Logf("pse event occurred in height: %d", height)
 		delegationAmountsBefore, delegatorScoresBefore, totalScoreBefore := getAllDelegatorInfo(ctx, t, chain, height-1)
 		delegationAmountsAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
 		for delegator, delegationAfter := range delegationAmountsAfter {
