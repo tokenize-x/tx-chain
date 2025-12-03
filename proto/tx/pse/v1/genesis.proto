@@ -32,8 +32,8 @@ message GenesisState {
     (gogoproto.moretags) = "yaml:\"account_scores\""
   ];
 
-  bool skip_distributions = 5 [
-    (gogoproto.moretags) = "yaml:\"skip_distributions\""
+  bool disable_distributions = 5 [
+    (gogoproto.moretags) = "yaml:\"disable_distributions\""
   ];
 }
 

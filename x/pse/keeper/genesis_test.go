@@ -58,7 +58,7 @@ func TestGenesis(t *testing.T) {
 			Score:   sdkmath.NewInt(5678),
 		},
 	}
-	genesisState.SkipDistributions = true
+	genesisState.DisableDistributions = true
 
 	err := pseKeeper.InitGenesis(ctx, genesisState)
 	requireT.NoError(err)
@@ -75,7 +75,7 @@ func TestGenesis(t *testing.T) {
 
 	requireT.EqualExportedValues(&genesisState.Params, &got.Params)
 	requireT.EqualExportedValues(&genesisState.ScheduledDistributions, &got.ScheduledDistributions)
-	requireT.Equal(genesisState.SkipDistributions, got.SkipDistributions)
+	requireT.Equal(genesisState.DisableDistributions, got.DisableDistributions)
 }
 
 // TestGenesis_EmptyState tests that default genesis state is valid and can be imported/exported.

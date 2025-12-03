@@ -74,8 +74,8 @@ message QueryScheduledDistributionsResponse {
     (gogoproto.moretags) = "yaml:\"schedule_distributions\""
   ];
 
-  bool skip_distribution = 2 [
-    (gogoproto.moretags) = "yaml:\"skip_distribution\""
+  bool disable_distributions = 2 [
+    (gogoproto.moretags) = "yaml:\"disable_distributions\""
   ];
 }
 

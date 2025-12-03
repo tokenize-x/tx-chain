@@ -68,3 +68,15 @@ func (ms MsgServer) UpdateDistributionSchedule(
 	}
 	return &types.EmptyResponse{}, nil
 }
+
+// DisableDistributions is a governance operation that disables distributions.
+func (ms MsgServer) DisableDistributions(
+	goCtx context.Context,
+	req *types.MsgDisableDistributions,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.DisableDistributions(goCtx, req.Authority)
+	if err != nil {
+		return nil, err
+	}
+	return &types.EmptyResponse{}, nil
+}

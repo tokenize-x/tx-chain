@@ -304,6 +304,7 @@
   
 - [tx/pse/v1/tx.proto](#tx/pse/v1/tx.proto)
     - [EmptyResponse](#tx.pse.v1.EmptyResponse)
+    - [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions)
     - [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings)
     - [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule)
     - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
@@ -5897,7 +5898,7 @@ GenesisState defines the module's genesis state.
 | `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all scheduled distributions (both past and pending). Stored as a list for genesis import/export, but will be stored as a map in state. Must be sorted by timestamp in ascending order. Completed allocations are removed from the map after processing.`  |
 | `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
-| `skip_distributions` | [bool](#bool) |  |    |
+| `disable_distributions` | [bool](#bool) |  |    |
 
 
 
@@ -6069,7 +6070,7 @@ QueryScheduledDistributionsResponse defines the response type for querying futur
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order. Past scheduled distributions list are automatically removed after processing,  so all returned scheduled distributions are future scheduled distributions.`  |
-| `skip_distribution` | [bool](#bool) |  |    |
+| `disable_distributions` | [bool](#bool) |  |    |
 
 
 
@@ -6189,6 +6190,21 @@ Query defines the gRPC querier service.
 
 
 
+<a name="tx.pse.v1.MsgDisableDistributions"></a>
+
+### MsgDisableDistributions
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |    |
+
+
+
+
+
+
 <a name="tx.pse.v1.MsgUpdateClearingAccountMappings"></a>
 
 ### MsgUpdateClearingAccountMappings
@@ -6271,6 +6287,7 @@ Msg defines the Msg service.
 | `UpdateExcludedAddresses` | [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateExcludedAddresses is a governance operation to update the list of excluded addresses.` |  |
 | `UpdateClearingAccountMappings` | [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateClearingAccountMappings is a governance operation to update clearing account to recipient mappings.` |  |
 | `UpdateDistributionSchedule` | [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionSchedule is a governance operation to update the distribution schedule.` |  |
+| `DisableDistributions` | [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `DisableDistributions is a governance operation to disable distributions.` |  |
 
  <!-- end services -->
 

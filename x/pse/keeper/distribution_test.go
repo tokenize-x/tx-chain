@@ -333,7 +333,7 @@ func TestDistribution_EndBlockFailure(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify skipped distributions is set to true
-	skipped, err := pseKeeper.SkipDistributions.Get(ctx)
+	skipped, err := pseKeeper.DisableDistributionsColl.Get(ctx)
 	requireT.NoError(err)
 	requireT.True(skipped, "skipped distributions should be set to true")
 

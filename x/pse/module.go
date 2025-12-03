@@ -139,7 +139,7 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // updates.
 func (am AppModule) EndBlock(c context.Context) error {
 	// Process periodic distributions
-	skipped, err := am.keeper.SkipDistributions.Get(c)
+	skipped, err := am.keeper.DisableDistributionsColl.Get(c)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (am AppModule) EndBlock(c context.Context) error {
 	err = am.keeper.ProcessNextDistribution(cacheCtx) //nolint:contextcheck // this is correct context passing
 	if err != nil {
 		ctx.Logger().Error("failed to process next distribution, skipping all future distributions", "error", err)
-		return am.keeper.SkipDistributions.Set(c, true)
+		return am.keeper.DisableDistributionsColl.Set(c, true)
 	}
 	writeCache()
 	return nil
