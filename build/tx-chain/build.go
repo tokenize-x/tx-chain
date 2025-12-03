@@ -71,16 +71,16 @@ func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
 
 // BuildGaiaDockerImage builds docker image of the gaia.
 func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := txcrusttools.Ensure(ctx, txchaintools.Gaia, txcrusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
+	if err := txcrusttools.Ensure(ctx, txchaintools.Gaia, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}
 
 	gaiaLocalPath := filepath.Join(
-		"bin", ".cache", gaiaBinaryName, txcrusttools.TargetPlatformLinuxAMD64InDocker.String(),
+		"bin", ".cache", gaiaBinaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(),
 	)
 	if err := txcrusttools.CopyToolBinaries(
 		txchaintools.Gaia,
-		txcrusttools.TargetPlatformLinuxAMD64InDocker,
+		txcrusttools.TargetPlatformLinuxLocalArchInDocker,
 		gaiaLocalPath,
 		gaiaBinaryPath,
 	); err != nil {
@@ -96,26 +96,27 @@ func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	return docker.BuildImage(ctx, docker.BuildImageConfig{
-		ContextDir:      gaiaLocalPath,
-		ImageName:       gaiaBinaryName,
-		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxAMD64InDocker},
-		Dockerfile:      dockerfile,
-		Versions:        []string{config.ZNetVersion},
+		ContextDir: gaiaLocalPath,
+		ImageName:  gaiaBinaryName,
+		Dockerfile: dockerfile,
+		Versions:   []string{config.ZNetVersion},
 	})
 }
 
 // BuildHermesDockerImage builds docker image of the ibc relayer.
 func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	if err := txcrusttools.Ensure(ctx, txchaintools.Hermes, txcrusttools.TargetPlatformLinuxAMD64InDocker); err != nil {
+	if err := txcrusttools.Ensure(
+		ctx, txchaintools.Hermes, txcrusttools.TargetPlatformLinuxLocalArchInDocker,
+	); err != nil {
 		return err
 	}
 
 	hermesLocalPath := filepath.Join(
-		"bin", ".cache", hermesBinaryName, txcrusttools.TargetPlatformLinuxAMD64InDocker.String(),
+		"bin", ".cache", hermesBinaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(),
 	)
 	if err := txcrusttools.CopyToolBinaries(
 		txchaintools.Hermes,
-		txcrusttools.TargetPlatformLinuxAMD64InDocker,
+		txcrusttools.TargetPlatformLinuxLocalArchInDocker,
 		hermesLocalPath,
 		hermesBinaryPath,
 	); err != nil {
@@ -132,11 +133,10 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	return docker.BuildImage(ctx, docker.BuildImageConfig{
-		ContextDir:      hermesLocalPath,
-		ImageName:       hermesBinaryName,
-		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxAMD64InDocker},
-		Dockerfile:      dockerfile,
-		Versions:        []string{config.ZNetVersion},
+		ContextDir: hermesLocalPath,
+		ImageName:  hermesBinaryName,
+		Dockerfile: dockerfile,
+		Versions:   []string{config.ZNetVersion},
 	})
 }
 
