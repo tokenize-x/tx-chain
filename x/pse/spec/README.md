@@ -26,7 +26,7 @@ All clearing accounts receive their initial allocation during the v6 upgrade and
 The PSE module maintains a time-based distribution schedule that defines when and how much each clearing account should distribute. The schedule is created during the v6 upgrade and operates as follows:
 
 - **Total Duration**: 84 months from the start date
-- **Start Date**: Set to 12:00 GMT on the day of the v6 software upgrade, capped at day 28 to ensure all months can accommodate the distribution date
+- **Start Date**: Set to 12:00 GMT one month after the v6 software upgrade, capped at day 28 to ensure all months can accommodate the distribution date
 - **Distribution Frequency**: Monthly distributions on the same day of each month (matching the start date day, capped at 28)
 - **Amount per Period**: Each clearing account distributes an equal portion (1/84) of its total allocation each month
 - **Processing**: Distributions are automatically processed during the `EndBlock` phase when the scheduled timestamp is reached
@@ -359,7 +359,7 @@ Mints 100 billion tokens (in base denomination) and distributes them to the six 
 
 Creates an 84-month distribution schedule with:
 
-- Start date set to 12:00 GMT on the v6 upgrade day, with the day of month capped at 28
+- Start date set to 12:00 GMT one month after the v6 upgrade day, with the day of month capped at 28
 - Monthly distributions occurring on the same day of each month (capped at day 28)
 - Equal allocation amounts per clearing account per month
 - Timestamps calculated using Gregorian calendar month arithmetic
