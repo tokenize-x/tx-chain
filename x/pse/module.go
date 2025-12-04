@@ -139,20 +139,20 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 // updates.
 func (am AppModule) EndBlock(c context.Context) error {
 	// Process periodic distributions
-	skipped, err := am.keeper.DisableDistributionsColl.Get(c)
+	disabled, err := am.keeper.DistributionDisabled.Get(c)
 	if err != nil {
 		return err
 	}
 	ctx := sdk.UnwrapSDKContext(c)
-	if skipped {
-		ctx.Logger().Info("skipping distribution because it was marked as skipped")
+	if disabled {
+		ctx.Logger().Info("skipping distribution because it was marked as disabled")
 		return nil
 	}
 	cacheCtx, writeCache := ctx.CacheContext()
 	err = am.keeper.ProcessNextDistribution(cacheCtx) //nolint:contextcheck // this is correct context passing
 	if err != nil {
-		ctx.Logger().Error("failed to process next distribution, skipping all future distributions", "error", err)
-		return am.keeper.DisableDistributionsColl.Set(c, true)
+		ctx.Logger().Error("failed to process next distribution, disabling all future distributions", "error", err)
+		return am.keeper.DistributionDisabled.Set(c, true)
 	}
 	writeCache()
 	return nil

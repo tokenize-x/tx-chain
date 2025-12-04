@@ -30,12 +30,12 @@ type Keeper struct {
 	stakingKeeper      types.StakingQuerier
 
 	// collections
-	Schema                   collections.Schema
-	Params                   collections.Item[types.Params]
-	DelegationTimeEntries    collections.Map[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry]
-	AccountScoreSnapshot     collections.Map[sdk.AccAddress, sdkmath.Int]
-	AllocationSchedule       collections.Map[uint64, types.ScheduledDistribution] // Map: timestamp -> ScheduledDistribution
-	DisableDistributionsColl collections.Item[bool]
+	Schema                collections.Schema
+	Params                collections.Item[types.Params]
+	DelegationTimeEntries collections.Map[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry]
+	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
+	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: timestamp -> ScheduledDistribution
+	DistributionDisabled  collections.Item[bool]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -89,10 +89,10 @@ func NewKeeper(
 			collections.Uint64Key,
 			codec.CollValue[types.ScheduledDistribution](cdc),
 		),
-		DisableDistributionsColl: collections.NewItem(
+		DistributionDisabled: collections.NewItem(
 			sb,
-			types.SkippedDistributionsKey,
-			"skipped_distributions",
+			types.DistributionDisabledKey,
+			"distribution_disabled",
 			codec.BoolValue,
 		),
 	}

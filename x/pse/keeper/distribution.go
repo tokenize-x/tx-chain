@@ -279,5 +279,5 @@ func (k Keeper) DisableDistributions(ctx context.Context, authority string) erro
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
-	return k.DisableDistributionsColl.Set(ctx, true)
+	return k.DistributionDisabled.Set(ctx, true)
 }
