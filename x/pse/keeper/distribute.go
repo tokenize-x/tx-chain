@@ -11,7 +11,12 @@ import (
 )
 
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
-func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdkmath.Int) error {
+func (k Keeper) DistributeCommunityPSE(
+	ctx context.Context,
+	bondDenom string,
+	totalPSEAmount sdkmath.Int,
+	scheduledAt uint64,
+) error {
 	// iterate all delegation time entries and calculate uncalculated score.
 	params, err := k.GetParams(ctx)
 	if err != nil {
@@ -56,14 +61,24 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 	// 1. rounding errors due to division.
 	// 2. some delegators have no delegation.
 	leftover := totalPSEAmount
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if totalPSEScore.IsPositive() {
 		err = finalScoreMap.walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
 			userAmount := totalPSEAmount.Mul(score).Quo(totalPSEScore)
-			deliveredAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
+			err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
 			if err != nil {
 				return err
 			}
-			leftover = leftover.Sub(deliveredAmount)
+			leftover = leftover.Sub(userAmount)
+			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
+				DelegatorAddress: addr.String(),
+				Score:            score,
+				TotalPseScore:    totalPSEScore,
+				Amount:           userAmount,
+				ScheduledAt:      scheduledAt,
+			}); err != nil {
+				sdkCtx.Logger().Error("failed to emit community distributed event", "error", err)
+			}
 			return nil
 		})
 		if err != nil {
@@ -85,20 +100,20 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 
 func (k Keeper) distributeToDelegator(
 	ctx context.Context, delAddr sdk.AccAddress, amount sdkmath.Int, bondDenom string,
-) (sdkmath.Int, error) {
+) error {
 	if amount.IsZero() {
-		return sdkmath.NewInt(0), nil
+		return nil
 	}
 
 	delAddrBech32, err := k.addressCodec.BytesToString(delAddr)
 	if err != nil {
-		return sdkmath.NewInt(0), err
+		return err
 	}
 	delegationResponse, err := k.stakingKeeper.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: delAddrBech32,
 	})
 	if err != nil {
-		return sdkmath.NewInt(0), err
+		return err
 	}
 	var delegations []stakingtypes.DelegationResponse
 	totalDelegationAmount := sdkmath.NewInt(0)
@@ -108,7 +123,7 @@ func (k Keeper) distributeToDelegator(
 	}
 
 	if len(delegations) == 0 {
-		return sdkmath.NewInt(0), nil
+		return nil
 	}
 
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
@@ -117,7 +132,7 @@ func (k Keeper) distributeToDelegator(
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
-		return sdkmath.NewInt(0), err
+		return err
 	}
 	for _, delegation := range delegations {
 		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
@@ -125,18 +140,18 @@ func (k Keeper) distributeToDelegator(
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 		if err != nil {
-			return sdkmath.NewInt(0), err
+			return err
 		}
 
 		val, err := k.stakingKeeper.GetValidator(ctx, valAddr)
 		if err != nil {
-			return sdkmath.NewInt(0), err
+			return err
 		}
 
 		_, err = k.stakingKeeper.Delegate(ctx, delAddr, delegationAmount, stakingtypes.Unbonded, val, true)
 		if err != nil {
-			return sdkmath.NewInt(0), err
+			return err
 		}
 	}
-	return amount, nil
+	return nil
 }

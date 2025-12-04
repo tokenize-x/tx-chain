@@ -10,6 +10,7 @@ import (
 	"time"
 
 	sdkmath "cosmossdk.io/math"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -23,6 +24,7 @@ import (
 	upgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v6/testutil/event"
 	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
 	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -112,7 +114,8 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	height := header.Height
 	for i := range 3 {
-		height, err = awaitScheduledDistributionEvent(ctx, chain, height)
+		var events communityDistributedEvent
+		height, events, err = awaitScheduledDistributionEvent(ctx, chain, height)
 		requireT.NoError(err)
 		t.Logf("pse event occurred in height: %d", height)
 		scheduledDistributions, err := getScheduledDistribution(ctx, chain)
@@ -134,6 +137,9 @@ func TestPSEDistribution(t *testing.T) {
 			delegatorScore := delegatorScoresBefore[delegator]
 			expectedIncrease := allocationAmount.Mul(delegatorScore).Quo(totalScoreBefore)
 			requireT.InEpsilon(expectedIncrease.Int64(), increasedAmount.Int64(), 0.05)
+			event := events.find(delegator)
+			requireT.NotNil(event)
+			requireT.Equal(event.Amount.String(), increasedAmount.String())
 		}
 	}
 }
@@ -541,7 +547,22 @@ func getAllDelegatorInfo(
 	return allDelegatorAmounts, allDelegatorScores, totalScore
 }
 
-func awaitScheduledDistributionEvent(ctx context.Context, chain integration.TXChain, startHeight int64) (int64, error) {
+type communityDistributedEvent []*psetypes.EventCommunityDistributed
+
+func (e communityDistributedEvent) find(delegatorAddress string) *psetypes.EventCommunityDistributed {
+	for _, event := range e {
+		if event.DelegatorAddress == delegatorAddress {
+			return event
+		}
+	}
+	return nil
+}
+
+func awaitScheduledDistributionEvent(
+	ctx context.Context,
+	chain integration.TXChain,
+	startHeight int64,
+) (int64, communityDistributedEvent, error) {
 	var observedHeight int64
 	err := chain.AwaitState(ctx, func(ctx context.Context) error {
 		query := fmt.Sprintf("tx.pse.v1.EventAllocationDistributed.mode='EndBlock' AND block.height>%d", startHeight)
@@ -559,10 +580,21 @@ func awaitScheduledDistributionEvent(ctx context.Context, chain integration.TXCh
 		integration.WithAwaitStateTimeout(40*time.Second),
 	)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
-	return observedHeight, nil
+	results, err := chain.ClientContext.RPCClient().BlockResults(ctx, &observedHeight)
+	if err != nil {
+		return 0, nil, err
+	}
+	// we have to remove the mode attribute from the events because it is not part of the typed event and
+	// is added by cosmos-sdk, otherwise parsing the events will fail.
+	events := removeAttributeFromEvent(results.FinalizeBlockEvents, "mode")
+	communityDistributedEvents, err := event.FindTypedEvents[*psetypes.EventCommunityDistributed](events)
+	if err != nil {
+		return 0, nil, err
+	}
+	return observedHeight, communityDistributedEvents, nil
 }
 
 func getScheduledDistribution(
@@ -575,4 +607,17 @@ func getScheduledDistribution(
 		return nil, err
 	}
 	return pseResponse.ScheduledDistributions, nil
+}
+
+func removeAttributeFromEvent(events []tmtypes.Event, key string) []tmtypes.Event {
+	newEvents := make([]tmtypes.Event, len(events))
+	for _, event := range events {
+		for i, attribute := range event.Attributes {
+			if attribute.Key == key {
+				event.Attributes = append(event.Attributes[:i], event.Attributes[i+1:]...)
+			}
+		}
+		newEvents = append(newEvents, event)
+	}
+	return newEvents
 }
