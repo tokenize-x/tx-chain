@@ -610,7 +610,7 @@ func getScheduledDistribution(
 }
 
 func removeAttributeFromEvent(events []tmtypes.Event, key string) []tmtypes.Event {
-	newEvents := make([]tmtypes.Event, len(events))
+	newEvents := make([]tmtypes.Event, 0, len(events))
 	for _, event := range events {
 		for i, attribute := range event.Attributes {
 			if attribute.Key == key {
