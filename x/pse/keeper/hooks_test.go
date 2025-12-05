@@ -353,7 +353,8 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 	mintAndSendToPSECommunityClearingAccount(r, amount)
 	bondDenom, err := r.testApp.StakingKeeper.BondDenom(r.ctx)
 	r.requireT.NoError(err)
-	err = r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, bondDenom, amount)
+	scheduledAt := r.ctx.BlockTime().Unix()
+	err = r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, bondDenom, amount, uint64(scheduledAt))
 	r.requireT.NoError(err)
 }
 
