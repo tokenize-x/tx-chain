@@ -302,6 +302,7 @@ and the formula for them is
 | `/ibc.lightclients.wasm.v1.MsgMigrateContract`                         |
 | `/ibc.lightclients.wasm.v1.MsgRemoveChecksum`                          |
 | `/ibc.lightclients.wasm.v1.MsgStoreCode`                               |
+| `/tx.pse.v1.MsgDisableDistributions`                                   |
 | `/tx.pse.v1.MsgUpdateClearingAccountMappings`                          |
 | `/tx.pse.v1.MsgUpdateDistributionSchedule`                             |
 | `/tx.pse.v1.MsgUpdateExcludedAddresses`                                |
