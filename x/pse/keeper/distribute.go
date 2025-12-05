@@ -11,7 +11,12 @@ import (
 )
 
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
-func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, totalPSEAmount sdkmath.Int) error {
+func (k Keeper) DistributeCommunityPSE(
+	ctx context.Context,
+	bondDenom string,
+	totalPSEAmount sdkmath.Int,
+	scheduledAt uint64,
+) error {
 	// iterate all delegation time entries and calculate uncalculated score.
 	params, err := k.GetParams(ctx)
 	if err != nil {
@@ -56,14 +61,24 @@ func (k Keeper) DistributeCommunityPSE(ctx context.Context, bondDenom string, to
 	// 1. rounding errors due to division.
 	// 2. some delegators have no delegation.
 	leftover := totalPSEAmount
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if totalPSEScore.IsPositive() {
 		err = finalScoreMap.walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
 			userAmount := totalPSEAmount.Mul(score).Quo(totalPSEScore)
-			deliveredAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
+			distributedAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
 			if err != nil {
 				return err
 			}
-			leftover = leftover.Sub(deliveredAmount)
+			leftover = leftover.Sub(distributedAmount)
+			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
+				DelegatorAddress: addr.String(),
+				Score:            score,
+				TotalPseScore:    totalPSEScore,
+				Amount:           userAmount,
+				ScheduledAt:      scheduledAt,
+			}); err != nil {
+				sdkCtx.Logger().Error("failed to emit community distributed event", "error", err)
+			}
 			return nil
 		})
 		if err != nil {
