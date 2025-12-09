@@ -27,7 +27,7 @@ func (k Keeper) DistributeCommunityPSE(
 		return err
 	}
 
-	err = finalScoreMap.iterateDelegationTimeEntries(ctx, k)
+	allDelegationTimeEntries, err := finalScoreMap.iterateDelegationTimeEntries(ctx, k)
 	if err != nil {
 		return err
 	}
@@ -46,10 +46,14 @@ func (k Keeper) DistributeCommunityPSE(
 		return err
 	}
 
-	// clear all delegation time entries.
-	err = k.DelegationTimeEntries.Clear(ctx, nil)
-	if err != nil {
-		return err
+	// reset all delegation time entries LastChangedUnixSec to the current block time.
+	currentBlockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
+	for _, kv := range allDelegationTimeEntries {
+		kv.Value.LastChangedUnixSec = currentBlockTime
+		err = k.DelegationTimeEntries.Set(ctx, kv.Key, kv.Value)
+		if err != nil {
+			return err
+		}
 	}
 
 	// distribute total pse coin based on per delegator score.

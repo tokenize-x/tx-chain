@@ -3,9 +3,11 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/collections"
 	addresscodec "cosmossdk.io/core/address"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
 type scoreMap struct {
@@ -103,18 +105,24 @@ func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) er
 	return nil
 }
 
-func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) error {
+func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
+	[]collections.KeyValue[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry], error) {
+	var allDelegationTimeEntry []collections.KeyValue[
+		collections.Pair[sdk.AccAddress, sdk.ValAddress],
+		types.DelegationTimeEntry,
+	]
 	delegationTimeEntriesIterator, err := k.DelegationTimeEntries.Iterate(ctx, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer delegationTimeEntriesIterator.Close()
 
 	for ; delegationTimeEntriesIterator.Valid(); delegationTimeEntriesIterator.Next() {
 		kv, err := delegationTimeEntriesIterator.KeyValue()
 		if err != nil {
-			return err
+			return nil, err
 		}
+		allDelegationTimeEntry = append(allDelegationTimeEntry, kv)
 		delAddr := kv.Key.K1()
 		valAddr := kv.Key.K2()
 		if m.isExcludedAddress(delAddr) {
@@ -124,14 +132,14 @@ func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) e
 		delegationTimeEntry := kv.Value
 		delegationScore, err := calculateAddedScore(ctx, k, valAddr, delegationTimeEntry)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		err = m.addScore(delAddr, delegationScore)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return allDelegationTimeEntry, nil
 }
 
 func (m *scoreMap) isExcludedAddress(addr sdk.AccAddress) bool {
