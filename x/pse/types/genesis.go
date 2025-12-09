@@ -11,7 +11,7 @@ func DefaultGenesisState() *GenesisState {
 		ScheduledDistributions: []ScheduledDistribution{},
 		DelegationTimeEntries:  []DelegationTimeEntryExport{},
 		AccountScores:          []AccountScore{},
-		SkipDistributions:      false,
+		DistributionsDisabled:  false,
 	}
 }
 

@@ -16,5 +16,5 @@ var (
 	StakingTimeKey          = collections.NewPrefix(1)
 	AccountScoreKey         = collections.NewPrefix(2)
 	AllocationScheduleKey   = collections.NewPrefix(3) // Map: timestamp -> ScheduledDistribution
-	SkippedDistributionsKey = collections.NewPrefix(4)
+	DistributionDisabledKey = collections.NewPrefix(4)
 )

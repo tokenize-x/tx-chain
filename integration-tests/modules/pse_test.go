@@ -144,6 +144,26 @@ func TestPSEDistribution(t *testing.T) {
 	}
 }
 
+func TestPSEDisableDistributions(t *testing.T) {
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	requireT := require.New(t)
+
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
+
+	msgDisableDistributions := &psetypes.MsgDisableDistributions{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	}
+	chain.Governance.ExpeditedProposalFromMsgAndVote(
+		ctx, t, nil,
+		"-", "-", "-", govtypesv1.OptionYes,
+		msgDisableDistributions,
+	)
+
+	scheduledDistributions, err := pseClient.ScheduledDistributions(ctx, &psetypes.QueryScheduledDistributionsRequest{})
+	requireT.NoError(err)
+	requireT.True(scheduledDistributions.DisableDistributions, "distributions should be disabled")
+}
+
 // TestPSEScore_DelegationFlow tests the end-to-end delegation flow and score accumulation.
 func TestPSEScore_DelegationFlow(t *testing.T) {
 	t.Parallel()

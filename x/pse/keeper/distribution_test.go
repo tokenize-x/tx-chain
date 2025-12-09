@@ -332,10 +332,10 @@ func TestDistribution_EndBlockFailure(t *testing.T) {
 	err = testApp.FinalizeBlock()
 	requireT.NoError(err)
 
-	// Verify skipped distributions is set to true
-	skipped, err := pseKeeper.SkipDistributions.Get(ctx)
+	// Verify disabled distributions is set to true
+	disabled, err := pseKeeper.DistributionDisabled.Get(ctx)
 	requireT.NoError(err)
-	requireT.True(skipped, "skipped distributions should be set to true")
+	requireT.True(disabled, "disabled distributions should be set to true")
 
 	// all recipients should have zero balance because the distribution failed.
 	for _, recipient := range recipients {
