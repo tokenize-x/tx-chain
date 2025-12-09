@@ -17,6 +17,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibchost "github.com/cosmos/ibc-go/v10/modules/core/24-host"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
@@ -57,6 +58,9 @@ var ignoredPrefixes = map[string][][]byte{
 	authzkeeper.StoreKey: {
 		authzkeeper.GrantQueuePrefix,
 	},
+	slashingtypes.StoreKey: {
+		slashingtypes.ValidatorMissedBlockBitmapKeyPrefix,
+	},
 }
 
 // TestExportGenesisModuleHashes tests the export of genesis and compares the module hashes
@@ -66,8 +70,6 @@ var ignoredPrefixes = map[string][][]byte{
 // 3. Move both apps to the same height by finalizing a block.
 // 4. Compare the module hashes of both apps to ensure they match.
 func TestExportGenesisModuleHashes(t *testing.T) {
-	// TODO: fix the export test
-	t.Skip("skipping export test")
 	requireT := require.New(t)
 
 	// the chain is stopped and the genesis is exported from a val/full node
@@ -244,7 +246,7 @@ func compareKVStores(exportedAppStore, initiatedAppStore sdkstore.KVStore, ignor
 		// check if the key exists in the exported app store
 		// if the key is not found, append the mismatch to the list
 		if _, ok := exportedMap[k]; !ok {
-			mismatches = append(mismatches, fmt.Sprintf("extra key %X in new store", []byte(k)))
+			mismatches = append(mismatches, fmt.Sprintf("extra key %q in new store", []byte(k)))
 		}
 	}
 
