@@ -89,7 +89,7 @@ func TestQueryScore_WithActiveDelegation(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator, err := testApp.AddValidator(ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator, err := testApp.AddValidator(ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil, nil)
 	requireT.NoError(err)
 	valAddr := sdk.MustValAddressFromBech32(validator.GetOperator())
 
@@ -144,7 +144,7 @@ func TestQueryScore_AccumulatedPlusCurrentPeriod(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator, err := testApp.AddValidator(ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator, err := testApp.AddValidator(ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil, nil)
 	requireT.NoError(err)
 	valAddr := sdk.MustValAddressFromBech32(validator.GetOperator())
 
@@ -197,7 +197,7 @@ func TestQueryScore_MultipleDelegations(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator1, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator1, err := testApp.AddValidator(ctx, validatorOperator1, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator1, err := testApp.AddValidator(ctx, validatorOperator1, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil, nil)
 	requireT.NoError(err)
 	valAddr1 := sdk.MustValAddressFromBech32(validator1.GetOperator())
 
@@ -205,7 +205,7 @@ func TestQueryScore_MultipleDelegations(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, validatorOperator2, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
 	))
-	validator2, err := testApp.AddValidator(ctx, validatorOperator2, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10))
+	validator2, err := testApp.AddValidator(ctx, validatorOperator2, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil, nil)
 	requireT.NoError(err)
 	valAddr2 := sdk.MustValAddressFromBech32(validator2.GetOperator())
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	addresscodec "cosmossdk.io/core/address"
+	sdkmath "cosmossdk.io/math"
 	store "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -52,6 +53,15 @@ func New(
 			}
 
 			if err := migrateMintParams(ctx, mintKeeper); err != nil {
+				return nil, err
+			}
+
+			// Set minimum commission rate to 5% and update validators with lower rates
+			minCommissionRate := sdkmath.LegacyNewDecWithPrec(5, 2) // 5 * 10^(-2) = 0.05 = 5%
+			if err := SetMinCommissionRate(ctx, stakingKeeper, minCommissionRate); err != nil {
+				return nil, err
+			}
+			if err := MigrateValidatorCommission(ctx, stakingKeeper); err != nil {
 				return nil, err
 			}
 

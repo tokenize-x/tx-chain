@@ -394,7 +394,7 @@ func TestKeeper_PlaceOrderWithStaking(t *testing.T) {
 	denomToStake := sdk.DefaultBondDenom
 
 	require.NoError(t, testApp.FundAccount(sdkCtx, validatorOwner, sdk.NewCoins(sdk.NewInt64Coin(denomToStake, 10))))
-	_, err := testApp.AddValidator(sdkCtx, validatorOwner, sdk.NewInt64Coin(denomToStake, 10))
+	_, err := testApp.AddValidator(sdkCtx, validatorOwner, sdk.NewInt64Coin(denomToStake, 10), nil, nil)
 	require.NoError(t, err)
 	val, err := testApp.StakingKeeper.GetValidators(sdkCtx, 1)
 	require.NoError(t, err)
@@ -473,7 +473,7 @@ func TestKeeper_PlaceOrderWithStaking(t *testing.T) {
 	require.NoError(t, testApp.FundAccount(sdkCtx, validatorOwner2, sdk.NewCoins(orderLockedBalance)))
 	fundOrderReserve(t, testApp, sdkCtx, validatorOwner2)
 	require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
-	_, err = testApp.AddValidator(sdkCtx, validatorOwner2, orderLockedBalance)
+	_, err = testApp.AddValidator(sdkCtx, validatorOwner2, orderLockedBalance, nil, nil)
 	require.ErrorContains(t, err, "does not have enough stake tokens to delegate")
 }
 
