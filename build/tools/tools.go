@@ -127,34 +127,41 @@ var Tools = []tools.Tool{
 	// Before upgrading verify in go.mod that they use the same version of IBC
 	tools.BinaryTool{
 		Name:    Gaia,
-		Version: "v24.0.0",
+		Version: "v25.2.0",
 		Sources: tools.Sources{
 			tools.TargetPlatformLinuxAMD64InDocker: {
-				URL:  "https://github.com/cosmos/gaia/releases/download/v24.0.0/gaiad-v24.0.0-linux-amd64",
-				Hash: "sha256:9c50ed3188d4f7519bfa5a06b8a8311b8ac480e86cbba57722cd62b9c3baeb3a",
+				URL:  "https://github.com/cosmos/gaia/releases/download/v25.2.0/gaiad-v25.2.0-linux-amd64",
+				Hash: "sha256:e54ab309ca4c117d73a043adfc4e9155f35a480925ad8a94a625bd80e9398f76",
 				Binaries: map[string]string{
-					"bin/gaiad": "gaiad-v24.0.0-linux-amd64",
+					"bin/gaiad": "gaiad-v25.2.0-linux-amd64",
+				},
+			},
+			tools.TargetPlatformLinuxARM64InDocker: {
+				URL:  "https://github.com/cosmos/gaia/releases/download/v25.2.0/gaiad-v25.2.0-linux-arm64",
+				Hash: "sha256:bfd0942c63270b4ab3ac07db1319718b68a12cca488316d40e68c160b650455a",
+				Binaries: map[string]string{
+					"bin/gaiad": "gaiad-v25.2.0-linux-arm64",
 				},
 			},
 			tools.TargetPlatformLinuxAMD64: {
-				URL:  "https://github.com/cosmos/gaia/releases/download/v24.0.0/gaiad-v24.0.0-linux-amd64",
-				Hash: "sha256:9c50ed3188d4f7519bfa5a06b8a8311b8ac480e86cbba57722cd62b9c3baeb3a",
+				URL:  "https://github.com/cosmos/gaia/releases/download/v25.2.0/gaiad-v25.2.0-linux-amd64",
+				Hash: "sha256:e54ab309ca4c117d73a043adfc4e9155f35a480925ad8a94a625bd80e9398f76",
 				Binaries: map[string]string{
-					"bin/gaiad": "gaiad-v24.0.0-linux-amd64",
+					"bin/gaiad": "gaiad-v25.2.0-linux-amd64",
 				},
 			},
 			tools.TargetPlatformDarwinAMD64: {
-				URL:  "https://github.com/cosmos/gaia/releases/download/v24.0.0/gaiad-v24.0.0-darwin-amd64",
-				Hash: "sha256:e1273a56fbb9f75b0b50a6a386e9c1172c9c38c57813c99974d9b2e1c02571fa",
+				URL:  "https://github.com/cosmos/gaia/releases/download/v25.2.0/gaiad-v25.2.0-darwin-amd64",
+				Hash: "sha256:8ec14899b1cc1f8dd847e38467c00ff961da99bf825e5a1816fa309feec7c165",
 				Binaries: map[string]string{
-					"bin/gaiad": "gaiad-v24.0.0-darwin-amd64",
+					"bin/gaiad": "gaiad-v25.2.0-darwin-amd64",
 				},
 			},
 			tools.TargetPlatformDarwinARM64: {
-				URL:  "https://github.com/cosmos/gaia/releases/download/v24.0.0/gaiad-v24.0.0-darwin-arm64",
-				Hash: "sha256:d92ecc2a873b1e49bc7bb4dd712d91c0be8fa3ac71d93cdd91bd5df8267356f0",
+				URL:  "https://github.com/cosmos/gaia/releases/download/v25.2.0/gaiad-v25.2.0-darwin-arm64",
+				Hash: "sha256:9ebf6156b68f0ab0cc9b4159845b2ad3447c58da53acdc56497cff0eefc913b7",
 				Binaries: map[string]string{
-					"bin/gaiad": "gaiad-v24.0.0-darwin-arm64",
+					"bin/gaiad": "gaiad-v25.2.0-darwin-arm64",
 				},
 			},
 		},
@@ -194,6 +201,18 @@ var Tools = []tools.Tool{
 			tools.TargetPlatformLinuxARM64InDocker: {
 				URL:  "https://github.com/informalsystems/hermes/releases/download/v1.13.3/hermes-v1.13.3-aarch64-unknown-linux-gnu.tar.gz", //nolint:lll // breaking down urls is not beneficial
 				Hash: "sha256:c586ac5e8d6bbeffff271e0f28b356488f5b44c58d5b25386c0051ddcf84af4d",
+			},
+			tools.TargetPlatformLinuxAMD64: {
+				URL:  "https://github.com/informalsystems/hermes/releases/download/v1.13.3/hermes-v1.13.3-x86_64-unknown-linux-gnu.tar.gz", //nolint:lll // breaking down urls is not beneficial
+				Hash: "sha256:3582136824ac1984c8884b310c63940a1489f091fa45faca38ed80e5dfe7d51b",
+			},
+			tools.TargetPlatformDarwinAMD64: {
+				URL:  "https://github.com/informalsystems/hermes/releases/download/v1.13.3/hermes-v1.13.3-x86_64-apple-darwin.tar.gz", //nolint:lll // breaking down urls is not beneficial
+				Hash: "sha256:8e90939527bf8d22b02945d5d0b309d2b998bffeb965219358486e2446889762",
+			},
+			tools.TargetPlatformDarwinARM64: {
+				URL:  "https://github.com/informalsystems/hermes/releases/download/v1.13.3/hermes-v1.13.3-aarch64-apple-darwin.tar.gz", //nolint:lll // breaking down urls is not beneficial
+				Hash: "sha256:aba0db17827f3646c86247292e24f12e98325cbc604e4ee034b9cac62be16588",
 			},
 		},
 		Binaries: map[string]string{
