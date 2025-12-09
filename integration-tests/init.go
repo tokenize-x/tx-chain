@@ -69,7 +69,7 @@ var (
 
 //nolint:lll // this function contains flag description and mnemonic which cannot be broken down.
 func init() {
-	flag.BoolVar(&runUnsafe, "run-unsafe", false, "run unsafe tests for example ones related to governance")
+	flag.BoolVar(&runUnsafe, "run-unsafe", true, "run unsafe tests for example ones related to governance")
 
 	flag.StringVar(&txGRPCAddress, "tx-grpc-address", "localhost:9090", "GRPC address of txd node started by znet")
 	flag.StringVar(&txRPCAddress, "tx-rpc-address", "http://localhost:26657", "RPC address of txd node started by znet")

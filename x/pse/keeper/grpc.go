@@ -62,14 +62,14 @@ func (qs QueryService) ScheduledDistributions(
 		return nil, err
 	}
 
-	skipDistribution, err := qs.keeper.SkipDistributions.Get(ctx)
+	disabled, err := qs.keeper.DistributionDisabled.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.QueryScheduledDistributionsResponse{
 		ScheduledDistributions: scheduledDistributions,
-		SkipDistribution:       skipDistribution,
+		DisableDistributions:   disabled,
 	}, nil
 }
 

@@ -238,6 +238,7 @@ func DefaultConfig() Config {
 			&psetypes.MsgUpdateExcludedAddresses{},
 			&psetypes.MsgUpdateClearingAccountMappings{},
 			&psetypes.MsgUpdateDistributionSchedule{},
+			&psetypes.MsgDisableDistributions{},
 
 			// distribution
 			&distributiontypes.MsgUpdateParams{},       // This is non-deterministic because all the gov proposals are non-deterministic anyway

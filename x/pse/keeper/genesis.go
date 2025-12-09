@@ -57,7 +57,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
-	return k.SkipDistributions.Set(ctx, genState.SkipDistributions)
+	return k.DistributionDisabled.Set(ctx, genState.DistributionsDisabled)
 }
 
 // ExportGenesis returns the module's exported genesis.
@@ -118,7 +118,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, err
 	}
 
-	genesis.SkipDistributions, err = k.SkipDistributions.Get(ctx)
+	genesis.DistributionsDisabled, err = k.DistributionDisabled.Get(ctx)
 	if err != nil {
 		return nil, err
 	}

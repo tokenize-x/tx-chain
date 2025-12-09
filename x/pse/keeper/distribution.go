@@ -271,3 +271,13 @@ func (k Keeper) UpdateDistributionSchedule(
 	// Save the new schedule
 	return k.SaveDistributionSchedule(ctx, newSchedule)
 }
+
+// DisableDistributions is a governance operation that disables distributions.
+func (k Keeper) DisableDistributions(ctx context.Context, authority string) error {
+	// Check authority
+	if k.authority != authority {
+		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+	}
+
+	return k.DistributionDisabled.Set(ctx, true)
+}
