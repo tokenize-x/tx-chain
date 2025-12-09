@@ -2,7 +2,7 @@ module github.com/tokenize-x/tx-chain/v6/integration-tests
 
 go 1.24.0
 
-toolchain go1.24.3
+toolchain go1.24.6
 
 replace (
 	// cosmos keyring
