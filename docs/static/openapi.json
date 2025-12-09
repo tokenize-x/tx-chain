@@ -16801,7 +16801,7 @@
           },
           "description": "scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order.\nPast scheduled distributions list are automatically removed after processing, \nso all returned scheduled distributions are future scheduled distributions."
         },
-        "skip_distribution": {
+        "disable_distributions": {
           "type": "boolean"
         }
       },
