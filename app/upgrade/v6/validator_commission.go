@@ -21,9 +21,7 @@ func MigrateValidatorCommission(ctx context.Context, stakingKeeper *stakingkeepe
 
 	minCommissionRate := params.MinCommissionRate
 
-	var validatorsToUpdate []stakingtypes.Validator
-
-	// Iterate through all validators to find those with commission below minimum
+	var updateErr error
 	err = stakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
 		validator, ok := val.(stakingtypes.Validator)
 		if !ok {
@@ -31,7 +29,17 @@ func MigrateValidatorCommission(ctx context.Context, stakingKeeper *stakingkeepe
 		}
 
 		if validator.Commission.Rate.LT(minCommissionRate) {
-			validatorsToUpdate = append(validatorsToUpdate, validator)
+			validator.Commission.Rate = minCommissionRate
+
+			if validator.Commission.MaxRate.LT(minCommissionRate) {
+				validator.Commission.MaxRate = minCommissionRate
+			}
+
+			validator.Commission.UpdateTime = sdkCtx.BlockTime()
+
+			if updateErr = stakingKeeper.SetValidator(ctx, validator); updateErr != nil {
+				return true
+			}
 		}
 		return false
 	})
@@ -39,23 +47,7 @@ func MigrateValidatorCommission(ctx context.Context, stakingKeeper *stakingkeepe
 		return err
 	}
 
-	// Update validators with commission below minimum
-	for _, validator := range validatorsToUpdate {
-		validator.Commission.Rate = minCommissionRate
-
-		if validator.Commission.MaxRate.LT(minCommissionRate) {
-			validator.Commission.MaxRate = minCommissionRate
-		}
-
-		// Update the commission update time
-		validator.Commission.UpdateTime = sdkCtx.BlockTime()
-
-		if err := stakingKeeper.SetValidator(ctx, validator); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return updateErr
 }
 
 // SetMinCommissionRate is a helper function to set the minimum commission rate

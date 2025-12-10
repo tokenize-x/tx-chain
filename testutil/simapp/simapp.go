@@ -270,13 +270,13 @@ func (s *App) FundAccount(ctx sdk.Context, address sdk.AccAddress, balances sdk.
 }
 
 // AddValidator creates a new validator in the simapp and returns the validator object.
-// This is a helper function for testing purposes.
-// Commission rates are optional - if nil, defaults to 10% rate and 20% max rate.
+// Commission is optional - if nil, defaults to 10% rate, 20% max rate, 1% max change rate.
+// Individual fields within CommissionRates that are zero will also use defaults.
 func (s *App) AddValidator(
 	ctx sdk.Context,
 	operator sdk.AccAddress,
 	value sdk.Coin,
-	commissionRate, maxRate *sdkmath.LegacyDec,
+	commission *stakingtypes.CommissionRates,
 ) (stakingtypes.Validator, error) {
 	privKey := secp256k1.GenPrivKey()
 	pubKey := privKey.PubKey()
@@ -288,24 +288,28 @@ func (s *App) AddValidator(
 	}
 
 	// Default commission rates
-	rate := sdkmath.LegacyNewDecWithPrec(10, 2)       // 10%
-	maxRateVal := sdkmath.LegacyNewDecWithPrec(20, 2) // 20%
-	if commissionRate != nil {
-		rate = *commissionRate
+	commissionRates := stakingtypes.CommissionRates{
+		Rate:          sdkmath.LegacyNewDecWithPrec(10, 2), // 10%
+		MaxRate:       sdkmath.LegacyNewDecWithPrec(20, 2), // 20%
+		MaxChangeRate: sdkmath.LegacyNewDecWithPrec(1, 2),  // 1%
 	}
-	if maxRate != nil {
-		maxRateVal = *maxRate
+	if commission != nil {
+		if !commission.Rate.IsNil() && !commission.Rate.IsZero() {
+			commissionRates.Rate = commission.Rate
+		}
+		if !commission.MaxRate.IsNil() && !commission.MaxRate.IsZero() {
+			commissionRates.MaxRate = commission.MaxRate
+		}
+		if !commission.MaxChangeRate.IsNil() && !commission.MaxChangeRate.IsZero() {
+			commissionRates.MaxChangeRate = commission.MaxChangeRate
+		}
 	}
 
 	msg := &stakingtypes.MsgCreateValidator{
 		Description: stakingtypes.Description{
 			Moniker: "Validator power",
 		},
-		Commission: stakingtypes.CommissionRates{
-			Rate:          rate,
-			MaxRate:       maxRateVal,
-			MaxChangeRate: sdkmath.LegacyNewDecWithPrec(1, 2),
-		},
+		Commission:        commissionRates,
 		MinSelfDelegation: sdkmath.OneInt(),
 		DelegatorAddress:  operator.String(),
 		ValidatorAddress:  valAddr.String(),

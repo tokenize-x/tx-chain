@@ -7,6 +7,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
@@ -36,21 +37,24 @@ func TestMigrateValidatorCommission(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(ctx, operator3, sdk.NewCoins(stakeAmount)))
 
 	// Val1: 1% commission, 20% max rate (commission below future minimum)
-	rate1 := sdkmath.LegacyNewDecWithPrec(1, 2)
-	maxRate1 := sdkmath.LegacyNewDecWithPrec(20, 2)
-	val1, err := testApp.AddValidator(ctx, operator1, stakeAmount, &rate1, &maxRate1)
+	val1, err := testApp.AddValidator(ctx, operator1, stakeAmount, &stakingtypes.CommissionRates{
+		Rate:    sdkmath.LegacyNewDecWithPrec(1, 2),
+		MaxRate: sdkmath.LegacyNewDecWithPrec(20, 2),
+	})
 	requireT.NoError(err)
 
 	// Val2: 10% commission, 20% max rate (commission above future minimum, no change expected)
-	rate2 := sdkmath.LegacyNewDecWithPrec(10, 2)
-	maxRate2 := sdkmath.LegacyNewDecWithPrec(20, 2)
-	val2, err := testApp.AddValidator(ctx, operator2, stakeAmount, &rate2, &maxRate2)
+	val2, err := testApp.AddValidator(ctx, operator2, stakeAmount, &stakingtypes.CommissionRates{
+		Rate:    sdkmath.LegacyNewDecWithPrec(10, 2),
+		MaxRate: sdkmath.LegacyNewDecWithPrec(20, 2),
+	})
 	requireT.NoError(err)
 
 	// Val3: 3% commission, 4% max rate (both below future minimum)
-	rate3 := sdkmath.LegacyNewDecWithPrec(3, 2)
-	maxRate3 := sdkmath.LegacyNewDecWithPrec(4, 2)
-	val3, err := testApp.AddValidator(ctx, operator3, stakeAmount, &rate3, &maxRate3)
+	val3, err := testApp.AddValidator(ctx, operator3, stakeAmount, &stakingtypes.CommissionRates{
+		Rate:    sdkmath.LegacyNewDecWithPrec(3, 2),
+		MaxRate: sdkmath.LegacyNewDecWithPrec(4, 2),
+	})
 	requireT.NoError(err)
 
 	// Set minimum commission rate to 5%
@@ -67,15 +71,15 @@ func TestMigrateValidatorCommission(t *testing.T) {
 	validator1, err := testApp.StakingKeeper.GetValidator(ctx, val1Addr)
 	requireT.NoError(err)
 	requireT.Equal(minCommissionRate.String(), validator1.Commission.Rate.String())
-	requireT.Equal(maxRate1.String(), validator1.Commission.MaxRate.String())
+	requireT.Equal(sdkmath.LegacyNewDecWithPrec(20, 2).String(), validator1.Commission.MaxRate.String())
 
 	// Val2: both commission and max rate should be unchanged
 	val2Addr, err := testApp.StakingKeeper.ValidatorAddressCodec().StringToBytes(val2.OperatorAddress)
 	requireT.NoError(err)
 	validator2, err := testApp.StakingKeeper.GetValidator(ctx, val2Addr)
 	requireT.NoError(err)
-	requireT.Equal(rate2.String(), validator2.Commission.Rate.String())
-	requireT.Equal(maxRate2.String(), validator2.Commission.MaxRate.String())
+	requireT.Equal(sdkmath.LegacyNewDecWithPrec(10, 2).String(), validator2.Commission.Rate.String())
+	requireT.Equal(sdkmath.LegacyNewDecWithPrec(20, 2).String(), validator2.Commission.MaxRate.String())
 
 	// Val3: both commission and max rate should be updated to 5%
 	val3Addr, err := testApp.StakingKeeper.ValidatorAddressCodec().StringToBytes(val3.OperatorAddress)

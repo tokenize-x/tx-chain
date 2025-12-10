@@ -20,15 +20,25 @@ func (v *validatorCommission) Before(t *testing.T) {
 
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 
-	// Get current staking params
 	paramsRes, err := stakingClient.Params(ctx, &stakingtypes.QueryParamsRequest{})
 	requireT.NoError(err)
 
-	// Before upgrade, min commission rate should be less than 5%
+	// Before upgrade, min commission rate param should be less than 5%
 	expectedMinCommission := sdkmath.LegacyNewDecWithPrec(5, 2)
 	requireT.True(paramsRes.Params.MinCommissionRate.LT(expectedMinCommission))
 
-	t.Logf("Before upgrade: min commission rate = %s", paramsRes.Params.MinCommissionRate.String())
+	// Verify znet validators already have commission > 5% (they are created with 10%)
+	validatorsRes, err := stakingClient.Validators(ctx, &stakingtypes.QueryValidatorsRequest{})
+	requireT.NoError(err)
+	requireT.NotEmpty(validatorsRes.Validators)
+
+	for _, validator := range validatorsRes.Validators {
+		requireT.True(validator.Commission.Rate.GT(expectedMinCommission),
+			"validator %s should have commission > 5%%", validator.OperatorAddress)
+	}
+
+	t.Logf("Before upgrade: min commission rate = %s, validators count = %d",
+		paramsRes.Params.MinCommissionRate.String(), len(validatorsRes.Validators))
 }
 
 func (v *validatorCommission) After(t *testing.T) {
