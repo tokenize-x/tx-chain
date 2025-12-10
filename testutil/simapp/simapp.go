@@ -85,6 +85,7 @@ func WithCustomLogger(logger log.Logger) Option {
 	}
 }
 
+// WithStartTime returns the simapp Option to run with different start time.
 func WithStartTime(startTime time.Time) Option {
 	return func(s Settings) Settings {
 		s.startTime = startTime
