@@ -21,11 +21,11 @@ func TestMigrateValidatorCommission(t *testing.T) {
 	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 
 	// Set minCommissionRate to 0 so we can create validators with any commission rates
-	requireT.NoError(v6.SetMinCommissionRate(ctx, testApp.StakingKeeper, sdkmath.LegacyZeroDec()))
-
-	// Get bond denom for staking
 	stakingParams, err := testApp.StakingKeeper.GetParams(ctx)
 	requireT.NoError(err)
+	stakingParams.MinCommissionRate = sdkmath.LegacyZeroDec()
+	requireT.NoError(testApp.StakingKeeper.SetParams(ctx, stakingParams))
+
 	stakeAmount := sdk.NewCoin(stakingParams.BondDenom, sdkmath.NewInt(1_000_000))
 
 	// Create operators and fund them
@@ -57,20 +57,21 @@ func TestMigrateValidatorCommission(t *testing.T) {
 	})
 	requireT.NoError(err)
 
-	// Set minimum commission rate to 5%
-	minCommissionRate := sdkmath.LegacyNewDecWithPrec(5, 2)
-	requireT.NoError(v6.SetMinCommissionRate(ctx, testApp.StakingKeeper, minCommissionRate))
-
-	// Run migration
+	// Run migration - this sets minimum commission rate to 5% and updates validators
 	err = v6.MigrateValidatorCommission(ctx, testApp.StakingKeeper)
 	requireT.NoError(err)
+
+	// Verify staking params were updated
+	updatedParams, err := testApp.StakingKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	requireT.Equal(v6.MinCommissionRate.String(), updatedParams.MinCommissionRate.String())
 
 	// Val1: commission should be updated to 5%, max rate unchanged at 20%
 	val1Addr, err := testApp.StakingKeeper.ValidatorAddressCodec().StringToBytes(val1.OperatorAddress)
 	requireT.NoError(err)
 	validator1, err := testApp.StakingKeeper.GetValidator(ctx, val1Addr)
 	requireT.NoError(err)
-	requireT.Equal(minCommissionRate.String(), validator1.Commission.Rate.String())
+	requireT.Equal(v6.MinCommissionRate.String(), validator1.Commission.Rate.String())
 	requireT.Equal(sdkmath.LegacyNewDecWithPrec(20, 2).String(), validator1.Commission.MaxRate.String())
 
 	// Val2: both commission and max rate should be unchanged
@@ -86,6 +87,6 @@ func TestMigrateValidatorCommission(t *testing.T) {
 	requireT.NoError(err)
 	validator3, err := testApp.StakingKeeper.GetValidator(ctx, val3Addr)
 	requireT.NoError(err)
-	requireT.Equal(minCommissionRate.String(), validator3.Commission.Rate.String())
-	requireT.Equal(minCommissionRate.String(), validator3.Commission.MaxRate.String())
+	requireT.Equal(v6.MinCommissionRate.String(), validator3.Commission.Rate.String())
+	requireT.Equal(v6.MinCommissionRate.String(), validator3.Commission.MaxRate.String())
 }

@@ -9,18 +9,26 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-// MigrateValidatorCommission updates validators with commission rates below the minimum
-// to have their commission rate set to the minimum commission rate.
+// MinCommissionRate is the minimum commission rate for validators (5%).
+var MinCommissionRate = sdkmath.LegacyNewDecWithPrec(5, 2) // 5 * 10^(-2) = 0.05 = 5%
+
+// MigrateValidatorCommission sets the minimum commission rate to 5% and updates
+// validators with commission rates below the minimum to have their commission
+// rate set to the minimum commission rate.
 func MigrateValidatorCommission(ctx context.Context, stakingKeeper *stakingkeeper.Keeper) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	// Set minimum commission rate in staking params
 	params, err := stakingKeeper.GetParams(ctx)
 	if err != nil {
 		return err
 	}
+	params.MinCommissionRate = MinCommissionRate
+	if err := stakingKeeper.SetParams(ctx, params); err != nil {
+		return err
+	}
 
-	minCommissionRate := params.MinCommissionRate
-
+	// Update validators with commission rates below the minimum
 	var updateErr error
 	err = stakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
 		validator, ok := val.(stakingtypes.Validator)
@@ -28,11 +36,11 @@ func MigrateValidatorCommission(ctx context.Context, stakingKeeper *stakingkeepe
 			return false
 		}
 
-		if validator.Commission.Rate.LT(minCommissionRate) {
-			validator.Commission.Rate = minCommissionRate
+		if validator.Commission.Rate.LT(MinCommissionRate) {
+			validator.Commission.Rate = MinCommissionRate
 
-			if validator.Commission.MaxRate.LT(minCommissionRate) {
-				validator.Commission.MaxRate = minCommissionRate
+			if validator.Commission.MaxRate.LT(MinCommissionRate) {
+				validator.Commission.MaxRate = MinCommissionRate
 			}
 
 			validator.Commission.UpdateTime = sdkCtx.BlockTime()
@@ -48,17 +56,4 @@ func MigrateValidatorCommission(ctx context.Context, stakingKeeper *stakingkeepe
 	}
 
 	return updateErr
-}
-
-// SetMinCommissionRate is a helper function to set the minimum commission rate
-// in staking params during upgrade if needed.
-func SetMinCommissionRate(ctx context.Context, stakingKeeper *stakingkeeper.Keeper, minRate sdkmath.LegacyDec) error {
-	params, err := stakingKeeper.GetParams(ctx)
-	if err != nil {
-		return err
-	}
-
-	params.MinCommissionRate = minRate
-
-	return stakingKeeper.SetParams(ctx, params)
 }
