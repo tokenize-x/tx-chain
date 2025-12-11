@@ -103,7 +103,6 @@ func (k Keeper) distributeAllocatedTokens(
 	scheduledDistribution types.ScheduledDistribution,
 ) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
 		if allocation.Amount.IsZero() {
