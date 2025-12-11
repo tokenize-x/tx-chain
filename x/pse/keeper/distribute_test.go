@@ -180,8 +180,9 @@ func TestKeeper_Distribute(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			requireT := require.New(t)
-			testApp := simapp.New()
-			ctx, _, err := testApp.BeginNextBlock()
+			startTime := time.Now().Round(time.Second)
+			testApp := simapp.New(simapp.WithStartTime(startTime))
+			ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
 			requireT.NoError(err)
 			runContext := &runEnv{
 				testApp:  testApp,

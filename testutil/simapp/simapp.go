@@ -59,8 +59,9 @@ var IgnoredModulesForExport = map[string]struct{}{
 
 // Settings for the simapp initialization.
 type Settings struct {
-	db     dbm.DB
-	logger log.Logger
+	db        dbm.DB
+	logger    log.Logger
+	startTime time.Time
 }
 
 var sdkConfigOnce = &sync.Once{}
@@ -84,6 +85,14 @@ func WithCustomLogger(logger log.Logger) Option {
 	}
 }
 
+// WithStartTime returns the simapp Option to run with different start time.
+func WithStartTime(startTime time.Time) Option {
+	return func(s Settings) Settings {
+		s.startTime = startTime
+		return s
+	}
+}
+
 // App is a simulation app wrapper.
 type App struct {
 	app.App
@@ -92,8 +101,9 @@ type App struct {
 // New creates application instance with in-memory database and disabled logging.
 func New(options ...Option) *App {
 	settings := Settings{
-		db:     dbm.NewMemDB(),
-		logger: log.NewNopLogger(),
+		db:        dbm.NewMemDB(),
+		logger:    log.NewNopLogger(),
+		startTime: time.Now(),
 	}
 
 	for _, option := range options {
@@ -139,7 +149,7 @@ func New(options ...Option) *App {
 	_, err = coreApp.InitChain(&abci.RequestInitChain{
 		ConsensusParams: simtestutil.DefaultConsensusParams,
 		AppStateBytes:   stateBytes,
-		Time:            time.Now(),
+		Time:            settings.startTime,
 	})
 	if err != nil {
 		panic(errors.Errorf("can't init chain: %s", err))
