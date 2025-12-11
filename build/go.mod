@@ -4,6 +4,7 @@ go 1.24.0
 
 toolchain go1.24.6
 
+replace github.com/tokenize-x/tx-crust => ../../tx-crust
 replace github.com/tokenize-x/tx-chain/v6 => ../
 
 // CosmosSDK replacements
