@@ -9,10 +9,39 @@ jobs:
   release:
     runs-on: self-hosted
     steps:
-      - name: Checkout tx-core
+      - name: Checkout tx-chain
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Setup SSH agent to access private repositories
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.TX_CRUST_PRIVATE_KEY }}
+            ${{ secrets.TX_TOOLS_PRIVATE_KEY }}
+            ${{ secrets.TX_WASM_SDK_PRIVATE_KEY }}
+            ${{ secrets.TX_STD_DERIVE_PRIVATE_KEY }}
+      - name: Setup access to private repositories
+        run: |
+          export GOPRIVATE=github.com/tokenize-x GONOSUMDB=github.com/tokenize-x
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          echo -e "${{ secrets.TX_CRUST_PRIVATE_KEY }}" > ~/.ssh/tx-crust-deploy-key
+          echo -e "${{ secrets.TX_TOOLS_PRIVATE_KEY }}" > ~/.ssh/tx-tools-deploy-key
+          echo -e "${{ secrets.TX_WASM_SDK_PRIVATE_KEY }}" > ~/.ssh/tx-wasm-sdk-deploy-key
+          echo -e "${{ secrets.TX_STD_DERIVE_PRIVATE_KEY }}" > ~/.ssh/tx-std-derive-deploy-key
+          chmod 600 ~/.ssh/tx-crust-deploy-key ~/.ssh/tx-tools-deploy-key ~/.ssh/tx-wasm-sdk-deploy-key ~/.ssh/tx-std-derive-deploy-key
+          {
+            echo -e "Host tx-crust-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-crust-deploy-key\n    IdentitiesOnly yes"
+            echo -e "Host tx-tools-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-tools-deploy-key\n    IdentitiesOnly yes"
+            echo -e "Host tx-wasm-sdk-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-wasm-sdk-deploy-key\n    IdentitiesOnly yes"
+            echo -e "Host tx-std-derive-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-std-derive-deploy-key\n    IdentitiesOnly yes"
+          } > ~/.ssh/config
+          {
+            echo -e "[url \"git@tx-crust-private:tokenize-x/tx-crust\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-crust\""
+            echo -e "[url \"git@tx-tools-private:tokenize-x/tx-tools\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-tools\""
+            echo -e "[url \"git@tx-wasm-sdk-private:tokenize-x/tx-wasm-sdk\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-wasm-sdk\""
+            echo -e "[url \"git@tx-std-derive-private:tokenize-x/tx-std-derive\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-std-derive\""
+          } > ~/.gitconfig
       - name: Build binaries
         run: make release
       - name: Build and publish images
