@@ -1650,6 +1650,8 @@ github.com/tidwall/btree v1.7.0/go.mod h1:twD9XRA5jj9VUQGELzDO4HPQTNJsoWWfYEL+EU
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/tokenize-x/tx-crust v0.0.0-20251204091714-85b536a4d6a0 h1:VA/UBUJ1MkYAf2yGdbqAYKKL6nBpUo6IM/YbxyYoDM8=
 github.com/tokenize-x/tx-crust v0.0.0-20251204091714-85b536a4d6a0/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
+github.com/tokenize-x/tx-crust v0.0.0-20251212141340-26bcfec6d08c h1:xwFfANvOUhTDFf2AIxecXPoh/LWP5q1xiRDeMvc6xxk=
+github.com/tokenize-x/tx-crust v0.0.0-20251212141340-26bcfec6d08c/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20251204091714-85b536a4d6a0 h1:CkcEu9z6bWu+bjuaURFalnI0X2SpWnvvSNODtlSQd2I=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20251204091714-85b536a4d6a0/go.mod h1:328EyqltI5jgYWvbvVsZjlzjZ1Fm/EGSS7xEm0TpSdw=
 github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033 h1:1++kosP83GjVa85RkTBxkzI3qNKPWp0uIRn4UiFQuPY=
