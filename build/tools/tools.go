@@ -85,7 +85,6 @@ var Tools = []tools.Tool{
 			},
 		},
 	},
-    // 2025-12-12T01:27:14.301276+08:00	error	build	run/run.go:74	Application returned error: checksum does not match for tool libwasmvm, expected: 70c989684d2b48ca17bbd55bb694bbb136d75c393c067ef3bdbca31d2b291b73ef7 (Masih Yeganeh 2025-01-31 13:05:04 +0330   1) package tools
 	// https://github.com/CosmWasm/wasmvm/releases
 	// Check compatibility with wasmd before upgrading: https://github.com/CosmWasm/wasmd
 	tools.BinaryTool{

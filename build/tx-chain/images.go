@@ -25,7 +25,7 @@ type imageConfig struct {
 
 // BuildTXdDockerImage builds txd docker image.
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	// deps(BuildTXdInDocker, ensureReleasedBinaries)
+	deps(BuildTXdInDocker, ensureReleasedBinaries)
 
 	return buildTXdDockerImage(ctx, imageConfig{
 		BinaryPath:      binaryPath,
