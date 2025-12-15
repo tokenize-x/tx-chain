@@ -103,9 +103,12 @@ func (k Keeper) distributeAllocatedTokens(
 	scheduledDistribution types.ScheduledDistribution,
 ) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
 	// Transfer tokens for each allocation in this distribution period
 	for _, allocation := range scheduledDistribution.Allocations {
+		if allocation.Amount.IsZero() {
+			continue
+		}
+
 		// Community clearing account has different distribution logic
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
 			if err := k.DistributeCommunityPSE(ctx, bondDenom, allocation.Amount, scheduledDistribution.Timestamp); err != nil {

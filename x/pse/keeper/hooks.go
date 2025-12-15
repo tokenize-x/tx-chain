@@ -69,6 +69,9 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
 	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, valAddr, delAddr)
 	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil
+		}
 		return err
 	}
 
@@ -111,14 +114,6 @@ func calculateAddedScore(
 }
 
 // BeforeValidatorSlashed implements the staking hooks interface.
-// TODO: we need to handle validator slashing for a more accurate score calculation.
-// example:
-// lets assume a validator is slashed at the middle of a given period which splits the period into two parts,
-// given following:
-// before slashing: 10 ucore
-// after slashing: 9 ucore
-// we calculate score as 9ucore * period (not completely accurate)
-// more accurate formula should be 10ucore * period_1 + 9ucore * period_2.
 func (h Hooks) BeforeValidatorSlashed(ctx context.Context, valAddr sdk.ValAddress, fraction sdkmath.LegacyDec) error {
 	return nil
 }
