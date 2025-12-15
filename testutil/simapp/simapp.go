@@ -280,11 +280,13 @@ func (s *App) FundAccount(ctx sdk.Context, address sdk.AccAddress, balances sdk.
 }
 
 // AddValidator creates a new validator in the simapp and returns the validator object.
-// This is a helper function for testing purposes that creates a validator with standard commission rates.
+// Commission is optional - if nil, defaults to 10% rate, 20% max rate, 1% max change rate.
+// Individual fields within CommissionRates that are zero will also use defaults.
 func (s *App) AddValidator(
 	ctx sdk.Context,
 	operator sdk.AccAddress,
 	value sdk.Coin,
+	commission *stakingtypes.CommissionRates,
 ) (stakingtypes.Validator, error) {
 	privKey := secp256k1.GenPrivKey()
 	pubKey := privKey.PubKey()
@@ -295,15 +297,29 @@ func (s *App) AddValidator(
 		return stakingtypes.Validator{}, err
 	}
 
+	// Default commission rates
+	commissionRates := stakingtypes.CommissionRates{
+		Rate:          sdkmath.LegacyNewDecWithPrec(10, 2), // 10%
+		MaxRate:       sdkmath.LegacyNewDecWithPrec(20, 2), // 20%
+		MaxChangeRate: sdkmath.LegacyNewDecWithPrec(1, 2),  // 1%
+	}
+	if commission != nil {
+		if !commission.Rate.IsNil() && !commission.Rate.IsZero() {
+			commissionRates.Rate = commission.Rate
+		}
+		if !commission.MaxRate.IsNil() && !commission.MaxRate.IsZero() {
+			commissionRates.MaxRate = commission.MaxRate
+		}
+		if !commission.MaxChangeRate.IsNil() && !commission.MaxChangeRate.IsZero() {
+			commissionRates.MaxChangeRate = commission.MaxChangeRate
+		}
+	}
+
 	msg := &stakingtypes.MsgCreateValidator{
 		Description: stakingtypes.Description{
 			Moniker: "Validator power",
 		},
-		Commission: stakingtypes.CommissionRates{
-			Rate:          sdkmath.LegacyMustNewDecFromStr("0.1"),
-			MaxRate:       sdkmath.LegacyMustNewDecFromStr("0.2"),
-			MaxChangeRate: sdkmath.LegacyMustNewDecFromStr("0.01"),
-		},
+		Commission:        commissionRates,
 		MinSelfDelegation: sdkmath.OneInt(),
 		DelegatorAddress:  operator.String(),
 		ValidatorAddress:  valAddr.String(),
