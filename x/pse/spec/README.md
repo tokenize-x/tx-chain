@@ -212,7 +212,6 @@ message MsgUpdateExcludedAddresses {
 - Authority must match the governance module address
 - All addresses must be valid bech32 addresses
 - No duplicates within the add or remove lists
-- Addresses in remove list must currently exist in the exclusion list
 
 **Use Cases**:
 
@@ -389,7 +388,7 @@ The PSE module parameters can be queried but are primarily managed through gover
 ### ExcludedAddresses
 
 - Contains bech32-encoded account addresses
-- Addresses in this list will not accumulate scores or receive Community distributions
+- Addresses in this list will not receive Community distributions
 - No duplicates allowed
 - Can be updated via governance using `MsgUpdateExcludedAddresses`
 - Common use case: excluding exchange addresses that custody user funds
