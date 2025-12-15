@@ -55,6 +55,11 @@ func New(
 				return nil, err
 			}
 
+			// Set minimum commission rate to 5% and update validators with lower rates
+			if err := MigrateValidatorCommission(ctx, stakingKeeper); err != nil {
+				return nil, err
+			}
+
 			// Perform PSE initialization: create schedule, mint, and distribute tokens
 			if err := InitPSEAllocationsAndSchedule(
 				ctx,
