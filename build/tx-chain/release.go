@@ -61,7 +61,8 @@ func ReleaseTXdImage(ctx context.Context, deps types.DepsFunc) error {
 			tools.TargetPlatformLinuxAMD64InDocker,
 			tools.TargetPlatformLinuxARM64InDocker,
 		},
-		Action:   docker.ActionPush,
-		Username: config.DockerHubUsername,
+		Action:            docker.ActionPush,
+		ContainerRegistry: config.ContainerRegistryName,
+		OrgName:           config.ContainerRegistryOrgName,
 	})
 }
