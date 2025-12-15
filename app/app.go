@@ -627,6 +627,8 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
+	app.TransferKeeper.SetAddressCodec(interfaceRegistry.SigningContext().AddressCodec())
+
 	app.PacketForwardKeeper.SetTransferKeeper(app.TransferKeeper)
 
 	app.ICAHostKeeper = icahostkeeper.NewKeeper(
