@@ -8,6 +8,7 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
+	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	"github.com/tokenize-x/tx-chain/v6/app/upgrade"
@@ -35,6 +36,7 @@ func New(
 		StoreUpgrades: store.StoreUpgrades{
 			Added: []string{
 				psetypes.StoreKey,
+				protocolpooltypes.StoreKey,
 			},
 			Deleted: []string{
 				"feeibc",
@@ -79,6 +81,10 @@ func New(
 			); err != nil {
 				return nil, err
 			}
+
+			// Note: Community pool funds migration from distribution to protocolpool
+			// happens automatically via distribution module's BeginBlocker in the next block
+
 			return vmap, nil
 		},
 	}

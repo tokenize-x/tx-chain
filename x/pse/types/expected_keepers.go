@@ -26,9 +26,9 @@ type BankKeeper interface {
 	SpendableCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 }
 
-// DistributionKeeper interface.
-type DistributionKeeper interface {
-	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
+// ProtocolPoolKeeper interface for protocolpool community pool operations.
+type ProtocolPoolKeeper interface {
+	FundCommunityPool(ctx sdk.Context, amount sdk.Coins, sender sdk.AccAddress) error
 }
 
 // StakingQuerier interface.

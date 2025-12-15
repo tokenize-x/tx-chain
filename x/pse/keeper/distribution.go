@@ -134,9 +134,9 @@ func (k Keeper) distributeAllocatedTokens(
 
 		// Distribution Precision Handling:
 		// The allocation amount is split equally among all recipients using integer division.
-		// Any remainder from division is sent to the community pool to ensure:
+		// Any remainder from division is sent to the protocolpool community pool to ensure:
 		// - Each recipient receives exactly: allocation.Amount / numRecipients (base amount)
-		// - Remainder (if any) goes to community pool for ecosystem benefit
+		// - Remainder (if any) goes to protocolpool community pool for ecosystem benefit
 		// This guarantees fair distribution and no tokens are lost
 		numRecipients := sdkmath.NewInt(int64(len(recipientAddrs)))
 		if numRecipients.IsZero() {
@@ -175,20 +175,20 @@ func (k Keeper) distributeAllocatedTokens(
 			}
 		}
 
-		// Send any remainder to community pool
+		// Send any remainder to protocolpool community pool
 		if !remainder.IsZero() {
-			clearingAccountAddr := k.accountKeeper.GetModuleAddress(allocation.ClearingAccount)
 			remainderCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, remainder))
-			if err := k.distributionKeeper.FundCommunityPool(ctx, remainderCoins, clearingAccountAddr); err != nil {
+			clearingAccountAddr := k.accountKeeper.GetModuleAddress(allocation.ClearingAccount)
+			if err := k.protocolPoolKeeper.FundCommunityPool(sdkCtx, remainderCoins, clearingAccountAddr); err != nil {
 				return errorsmod.Wrapf(
 					types.ErrTransferFailed,
-					"failed to send remainder to community pool from clearing account '%s': %v",
+					"failed to send remainder to protocolpool community pool from clearing account '%s': %v",
 					allocation.ClearingAccount,
 					err,
 				)
 			}
 
-			sdkCtx.Logger().Info("sent distribution remainder to community pool",
+			sdkCtx.Logger().Info("sent distribution remainder to protocolpool community pool",
 				"clearing_account", allocation.ClearingAccount,
 				"remainder", remainder.String())
 		}

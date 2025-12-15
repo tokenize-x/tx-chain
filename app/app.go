@@ -93,6 +93,9 @@ import (
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+	"github.com/cosmos/cosmos-sdk/x/protocolpool"
+	protocolpoolkeeper "github.com/cosmos/cosmos-sdk/x/protocolpool/keeper"
+	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -193,17 +196,19 @@ var (
 // getMaccPerms returns the module account permissions map.
 func getMaccPerms() map[string][]string {
 	perms := map[string][]string{
-		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		icatypes.ModuleName:            nil,
-		wasmtypes.ModuleName:           {authtypes.Burner},
-		assetfttypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
-		assetnfttypes.ModuleName:       {authtypes.Burner},
+		authtypes.FeeCollectorName:                  nil,
+		distrtypes.ModuleName:                       nil,
+		protocolpooltypes.ModuleName:                nil,
+		protocolpooltypes.ProtocolPoolEscrowAccount: nil,
+		minttypes.ModuleName:                        {authtypes.Minter},
+		stakingtypes.BondedPoolName:                 {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName:              {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:                         {authtypes.Burner},
+		ibctransfertypes.ModuleName:                 {authtypes.Minter, authtypes.Burner},
+		icatypes.ModuleName:                         nil,
+		wasmtypes.ModuleName:                        {authtypes.Burner},
+		assetfttypes.ModuleName:                     {authtypes.Minter, authtypes.Burner},
+		assetnfttypes.ModuleName:                    {authtypes.Burner},
 		// the line is required by the nft module to have the module account stored in the account keeper
 		nft.ModuleName:      {},
 		psetypes.ModuleName: {authtypes.Minter},
@@ -250,15 +255,16 @@ type App struct {
 	tkeys map[string]*storetypes.TransientStoreKey
 
 	// keepers
-	AccountKeeper  authkeeper.AccountKeeper
-	AuthzKeeper    authzkeeper.Keeper
-	StakingKeeper  *stakingkeeper.Keeper
-	SlashingKeeper slashingkeeper.Keeper
-	MintKeeper     mintkeeper.Keeper
-	DistrKeeper    distrkeeper.Keeper
-	GovKeeper      govkeeper.Keeper
-	UpgradeKeeper  *upgradekeeper.Keeper
-	ParamsKeeper   paramskeeper.Keeper //nolint:staticcheck
+	AccountKeeper      authkeeper.AccountKeeper
+	AuthzKeeper        authzkeeper.Keeper
+	StakingKeeper      *stakingkeeper.Keeper
+	SlashingKeeper     slashingkeeper.Keeper
+	MintKeeper         mintkeeper.Keeper
+	DistrKeeper        distrkeeper.Keeper
+	ProtocolPoolKeeper protocolpoolkeeper.Keeper
+	GovKeeper          govkeeper.Keeper
+	UpgradeKeeper      *upgradekeeper.Keeper
+	ParamsKeeper       paramskeeper.Keeper //nolint:staticcheck
 	// IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	IBCKeeper              *ibckeeper.Keeper
 	IBCHooksKeeper         ibchookskeeper.Keeper
@@ -339,7 +345,7 @@ func New(
 	keys := storetypes.NewKVStoreKeys(
 		authtypes.StoreKey, authz.ModuleName, banktypes.StoreKey,
 		stakingtypes.StoreKey, minttypes.StoreKey,
-		distrtypes.StoreKey, slashingtypes.StoreKey, govtypes.StoreKey,
+		distrtypes.StoreKey, protocolpooltypes.StoreKey, slashingtypes.StoreKey, govtypes.StoreKey,
 		paramstypes.StoreKey, upgradetypes.StoreKey, feegrant.StoreKey,
 		evidencetypes.StoreKey, consensusparamtypes.StoreKey,
 		wasmtypes.StoreKey, feemodeltypes.StoreKey, assetfttypes.StoreKey,
@@ -488,6 +494,14 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
+	app.ProtocolPoolKeeper = protocolpoolkeeper.NewKeeper(
+		appCodec,
+		runtime.NewKVStoreService(keys[protocolpooltypes.StoreKey]),
+		app.AccountKeeper,
+		app.BankKeeper,
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	)
+
 	app.DistrKeeper = distrkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[distrtypes.StoreKey]),
@@ -535,7 +549,7 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		app.AccountKeeper,
 		app.BankKeeper,
-		app.DistrKeeper,
+		app.ProtocolPoolKeeper,
 		stakingkeeper.NewQuerier(app.StakingKeeper),
 		interfaceRegistry.SigningContext().AddressCodec(),
 		interfaceRegistry.SigningContext().ValidatorAddressCodec(),
@@ -902,6 +916,11 @@ func New(
 			app.StakingKeeper,
 			app.GetSubspace(distrtypes.ModuleName),
 		),
+		protocolpool.NewAppModule(
+			app.ProtocolPoolKeeper,
+			app.AccountKeeper,
+			app.BankKeeper,
+		),
 		wstakingModule,
 		upgrade.NewAppModule(app.UpgradeKeeper, app.AccountKeeper.AddressCodec()),
 		evidence.NewAppModule(app.EvidenceKeeper),
@@ -966,6 +985,7 @@ func New(
 		upgradetypes.ModuleName,
 		minttypes.ModuleName,
 		distrtypes.ModuleName,
+		protocolpooltypes.ModuleName,
 		slashingtypes.ModuleName,
 		evidencetypes.ModuleName,
 		customparamstypes.ModuleName,
@@ -1004,6 +1024,7 @@ func New(
 		authz.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
+		protocolpooltypes.ModuleName,
 		slashingtypes.ModuleName,
 		vestingtypes.ModuleName,
 		minttypes.ModuleName,
@@ -1041,6 +1062,7 @@ func New(
 		authz.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
+		protocolpooltypes.ModuleName,
 		customparamstypes.ModuleName,
 		stakingtypes.ModuleName,
 		vestingtypes.ModuleName,

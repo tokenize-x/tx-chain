@@ -60,7 +60,7 @@ func (k Keeper) DistributeCommunityPSE(
 	totalPSEScore := finalScoreMap.totalScore
 
 	// leftover is the amount of pse coin that is not distributed to any delegator.
-	// It will be sent to CommunityPool.
+	// It will be sent to protocolpool community pool.
 	// there are 2 sources of leftover:
 	// 1. rounding errors due to division.
 	// 2. some delegators have no delegation.
@@ -90,10 +90,10 @@ func (k Keeper) DistributeCommunityPSE(
 		}
 	}
 
-	// send leftover to CommunityPool.
+	// send leftover to protocolpool community pool
 	if leftover.IsPositive() {
 		pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
-		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
+		err = k.protocolPoolKeeper.FundCommunityPool(sdk.UnwrapSDKContext(ctx), sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
 		if err != nil {
 			return err
 		}

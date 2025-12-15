@@ -26,7 +26,7 @@ type Keeper struct {
 	// keepers
 	accountKeeper      types.AccountKeeper
 	bankKeeper         types.BankKeeper
-	distributionKeeper types.DistributionKeeper
+	protocolPoolKeeper types.ProtocolPoolKeeper
 	stakingKeeper      types.StakingQuerier
 
 	// collections
@@ -45,7 +45,7 @@ func NewKeeper(
 	authority string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-	distributionKeeper types.DistributionKeeper,
+	protocolPoolKeeper types.ProtocolPoolKeeper,
 	stakingKeeper types.StakingQuerier,
 	addressCodec addresscodec.Codec,
 	valAddressCodec addresscodec.Codec,
@@ -59,7 +59,7 @@ func NewKeeper(
 		authority:          authority,
 		accountKeeper:      accountKeeper,
 		bankKeeper:         bankKeeper,
-		distributionKeeper: distributionKeeper,
+		protocolPoolKeeper: protocolPoolKeeper,
 		stakingKeeper:      stakingKeeper,
 
 		Params: collections.NewItem(
