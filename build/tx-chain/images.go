@@ -15,11 +15,12 @@ import (
 )
 
 type imageConfig struct {
-	BinaryPath      string
-	TargetPlatforms []txcrusttools.TargetPlatform
-	Action          docker.Action
-	Username        string
-	Versions        []string
+	BinaryPath        string
+	TargetPlatforms   []txcrusttools.TargetPlatform
+	Action            docker.Action
+	ContainerRegistry string
+	OrgName           string
+	Versions          []string
 }
 
 // BuildTXdDockerImage builds txd docker image.
@@ -55,13 +56,14 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 	}
 
 	return docker.BuildImage(ctx, docker.BuildImageConfig{
-		ContextDir:      filepath.Join("bin", ".cache", binaryName),
-		ImageName:       binaryName,
-		TargetPlatforms: cfg.TargetPlatforms,
-		Action:          cfg.Action,
-		Versions:        cfg.Versions,
-		Username:        cfg.Username,
-		Dockerfile:      dockerfile,
+		ContextDir:        filepath.Join("bin", ".cache", binaryName),
+		ImageName:         binaryName,
+		TargetPlatforms:   cfg.TargetPlatforms,
+		Action:            cfg.Action,
+		Versions:          cfg.Versions,
+		ContainerRegistry: cfg.ContainerRegistry,
+		OrgName:           cfg.OrgName,
+		Dockerfile:        dockerfile,
 	})
 }
 

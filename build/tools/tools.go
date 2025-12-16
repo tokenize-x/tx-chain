@@ -85,7 +85,6 @@ var Tools = []tools.Tool{
 			},
 		},
 	},
-
 	// https://github.com/CosmWasm/wasmvm/releases
 	// Check compatibility with wasmd before upgrading: https://github.com/CosmWasm/wasmd
 	tools.BinaryTool{
