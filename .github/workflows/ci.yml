@@ -116,7 +116,7 @@ jobs:
             echo -e "Host tx-std-derive-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-std-derive-deploy-key\n    IdentitiesOnly yes"
           } > ~/.ssh/config
           {
-            echo -e "[url \"git@tx-chain-private:tokenize-x/tx-crust\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-chain\""
+            echo -e "[url \"git@tx-chain-private:tokenize-x/tx-chain\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-chain\""
             echo -e "[url \"git@tx-crust-private:tokenize-x/tx-crust\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-crust\""
             echo -e "[url \"git@tx-tools-private:tokenize-x/tx-tools\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-tools\""
             echo -e "[url \"git@tx-wasm-sdk-private:tokenize-x/tx-wasm-sdk\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-wasm-sdk\""
