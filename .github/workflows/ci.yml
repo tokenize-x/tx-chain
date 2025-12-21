@@ -107,7 +107,7 @@ jobs:
           echo -e "${{ secrets.TX_TOOLS_PRIVATE_KEY }}" > ~/.ssh/tx-tools-deploy-key
           echo -e "${{ secrets.TX_WASM_SDK_PRIVATE_KEY }}" > ~/.ssh/tx-wasm-sdk-deploy-key
           echo -e "${{ secrets.TX_STD_DERIVE_PRIVATE_KEY }}" > ~/.ssh/tx-std-derive-deploy-key
-          chmod 600 ~/.ssh/tx-crust-deploy-key ~/.ssh/tx-tools-deploy-key ~/.ssh/tx-wasm-sdk-deploy-key ~/.ssh/tx-std-derive-deploy-key
+          chmod 600 ~/.ssh/tx-chain-deploy-key ~/.ssh/tx-crust-deploy-key ~/.ssh/tx-tools-deploy-key ~/.ssh/tx-wasm-sdk-deploy-key ~/.ssh/tx-std-derive-deploy-key
           {
             echo -e "Host tx-chain-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-chain-deploy-key\n    IdentitiesOnly yes"
             echo -e "Host tx-crust-private\n    HostName github.com\n    User git\n    StrictHostKeyChecking no\n    IdentityFile ~/.ssh/tx-crust-deploy-key\n    IdentitiesOnly yes"
