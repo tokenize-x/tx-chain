@@ -1,9 +1,10 @@
 package deterministicmap
 
-func SomeFunc1() {
-	_ = map[string]int{"a": 1} // want "use of built-in map is forbidden. use DeterministicMap instead"
-}
+import "fmt"
 
-func SomeFunc2() {
-	var _ map[string]string // want "use of built-in map is forbidden. use DeterministicMap instead"
+func SomeFunc() {
+	m := map[string]int{"a": 1}
+	for k, v := range m /* want "ranging over map is forbidden (iteration order is nondeterministic); use DeterministicMap instead" */ {
+		fmt.Println(k, v)
+	}
 }

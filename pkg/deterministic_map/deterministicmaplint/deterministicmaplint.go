@@ -53,24 +53,18 @@ func (f *PluginDeterministicMapLint) GetLoadMode() string {
 func (f *PluginDeterministicMapLint) run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
-			switch node := n.(type) {
-			case *ast.ValueSpec:
-				if node.Type != nil {
-					checkType(pass, node.Type, pass.TypesInfo.TypeOf(node.Type))
+			if rs, isRange := n.(*ast.RangeStmt); isRange {
+				t := pass.TypesInfo.TypeOf(rs.X)
+				if t == nil {
+					return true
 				}
 
-			case *ast.Field:
-				checkType(pass, node.Type, pass.TypesInfo.TypeOf(node.Type))
-
-			case *ast.TypeSpec:
-				checkType(pass, node.Type, pass.TypesInfo.TypeOf(node.Type))
-
-			case *ast.CompositeLit:
-				checkType(pass, node, pass.TypesInfo.TypeOf(node))
-
-			case *ast.FuncDecl:
-				checkFieldList(pass, node.Type.Params)
-				checkFieldList(pass, node.Type.Results)
+				if isForbiddenMapType(t) {
+					pass.Reportf(
+						rs.Pos(),
+						"ranging over map is forbidden (iteration order is nondeterministic); use DeterministicMap instead",
+					)
+				}
 			}
 
 			return true
@@ -78,27 +72,6 @@ func (f *PluginDeterministicMapLint) run(pass *analysis.Pass) (interface{}, erro
 	}
 
 	return nil, nil //nolint:nilnil
-}
-
-func checkFieldList(pass *analysis.Pass, fl *ast.FieldList) {
-	if fl == nil {
-		return
-	}
-	for _, f := range fl.List {
-		checkType(pass, f.Type, pass.TypesInfo.TypeOf(f.Type))
-	}
-}
-
-func checkType(pass *analysis.Pass, node ast.Node, t types.Type) {
-	if t == nil {
-		return
-	}
-	if isForbiddenMapType(t) {
-		pass.Reportf(
-			node.Pos(),
-			"use of built-in map is forbidden. use DeterministicMap instead",
-		)
-	}
 }
 
 func isForbiddenMapType(t types.Type) bool {
@@ -110,10 +83,8 @@ func isForbiddenMapType(t types.Type) bool {
 				return false
 			}
 			t = tt.Underlying()
-
 		case *types.Map:
 			return true
-
 		default:
 			return false
 		}
