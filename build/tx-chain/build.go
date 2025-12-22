@@ -278,7 +278,7 @@ func Lint(ctx context.Context, deps types.DepsFunc) error {
 		CompileAllSmartContracts,
 		formatProto,
 		lintProto,
-		// breakingProto, TODO(Restore breaking proto)
+		breakingProto,
 	)
 	return lint.Lint(ctx, deps)
 }
