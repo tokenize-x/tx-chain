@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	deterministicmap "github.com/tokenize-x/tx-chain/v6/pkg/deterministic-map"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
@@ -225,15 +226,15 @@ func (c ChainContext) AwaitForIBCChannelID(
 			return errors.Errorf("failed to query open channels on: %s: %s", peerChain.ChainSettings.ChainID, err)
 		}
 
-		for chID, ch := range openChannelsMap {
+		err = openChannelsMap.RangeErr(func(chID string, ch *ibcchanneltypes.IdentifiedChannel) error {
 			if ch.PortId != port {
-				continue
+				return nil
 			}
 
 			// Counterparty channel on a peer chain should exist and match a current chain channel.
-			peerCh, ok := peerOpenChannelsMap[ch.Counterparty.ChannelId]
+			peerCh, ok := peerOpenChannelsMap.Get(ch.Counterparty.ChannelId)
 			if !ok || peerCh.Counterparty.ChannelId != chID {
-				continue
+				return nil
 			}
 			// Peer chain might have different port ID. E.g., in case of IBC transfer from WASM smart contract
 			// source port is wasm.<src-chain-smart-contract>, but destination is wasm.<dst-chain-smart-contract>.
@@ -250,9 +251,14 @@ func (c ChainContext) AwaitForIBCChannelID(
 
 			// Chains names should match.
 			if expectedChainName != c.ChainSettings.ChainID || expectedPeerChainName != peerChain.ChainSettings.ChainID {
-				continue
+				return nil
 			}
 			connectedChannelIDs = append(connectedChannelIDs, ch.ChannelId)
+
+			return nil
+		})
+		if err != nil {
+			return err
 		}
 
 		if len(connectedChannelIDs) == 0 {
@@ -394,7 +400,9 @@ func (c ChainContext) getIBCClientAndConnectionIDs(ctx context.Context, peerChai
 	return "", "", errors.Errorf("failed to find client and connection on the %s", peerChainID)
 }
 
-func (c ChainContext) getAllOpenChannels(ctx context.Context) (map[string]*ibcchanneltypes.IdentifiedChannel, error) {
+func (c ChainContext) getAllOpenChannels(ctx context.Context) (
+	*deterministicmap.Map[string, *ibcchanneltypes.IdentifiedChannel], error,
+) {
 	ibcChannelClient := ibcchanneltypes.NewQueryClient(c.ClientContext)
 
 	var openChannels []*ibcchanneltypes.IdentifiedChannel
@@ -426,7 +434,7 @@ func (c ChainContext) getAllOpenChannels(ctx context.Context) (map[string]*ibcch
 			return ch.ChannelId, ch
 		})
 
-	return openChannelsMap, nil
+	return deterministicmap.FromMap(openChannelsMap), nil
 }
 
 func (c ChainContext) getIBCCounterpartyChainName(ctx context.Context, channelID, portID string) (string, error) {

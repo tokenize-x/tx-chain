@@ -135,6 +135,7 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/docs"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	deterministicmap "github.com/tokenize-x/tx-chain/v6/pkg/deterministic-map"
 	assetft "github.com/tokenize-x/tx-chain/v6/x/asset/ft"
 	assetftkeeper "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper"
 	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
@@ -1426,14 +1427,16 @@ func (app *App) RegisterNodeService(clientCtx client.Context, cfg serverconfig.C
 func (app *App) AutoCliOpts() autocli.AppOptions {
 	modules := make(map[string]appmodule.AppModule)
 
-	for _, m := range app.ModuleManager.Modules {
+	deterministicModules := deterministicmap.FromMap(app.ModuleManager.Modules)
+	deterministicModules.Range(func(_ string, m any) bool {
 		if moduleWithName, ok := m.(module.HasName); ok {
 			moduleName := moduleWithName.Name()
 			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
 				modules[moduleName] = appModule
 			}
 		}
-	}
+		return true
+	})
 
 	return autocli.AppOptions{
 		Modules:               modules,
@@ -1469,18 +1472,20 @@ func initParamsKeeper(
 }
 
 func excludeModules(modules map[string]interface{}, modulesToExclude []string) map[string]interface{} {
-	filteredModules := make(map[string]interface{}, 0)
+	filteredModules := make(map[string]interface{})
 
 	modulesToExcludeMap := lo.SliceToMap(modulesToExclude, func(k string) (string, struct{}) {
 		return k, struct{}{}
 	})
-	for n, m := range modules {
+	deterministicModules := deterministicmap.FromMap(modules)
+	deterministicModules.Range(func(n string, m any) bool {
 		if _, ok := modulesToExcludeMap[n]; ok {
-			continue
+			return true
 		}
 
 		filteredModules[n] = m
-	}
+		return true
+	})
 
 	return filteredModules
 }

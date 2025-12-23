@@ -22,6 +22,23 @@ func New[K cmp.Ordered, V any]() *Map[K, V] {
 	}
 }
 
+// FromMap converts a native Go map into a deterministic Map.
+// The resulting map has canonical sorted order.
+func FromMap[K cmp.Ordered, V any](src map[K]V) *Map[K, V] {
+	m := &Map[K, V]{
+		data:   make(map[K]V, len(src)),
+		keys:   make([]K, 0, len(src)),
+		sorted: false,
+	}
+
+	for k, v := range src { //nolint:deterministicmaplint
+		m.data[k] = v
+		m.keys = append(m.keys, k)
+	}
+
+	return m
+}
+
 // ensure initializes internal state for zero-value usage.
 func (m *Map[K, V]) ensure() {
 	if m.data == nil {
@@ -95,6 +112,34 @@ func (m *Map[K, V]) ensureSorted() {
 	m.sorted = true
 }
 
+// Keys returns all keys in deterministic sorted order.
+func (m *Map[K, V]) Keys() []K {
+	if m.data == nil {
+		return nil
+	}
+
+	m.ensureSorted()
+
+	out := make([]K, len(m.keys))
+	copy(out, m.keys)
+	return out
+}
+
+// Values returns all values in deterministic key order.
+func (m *Map[K, V]) Values() []V {
+	if m.data == nil {
+		return nil
+	}
+
+	m.ensureSorted()
+
+	out := make([]V, 0, len(m.keys))
+	for _, k := range m.keys {
+		out = append(out, m.data[k])
+	}
+	return out
+}
+
 // Range iterates over the map in deterministic sorted order.
 // Returning false from fn stops iteration.
 func (m *Map[K, V]) Range(fn func(key K, value V) bool) {
@@ -109,4 +154,22 @@ func (m *Map[K, V]) Range(fn func(key K, value V) bool) {
 			return
 		}
 	}
+}
+
+// RangeErr iterates over the map in deterministic sorted order.
+// Returning error from fn stops iteration and returns the error.
+func (m *Map[K, V]) RangeErr(fn func(key K, value V) error) error {
+	if m.data == nil {
+		return nil
+	}
+
+	m.ensureSorted()
+
+	for _, k := range m.keys {
+		if err := fn(k, m.data[k]); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
