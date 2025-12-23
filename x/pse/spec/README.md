@@ -4,6 +4,8 @@
 
 This document specifies the `pse` module (Proof of Support Emission). The module is responsible for managing scheduled token distributions from clearing accounts to designated recipients based on a predefined allocation schedule. The Community clearing account uses a special score-based distribution mechanism that rewards stakers proportionally to their staking duration and amount. This module was introduced in the v6 upgrade of TX Blockchain.
 
+[![PSE Schedule & Distribution](https://cdn.loom.com/sessions/thumbnails/e4ca212e1b2241a9907e727fc2126456-bc0e80993661f9ea-full-play.gif)](https://www.loom.com/share/e4ca212e1b2241a9907e727fc2126456)
+
 ## Concepts
 
 The PSE module implements a sophisticated token distribution system with the following key components:
