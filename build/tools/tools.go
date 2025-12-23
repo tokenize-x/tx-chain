@@ -386,9 +386,9 @@ var Tools = []tools.Tool{
 
 	tools.CustomLinter{
 		Name:   DeterministicMapLint,
-		Module: "pkg/deterministic_map/deterministicmaplint",
+		Module: "pkg/deterministic-map/deterministicmaplint",
 		Local:  true,
-		Path:   "pkg/deterministic_map/deterministicmaplint",
+		Path:   "pkg/deterministic-map/deterministicmaplint",
 	},
 }
 

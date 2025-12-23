@@ -8,6 +8,6 @@ use ./build
 
 use ./integration-tests
 
-use ./pkg/deterministic_map/deterministicmaplint
+use ./pkg/deterministic-map/deterministicmaplint
 
 replace github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 => github.com/tokenize-x/ibc-apps/modules/ibc-hooks/v8 v8.0.0-20250801064028-4db66ba3f6f8
