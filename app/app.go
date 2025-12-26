@@ -1428,14 +1428,14 @@ func (app *App) AutoCliOpts() autocli.AppOptions {
 	modules := make(map[string]appmodule.AppModule)
 
 	deterministicModules := deterministicmap.FromMap(app.ModuleManager.Modules)
-	deterministicModules.Range(func(_ string, m any) bool {
+	_ = deterministicModules.Range(func(_ string, m any) error {
 		if moduleWithName, ok := m.(module.HasName); ok {
 			moduleName := moduleWithName.Name()
 			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
 				modules[moduleName] = appModule
 			}
 		}
-		return true
+		return nil
 	})
 
 	return autocli.AppOptions{
@@ -1478,13 +1478,13 @@ func excludeModules(modules map[string]interface{}, modulesToExclude []string) m
 		return k, struct{}{}
 	})
 	deterministicModules := deterministicmap.FromMap(modules)
-	deterministicModules.Range(func(n string, m any) bool {
+	_ = deterministicModules.Range(func(n string, m any) error {
 		if _, ok := modulesToExcludeMap[n]; ok {
-			return true
+			return nil
 		}
 
 		filteredModules[n] = m
-		return true
+		return nil
 	})
 
 	return filteredModules

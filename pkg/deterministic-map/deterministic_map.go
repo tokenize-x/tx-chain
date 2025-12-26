@@ -2,38 +2,54 @@ package deterministicmap
 
 import (
 	"cmp"
+	"errors"
 	"sort"
 )
 
-// Map is a deterministic, sorted map with lazy sorting.
-// Iteration order is canonical and stable across executions.
-type Map[K cmp.Ordered, V any] struct {
-	data   map[K]V
-	keys   []K
-	sorted bool
+// ErrBreak is a sentinel error that stops iteration gracefully.
+var ErrBreak = errors.New("break iteration")
+
+// entry represents a key/value pair.
+type entry[K comparable, V any] struct {
+	key   K
+	value V
 }
 
-// New creates an initialized sorted Map.
+// Map is a deterministic map backed by a slice of entries.
+// Iteration order is stable and deterministic.
+type Map[K cmp.Ordered, V any] struct {
+	index   map[K]int
+	entries []entry[K, V]
+}
+
+// New creates an initialized deterministic Map.
 // The zero value of Map is also safe to use.
 func New[K cmp.Ordered, V any]() *Map[K, V] {
 	return &Map[K, V]{
-		data:   make(map[K]V),
-		sorted: true,
+		index: make(map[K]int),
 	}
 }
 
 // FromMap converts a native Go map into a deterministic Map.
-// The resulting map has canonical sorted order.
+// Keys are sorted once to establish canonical iteration order.
 func FromMap[K cmp.Ordered, V any](src map[K]V) *Map[K, V] {
 	m := &Map[K, V]{
-		data:   make(map[K]V, len(src)),
-		keys:   make([]K, 0, len(src)),
-		sorted: false,
+		index:   make(map[K]int, len(src)),
+		entries: make([]entry[K, V], 0, len(src)),
 	}
 
-	for k, v := range src { //nolint:deterministicmaplint
-		m.data[k] = v
-		m.keys = append(m.keys, k)
+	keys := make([]K, 0, len(src))
+	for k := range src { //nolint:deterministicmaplint
+		keys = append(keys, k)
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+
+	for i, k := range keys {
+		m.entries = append(m.entries, entry[K, V]{key: k, value: src[k]})
+		m.index[k] = i
 	}
 
 	return m
@@ -41,132 +57,99 @@ func FromMap[K cmp.Ordered, V any](src map[K]V) *Map[K, V] {
 
 // ensure initializes internal state for zero-value usage.
 func (m *Map[K, V]) ensure() {
-	if m.data == nil {
-		m.data = make(map[K]V)
-		m.sorted = true
+	if m.index == nil {
+		m.index = make(map[K]int)
 	}
 }
 
 // Set inserts or updates a key/value pair.
-// Insertion of a new key invalidates sort order.
+// New keys are appended deterministically.
 func (m *Map[K, V]) Set(key K, value V) {
 	m.ensure()
 
-	if _, exists := m.data[key]; !exists {
-		m.keys = append(m.keys, key)
-		m.sorted = false
+	if i, exists := m.index[key]; exists {
+		m.entries[i].value = value
+		return
 	}
 
-	m.data[key] = value
+	m.index[key] = len(m.entries)
+	m.entries = append(m.entries, entry[K, V]{key: key, value: value})
 }
 
 // Get retrieves a value by key.
 func (m *Map[K, V]) Get(key K) (V, bool) {
-	if m.data == nil {
+	if m.index == nil {
 		var zero V
 		return zero, false
 	}
-	v, ok := m.data[key]
-	return v, ok
+
+	i, ok := m.index[key]
+	if !ok {
+		var zero V
+		return zero, false
+	}
+
+	return m.entries[i].value, true
 }
 
 // Delete removes a key/value pair.
-// Deletion invalidates sort order.
+// Deletion is O(1) using swap-with-last, preserving deterministic iteration.
 func (m *Map[K, V]) Delete(key K) {
-	if m.data == nil {
+	if m.index == nil {
 		return
 	}
 
-	if _, exists := m.data[key]; !exists {
+	i, ok := m.index[key]
+	if !ok {
 		return
 	}
 
-	delete(m.data, key)
+	last := len(m.entries) - 1
+	lastEntry := m.entries[last]
 
-	for i, k := range m.keys {
-		if k == key {
-			m.keys = append(m.keys[:i], m.keys[i+1:]...)
-			break
-		}
+	if i != last {
+		m.entries[i] = lastEntry
+		m.index[lastEntry.key] = i
 	}
 
-	m.sorted = false
+	delete(m.index, key)
+	m.entries = m.entries[:last]
 }
 
 // Len returns the number of entries in the map.
 func (m *Map[K, V]) Len() int {
-	if m.data == nil {
+	if m.index == nil {
 		return 0
 	}
-	return len(m.keys)
+	return len(m.entries)
 }
 
-// ensureSorted sorts keys if the map is marked as unsorted.
-func (m *Map[K, V]) ensureSorted() {
-	if m.sorted {
-		return
-	}
-	sort.Slice(m.keys, func(i, j int) bool {
-		return m.keys[i] < m.keys[j]
-	})
-	m.sorted = true
-}
-
-// Keys returns all keys in deterministic sorted order.
-func (m *Map[K, V]) Keys() []K {
-	if m.data == nil {
-		return nil
-	}
-
-	m.ensureSorted()
-
-	out := make([]K, len(m.keys))
-	copy(out, m.keys)
-	return out
-}
-
-// Values returns all values in deterministic key order.
+// Values returns the map values in deterministic iteration order.
 func (m *Map[K, V]) Values() []V {
-	if m.data == nil {
+	if m.index == nil {
 		return nil
 	}
 
-	m.ensureSorted()
-
-	out := make([]V, 0, len(m.keys))
-	for _, k := range m.keys {
-		out = append(out, m.data[k])
+	out := make([]V, len(m.entries))
+	for i, e := range m.entries {
+		out[i] = e.value
 	}
 	return out
 }
 
-// Range iterates over the map in deterministic sorted order.
-// Returning false from fn stops iteration.
-func (m *Map[K, V]) Range(fn func(key K, value V) bool) {
-	if m.data == nil {
-		return
-	}
-
-	m.ensureSorted()
-
-	for _, k := range m.keys {
-		if !fn(k, m.data[k]) {
-			return
-		}
-	}
-}
-
-// RangeErr iterates over the map in deterministic sorted order.
-// Returning error from fn stops iteration and returns the error.
-func (m *Map[K, V]) RangeErr(fn func(key K, value V) error) error {
-	if m.data == nil {
+// Range iterates over the map in deterministic order.
+// If the function returns ErrBreak, iteration stops gracefully.
+// Any other error is propagated.
+func (m *Map[K, V]) Range(fn func(key K, value V) error) error {
+	if m.index == nil {
 		return nil
 	}
 
-	m.ensureSorted()
-
-	for _, k := range m.keys {
-		if err := fn(k, m.data[k]); err != nil {
+	for _, e := range m.entries {
+		if err := fn(e.key, e.value); err != nil {
+			if errors.Is(err, ErrBreak) {
+				return nil
+			}
 			return err
 		}
 	}

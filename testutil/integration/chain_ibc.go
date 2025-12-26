@@ -226,7 +226,7 @@ func (c ChainContext) AwaitForIBCChannelID(
 			return errors.Errorf("failed to query open channels on: %s: %s", peerChain.ChainSettings.ChainID, err)
 		}
 
-		err = openChannelsMap.RangeErr(func(chID string, ch *ibcchanneltypes.IdentifiedChannel) error {
+		err = openChannelsMap.Range(func(chID string, ch *ibcchanneltypes.IdentifiedChannel) error {
 			if ch.PortId != port {
 				return nil
 			}
