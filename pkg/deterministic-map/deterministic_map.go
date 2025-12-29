@@ -104,16 +104,16 @@ func (m *Map[K, V]) Delete(key K) {
 		return
 	}
 
-	last := len(m.entries) - 1
-	lastEntry := m.entries[last]
+	lastIdx := len(m.entries) - 1
+	lastEntry := m.entries[lastIdx]
 
-	if i != last {
+	if i != lastIdx {
 		m.entries[i] = lastEntry
 		m.index[lastEntry.key] = i
 	}
 
 	delete(m.index, key)
-	m.entries = m.entries[:last]
+	m.entries = m.entries[:lastIdx]
 }
 
 // Len returns the number of entries in the map.
