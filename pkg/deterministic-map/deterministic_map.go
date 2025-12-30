@@ -55,18 +55,9 @@ func FromMap[K cmp.Ordered, V any](src map[K]V) *Map[K, V] {
 	return m
 }
 
-// ensure initializes internal state for zero-value usage.
-func (m *Map[K, V]) ensure() {
-	if m.index == nil {
-		m.index = make(map[K]int)
-	}
-}
-
 // Set inserts or updates a key/value pair.
 // New keys are appended deterministically.
 func (m *Map[K, V]) Set(key K, value V) {
-	m.ensure()
-
 	if i, exists := m.index[key]; exists {
 		m.entries[i].value = value
 		return
