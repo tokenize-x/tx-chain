@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -43,7 +44,12 @@ var defaultBuildTags = []string{"netgo", "ledger"}
 
 // BuildTXd builds all the versions of txd binary.
 func BuildTXd(ctx context.Context, deps types.DepsFunc) error {
-	deps(BuildTXdLocally, BuildTXdInDocker)
+	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
+	if runtime.GOOS == txcrusttools.OSLinux {
+		deps(BuildTXdLocally)
+	} else {
+		deps(BuildTXdLocally, BuildTXdInDocker)
+	}
 	return nil
 }
 
