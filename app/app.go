@@ -135,6 +135,7 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/docs"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	deterministicmap "github.com/tokenize-x/tx-chain/v6/pkg/deterministic-map"
 	assetft "github.com/tokenize-x/tx-chain/v6/x/asset/ft"
 	assetftkeeper "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper"
 	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
@@ -1316,7 +1317,7 @@ func (app *App) LoadHeight(height int64) error {
 // ModuleAccountAddrs returns all the app's module account addresses.
 func (app *App) ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
-	for acc := range maccPerms {
+	for acc := range maccPerms { //nolint:deterministicmaplint // The result suppose to be map because Cosmos needs it
 		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
 	}
 
@@ -1424,16 +1425,18 @@ func (app *App) RegisterNodeService(clientCtx client.Context, cfg serverconfig.C
 
 // AutoCliOpts returns the autocli options for the app.
 func (app *App) AutoCliOpts() autocli.AppOptions {
-	modules := make(map[string]appmodule.AppModule, 0)
+	modules := make(map[string]appmodule.AppModule)
 
-	for _, m := range app.ModuleManager.Modules {
+	deterministicModules := deterministicmap.FromMap(app.ModuleManager.Modules)
+	_ = deterministicModules.Range(func(_ string, m any) error {
 		if moduleWithName, ok := m.(module.HasName); ok {
 			moduleName := moduleWithName.Name()
 			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
 				modules[moduleName] = appModule
 			}
 		}
-	}
+		return nil
+	})
 
 	return autocli.AppOptions{
 		Modules:               modules,
@@ -1469,18 +1472,20 @@ func initParamsKeeper(
 }
 
 func excludeModules(modules map[string]interface{}, modulesToExclude []string) map[string]interface{} {
-	filteredModules := make(map[string]interface{}, 0)
+	filteredModules := make(map[string]interface{})
 
 	modulesToExcludeMap := lo.SliceToMap(modulesToExclude, func(k string) (string, struct{}) {
 		return k, struct{}{}
 	})
-	for n, m := range modules {
+	deterministicModules := deterministicmap.FromMap(modules)
+	_ = deterministicModules.Range(func(n string, m any) error {
 		if _, ok := modulesToExcludeMap[n]; ok {
-			continue
+			return nil
 		}
 
 		filteredModules[n] = m
-	}
+		return nil
+	})
 
 	return filteredModules
 }
