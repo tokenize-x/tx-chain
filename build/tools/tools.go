@@ -57,10 +57,6 @@ var Tools = []tools.Tool{
 				URL:  "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2Fv1.6.0/cosmovisor-v1.6.0-linux-arm64.tar.gz", //nolint:lll // breaking down urls is not beneficial
 				Hash: "sha256:b425ef02ea22f10753b293270ced49d1f158c5f6a8707a51eb20788570a65d63",
 			},
-			tools.TargetPlatformLinuxAMD64: {
-				URL:  "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2Fv1.6.0/cosmovisor-v1.6.0-linux-amd64.tar.gz", //nolint:lll // breaking down urls is not beneficial
-				Hash: "sha256:844ac6de7aeccb9a05e46fbb5a6c107e5ba896a488ec19e59febb959d6f6a43e",
-			},
 		},
 		Binaries: map[string]string{
 			"bin/cosmovisor": "cosmovisor",
