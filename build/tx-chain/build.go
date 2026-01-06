@@ -3,6 +3,8 @@ package txchain
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -60,7 +62,7 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 		return err
 	}
 
-	return golang.Build(ctx, deps, golang.BinaryBuildConfig{
+	err = golang.Build(ctx, deps, golang.BinaryBuildConfig{
 		TargetPlatform: txcrusttools.TargetPlatformLocal,
 		PackagePath:    "cmd/txd",
 		BinOutputPath:  binaryPath,
@@ -68,6 +70,42 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 		Tags:           defaultBuildTags,
 		LDFlags:        ldFlags,
 	})
+	if err != nil {
+		return err
+	}
+
+	return CopyLocalBinary(
+		binaryPath,
+		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLocal.String(), "bin", binaryName),
+	)
+}
+
+// CopyLocalBinary copies the binary to the cache dir.
+func CopyLocalBinary(src, dst string) error {
+	path := filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLocal.String(), "bin")
+	dstPath := filepath.Join(path, binaryName)
+
+	// create dir from path
+	err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// copy the file we need
+	fr, err := os.Open(src)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer fr.Close()
+	fw, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer fw.Close()
+	if _, err = io.Copy(fw, fr); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // BuildTXdInDocker builds txd in docker.

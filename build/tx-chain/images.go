@@ -32,7 +32,7 @@ func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
 		deps(BuildTXdLocally, ensureReleasedBinariesLocal)
 		targetPlatform = txcrusttools.TargetPlatformLocal
 	} else {
-		deps(BuildTXdInDocker, ensureReleasedBinaries)
+		deps(BuildTXdInDocker, ensureReleasedBinariesInDocker)
 	}
 
 	return buildTXdDockerImage(ctx, imageConfig{
@@ -73,16 +73,6 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 		OrgName:           cfg.OrgName,
 		Dockerfile:        dockerfile,
 	})
-}
-
-// ensureReleasedBinaries ensures that all previous cored versions are installed.
-// TODO (v7): Rename all cored to txd.
-func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
-	if err := ensureReleasedBinariesLocal(ctx, deps); err != nil {
-		return err
-	}
-	// copy the release binary for the local platform to use for the genesis generation
-	return ensureReleasedBinariesLocal(ctx, deps)
 }
 
 // ensureReleasedBinaries ensures that all previous cored versions are installed.
