@@ -74,19 +74,16 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 		return err
 	}
 
-	return CopyLocalBinary(
+	return copyLocalBinary(
 		binaryPath,
 		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(), "bin", binaryName),
 	)
 }
 
-// CopyLocalBinary copies the binary to the cache dir.
-func CopyLocalBinary(src, dst string) error {
-	path := filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLocal.String(), "bin")
-	dstPath := filepath.Join(path, binaryName)
-
+// copyLocalBinary copies the binary to the cache dir.
+func copyLocalBinary(src, dst string) error {
 	// create dir from path
-	err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm)
+	err := os.MkdirAll(filepath.Dir(dst), os.ModePerm)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -97,7 +94,7 @@ func CopyLocalBinary(src, dst string) error {
 		return errors.WithStack(err)
 	}
 	defer fr.Close()
-	fw, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+	fw, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
 	if err != nil {
 		return errors.WithStack(err)
 	}
