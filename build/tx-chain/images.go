@@ -22,22 +22,21 @@ type imageConfig struct {
 	ContainerRegistry string
 	OrgName           string
 	Versions          []string
+	UseLocalBinary    bool
 }
 
 // BuildTXdDockerImage builds txd docker image.
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	targetPlatform := txcrusttools.TargetPlatformLinuxLocalArchInDocker
 	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
 	if runtime.GOOS == txcrusttools.OSLinux {
 		deps(BuildTXdLocally, ensureReleasedBinariesLocal)
-		targetPlatform = txcrusttools.TargetPlatformLocal
 	} else {
 		deps(BuildTXdInDocker, ensureReleasedBinariesInDocker)
 	}
 
 	return buildTXdDockerImage(ctx, imageConfig{
 		BinaryPath:      binaryPath,
-		TargetPlatforms: []txcrusttools.TargetPlatform{targetPlatform},
+		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxLocalArchInDocker},
 		Action:          docker.ActionLoad,
 		Versions:        []string{config.ZNetVersion},
 	})
@@ -45,11 +44,7 @@ func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
 
 func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 	binaryName := filepath.Base(cfg.BinaryPath)
-	isInDocker := true
 	for _, platform := range cfg.TargetPlatforms {
-		if platform == txcrusttools.TargetPlatformLocal {
-			isInDocker = false
-		}
 		if err := ensureCosmovisorWithInstalledBinary(ctx, platform, binaryName); err != nil {
 			return err
 		}
@@ -62,7 +57,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 			string(constant.ChainIDDev),
 			string(constant.ChainIDTest),
 		},
-		InDocker: isInDocker,
+		InDocker: cfg.UseLocalBinary,
 	})
 	if err != nil {
 		return err
