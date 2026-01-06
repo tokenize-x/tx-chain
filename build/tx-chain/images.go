@@ -29,9 +29,9 @@ type imageConfig struct {
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
 	if runtime.GOOS == txcrusttools.OSLinux {
-		deps(BuildTXdLocally, ensureReleasedBinariesLocal)
+		deps(BuildTXdLocally, ensureReleasedBinaries)
 	} else {
-		deps(BuildTXdInDocker, ensureReleasedBinariesInDocker)
+		deps(BuildTXdInDocker, ensureReleasedBinaries)
 	}
 
 	return buildTXdDockerImage(ctx, imageConfig{
@@ -57,7 +57,6 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 			string(constant.ChainIDDev),
 			string(constant.ChainIDTest),
 		},
-		InDocker: true, //cfg.UseLocalBinary,
 	})
 	if err != nil {
 		return err
@@ -77,8 +76,18 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 
 // ensureReleasedBinaries ensures that all previous cored versions are installed.
 // TODO (v7): Rename all cored to txd.
-func ensureReleasedBinariesLocal(ctx context.Context, deps types.DepsFunc) error {
+func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
 	const binaryTool = txchaintools.CoredV503
+	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
+		return err
+	}
+	if err := txcrusttools.CopyToolBinaries(
+		binaryTool,
+		txcrusttools.TargetPlatformLinuxLocalArchInDocker,
+		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String()),
+		fmt.Sprintf("bin/%s", binaryTool)); err != nil {
+		return err
+	}
 	// copy the release binary for the local platform to use for the genesis generation
 	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLocal); err != nil {
 		return err
@@ -89,18 +98,4 @@ func ensureReleasedBinariesLocal(ctx context.Context, deps types.DepsFunc) error
 		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLocal.String()),
 		fmt.Sprintf("bin/%s", binaryTool),
 	)
-}
-
-// ensureReleasedBinaries ensures that all previous cored versions are installed.
-// TODO (v7): Rename all cored to txd.
-func ensureReleasedBinariesInDocker(ctx context.Context, deps types.DepsFunc) error {
-	const binaryTool = txchaintools.CoredV503
-	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
-		return err
-	}
-	return txcrusttools.CopyToolBinaries(
-		binaryTool,
-		txcrusttools.TargetPlatformLinuxLocalArchInDocker,
-		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String()),
-		fmt.Sprintf("bin/%s", binaryTool))
 }
