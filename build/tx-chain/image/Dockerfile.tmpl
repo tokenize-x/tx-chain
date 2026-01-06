@@ -1,8 +1,8 @@
 FROM --platform=$BUILDPLATFORM {{ .From }} as builder
 
 ARG TARGETARCH
-COPY docker.linux.$TARGETARCH/{{ .TXdBinary }} /{{ .TXdBinary }}
-COPY docker.linux.$TARGETARCH/{{ .CosmovisorBinary }} /{{ .CosmovisorBinary }}
+COPY linux.$TARGETARCH/{{ .TXdBinary }} /{{ .TXdBinary }}
+COPY linux.$TARGETARCH/{{ .CosmovisorBinary }} /{{ .CosmovisorBinary }}
 
 {{ $txd := .TXdBinary }}
 {{ range .Networks }}
