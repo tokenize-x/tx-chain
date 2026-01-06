@@ -2383,10 +2383,8 @@ github.com/tokenize-x/ibc-apps/modules/ibc-hooks/v8 v8.0.0-20250801064028-4db66b
 github.com/tokenize-x/ibc-apps/modules/ibc-hooks/v8 v8.0.0-20250801064028-4db66ba3f6f8/go.mod h1:XKNgHNXtpw2H1JY8PnYMA/xDEkgu+7vw9o+lwXHTk9o=
 github.com/tokenize-x/tx-crust v0.0.0-20251204091714-85b536a4d6a0 h1:VA/UBUJ1MkYAf2yGdbqAYKKL6nBpUo6IM/YbxyYoDM8=
 github.com/tokenize-x/tx-crust v0.0.0-20251204091714-85b536a4d6a0/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
-github.com/tokenize-x/tx-crust v0.0.0-20260106152102-cec23403d88f h1:G1ndMtrIZyn6jL1RbilVU/1X9a2m8r18eBQ+8nbjCgc=
-github.com/tokenize-x/tx-crust v0.0.0-20260106152102-cec23403d88f/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260106152102-cec23403d88f h1:8FGbEeuRHe/hWhNW0QuDInpAoOIBemc0QALj2wBYUV4=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260106152102-cec23403d88f/go.mod h1:328EyqltI5jgYWvbvVsZjlzjZ1Fm/EGSS7xEm0TpSdw=
+github.com/tokenize-x/tx-crust v0.0.0-20260106155622-4f2a27ceae92/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
+github.com/tokenize-x/tx-crust/znet v0.0.0-20260106155622-4f2a27ceae92/go.mod h1:328EyqltI5jgYWvbvVsZjlzjZ1Fm/EGSS7xEm0TpSdw=
 github.com/tomarrell/wrapcheck/v2 v2.8.1 h1:HxSqDSN0sAt0yJYsrcYVoEeyM4aI9yAm3KQpIXDJRhQ=
 github.com/tomarrell/wrapcheck/v2 v2.8.1/go.mod h1:/n2Q3NZ4XFT50ho6Hbxg+RV1uyo2Uow/Vdm9NQcl5SE=
 github.com/tommy-muehle/go-mnd/v2 v2.5.1 h1:NowYhSdyE/1zwK9QCLeRb6USWdoif80Ie+v+yU8u1Zw=

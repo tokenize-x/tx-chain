@@ -33,8 +33,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
 	github.com/tokenize-x/tx-chain/v6 v6.0.0-20251120065312-4ec1d9036a1d
-	github.com/tokenize-x/tx-crust v0.0.0-20260106152102-cec23403d88f
-	github.com/tokenize-x/tx-crust/znet v0.0.0-20260106152102-cec23403d88f
+	github.com/tokenize-x/tx-crust v0.0.0-20260106155622-4f2a27ceae92
+	github.com/tokenize-x/tx-crust/znet v0.0.0-20260106155622-4f2a27ceae92
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 
