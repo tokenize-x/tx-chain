@@ -76,7 +76,7 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 
 	return CopyLocalBinary(
 		binaryPath,
-		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLocal.String(), "bin", binaryName),
+		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(), "bin", binaryName),
 	)
 }
 
