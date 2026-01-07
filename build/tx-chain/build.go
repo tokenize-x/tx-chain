@@ -62,10 +62,11 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 		return err
 	}
 
+	binOutputPath := filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(), "bin", binaryName)
 	err = golang.Build(ctx, deps, golang.BinaryBuildConfig{
 		TargetPlatform: txcrusttools.TargetPlatformLocal,
 		PackagePath:    "cmd/txd",
-		BinOutputPath:  binaryPath,
+		BinOutputPath:  binOutputPath,
 		CGOEnabled:     true,
 		Tags:           defaultBuildTags,
 		LDFlags:        ldFlags,
@@ -75,8 +76,8 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	return copyLocalBinary(
-		binaryPath,
 		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(), "bin", binaryName),
+		binaryPath,
 	)
 }
 
