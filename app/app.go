@@ -1278,6 +1278,32 @@ func (app *App) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.
 
 // BeginBlocker application updates every begin block.
 func (app *App) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
+	// Demo: Initialize PSE at height 50
+	if ctx.BlockHeight() == 50 {
+		ctx.Logger().Info("PSE Demo: Initializing at height 50")
+
+		// Check if already initialized
+		schedule, err := app.PSEKeeper.GetDistributionSchedule(ctx)
+		if err != nil {
+			ctx.Logger().Error("failed to check PSE schedule", "error", err)
+		} else if len(schedule) == 0 {
+			// Not initialized yet, do it now
+			err = appupgradev6.InitPSEAllocationsAndSchedule(
+				ctx,
+				app.PSEKeeper,
+				app.BankKeeper.BaseKeeper,
+				stakingkeeper.NewQuerier(app.StakingKeeper),
+			)
+			if err != nil {
+				ctx.Logger().Error("failed to initialize PSE at height 50", "error", err)
+			} else {
+				ctx.Logger().Info("PSE initialization completed at height 50")
+			}
+		} else {
+			ctx.Logger().Info("PSE already initialized, skipping")
+		}
+	}
+
 	return app.ModuleManager.BeginBlock(ctx)
 }
 

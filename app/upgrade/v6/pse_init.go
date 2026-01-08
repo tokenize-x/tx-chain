@@ -29,6 +29,11 @@ const (
 	// MaxDistributionDay caps the day of month for distributions to ensure consistency
 	// across all months. Set to 28 to guarantee all months (including February) have this day.
 	MaxDistributionDay = 28
+
+	// DistributionIntervalSeconds is the interval between distributions
+	// Set to 60 seconds (1 minute) for demo purposes
+	// In production, this should be based on calendar months
+	DistributionIntervalSeconds = 60 // 1 minute for demo
 )
 
 // InitialFundAllocation defines the token funding allocation for a module account during initialization.
@@ -72,29 +77,67 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 
 // DefaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.
 // Community clearing account is not included in the mappings.
-// Each clearing account has a single default recipient address.
+// Different clearing accounts have different numbers of recipients:
+// - Foundation: 2 recipients
+// - Team: 3 recipients
+// - Alliance, Partnership, Investors: 1 recipient each
 // TODO: Replace placeholder addresses with actual recipient addresses provided by management.
 func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountMapping, error) {
-	// Determine the recipient address based on chain ID
-	var recipientAddress string
+	// Define base recipient addresses for each chain
+	var baseAddresses map[string][]string
 	switch chainID {
 	case string(constant.ChainIDMain):
-		recipientAddress = "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5"
+		baseAddresses = map[string][]string{
+			"foundation":  {"core1foundation1address000000000000000000000000", "core1foundation2address000000000000000000000000"},
+			"team":        {"core1team1address00000000000000000000000000000", "core1team2address00000000000000000000000000000", "core1team3address00000000000000000000000000000"},
+			"alliance":    {"core1alliance1address000000000000000000000000"},
+			"partnership": {"core1partnership1address0000000000000000000"},
+			"investors":   {"core1investors1address00000000000000000000000"},
+		}
 	case string(constant.ChainIDTest):
-		recipientAddress = "testcore1dm4x48jqunpdh9h8sud30cwmtsghfuqascgqam"
+		baseAddresses = map[string][]string{
+			"foundation":  {"testcore1foundation1address00000000000000000", "testcore1foundation2address00000000000000000"},
+			"team":        {"testcore1team1address0000000000000000000000", "testcore1team2address0000000000000000000000", "testcore1team3address0000000000000000000000"},
+			"alliance":    {"testcore1alliance1address0000000000000000000"},
+			"partnership": {"testcore1partnership1address000000000000000"},
+			"investors":   {"testcore1investors1address000000000000000000"},
+		}
 	case string(constant.ChainIDDev):
-		recipientAddress = "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
+		baseAddresses = map[string][]string{
+			"foundation":  {"devcore1rm6twjcqvgf2guc54gvas2860q3zcd9pwmumz4", "devcore1r2fuv00ll8mku5y927nl2k3c4r2a3vzx9ekzrs"},
+			"team":        {"devcore1myu0eua9zzng92gw0jyjy2p9pftlmug24tm6pm", "devcore17rprm85xvpxup87wg9kl9yj6v0amp5pdk7w689", "devcore1x2sjwtjhva6huvanyl895g4gks6s7wxty60wlf"},
+			"alliance":    {"devcore1py6vj4acvypw24e7f2gs4pck7rh9s8vh9s9uys"},
+			"partnership": {"devcore1jp8j2avp4hlm9nhxxmwzqwa4hzf5ryjq4vss77"},
+			"investors":   {"devcore19veu5j9t005yquwg9gk3r4hgevemjphl2aclnv"},
+		}
 	default:
 		return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
 	}
 
 	// Create mappings for all non-Community clearing accounts
-	// Each starts with a single default recipient (can be modified via governance)
 	var mappings []psetypes.ClearingAccountMapping
 	for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
+		var recipients []string
+
+		// Map clearing account module name to base address key
+		switch clearingAccount {
+		case psetypes.ClearingAccountFoundation:
+			recipients = baseAddresses["foundation"]
+		case psetypes.ClearingAccountTeam:
+			recipients = baseAddresses["team"]
+		case psetypes.ClearingAccountAlliance:
+			recipients = baseAddresses["alliance"]
+		case psetypes.ClearingAccountPartnership:
+			recipients = baseAddresses["partnership"]
+		case psetypes.ClearingAccountInvestors:
+			recipients = baseAddresses["investors"]
+		default:
+			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown clearing account: %s", clearingAccount)
+		}
+
 		mappings = append(mappings, psetypes.ClearingAccountMapping{
 			ClearingAccount:    clearingAccount,
-			RecipientAddresses: []string{recipientAddress},
+			RecipientAddresses: recipients,
 		})
 	}
 
@@ -115,21 +158,8 @@ func InitPSEAllocationsAndSchedule(
 
 	// Initialize parameters using predefined constants
 	allocations := DefaultInitialFundAllocations()
-	// Start distributions one month after the upgrade at 12:00:00 GMT
-	// This ensures distributions happen at noon GMT on the same day every month
-	// Day is capped at 28 to ensure consistency across all months (including February)
-	upgradeBlockTime := sdkCtx.BlockTime()
-	distributionDay := upgradeBlockTime.Day()
-	if distributionDay > 28 {
-		distributionDay = 28
-	}
-	scheduleStartTime := uint64(time.Date(
-		upgradeBlockTime.Year(),
-		upgradeBlockTime.Month()+1,
-		distributionDay,
-		12, 0, 0, 0,
-		time.UTC,
-	).Unix())
+	// Start distributions immediately from current block time
+	scheduleStartTime := uint64(sdkCtx.BlockTime().Unix()) + 60
 	totalMintAmount := sdkmath.NewInt(InitialTotalMint)
 
 	// Retrieve the chain's native token denomination from staking params
@@ -180,25 +210,25 @@ func InitPSEAllocationsAndSchedule(
 	}
 
 	// Step 5: Mint and fund all clearing accounts
-	if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, bondDenom); err != nil {
-		return err
-	}
+	// DISABLED FOR DEMO: znet already handles minting and funding
+	// if err := MintAndFundClearingAccounts(ctx, bankKeeper, allocations, totalMintAmount, bondDenom); err != nil {
+	// 	return err
+	// }
 
-	sdkCtx.Logger().Info("initialization completed",
-		"minted", totalMintAmount.String(),
+	sdkCtx.Logger().Info("PSE initialization completed (minting disabled - handled by znet)",
 		"denom", bondDenom,
 		"fund_allocations", len(allocations),
 		"periods", len(schedule),
+		"interval_seconds", DistributionIntervalSeconds,
 	)
 
 	return nil
 }
 
-// CreateDistributionSchedule generates a monthly distribution schedule over n calendar months.
+// CreateDistributionSchedule generates a distribution schedule over TotalAllocationMonths periods.
+// Each period is separated by DistributionIntervalSeconds.
 // All clearing accounts (including Community) are included in the schedule.
-// Each distribution month allocates an equal portion (1/n) of each clearing account's total balance.
-// Timestamps are calculated by adding one calendar month for each month, maintaining the same day of month.
-// The day of month is capped at MaxDistributionDay (28) to ensure all months have this day.
+// Each distribution allocates an equal portion (1/n) of each clearing account's total balance.
 // Returns the schedule without persisting it to state, making this a pure, testable function.
 // Community clearing account uses score-based distribution, others use direct recipient transfers.
 func CreateDistributionSchedule(
@@ -213,64 +243,48 @@ func CreateDistributionSchedule(
 	// Convert Unix timestamp to time.Time for date arithmetic
 	startDateTime := time.Unix(int64(startTime), 0).UTC()
 
-	// Cap the day to MaxDistributionDay to ensure consistency across all months
-	distributionDay := startDateTime.Day()
-	if distributionDay > MaxDistributionDay {
-		distributionDay = MaxDistributionDay
-	}
-
-	// Pre-allocate slice with exact capacity for n distribution months
+	// Pre-allocate slice with exact capacity
 	schedule := make([]psetypes.ScheduledDistribution, 0, TotalAllocationMonths)
 
-	for month := range TotalAllocationMonths {
-		// Calculate distribution timestamp by adding calendar months
-		// AddDate(0, month, 0) adds 'month' months while maintaining the same day
-		distributionDateTime := time.Date(
-			startDateTime.Year(),
-			startDateTime.Month(),
-			distributionDay,
-			startDateTime.Hour(),
-			startDateTime.Minute(),
-			startDateTime.Second(),
-			startDateTime.Nanosecond(),
-			time.UTC,
-		).AddDate(0, month, 0)
+	for i := int64(0); i < TotalAllocationMonths; i++ {
+		// Add i intervals to start time
+		distributionDateTime := startDateTime.Add(time.Duration(i*DistributionIntervalSeconds) * time.Second)
 		distributionTime := uint64(distributionDateTime.Unix())
 
-		// Build allocations list for this distribution month
+		// Build allocations list for this distribution period
 		// All clearing accounts (including Community) are included
-		monthAllocations := make([]psetypes.ClearingAccountAllocation, 0, len(distributionFundAllocations))
+		periodAllocations := make([]psetypes.ClearingAccountAllocation, 0, len(distributionFundAllocations))
 
 		for _, allocation := range distributionFundAllocations {
 			// Calculate total balance for this module account from percentage
 			totalBalance := allocation.Percentage.MulInt(totalMintAmount).TruncateInt()
 
-			// Divide total balance equally across all distribution months using integer division
-			monthAmount := totalBalance.QuoRaw(TotalAllocationMonths)
+			// Divide total balance equally across all distribution periods using integer division
+			periodAmount := totalBalance.QuoRaw(TotalAllocationMonths)
 
-			// Fail if balance is too small to distribute over n months
-			if monthAmount.IsZero() {
+			// Fail if balance is too small to distribute over n periods
+			if periodAmount.IsZero() {
 				return nil, errorsmod.Wrapf(
 					psetypes.ErrInvalidInput,
-					"clearing account %s: balance too small to divide into distribution months",
+					"clearing account %s: balance too small to divide into distribution periods",
 					allocation.ClearingAccount,
 				)
 			}
 
-			monthAllocations = append(monthAllocations, psetypes.ClearingAccountAllocation{
+			periodAllocations = append(periodAllocations, psetypes.ClearingAccountAllocation{
 				ClearingAccount: allocation.ClearingAccount,
-				Amount:          monthAmount,
+				Amount:          periodAmount,
 			})
 		}
 
-		if len(monthAllocations) == 0 {
-			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "no allocations for distribution month %d", month)
+		if len(periodAllocations) == 0 {
+			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "no allocations for distribution period %d", i)
 		}
 
-		// Add this distribution month to the schedule
+		// Add this distribution period to the schedule
 		schedule = append(schedule, psetypes.ScheduledDistribution{
 			Timestamp:   distributionTime,
-			Allocations: monthAllocations,
+			Allocations: periodAllocations,
 		})
 	}
 
