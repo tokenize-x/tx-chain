@@ -46,12 +46,7 @@ var defaultBuildTags = []string{"netgo", "ledger"}
 
 // BuildTXd builds all the versions of txd binary.
 func BuildTXd(ctx context.Context, deps types.DepsFunc) error {
-	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
-	if runtime.GOOS == txcrusttools.OSLinux {
-		deps(BuildTXdLocally)
-	} else {
-		deps(BuildTXdLocally, BuildTXdInDocker)
-	}
+	deps(BuildTXdLocally, BuildTXdInDocker)
 	return nil
 }
 
@@ -63,7 +58,7 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	binOutputPath := filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(), "bin", binaryName)
-	err = golang.Build(ctx, deps, golang.BinaryBuildConfig{
+	return golang.Build(ctx, deps, golang.BinaryBuildConfig{
 		TargetPlatform: txcrusttools.TargetPlatformLocal,
 		PackagePath:    "cmd/txd",
 		BinOutputPath:  binOutputPath,
@@ -71,14 +66,6 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 		Tags:           defaultBuildTags,
 		LDFlags:        ldFlags,
 	})
-	if err != nil {
-		return err
-	}
-
-	return copyLocalBinary(
-		filepath.Join("bin", ".cache", binaryName, txcrusttools.TargetPlatformLinuxLocalArchInDocker.String(), "bin", binaryName),
-		binaryPath,
-	)
 }
 
 // copyLocalBinary copies the binary to the cache dir.
@@ -267,14 +254,22 @@ func buildTXdInDocker(
 		default:
 			return errors.Errorf("building is not possible for platform %s", targetPlatform)
 		}
-		const ccDockerDir = "/musl-gcc"
-		dockerVolumes = append(
-			dockerVolumes,
-			fmt.Sprintf("%s:%s", hostCCDirPath, ccDockerDir),
-			// put the libwasmvm to the lib folder of the compiler
-			fmt.Sprintf("%s:%s", wasmHostDirPath, fmt.Sprintf("%s%s", ccDockerDir, wasmCCLibRelativeLibPath)),
-		)
-		cc = fmt.Sprintf("%s%s", ccDockerDir, ccRelativePath)
+		if runtime.GOOS == txcrusttools.OSLinux {
+			targetPlatform = txcrusttools.TargetPlatformLocal
+			if err := copyLocalBinary(wasmHostDirPath, hostCCDirPath+wasmCCLibRelativeLibPath); err != nil {
+				return err
+			}
+			cc = hostCCDirPath + ccRelativePath
+		} else {
+			const ccDockerDir = "/musl-gcc"
+			dockerVolumes = append(
+				dockerVolumes,
+				fmt.Sprintf("%s:%s", hostCCDirPath, ccDockerDir),
+				// put the libwasmvm to the lib folder of the compiler
+				fmt.Sprintf("%s:%s", wasmHostDirPath, fmt.Sprintf("%s%s", ccDockerDir, wasmCCLibRelativeLibPath)),
+			)
+			cc = fmt.Sprintf("%s%s", ccDockerDir, ccRelativePath)
+		}
 	case txcrusttools.OSDarwin:
 		buildTags = append(buildTags, "static_wasm")
 		switch targetPlatform {

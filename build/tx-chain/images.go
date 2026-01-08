@@ -27,11 +27,12 @@ type imageConfig struct {
 
 // BuildTXdDockerImage builds txd docker image.
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
+	deps(BuildTXdInDocker, ensureReleasedBinaries)
+
+	useLocalBinary := false
 	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
 	if runtime.GOOS == txcrusttools.OSLinux {
-		deps(BuildTXdLocally, ensureReleasedBinaries)
-	} else {
-		deps(BuildTXdInDocker, ensureReleasedBinaries)
+		useLocalBinary = true
 	}
 
 	return buildTXdDockerImage(ctx, imageConfig{
@@ -39,6 +40,7 @@ func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
 		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxLocalArchInDocker},
 		Action:          docker.ActionLoad,
 		Versions:        []string{config.ZNetVersion},
+		UseLocalBinary:  useLocalBinary,
 	})
 }
 
@@ -57,6 +59,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 			string(constant.ChainIDDev),
 			string(constant.ChainIDTest),
 		},
+		InDocker: cfg.UseLocalBinary,
 	})
 	if err != nil {
 		return err
