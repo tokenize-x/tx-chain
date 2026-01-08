@@ -94,7 +94,7 @@ func copyLocalBinary(src, dst string) error {
 
 // BuildTXdInDocker builds txd in docker.
 func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
-	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag})
+	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false)
 }
 
 // BuildGaiaDockerImage builds docker image of the gaia.
@@ -208,6 +208,7 @@ func buildTXdInDocker(
 	deps types.DepsFunc,
 	targetPlatform txcrusttools.TargetPlatform,
 	extraFlags []string,
+	release bool,
 ) error {
 	if err := txcrusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
 		return err
@@ -253,7 +254,7 @@ func buildTXdInDocker(
 		default:
 			return errors.Errorf("building is not possible for platform %s", targetPlatform)
 		}
-		if runtime.GOOS == txcrusttools.OSLinux {
+		if !release && runtime.GOOS == txcrusttools.OSLinux {
 			targetPlatform = txcrusttools.TargetPlatformLocal
 			if err := copyLocalBinary(wasmHostDirPath, hostCCDirPath+wasmCCLibRelativeLibPath); err != nil {
 				return err
