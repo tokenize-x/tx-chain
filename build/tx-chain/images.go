@@ -59,7 +59,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 			string(constant.ChainIDDev),
 			string(constant.ChainIDTest),
 		},
-		InDocker: cfg.UseLocalBinary,
+		InDocker: !cfg.UseLocalBinary,
 	})
 	if err != nil {
 		return err
