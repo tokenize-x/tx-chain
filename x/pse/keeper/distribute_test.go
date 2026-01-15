@@ -248,7 +248,9 @@ func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
 
 	// one validator
 	valOp, _ := testApp.GenAccount(ctx)
-	requireT.NoError(testApp.FundAccount(ctx, valOp, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000)))))
+	requireT.NoError(testApp.FundAccount(
+		ctx, valOp, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000))),
+	))
 	val, err := testApp.AddValidator(ctx, valOp, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil)
 	requireT.NoError(err)
 	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
@@ -269,8 +271,12 @@ func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
 	}
 
 	// mint coins for delegation
-	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(200)))))
-	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, del, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(200)))))
+	requireT.NoError(testApp.BankKeeper.MintCoins(
+		ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(200))),
+	))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToAccount(
+		ctx, minttypes.ModuleName, del, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(200))),
+	))
 	delegate(100)
 
 	// advance time to accrue score on next modification
@@ -296,7 +302,9 @@ func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
 	amount := sdkmath.NewInt(1_000)
 	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
 	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, amount))))
-	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, amount))))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
+	))
 	scheduledAt := uint64(ctx.BlockTime().Unix())
 	err = testApp.PSEKeeper.DistributeCommunityPSE(ctx, bondDenom, amount, scheduledAt)
 	requireT.NoError(err)
@@ -308,7 +316,7 @@ func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
 	requireT.Equal(prevSnap, snap, "excluded snapshot should be unchanged after distribution")
 
 	// Verify Scenario B: The excluded delegator can successfully undelegate all tokens after distribution.
-	// This confirms delegation time entries were reset (not cleared), allowing the BeforeDelegationRemoved hook to succeed.
+	// This confirms delegation time entries were reset (not cleared), allowing the hook to succeed.
 	msgUndel := &stakingtypes.MsgUndelegate{
 		DelegatorAddress: del.String(),
 		ValidatorAddress: valAddr.String(),
