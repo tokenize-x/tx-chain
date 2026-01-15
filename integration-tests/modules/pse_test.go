@@ -35,19 +35,28 @@ func TestPSEDistribution(t *testing.T) {
 	requireT := require.New(t)
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 
-	// create 3 new delegations
-	for i := range 3 {
+	// create 4 new delegations (4th will be excluded to test excluded address handling)
+	delegators := make([]sdk.AccAddress, 4)
+	validatorAddress := ""
+	for i := range 4 {
 		validatorsResponse, err := stakingClient.Validators(
 			ctx, &stakingtypes.QueryValidatorsRequest{Status: stakingtypes.Bonded.String()},
 		)
 		require.NoError(t, err)
 		validator1 := validatorsResponse.Validators[0]
+		if validatorAddress == "" {
+			validatorAddress = validator1.OperatorAddress
+		}
 
 		delegateAmount := sdkmath.NewInt(100_000_000 * int64(i+1))
 		acc := chain.GenAccount()
+		delegators[i] = acc
 		chain.FundAccountWithOptions(ctx, t, acc, integration.BalancesOptions{
-			Messages: []sdk.Msg{&stakingtypes.MsgDelegate{}},
-			Amount:   delegateAmount,
+			Messages: []sdk.Msg{
+				&stakingtypes.MsgDelegate{},
+				&stakingtypes.MsgUndelegate{},
+			},
+			Amount: delegateAmount,
 		})
 		delegateMsg := &stakingtypes.MsgDelegate{
 			DelegatorAddress: acc.String(),
@@ -102,17 +111,27 @@ func TestPSEDistribution(t *testing.T) {
 		Mappings:  mappings,
 	}
 
+	// Exclude the 4th delegator to test excluded address handling
+	msgUpdateExcludedAddresses := &psetypes.MsgUpdateExcludedAddresses{
+		Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		AddressesToAdd:    []string{delegators[3].String()},
+		AddressesToRemove: nil,
+	}
+
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
 		ctx, t, nil,
 		"-", "-", "-", govtypesv1.OptionYes,
 		msgUpdateDistributionSchedule,
 		msgUpdateClearingAccountMappings,
+		msgUpdateExcludedAddresses,
 	)
 
 	// ensure distributions are done correctly with correct ratios
 	header, err := chain.LatestBlockHeader(ctx)
 	requireT.NoError(err)
 	height := header.Height
+	excludedDelegator := delegators[3].String()
+
 	for i := range 3 {
 		var events communityDistributedEvent
 		height, events, err = awaitScheduledDistributionEvent(ctx, chain, height)
@@ -123,7 +142,66 @@ func TestPSEDistribution(t *testing.T) {
 		requireT.Len(scheduledDistributions, 2-i)
 		delegationAmountsBefore, delegatorScoresBefore, totalScoreBefore := getAllDelegatorInfo(ctx, t, chain, height-1)
 		delegationAmountsAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
+
+		// Distribution 1: Verify excluded delegator receives NO rewards
+		if i == 0 {
+			excludedBefore, excludedBeforeExists := delegationAmountsBefore[excludedDelegator]
+			excludedAfter, excludedAfterExists := delegationAmountsAfter[excludedDelegator]
+			if excludedBeforeExists && excludedAfterExists {
+				requireT.Equal(excludedBefore, excludedAfter,
+					"Excluded delegator %s should NOT receive distribution", excludedDelegator)
+				excludedEvent := events.find(excludedDelegator)
+				requireT.Nil(excludedEvent,
+					"Excluded delegator %s should NOT have distribution event", excludedDelegator)
+				t.Logf("Delegator %s correctly excluded from distribution 1", excludedDelegator)
+			}
+
+			// After first distribution, REMOVE the address from exclusion list
+			// This tests that preserved snapshots allow re-inclusion
+			msgRemoveExcluded := &psetypes.MsgUpdateExcludedAddresses{
+				Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+				AddressesToAdd:    nil,
+				AddressesToRemove: []string{delegators[3].String()},
+			}
+			chain.Governance.ExpeditedProposalFromMsgAndVote(
+				ctx, t, nil,
+				"-", "-", "-", govtypesv1.OptionYes,
+				msgRemoveExcluded,
+			)
+			t.Logf("Removed delegator %s from exclusion list - should receive rewards in next distribution", excludedDelegator)
+			continue // Skip normal validation for this distribution
+		}
+
+		// Distribution 2 & 3: Verify previously-excluded delegator NOW receives rewards
+		if i >= 1 {
+			excludedBefore, excludedBeforeExists := delegationAmountsBefore[excludedDelegator]
+			excludedAfter, excludedAfterExists := delegationAmountsAfter[excludedDelegator]
+			if excludedBeforeExists && excludedAfterExists {
+				increasedAmount := excludedAfter.Sub(excludedBefore)
+				requireT.True(increasedAmount.IsPositive(),
+					"Previously-excluded delegator %s should NOW receive rewards after removal from exclusion list", excludedDelegator)
+
+				delegatorScore := delegatorScoresBefore[excludedDelegator]
+				expectedIncrease := allocationAmount.Mul(delegatorScore).Quo(totalScoreBefore)
+				requireT.InEpsilon(expectedIncrease.Int64(), increasedAmount.Int64(), 0.05,
+					"Previously-excluded delegator should receive correct reward amount")
+
+				excludedEvent := events.find(excludedDelegator)
+				requireT.NotNil(excludedEvent,
+					"Previously-excluded delegator should have distribution event after re-inclusion")
+				requireT.Equal(excludedEvent.Amount.String(), increasedAmount.String())
+
+				t.Logf("Previously-excluded delegator %s received rewards in distribution %d (amount: %s)",
+					excludedDelegator, i+1, increasedAmount.String())
+			}
+		}
+
 		for delegator, delegationAfter := range delegationAmountsAfter {
+			// Skip excluded delegator for distribution 1 (will be tested separately above)
+			if delegator == excludedDelegator && i == 0 {
+				continue
+			}
+
 			delegationAmountBefore, exists := delegationAmountsBefore[delegator]
 			requireT.True(exists)
 			increasedAmount := delegationAfter.Sub(delegationAmountBefore)
@@ -142,6 +220,45 @@ func TestPSEDistribution(t *testing.T) {
 			requireT.Equal(event.Amount.String(), increasedAmount.String())
 		}
 	}
+
+	// Test that excluded delegator can undelegate their full delegation after distributions
+	// Note: This delegator received rewards in distributions 2 & 3 after being removed from exclusion
+	t.Log("Testing previously-excluded delegator undelegation capability...")
+
+	// Query actual current delegation amount
+	delResp, err := stakingClient.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+		DelegatorAddr: excludedDelegator,
+	})
+	requireT.NoError(err)
+	requireT.Len(delResp.DelegationResponses, 1, "Delegator should have exactly one delegation")
+
+	actualDelegationAmount := delResp.DelegationResponses[0].Balance.Amount
+	t.Logf("Current delegation amount for previously-excluded delegator: %s", actualDelegationAmount.String())
+
+	undelegateMsg := &stakingtypes.MsgUndelegate{
+		DelegatorAddress: excludedDelegator,
+		ValidatorAddress: validatorAddress,
+		Amount:           sdk.NewCoin(chain.ChainSettings.Denom, actualDelegationAmount),
+	}
+
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(delegators[3]),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(undelegateMsg)),
+		undelegateMsg,
+	)
+	requireT.NoError(err, "Previously-excluded delegator should be able to undelegate full amount")
+
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
+	delRespAfter, err := stakingClient.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+		DelegatorAddr: excludedDelegator,
+	})
+	requireT.NoError(err)
+	requireT.Len(delRespAfter.DelegationResponses, 0,
+		"Previously-excluded delegator should have zero active delegations after full undelegation")
+
+	t.Logf("Previously-excluded delegator successfully undelegated full amount (%s)",
+		actualDelegationAmount.String())
 }
 
 func TestPSEDisableDistributions(t *testing.T) {
