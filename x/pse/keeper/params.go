@@ -3,7 +3,10 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/samber/lo"
 
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -51,6 +54,45 @@ func (k Keeper) UpdateExcludedAddresses(
 		return !found
 	})
 
+	// When addresses are removed from exclusion, recreate their DelegationTimeEntries with current state
+	// so they start accumulating score immediately without requiring a delegation change.
+	currentBlockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
+	for _, addrStr := range addressesToRemove {
+		addr, err := k.addressCodec.StringToBytes(addrStr)
+		if err != nil {
+			return err
+		}
+
+		// Query all current delegations for this address
+		delAddrBech32, err := k.addressCodec.BytesToString(addr)
+		if err != nil {
+			return err
+		}
+
+		delegationResponse, err := k.stakingKeeper.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+			DelegatorAddr: delAddrBech32,
+		})
+		if err != nil {
+			return err
+		}
+
+		// Recreate DelegationTimeEntry for each active delegation
+		for _, delegation := range delegationResponse.DelegationResponses {
+			valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
+			if err != nil {
+				continue
+			}
+
+			// Set entry with current block time and current shares
+			if err := k.SetDelegationTimeEntry(ctx, valAddr, addr, types.DelegationTimeEntry{
+				LastChangedUnixSec: currentBlockTime,
+				Shares:             delegation.Delegation.Shares,
+			}); err != nil {
+				return err
+			}
+		}
+	}
+
 	excludedAddrMap := make(map[string]struct{}, len(params.ExcludedAddresses))
 	for _, addr := range params.ExcludedAddresses {
 		excludedAddrMap[addr] = struct{}{}
@@ -61,6 +103,37 @@ func (k Keeper) UpdateExcludedAddresses(
 	})
 
 	params.ExcludedAddresses = append(params.ExcludedAddresses, toActuallyAdd...)
+
+	// Clear AccountScoreSnapshot AND DelegationTimeEntries for newly excluded addresses.
+	// Removing DelegationTimeEntries ensures they start completely fresh when re-included.
+	// Entries will be recreated naturally when hooks fire after re-inclusion.
+	for _, addrStr := range toActuallyAdd {
+		addr, err := k.addressCodec.StringToBytes(addrStr)
+		if err != nil {
+			return err
+		}
+
+		// Remove snapshot if it exists
+		_ = k.AccountScoreSnapshot.Remove(ctx, addr)
+
+		// Remove all delegation time entries for this address
+		rng := collections.NewPrefixedPairRange[sdk.AccAddress, sdk.ValAddress](addr)
+		iter, err := k.DelegationTimeEntries.Iterate(ctx, rng)
+		if err != nil {
+			return err
+		}
+		defer iter.Close()
+
+		for ; iter.Valid(); iter.Next() {
+			kv, err := iter.KeyValue()
+			if err != nil {
+				return err
+			}
+			if err := k.DelegationTimeEntries.Remove(ctx, kv.Key); err != nil {
+				return err
+			}
+		}
+	}
 
 	return k.SetParams(ctx, params)
 }

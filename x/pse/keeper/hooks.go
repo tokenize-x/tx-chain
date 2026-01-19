@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"cosmossdk.io/collections"
+	addresscodec "cosmossdk.io/core/address"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -42,6 +43,26 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// Update DelegationTimeEntry for all addresses (needed for delegation tracking)
+	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
+		LastChangedUnixSec: blockTimeUnixSeconds,
+		Shares:             delegation.Shares,
+	}); err != nil {
+		return err
+	}
+
+	// Stop score addition for excluded addresses
+	params, err := h.k.GetParams(ctx)
+	if err != nil {
+		// During genesis, params might not be initialized yet - treat all as non-excluded
+		if !errors.Is(err, collections.ErrNotFound) {
+			return err
+		}
+	} else if isExcludedAddress(delAddr, params.ExcludedAddresses, h.k.addressCodec) {
+		return nil
+	}
+
+	// Only update AccountScoreSnapshot for non-excluded addresses
 	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		lastScore = sdkmath.NewInt(0)
@@ -54,13 +75,6 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 	newScore := lastScore.Add(addedScore)
-
-	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
-		LastChangedUnixSec: blockTimeUnixSeconds,
-		Shares:             delegation.Shares,
-	}); err != nil {
-		return err
-	}
 
 	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
 }
@@ -75,6 +89,23 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// Remove DelegationTimeEntry for all addresses
+	if err := h.k.RemoveDelegationTimeEntry(ctx, valAddr, delAddr); err != nil {
+		return err
+	}
+
+	// Stop score addition for excluded addresses
+	params, err := h.k.GetParams(ctx)
+	if err != nil {
+		// During genesis, params might not be initialized yet - treat all as non-excluded
+		if !errors.Is(err, collections.ErrNotFound) {
+			return err
+		}
+	} else if isExcludedAddress(delAddr, params.ExcludedAddresses, h.k.addressCodec) {
+		return nil
+	}
+
+	// Only update AccountScoreSnapshot for non-excluded addresses
 	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		lastScore = sdkmath.NewInt(0)
@@ -87,10 +118,6 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 	newScore := lastScore.Add(addedScore)
-
-	if err := h.k.RemoveDelegationTimeEntry(ctx, valAddr, delAddr); err != nil {
-		return err
-	}
 
 	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
 }
@@ -160,4 +187,18 @@ func (h Hooks) AfterValidatorBeginUnbonding(_ context.Context, _ sdk.ConsAddress
 // AfterUnbondingInitiated implements the staking hooks interface.
 func (h Hooks) AfterUnbondingInitiated(_ context.Context, _ uint64) error {
 	return nil
+}
+
+// isExcludedAddress checks if the given address is in the excluded addresses list.
+func isExcludedAddress(addr sdk.AccAddress, excludedAddresses []string, codec addresscodec.Codec) bool {
+	addrStr, err := codec.BytesToString(addr)
+	if err != nil {
+		return false
+	}
+	for _, excluded := range excludedAddresses {
+		if excluded == addrStr {
+			return true
+		}
+	}
+	return false
 }

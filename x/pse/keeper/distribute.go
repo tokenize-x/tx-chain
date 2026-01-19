@@ -40,38 +40,11 @@ func (k Keeper) DistributeCommunityPSE(
 		return err
 	}
 
-	// Clear account score snapshots only for non-excluded addresses.
-	// Excluded addresses must retain their snapshots so that if they become non-excluded in the future,
-	// their historical score accumulation is preserved and correctly factored into future distributions.
-	snapshotIter, err := k.AccountScoreSnapshot.Iterate(ctx, nil)
-	if err != nil {
+	// Clear all account score snapshots.
+	// Excluded addresses should not have snapshots (cleared when added to exclusion list),
+	// but we clear unconditionally for simplicity and safety.
+	if err := k.AccountScoreSnapshot.Clear(ctx, nil); err != nil {
 		return err
-	}
-	defer snapshotIter.Close()
-
-	// Build exclusion lookup map for efficient O(1) address exclusion checks during iteration.
-	excludedAddrMap := make(map[string]struct{}, len(params.ExcludedAddresses))
-	for _, addr := range params.ExcludedAddresses {
-		excludedAddrMap[addr] = struct{}{}
-	}
-
-	for ; snapshotIter.Valid(); snapshotIter.Next() {
-		kv, err := snapshotIter.KeyValue()
-		if err != nil {
-			return err
-		}
-		delAddr := kv.Key
-		delStr, err := k.addressCodec.BytesToString(delAddr)
-		if err != nil {
-			return err
-		}
-		// Only remove snapshots for non-excluded addresses. Excluded addresses keep their snapshots
-		// to maintain score history for potential future inclusion.
-		if _, excluded := excludedAddrMap[delStr]; !excluded {
-			if err := k.AccountScoreSnapshot.Remove(ctx, delAddr); err != nil {
-				return err
-			}
-		}
 	}
 
 	// reset all delegation time entries LastChangedUnixSec to the current block time.

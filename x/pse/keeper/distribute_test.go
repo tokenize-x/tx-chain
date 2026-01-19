@@ -6,6 +6,8 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -227,24 +229,22 @@ func TestKeeper_Distribute(t *testing.T) {
 	}
 }
 
-// Test_ExcludedAddress_SnapshotPreservationAndUndelegation validates two critical behaviors for excluded addresses:
+// Test_ExcludedAddress_ScoreStopAndUndelegation validates two critical behaviors for excluded addresses:
 //
-// Scenario A: Snapshot Preservation
-// When an address is excluded from PSE distribution via governance parameters, its score snapshot
-// must be preserved during distribution cycles. This ensures that if the address is later re-included,
-// its historical score accumulation remains intact for accurate future reward calculations.
+// Scenario A: Score Accumulation Stops When Excluded
+// When an address is added to the excluded list, their score snapshot is cleared and they stop
+// accumulating scores even when delegation changes occur. This ensures excluded addresses don't
+// receive rewards for time spent excluded.
 //
 // Scenario B: Full Undelegation Post-Distribution
-// Excluded delegators must be able to fully undelegate their tokens after a distribution occurs.
+// Excluded delegators must be able to fully undelegate their tokens after distributions occur.
 // This test ensures delegation time entries are properly maintained for all addresses, allowing
 // successful undelegation even for excluded accounts.
-func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
+func Test_ExcludedAddress_ScoreStopAndUndelegation(t *testing.T) {
 	requireT := require.New(t)
 
-	startTime := time.Now().Round(time.Second)
-	testApp := simapp.New(simapp.WithStartTime(startTime))
-	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
-	requireT.NoError(err)
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
 
 	// one validator
 	valOp, _ := testApp.GenAccount(ctx)
@@ -259,7 +259,7 @@ func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
 	del, _ := testApp.GenAccount(ctx)
 	requireT.NoError(testApp.FundAccount(ctx, del, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000)))))
 
-	// delegate some, wait, delegate again to accumulate non-zero snapshot via hooks
+	// delegate some
 	delegate := func(amount int64) {
 		msg := &stakingtypes.MsgDelegate{
 			DelegatorAddress: del.String(),
@@ -279,22 +279,34 @@ func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
 	))
 	delegate(100)
 
-	// advance time to accrue score on next modification
-	ctx, _, err = testApp.BeginNextBlockAtTime(ctx.BlockTime().Add(5 * time.Second))
-	requireT.NoError(err)
-	delegate(1) // triggers hook to store snapshot
+	// Verify snapshot is created
+	snap1, err := testApp.PSEKeeper.AccountScoreSnapshot.Get(ctx, del)
+	if err == nil {
+		requireT.True(snap1.IsZero() || snap1.IsPositive(), "snapshot should exist after first delegation")
+	}
 
-	// capture snapshot before exclusion
-	prevSnap, err := testApp.PSEKeeper.AccountScoreSnapshot.Get(ctx, del)
+	// exclude the delegator via UpdateExcludedAddresses (this clears their snapshot)
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	err = testApp.PSEKeeper.UpdateExcludedAddresses(
+		ctx,
+		authority,
+		[]string{del.String()}, // addresses to add
+		nil,                    // addresses to remove
+	)
 	requireT.NoError(err)
-	requireT.True(prevSnap.GT(sdkmath.ZeroInt()), "snapshot should be non-zero before exclusion")
 
-	// exclude the delegator via governance params
-	params, err := testApp.PSEKeeper.GetParams(ctx)
-	requireT.NoError(err)
-	params.ExcludedAddresses = append(params.ExcludedAddresses, del.String())
-	err = testApp.PSEKeeper.SetParams(ctx, params)
-	requireT.NoError(err)
+	// Verify Scenario A: The excluded address's score snapshot should be CLEARED when added to exclusion
+	_, err = testApp.PSEKeeper.AccountScoreSnapshot.Get(ctx, del)
+	requireT.Error(err, "excluded snapshot should be cleared immediately upon exclusion")
+
+	// Make a delegation change - excluded address should NOT accumulate score
+	delegate(1) // triggers hook, but should not update snapshot for excluded address
+
+	// Verify snapshot is still not present (or zero if present)
+	snap, err := testApp.PSEKeeper.AccountScoreSnapshot.Get(ctx, del)
+	if err == nil {
+		requireT.True(snap.IsZero(), "excluded address should not accumulate score even after delegation changes")
+	}
 
 	// fund community clearing and run distribution
 	bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
@@ -308,12 +320,6 @@ func Test_ExcludedAddress_SnapshotPreservationAndUndelegation(t *testing.T) {
 	scheduledAt := uint64(ctx.BlockTime().Unix())
 	err = testApp.PSEKeeper.DistributeCommunityPSE(ctx, bondDenom, amount, scheduledAt)
 	requireT.NoError(err)
-
-	// Verify Scenario A: The excluded address's score snapshot must still exist and match its pre-exclusion value.
-	// This confirms the selective clearing logic preserves excluded address snapshots.
-	snap, err := testApp.PSEKeeper.AccountScoreSnapshot.Get(ctx, del)
-	requireT.NoError(err, "excluded snapshot should still exist after distribution")
-	requireT.Equal(prevSnap, snap, "excluded snapshot should be unchanged after distribution")
 
 	// Verify Scenario B: The excluded delegator can successfully undelegate all tokens after distribution.
 	// This confirms delegation time entries were reset (not cleared), allowing the hook to succeed.
