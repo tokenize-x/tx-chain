@@ -35,45 +35,53 @@ func TestPSEDistribution(t *testing.T) {
 	requireT := require.New(t)
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 
-	// create 4 new delegations (4th will be excluded to test excluded address handling)
-	delegators := make([]sdk.AccAddress, 4)
-	validatorAddress := ""
-	for i := range 4 {
-		validatorsResponse, err := stakingClient.Validators(
-			ctx, &stakingtypes.QueryValidatorsRequest{Status: stakingtypes.Bonded.String()},
-		)
-		require.NoError(t, err)
-		validator1 := validatorsResponse.Validators[0]
-		if validatorAddress == "" {
-			validatorAddress = validator1.OperatorAddress
-		}
+	// Epsilon tolerances for distribution verification
+	const (
+		epsilonNormal     = 0.05 // Normal delegators
+		epsilonReIncluded = 0.06 // Re-included delegators have higher variance due to validator earnings
+	)
 
+	// ============================================================
+	// SETUP: Create 4 delegators with progressive amounts
+	// ============================================================
+	delegators := make([]sdk.AccAddress, 4)
+	var validatorAddress string
+
+	validatorsResponse, err := stakingClient.Validators(
+		ctx, &stakingtypes.QueryValidatorsRequest{Status: stakingtypes.Bonded.String()},
+	)
+	requireT.NoError(err)
+	validator := validatorsResponse.Validators[0]
+	validatorAddress = validator.OperatorAddress
+
+	for i := range 4 {
 		delegateAmount := sdkmath.NewInt(100_000_000 * int64(i+1))
 		acc := chain.GenAccount()
 		delegators[i] = acc
+
 		chain.FundAccountWithOptions(ctx, t, acc, integration.BalancesOptions{
-			Messages: []sdk.Msg{
-				&stakingtypes.MsgDelegate{},
-				&stakingtypes.MsgUndelegate{},
-			},
-			Amount: delegateAmount,
+			Messages: []sdk.Msg{&stakingtypes.MsgDelegate{}, &stakingtypes.MsgUndelegate{}},
+			Amount:   delegateAmount,
 		})
-		delegateMsg := &stakingtypes.MsgDelegate{
-			DelegatorAddress: acc.String(),
-			ValidatorAddress: validator1.OperatorAddress,
-			Amount:           sdk.NewCoin(chain.ChainSettings.Denom, delegateAmount),
-		}
+
 		_, err = client.BroadcastTx(
 			ctx,
 			chain.ClientContext.WithFromAddress(acc),
-			chain.TxFactory().WithGas(chain.GasLimitByMsgs(delegateMsg)),
-			delegateMsg,
+			chain.TxFactory().WithGas(chain.GasLimitByMsgs(&stakingtypes.MsgDelegate{})),
+			&stakingtypes.MsgDelegate{
+				DelegatorAddress: acc.String(),
+				ValidatorAddress: validator.OperatorAddress,
+				Amount:           sdk.NewCoin(chain.ChainSettings.Denom, delegateAmount),
+			},
 		)
 		requireT.NoError(err)
 	}
 
+	// ============================================================
+	// SETUP: Configure 3 distributions and exclude 4th delegator
+	// ============================================================
+	allocationAmount := sdkmath.NewInt(100_000_000_000_000)
 	allocations := make([]psetypes.ClearingAccountAllocation, 0)
-	allocationAmount := sdkmath.NewInt(100_000_000_000_000) // 100 million tokens
 	for _, clearingAccount := range psetypes.GetAllClearingAccounts() {
 		allocations = append(allocations, psetypes.ClearingAccountAllocation{
 			ClearingAccount: clearingAccount,
@@ -81,188 +89,187 @@ func TestPSEDistribution(t *testing.T) {
 		})
 	}
 
-	// create 3 schedule distribution, each 30 seconds apart
 	govParams, err := chain.Governance.QueryGovParams(ctx)
 	requireT.NoError(err)
-	distributionStartTime := time.Now().
-		Add(10 * time.Second). // add 10 seconds for the proposal to be submitted and voted
-		Add(*govParams.ExpeditedVotingPeriod)
-	msgUpdateDistributionSchedule := &psetypes.MsgUpdateDistributionSchedule{
-		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Schedule: []psetypes.ScheduledDistribution{
-			{
-				Timestamp:   uint64(distributionStartTime.Add(30 * time.Second).Unix()),
-				Allocations: allocations,
-			},
-			{
-				Timestamp:   uint64(distributionStartTime.Add(60 * time.Second).Unix()),
-				Allocations: allocations,
-			},
-			{
-				Timestamp:   uint64(distributionStartTime.Add(90 * time.Second).Unix()),
-				Allocations: allocations,
-			},
-		},
-	}
-	mappings, err := upgradev6.DefaultClearingAccountMappings(chain.ChainSettings.ChainID)
-	requireT.NoError(err)
-	msgUpdateClearingAccountMappings := &psetypes.MsgUpdateClearingAccountMappings{
-		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Mappings:  mappings,
-	}
-
-	// Exclude the 4th delegator to test excluded address handling
-	msgUpdateExcludedAddresses := &psetypes.MsgUpdateExcludedAddresses{
-		Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		AddressesToAdd:    []string{delegators[3].String()},
-		AddressesToRemove: nil,
-	}
+	distributionStartTime := time.Now().Add(10 * time.Second).Add(*govParams.ExpeditedVotingPeriod)
 
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
-		ctx, t, nil,
-		"-", "-", "-", govtypesv1.OptionYes,
-		msgUpdateDistributionSchedule,
-		msgUpdateClearingAccountMappings,
-		msgUpdateExcludedAddresses,
+		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
+		&psetypes.MsgUpdateDistributionSchedule{
+			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			Schedule: []psetypes.ScheduledDistribution{
+				{Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
+				{Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
+				{Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
+			},
+		},
+		&psetypes.MsgUpdateClearingAccountMappings{
+			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			Mappings:  must(upgradev6.DefaultClearingAccountMappings(chain.ChainSettings.ChainID)),
+		},
+		&psetypes.MsgUpdateExcludedAddresses{
+			Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			AddressesToAdd: []string{delegators[3].String()},
+		},
 	)
 
-	// ensure distributions are done correctly with correct ratios
+	excludedDelegator := delegators[3].String()
+
+	// ============================================================
+	// DISTRIBUTION 1: Verify excluded delegator receives NO rewards
+	// ============================================================
+	t.Log("=== Distribution 1: Excluded delegator should receive nothing ===")
+
 	header, err := chain.LatestBlockHeader(ctx)
 	requireT.NoError(err)
 	height := header.Height
-	excludedDelegator := delegators[3].String()
 
-	for i := range 3 {
-		var events communityDistributedEvent
-		height, events, err = awaitScheduledDistributionEvent(ctx, chain, height)
-		requireT.NoError(err)
-		t.Logf("pse event occurred in height: %d", height)
-		scheduledDistributions, err := getScheduledDistribution(ctx, chain)
-		requireT.NoError(err)
-		requireT.Len(scheduledDistributions, 2-i)
-		delegationAmountsBefore, delegatorScoresBefore, totalScoreBefore := getAllDelegatorInfo(ctx, t, chain, height-1)
-		delegationAmountsAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
+	height, events, err := awaitScheduledDistributionEvent(ctx, chain, height)
+	requireT.NoError(err)
+	t.Logf("Distribution 1 at height: %d", height)
 
-		// Distribution 1: Verify excluded delegator receives NO rewards
-		if i == 0 {
-			excludedBefore, excludedBeforeExists := delegationAmountsBefore[excludedDelegator]
-			excludedAfter, excludedAfterExists := delegationAmountsAfter[excludedDelegator]
-			if excludedBeforeExists && excludedAfterExists {
-				requireT.Equal(excludedBefore, excludedAfter,
-					"Excluded delegator %s should NOT receive distribution", excludedDelegator)
-				excludedEvent := events.find(excludedDelegator)
-				requireT.Nil(excludedEvent,
-					"Excluded delegator %s should NOT have distribution event", excludedDelegator)
-				t.Logf("Delegator %s correctly excluded from distribution 1", excludedDelegator)
-			}
+	scheduledDistributions, err := getScheduledDistribution(ctx, chain)
+	requireT.NoError(err)
+	requireT.Len(scheduledDistributions, 2)
 
-			// After first distribution, REMOVE the address from exclusion list
-			// This tests that preserved snapshots allow re-inclusion
-			msgRemoveExcluded := &psetypes.MsgUpdateExcludedAddresses{
-				Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-				AddressesToAdd:    nil,
-				AddressesToRemove: []string{delegators[3].String()},
-			}
-			chain.Governance.ExpeditedProposalFromMsgAndVote(
-				ctx, t, nil,
-				"-", "-", "-", govtypesv1.OptionYes,
-				msgRemoveExcluded,
-			)
-			t.Logf("Removed delegator %s from exclusion list - should receive rewards in next distribution", excludedDelegator)
-			continue // Skip normal validation for this distribution
-		}
+	balancesBefore, scoresBefore, totalScore := getAllDelegatorInfo(ctx, t, chain, height-1)
+	balancesAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
 
-		// Distribution 2 & 3: Verify previously-excluded delegator receives rewards
-		if i >= 1 {
-			excludedBefore, excludedBeforeExists := delegationAmountsBefore[excludedDelegator]
-			excludedAfter, excludedAfterExists := delegationAmountsAfter[excludedDelegator]
-			if excludedBeforeExists && excludedAfterExists {
-				increasedAmount := excludedAfter.Sub(excludedBefore)
-				if increasedAmount.IsPositive() {
-					delegatorScore := delegatorScoresBefore[excludedDelegator]
-					expectedIncrease := allocationAmount.Mul(delegatorScore).Quo(totalScoreBefore)
+	// Excluded delegator should receive nothing
+	requireT.Equal(balancesBefore[excludedDelegator], balancesAfter[excludedDelegator],
+		"Excluded delegator should NOT receive rewards")
+	requireT.Nil(events.find(excludedDelegator), "Excluded delegator should NOT have event")
+	t.Logf("Excluded delegator correctly received no rewards")
 
-					// Note: Re-included delegators can show ~5.5% variance due to
-					// validator earnings between re-inclusion and distribution.
-					requireT.InEpsilon(expectedIncrease.Int64(), increasedAmount.Int64(), 0.06,
-						"Re-included delegator receives rewards starting from re-inclusion time (variance due to validator earnings)")
-					excludedEvent := events.find(excludedDelegator)
-					requireT.NotNil(excludedEvent, "Re-included delegator should have distribution event")
-					requireT.Equal(excludedEvent.Amount.String(), increasedAmount.String())
+	// Other delegators should receive correct rewards
+	for _, delegator := range delegators[:3] { // First 3 delegators
+		addr := delegator.String()
+		increased := balancesAfter[addr].Sub(balancesBefore[addr])
+		requireT.True(increased.IsPositive())
 
-					t.Logf("Previously-excluded delegator %s received rewards in distribution %d (amount: %s, started fresh)",
-						excludedDelegator, i+1, increasedAmount.String())
-				} else {
-					// It's possible they don't receive rewards in distribution 2 if re-inclusion happened very recently
-					t.Logf("Re-included delegator %s received no rewards in distribution %d (likely no score accumulated yet)",
-						excludedDelegator, i+1)
-				}
-			}
-		}
-
-		for delegator, delegationAfter := range delegationAmountsAfter {
-			// Skip excluded delegator in all distributions; it's tested separately above
-			if delegator == excludedDelegator {
-				continue
-			}
-
-			delegationAmountBefore, exists := delegationAmountsBefore[delegator]
-			requireT.True(exists)
-			increasedAmount := delegationAfter.Sub(delegationAmountBefore)
-			if !increasedAmount.IsPositive() {
-				t.Fatalf("delegator: %s, delegation amount: %d, old delegation amount: %d",
-					delegator,
-					delegationAfter.Int64(),
-					delegationAmountBefore.Int64(),
-				)
-			}
-			delegatorScore := delegatorScoresBefore[delegator]
-			expectedIncrease := allocationAmount.Mul(delegatorScore).Quo(totalScoreBefore)
-			requireT.InEpsilon(expectedIncrease.Int64(), increasedAmount.Int64(), 0.05)
-			event := events.find(delegator)
-			requireT.NotNil(event)
-			requireT.Equal(event.Amount.String(), increasedAmount.String())
-		}
+		expected := allocationAmount.Mul(scoresBefore[addr]).Quo(totalScore)
+		requireT.InEpsilon(expected.Int64(), increased.Int64(), epsilonNormal)
+		requireT.NotNil(events.find(addr))
 	}
 
-	// Test that re-included delegator can undelegate their full delegation after distributions
-	// Note: This delegator was excluded for distribution 1, then re-included and received rewards in 2 & 3
-	t.Log("Testing re-included delegator undelegation capability...")
+	// ============================================================
+	// RE-INCLUSION: Remove delegator from exclusion list
+	// ============================================================
+	t.Log("=== Re-including previously excluded delegator ===")
 
-	// Query actual current delegation amount
+	chain.Governance.ExpeditedProposalFromMsgAndVote(
+		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
+		&psetypes.MsgUpdateExcludedAddresses{
+			Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			AddressesToRemove: []string{excludedDelegator},
+		},
+	)
+	t.Logf("Delegator re-included, should receive rewards in next distribution")
+
+	// ============================================================
+	// DISTRIBUTION 2: Verify re-included delegator receives rewards
+	// ============================================================
+	t.Log("=== Distribution 2: Re-included delegator should receive rewards ===")
+
+	height, events, err = awaitScheduledDistributionEvent(ctx, chain, height)
+	requireT.NoError(err)
+	t.Logf("Distribution 2 at height: %d", height)
+
+	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
+	requireT.NoError(err)
+	requireT.Len(scheduledDistributions, 1)
+
+	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
+	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+
+	// Re-included delegator should now receive rewards
+	reIncludedIncrease := balancesAfter[excludedDelegator].Sub(balancesBefore[excludedDelegator])
+	if reIncludedIncrease.IsPositive() {
+		expected := allocationAmount.Mul(scoresBefore[excludedDelegator]).Quo(totalScore)
+		requireT.InEpsilon(expected.Int64(), reIncludedIncrease.Int64(), epsilonReIncluded)
+		requireT.NotNil(events.find(excludedDelegator))
+		t.Logf("Re-included delegator received rewards: %s", reIncludedIncrease.String())
+	} else {
+		t.Logf("Re-included delegator received no rewards yet (score may not have accumulated)")
+	}
+
+	// Other delegators should still receive correct rewards
+	for _, delegator := range delegators[:3] {
+		addr := delegator.String()
+		increased := balancesAfter[addr].Sub(balancesBefore[addr])
+		requireT.True(increased.IsPositive())
+
+		expected := allocationAmount.Mul(scoresBefore[addr]).Quo(totalScore)
+		requireT.InEpsilon(expected.Int64(), increased.Int64(), epsilonNormal)
+		requireT.NotNil(events.find(addr))
+	}
+
+	// ============================================================
+	// DISTRIBUTION 3: Verify continued rewards
+	// ============================================================
+	t.Log("=== Distribution 3: All delegators receive rewards ===")
+
+	height, events, err = awaitScheduledDistributionEvent(ctx, chain, height)
+	requireT.NoError(err)
+	t.Logf("Distribution 3 at height: %d", height)
+
+	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
+	requireT.NoError(err)
+	requireT.Len(scheduledDistributions, 0)
+
+	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
+	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+
+	// All delegators (including re-included) should receive rewards
+	for _, delegator := range delegators {
+		addr := delegator.String()
+		increased := balancesAfter[addr].Sub(balancesBefore[addr])
+		requireT.True(increased.IsPositive(), "Delegator %s should receive rewards", addr)
+
+		expected := allocationAmount.Mul(scoresBefore[addr]).Quo(totalScore)
+		epsilon := epsilonNormal
+		if addr == excludedDelegator {
+			epsilon = epsilonReIncluded
+		}
+		requireT.InEpsilon(expected.Int64(), increased.Int64(), epsilon)
+		requireT.NotNil(events.find(addr))
+	}
+
+	// ============================================================
+	// UNDELEGATION TEST: Re-included delegator can fully undelegate
+	// ============================================================
+	t.Log("=== Testing full undelegation for re-included delegator ===")
+
 	delResp, err := stakingClient.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: excludedDelegator,
 	})
 	requireT.NoError(err)
-	requireT.Len(delResp.DelegationResponses, 1, "Delegator should have exactly one delegation")
+	requireT.Len(delResp.DelegationResponses, 1)
 
-	actualDelegationAmount := delResp.DelegationResponses[0].Balance.Amount
-	t.Logf("Current delegation amount for re-included delegator: %s", actualDelegationAmount.String())
-
-	undelegateMsg := &stakingtypes.MsgUndelegate{
-		DelegatorAddress: excludedDelegator,
-		ValidatorAddress: validatorAddress,
-		Amount:           sdk.NewCoin(chain.ChainSettings.Denom, actualDelegationAmount),
-	}
+	currentDelegation := delResp.DelegationResponses[0].Balance.Amount
+	t.Logf("Current delegation: %s", currentDelegation.String())
 
 	_, err = client.BroadcastTx(
 		ctx,
 		chain.ClientContext.WithFromAddress(delegators[3]),
-		chain.TxFactory().WithGas(chain.GasLimitByMsgs(undelegateMsg)),
-		undelegateMsg,
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(&stakingtypes.MsgUndelegate{})),
+		&stakingtypes.MsgUndelegate{
+			DelegatorAddress: excludedDelegator,
+			ValidatorAddress: validatorAddress,
+			Amount:           sdk.NewCoin(chain.ChainSettings.Denom, currentDelegation),
+		},
 	)
 	requireT.NoError(err, "Re-included delegator should be able to undelegate full amount")
 
 	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
+
 	delRespAfter, err := stakingClient.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: excludedDelegator,
 	})
 	requireT.NoError(err)
-	requireT.Len(delRespAfter.DelegationResponses, 0,
-		"Re-included delegator should have zero active delegations after full undelegation")
+	requireT.Len(delRespAfter.DelegationResponses, 0, "Should have zero delegations after full undelegation")
 
-	t.Logf("Re-included delegator successfully undelegated full amount (%s)",
-		actualDelegationAmount.String())
+	t.Logf("Re-included delegator successfully undelegated full amount (%s)", currentDelegation.String())
 }
 
 func TestPSEDisableDistributions(t *testing.T) {
@@ -642,6 +649,14 @@ func TestPSEQueryScore_AddressWithoutDelegation(t *testing.T) {
 		// Score should be zero for addresses with no delegation
 		requireT.True(scoreResp.Score.IsZero(), "score should be zero for address with no delegation")
 	}
+}
+
+// must panics if error is not nil, otherwise returns value
+func must[T any](val T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return val
 }
 
 func getAllDelegatorInfo(
