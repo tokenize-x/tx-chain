@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
@@ -163,4 +164,30 @@ func (k Keeper) UpdateClearingAccountMappings(
 	params.ClearingAccountMappings = mappings
 
 	return k.SetParams(ctx, params)
+}
+
+// IsExcludedAddress checks if the given address is in the excluded addresses list.
+// Returns false if params are not initialized (e.g., during genesis).
+func (k Keeper) IsExcludedAddress(ctx context.Context, addr sdk.AccAddress) bool {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		// During genesis, params might not be initialized yet - treat all as non-excluded
+		if errors.Is(err, collections.ErrNotFound) {
+			return false
+		}
+		// For other errors, conservatively treat as non-excluded
+		return false
+	}
+
+	addrStr, err := k.addressCodec.BytesToString(addr)
+	if err != nil {
+		return false
+	}
+
+	for _, excluded := range params.ExcludedAddresses {
+		if excluded == addrStr {
+			return true
+		}
+	}
+	return false
 }
