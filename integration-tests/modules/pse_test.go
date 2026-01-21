@@ -105,7 +105,11 @@ func TestPSEDistribution(t *testing.T) {
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-			Mappings:  must(upgradev6.DefaultClearingAccountMappings(chain.ChainSettings.ChainID)),
+			Mappings: func() []psetypes.ClearingAccountMapping {
+				m, err := upgradev6.DefaultClearingAccountMappings(chain.ChainSettings.ChainID)
+				requireT.NoError(err)
+				return m
+			}(),
 		},
 		&psetypes.MsgUpdateExcludedAddresses{
 			Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
@@ -649,14 +653,6 @@ func TestPSEQueryScore_AddressWithoutDelegation(t *testing.T) {
 		// Score should be zero for addresses with no delegation
 		requireT.True(scoreResp.Score.IsZero(), "score should be zero for address with no delegation")
 	}
-}
-
-// must panics if error is not nil, otherwise returns value
-func must[T any](val T, err error) T {
-	if err != nil {
-		panic(err)
-	}
-	return val
 }
 
 func getAllDelegatorInfo(

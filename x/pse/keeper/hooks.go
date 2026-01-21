@@ -47,14 +47,6 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return nil
 	}
 
-	// Update DelegationTimeEntry for non-excluded addresses
-	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
-		LastChangedUnixSec: blockTimeUnixSeconds,
-		Shares:             delegation.Shares,
-	}); err != nil {
-		return err
-	}
-
 	// Only update AccountScoreSnapshot for non-excluded addresses
 	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
@@ -68,6 +60,14 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 	newScore := lastScore.Add(addedScore)
+
+	// Update DelegationTimeEntry for non-excluded addresses
+	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
+		LastChangedUnixSec: blockTimeUnixSeconds,
+		Shares:             delegation.Shares,
+	}); err != nil {
+		return err
+	}
 
 	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
 }
