@@ -42,7 +42,7 @@ func (k Keeper) DistributeCommunityPSE(
 
 	// Clear all account score snapshots.
 	// Excluded addresses should not have snapshots (cleared when added to exclusion list),
-	// but we clear unconditionally for simplicity and safety.
+	// but we clear unconditionally for all addresses.
 	if err := k.AccountScoreSnapshot.Clear(ctx, nil); err != nil {
 		return err
 	}

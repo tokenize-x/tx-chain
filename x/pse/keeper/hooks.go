@@ -43,7 +43,11 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	}
 
 	// Stop score addition for excluded addresses
-	if h.k.IsExcludedAddress(ctx, delAddr) {
+	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
+	if err != nil {
+		return err
+	}
+	if isExcluded {
 		return nil
 	}
 
@@ -83,7 +87,11 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	}
 
 	// Stop score addition for excluded addresses
-	if h.k.IsExcludedAddress(ctx, delAddr) {
+	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
+	if err != nil {
+		return err
+	}
+	if isExcluded {
 		return nil
 	}
 
@@ -101,7 +109,7 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	}
 	newScore := lastScore.Add(addedScore)
 
-	// Remove DelegationTimeEntry for all addresses, including excluded ones
+	// Remove DelegationTimeEntry for non-excluded addresses
 	if err := h.k.RemoveDelegationTimeEntry(ctx, valAddr, delAddr); err != nil {
 		return err
 	}
