@@ -231,7 +231,7 @@ func TestKeeper_Distribute(t *testing.T) {
 	}
 }
 
-// Test_ExcludedAddress_FullLifecycle validates the complete lifecycle of excluded addresses
+// Test_ExcludedAddress_FullLifecycle validates the complete lifecycle of excluded addresses.
 func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT := require.New(t)
 
@@ -339,7 +339,10 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	err = pseKeeper.DistributeCommunityPSE(ctx, bondDenom, amount, scheduledAt)
 	requireT.NoError(err)
 	balanceAfter := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
-	requireT.Equal(balanceBefore.Amount.String(), balanceAfter.Amount.String(), "Excluded address should receive no rewards")
+	requireT.Equal(
+		balanceBefore.Amount.String(), balanceAfter.Amount.String(),
+		"Excluded address should receive no rewards",
+	)
 
 	// Step 6: Verify excluded delegator can fully undelegate after distribution
 	msgUndel := &stakingtypes.MsgUndelegate{
