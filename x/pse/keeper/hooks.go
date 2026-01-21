@@ -42,6 +42,16 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// Stop score addition for excluded addresses
+	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
+	if err != nil {
+		return err
+	}
+	if isExcluded {
+		return nil
+	}
+
+	// Only update AccountScoreSnapshot for non-excluded addresses
 	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		lastScore = sdkmath.NewInt(0)
@@ -55,6 +65,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	}
 	newScore := lastScore.Add(addedScore)
 
+	// Update DelegationTimeEntry for non-excluded addresses
 	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
 		LastChangedUnixSec: blockTimeUnixSeconds,
 		Shares:             delegation.Shares,
@@ -75,6 +86,16 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// Stop score addition for excluded addresses
+	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
+	if err != nil {
+		return err
+	}
+	if isExcluded {
+		return nil
+	}
+
+	// Only update AccountScoreSnapshot for non-excluded addresses
 	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		lastScore = sdkmath.NewInt(0)
@@ -88,6 +109,7 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	}
 	newScore := lastScore.Add(addedScore)
 
+	// Remove DelegationTimeEntry for non-excluded addresses
 	if err := h.k.RemoveDelegationTimeEntry(ctx, valAddr, delAddr); err != nil {
 		return err
 	}
