@@ -35,7 +35,7 @@ func main() {
 	)
 
 	cfg := deterministicgas.DefaultConfig()
-	for msgURL, gasFunc := range cfg.GasByMessageMap() {
+	for msgURL, gasFunc := range cfg.GasByMessageMap() { //nolint:deterministicmaplint // the results are sorted later
 		fnFullName := runtime.FuncForPC(reflect.ValueOf(gasFunc).Pointer()).Name()
 		fnParts := strings.Split(fnFullName, "/")
 		fnShortName := fnParts[len(fnParts)-1]
