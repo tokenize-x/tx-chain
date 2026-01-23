@@ -21,9 +21,9 @@ const (
 	Osmosis tools.Name = "osmosis"
 	// Hermes is an Inter-Blockchain Communication (IBC) relayer.
 	Hermes tools.Name = "hermes"
-	// CoredV500 is an older version of cored used for testing chain upgrades.
+	// CoredV503 is an older version of cored used for testing chain upgrades.
 	// TODO (v7): Should be renamed to TXdV600.
-	CoredV500 tools.Name = "cored-v5.0.0"
+	CoredV503 tools.Name = "cored-v5.0.3"
 	// Buf is a tool for working with Protocol Buffers.
 	Buf tools.Name = "buf"
 	// Protoc is the Protocol Buffers compiler.
@@ -223,49 +223,49 @@ var Tools = []tools.Tool{
 
 	// https://github.com/CoreumFoundation/coreum/releases
 	tools.BinaryTool{
-		Name:    CoredV500,
-		Version: "v5.0.0",
+		Name:    CoredV503,
+		Version: "v5.0.3",
 		Sources: tools.Sources{
 			tools.TargetPlatformLinuxAMD64InDocker: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.0/cored-linux-amd64",
-				Hash: "sha256:6bdbd15f7159e9d0aef62369cb822acf57bad51c4c664f6736b95ecfb8250702",
+				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-amd64",
+				Hash: "sha256:238fca20014f885613ded2cf0490bfc8b672a25d33bc8a19892c3ac3b0418cf5",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.0": "cored-linux-amd64",
+					"bin/cored-v5.0.3": "cored-linux-amd64",
 				},
 			},
 			tools.TargetPlatformLinuxARM64InDocker: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.0/cored-linux-arm64",
-				Hash: "sha256:cee6aeb8043529cce43713f9213c8866f3c4745198a5b9ef44318d6b6728a380",
+				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-arm64",
+				Hash: "sha256:2752e17ac4d993256687e044247cde2a24b660106d134eadb224beb6ec707303",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.0": "cored-linux-arm64",
+					"bin/cored-v5.0.3": "cored-linux-arm64",
 				},
 			},
 			tools.TargetPlatformLinuxAMD64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.0/cored-linux-amd64",
-				Hash: "sha256:6bdbd15f7159e9d0aef62369cb822acf57bad51c4c664f6736b95ecfb8250702",
+				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-amd64",
+				Hash: "sha256:238fca20014f885613ded2cf0490bfc8b672a25d33bc8a19892c3ac3b0418cf5",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.0": "cored-linux-amd64",
+					"bin/cored-v5.0.3": "cored-linux-amd64",
 				},
 			},
 			tools.TargetPlatformLinuxARM64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.0/cored-linux-arm64",
-				Hash: "sha256:cee6aeb8043529cce43713f9213c8866f3c4745198a5b9ef44318d6b6728a380",
+				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-arm64",
+				Hash: "sha256:2752e17ac4d993256687e044247cde2a24b660106d134eadb224beb6ec707303",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.0": "cored-linux-arm64",
+					"bin/cored-v5.0.3": "cored-linux-arm64",
 				},
 			},
 			tools.TargetPlatformDarwinAMD64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.0/cored-darwin-amd64",
-				Hash: "sha256:bb32768a1114733dc9a90db70a32dd8cd25828a725a57fc9831301ceb648c0f9",
+				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-darwin-amd64",
+				Hash: "sha256:4de3948b524df48ba7f300f4948a0e9e490e038e7845be2c2ef76b0e2fdaeb0b",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.0": "cored-darwin-amd64",
+					"bin/cored-v5.0.3": "cored-darwin-amd64",
 				},
 			},
 			tools.TargetPlatformDarwinARM64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.0/cored-darwin-arm64",
-				Hash: "sha256:8776d26dcd02694c927858da183e81a5cb51ec25aa6fa22d382d8b082ca57cc1",
+				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-darwin-arm64",
+				Hash: "sha256:eff5ea0be58b655a1e0ddd07eb361cc9717058aae50eeac5cfffcfcfbf9b9184",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.0": "cored-darwin-arm64",
+					"bin/cored-v5.0.3": "cored-darwin-arm64",
 				},
 			},
 		},

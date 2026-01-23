@@ -6,6 +6,6 @@ import "github.com/tokenize-x/tx-chain/build/tools"
 func TXdUpgrades() map[string]string {
 	return map[string]string{
 		"v6": "txd",
-		"v5": string(tools.CoredV500),
+		"v5": string(tools.CoredV503),
 	}
 }
