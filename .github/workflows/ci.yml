@@ -25,7 +25,7 @@ jobs:
             "integration tests tx-chain-modules",
             "integration tests tx-chain-stress",
             "integration tests tx-chain-ibc",
-            "integration tests tx-chain-upgrade-v5.0.0",
+            "integration tests tx-chain-upgrade",
           ]
         include:
           - ci_step: "lint"
@@ -60,7 +60,7 @@ jobs:
             linter-cache: false
             wasm-cache: true
             codecov: false
-          - ci_step: "integration tests tx-chain-upgrade-v5.0.0"
+          - ci_step: "integration tests tx-chain-upgrade"
             command: make integration-tests-upgrade
             linter-cache: false
             wasm-cache: true
