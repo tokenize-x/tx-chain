@@ -280,12 +280,6 @@ func Lint(ctx context.Context, deps types.DepsFunc) error {
 		lintProto,
 		breakingProto,
 	)
-
-	ctx, err := golang.WithCustomLinters(ctx, txchaintools.DeterministicMapLint)
-	if err != nil {
-		return err
-	}
-
 	return lint.Lint(ctx, deps)
 }
 

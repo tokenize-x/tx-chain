@@ -1,8 +1,6 @@
 package deterministicgas
 
 import (
-	"maps"
-
 	storetypes "cosmossdk.io/store/types"
 	evidencetypes "cosmossdk.io/x/evidence/types"
 	feegranttypes "cosmossdk.io/x/feegrant"
@@ -401,7 +399,11 @@ func (cfg Config) GasRequiredByMessage(msg sdk.Msg) (uint64, bool) {
 
 // GasByMessageMap returns copy mapping of message types and functions to calculate gas for specific type.
 func (cfg Config) GasByMessageMap() map[MsgURL]gasByMsgFunc {
-	return maps.Clone(cfg.gasByMsg)
+	newGasByMsg := make(map[MsgURL]gasByMsgFunc, len(cfg.gasByMsg))
+	for k, v := range cfg.gasByMsg {
+		newGasByMsg[k] = v
+	}
+	return newGasByMsg
 }
 
 // MsgToMsgURL returns TypeURL of a msg in cosmos SDK style.
