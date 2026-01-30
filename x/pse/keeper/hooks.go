@@ -24,6 +24,8 @@ func (k Keeper) Hooks() Hooks {
 	return Hooks{k}
 }
 
+// TODO: These next 2 functions have some duplicate codes that may be extracted
+// TODO: These hooks still do unnecessary calculation after 84 month and scores are calculated and stored. We can add a check for early return
 // AfterDelegationModified implements the staking hooks interface.
 func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
 	delegation, err := h.k.stakingKeeper.GetDelegation(ctx, delAddr, valAddr)
@@ -42,6 +44,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// TODO: hoist this check to the top of function to avoid unnecessary work
 	// Stop score addition for excluded addresses
 	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
 	if err != nil {
@@ -86,6 +89,7 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// TODO: hoist this check to the top of function to avoid unnecessary work
 	// Stop score addition for excluded addresses
 	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
 	if err != nil {
@@ -123,13 +127,24 @@ func calculateAddedScore(
 	valAddr sdk.ValAddress,
 	delegationTimeEntry types.DelegationTimeEntry,
 ) (sdkmath.Int, error) {
+	// TODO: does it make sense to retrieve most of things here once and keep them in memory, because they are constant? We are calling this per delegation time entry
 	val, err := keeper.stakingKeeper.GetValidator(ctx, valAddr)
 	if err != nil {
 		return sdkmath.NewInt(0), err
 	}
 
+	// TODO (nit): we have this time in calling function, we can pass it, also we are unwrapping SDK context twice here
 	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	delegationDuration := blockTimeUnixSeconds - delegationTimeEntry.LastChangedUnixSec
+	// TODO: let's be safe and handle this case:
+	if delegationDuration < 0 {
+		// Clock skew or migration issue - use zero duration
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		sdkCtx.Logger().Warn("negative delegation duration detected, using zero",
+			"block_time", blockTimeUnixSeconds,
+			"last_changed", delegationTimeEntry.LastChangedUnixSec)
+		delegationDuration = 0
+	}
 	previousDelegatedTokens := val.TokensFromShares(delegationTimeEntry.Shares).TruncateInt()
 	delegationScore := previousDelegatedTokens.MulRaw(delegationDuration)
 	return delegationScore, nil

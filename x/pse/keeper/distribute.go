@@ -148,6 +148,7 @@ func (k Keeper) distributeToDelegator(
 			return sdkmath.NewInt(0), err
 		}
 
+		// TODO: do we need to get validators for each delegation? or we can get them beforehand?
 		val, err := k.stakingKeeper.GetValidator(ctx, valAddr)
 		if err != nil {
 			return sdkmath.NewInt(0), err

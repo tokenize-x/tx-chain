@@ -123,16 +123,21 @@ func (k Keeper) UpdateExcludedAddresses(
 		if err != nil {
 			return err
 		}
-		defer iter.Close()
 
 		for ; iter.Valid(); iter.Next() {
 			kv, err := iter.KeyValue()
 			if err != nil {
+				iter.Close()
 				return err
 			}
 			if err := k.DelegationTimeEntries.Remove(ctx, kv.Key); err != nil {
+				iter.Close()
 				return err
 			}
+		}
+		// Close iterator immediately after loop completes, not deferred
+		if err := iter.Close(); err != nil {
+			return err
 		}
 	}
 
