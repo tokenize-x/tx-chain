@@ -788,7 +788,7 @@ func TestAmino(t *testing.T) {
 				Issuer: address,
 				Symbol: "ABC",
 			},
-			wantAminoJSON: `{"type":"assetft/MsgIssue","value":{"burn_rate":"0","initial_amount":"0","issuer":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","send_commission_rate":"0","symbol":"ABC"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgIssue","value":{"issuer":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","symbol":"ABC","initial_amount":"0","burn_rate":"0","send_commission_rate":"0"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgMint{}),
@@ -796,7 +796,7 @@ func TestAmino(t *testing.T) {
 				Sender: address,
 				Coin:   coin,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgMint","value":{"coin":{"amount":"1","denom":"my-denom"},"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgMint","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"denom":"my-denom","amount":"1"}}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgBurn{}),
@@ -804,7 +804,7 @@ func TestAmino(t *testing.T) {
 				Sender: address,
 				Coin:   coin,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgBurn","value":{"coin":{"amount":"1","denom":"my-denom"},"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgBurn","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"denom":"my-denom","amount":"1"}}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgFreeze{}),
@@ -812,7 +812,7 @@ func TestAmino(t *testing.T) {
 				Sender: address,
 				Coin:   coin,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgFreeze","value":{"coin":{"amount":"1","denom":"my-denom"},"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgFreeze","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"denom":"my-denom","amount":"1"}}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgUnfreeze{}),
@@ -820,7 +820,7 @@ func TestAmino(t *testing.T) {
 				Sender: address,
 				Coin:   coin,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgUnfreeze","value":{"coin":{"amount":"1","denom":"my-denom"},"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgUnfreeze","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"denom":"my-denom","amount":"1"}}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgSetFrozen{}),
@@ -829,7 +829,7 @@ func TestAmino(t *testing.T) {
 				Account: address,
 				Coin:    coin,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgSetFrozen","value":{"account":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"amount":"1","denom":"my-denom"},"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgSetFrozen","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","account":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"denom":"my-denom","amount":"1"}}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgGloballyFreeze{}),
@@ -837,7 +837,7 @@ func TestAmino(t *testing.T) {
 				Sender: address,
 				Denom:  coin.Denom,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgGloballyFreeze","value":{"denom":"my-denom","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgGloballyFreeze","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","denom":"my-denom"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgGloballyUnfreeze{}),
@@ -845,7 +845,7 @@ func TestAmino(t *testing.T) {
 				Sender: address,
 				Denom:  coin.Denom,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgGloballyUnfreeze","value":{"denom":"my-denom","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgGloballyUnfreeze","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","denom":"my-denom"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgSetWhitelistedLimit{}),
@@ -854,7 +854,7 @@ func TestAmino(t *testing.T) {
 				Account: address,
 				Coin:    coin,
 			},
-			wantAminoJSON: `{"type":"assetft/MsgSetWhitelistedLimit","value":{"account":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"amount":"1","denom":"my-denom"},"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgSetWhitelistedLimit","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","account":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","coin":{"denom":"my-denom","amount":"1"}}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgUpdateDEXUnifiedRefAmount{}),
@@ -863,7 +863,7 @@ func TestAmino(t *testing.T) {
 				Denom:            coin.Denom,
 				UnifiedRefAmount: sdkmath.LegacyMustNewDecFromStr("1.3"),
 			},
-			wantAminoJSON: `{"type":"assetft/MsgUpdateDEXUnifiedRefAmount","value":{"denom":"my-denom","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","unified_ref_amount":"1.300000000000000000"}}`,
+			wantAminoJSON: `{"type":"assetft/MsgUpdateDEXUnifiedRefAmount","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","denom":"my-denom","unified_ref_amount":"1.300000000000000000"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgUpdateDEXWhitelistedDenoms{}),
@@ -872,7 +872,7 @@ func TestAmino(t *testing.T) {
 				Denom:             coin.Denom,
 				WhitelistedDenoms: []string{"denom2", "denom3"},
 			},
-			wantAminoJSON: `{"type":"assetft/MsgUpdateDEXWhitelistedDenoms","value":{"denom":"my-denom","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","whitelisted_denoms":["denom2","denom3"]}}`,
+			wantAminoJSON: `{"type":"assetft/MsgUpdateDEXWhitelistedDenoms","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","denom":"my-denom","whitelisted_denoms":["denom2","denom3"]}}`,
 		},
 	}
 
@@ -881,7 +881,7 @@ func TestAmino(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			generatedJSON := legacyAmino.Amino.MustMarshalJSON(tt.msg)
-			require.Equal(t, tt.wantAminoJSON, string(sdk.MustSortJSON(generatedJSON)))
+			require.Equal(t, tt.wantAminoJSON, string(generatedJSON))
 		})
 	}
 }
