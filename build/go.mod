@@ -33,8 +33,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
 	github.com/tokenize-x/tx-chain/v6 v6.0.0-20251120065312-4ec1d9036a1d
-	github.com/tokenize-x/tx-crust v0.0.0-20251225123722-dd141dffcb7b
-	github.com/tokenize-x/tx-crust/znet v0.0.0-20251225123722-dd141dffcb7b
+	github.com/tokenize-x/tx-crust v0.0.0-20260127055649-9b4dc818ce1c
+	github.com/tokenize-x/tx-crust/znet v0.0.0-20260127055649-9b4dc818ce1c
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 
@@ -99,7 +99,7 @@ require (
 	github.com/cockroachdb/pebble v1.1.5 // indirect
 	github.com/cockroachdb/redact v1.1.6 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
-	github.com/cometbft/cometbft v0.38.19 // indirect
+	github.com/cometbft/cometbft v0.38.21 // indirect
 	github.com/cometbft/cometbft-db v0.14.1 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-db v1.1.1 // indirect
