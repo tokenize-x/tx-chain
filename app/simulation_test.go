@@ -8,11 +8,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	simulationtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 	clientcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
 	"github.com/stretchr/testify/require"
-
 	"github.com/tokenize-x/tx-chain/v6/app"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
@@ -83,7 +83,7 @@ func TestFullAppSimulation(t *testing.T) {
 		simApp.GetBaseApp(),
 		simtestutil.AppStateFn(simApp.AppCodec(), simApp.SimulationManager(), simApp.DefaultGenesis()),
 		simulationtypes.RandomAccounts,
-		simtestutil.SimulationOperations(simApp, simApp.AppCodec(), cfg),
+		simtestutil.BuildSimulationOperations(simApp, simApp.AppCodec(), cfg, moduletestutil.MakeTestTxConfig()),
 		simApp.ModuleAccountAddrs(),
 		cfg,
 		simApp.AppCodec(),
