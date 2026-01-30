@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 	clientcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tokenize-x/tx-chain/v6/app"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
