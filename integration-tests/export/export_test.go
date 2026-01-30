@@ -54,6 +54,7 @@ var ignoredPrefixes = map[string][][]byte{
 	},
 	ibcexported.StoreKey: {
 		ibchost.KeyClientStorePrefix,
+		[]byte(ibchost.KeyNextSeqSendPrefix),
 	},
 	authzkeeper.StoreKey: {
 		authzkeeper.GrantQueuePrefix,
