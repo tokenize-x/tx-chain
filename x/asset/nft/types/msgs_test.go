@@ -835,7 +835,7 @@ func TestAmino(t *testing.T) {
 				Issuer: address,
 				Symbol: "ABC",
 			},
-			wantAminoJSON: `{"type":"assetnft/MsgIssueClass","value":{"issuer":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","royalty_rate":"0","symbol":"ABC"}}`,
+			wantAminoJSON: `{"type":"assetnft/MsgIssueClass","value":{"issuer":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","symbol":"ABC","royalty_rate":"0"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgMint{}),
@@ -843,7 +843,7 @@ func TestAmino(t *testing.T) {
 				Sender:  address,
 				ClassID: "classID",
 			},
-			wantAminoJSON: `{"type":"assetnft/MsgMint","value":{"class_id":"classID","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetnft/MsgMint","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","class_id":"classID"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgBurn{}),
@@ -852,7 +852,7 @@ func TestAmino(t *testing.T) {
 				ClassID: "classID",
 				ID:      "nftID",
 			},
-			wantAminoJSON: `{"type":"assetnft/MsgBurn","value":{"class_id":"classID","id":"nftID","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetnft/MsgBurn","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","class_id":"classID","id":"nftID"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgFreeze{}),
@@ -861,7 +861,7 @@ func TestAmino(t *testing.T) {
 				ClassID: "classID",
 				ID:      "nftID",
 			},
-			wantAminoJSON: `{"type":"assetnft/MsgFreeze","value":{"class_id":"classID","id":"nftID","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetnft/MsgFreeze","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","class_id":"classID","id":"nftID"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgUnfreeze{}),
@@ -870,7 +870,7 @@ func TestAmino(t *testing.T) {
 				ClassID: "classID",
 				ID:      "nftID",
 			},
-			wantAminoJSON: `{"type":"assetnft/MsgUnfreeze","value":{"class_id":"classID","id":"nftID","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetnft/MsgUnfreeze","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","class_id":"classID","id":"nftID"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgAddToWhitelist{}),
@@ -879,7 +879,7 @@ func TestAmino(t *testing.T) {
 				ClassID: "classID",
 				ID:      "nftID",
 			},
-			wantAminoJSON: `{"type":"assetnft/MsgAddToWhitelist","value":{"class_id":"classID","id":"nftID","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetnft/MsgAddToWhitelist","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","class_id":"classID","id":"nftID"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgRemoveFromWhitelist{}),
@@ -888,7 +888,7 @@ func TestAmino(t *testing.T) {
 				ClassID: "classID",
 				ID:      "nftID",
 			},
-			wantAminoJSON: `{"type":"assetnft/MsgRemoveFromWhitelist","value":{"class_id":"classID","id":"nftID","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"assetnft/MsgRemoveFromWhitelist","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","class_id":"classID","id":"nftID"}}`,
 		},
 	}
 
@@ -897,7 +897,7 @@ func TestAmino(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			generatedJSON := legacyAmino.Amino.MustMarshalJSON(tt.msg)
-			require.Equal(t, tt.wantAminoJSON, string(sdk.MustSortJSON(generatedJSON)))
+			require.Equal(t, tt.wantAminoJSON, string(generatedJSON))
 		})
 	}
 }
