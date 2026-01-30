@@ -70,6 +70,19 @@ jobs:
     env:
       CARGO_NET_GIT_FETCH_WITH_CLI: true
     steps:
+      - name: Go version used to build builder
+        run: go version
+      - name: Checkout tx-chain
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup go cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
       - name: Setup tx-crust cache
         uses: actions/cache@v4
         with:
@@ -109,19 +122,6 @@ jobs:
             echo -e "[url \"git@tx-wasm-sdk-private:tokenize-x/tx-wasm-sdk\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-wasm-sdk\""
             echo -e "[url \"git@tx-std-derive-private:tokenize-x/tx-std-derive\"]\n        insteadOf = \"https://github.com/tokenize-x/tx-std-derive\""
           } > ~/.gitconfig
-      - name: Go version used to build builder
-        run: go version
-      - name: Checkout tx-chain
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Setup go cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
       - name: Make builder
         run: |
           ${{ github.workspace }}/bin/tx-chain-builder build/me

@@ -19,7 +19,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	deterministicmap "github.com/tokenize-x/tx-chain/v6/pkg/deterministic-map"
 	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
 )
 
@@ -70,7 +69,10 @@ func GetTxCmd() *cobra.Command {
 
 // CmdTxIssueClass returns IssueClass cobra command.
 func CmdTxIssueClass() *cobra.Command {
-	allowedFeatures := deterministicmap.FromMap(types.ClassFeature_name).Values()
+	allowedFeatures := make([]string, 0, len(types.ClassFeature_name))
+	for _, n := range types.ClassFeature_name {
+		allowedFeatures = append(allowedFeatures, n)
+	}
 	allowedFeaturesString := strings.Join(allowedFeatures, ",")
 
 	cmd := &cobra.Command{

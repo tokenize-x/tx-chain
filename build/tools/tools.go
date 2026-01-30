@@ -40,8 +40,6 @@ const (
 	ProtocGenBufLint tools.Name = "protoc-gen-buf-lint"
 	// ProtocGenBufBreaking detects breaking changes in Protobuf files.
 	ProtocGenBufBreaking tools.Name = "protoc-gen-buf-breaking"
-	// DeterministicMapLint lints deterministic map usage.
-	DeterministicMapLint tools.Name = "deterministicmaplint"
 )
 
 // Tools list of required binaries and libraries.
@@ -382,13 +380,6 @@ var Tools = []tools.Tool{
 		Name:    ProtocGenBufBreaking,
 		Version: "v1.26.1",
 		Package: "github.com/bufbuild/buf/cmd/protoc-gen-buf-breaking",
-	},
-
-	tools.CustomLinter{
-		Name:   DeterministicMapLint,
-		Module: "pkg/deterministic-map/deterministicmaplint",
-		Local:  true,
-		Path:   "pkg/deterministic-map/deterministicmaplint",
 	},
 }
 
