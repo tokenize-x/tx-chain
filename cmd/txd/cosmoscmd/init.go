@@ -15,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/input"
 	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
@@ -57,7 +56,7 @@ func displayInfo(info printInfo) error {
 		return err
 	}
 
-	_, err = fmt.Fprintf(os.Stderr, "%s\n", sdk.MustSortJSON(out))
+	_, err = fmt.Fprintf(os.Stderr, "%s\n", string(out))
 
 	return err
 }

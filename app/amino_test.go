@@ -9,10 +9,8 @@ import (
 	msgv1 "cosmossdk.io/api/cosmos/msg/v1"
 	"cosmossdk.io/x/feegrant"
 	"cosmossdk.io/x/nft"
-	sdktestdatatypes "github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdktxtypes "github.com/cosmos/cosmos-sdk/types/tx"
-	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
@@ -100,8 +98,7 @@ func TestLegacyAmino_ExpectedMessages(t *testing.T) {
 		sdk.MsgTypeURL(&ibcinterchainaccountshosttypes.MsgUpdateParams{}):    {},
 
 		// internal cosmos
-		sdk.MsgTypeURL(&sdktestdatatypes.MsgCreateDog{}): {},
-		sdk.MsgTypeURL(&sdktxtypes.Tx{}):                 {},
+		sdk.MsgTypeURL(&sdktxtypes.Tx{}): {},
 
 		// feegrant
 		sdk.MsgTypeURL(&feegrant.MsgPruneAllowances{}): {},
@@ -125,7 +122,7 @@ func TestLegacyAmino_ExpectedMessages(t *testing.T) {
 		}
 
 		messageURL := sdk.MsgTypeURL(sdkMsg)
-		_, isLegacyMessage := protoInterface.(legacytx.LegacyMsg)
+		_, isLegacyMessage := protoInterface.(sdk.LegacyMsg)
 		if isLegacyMessage {
 			continue
 		}
