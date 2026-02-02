@@ -50,13 +50,28 @@ func newPrintInfo(moniker, chainID, nodeID, genTxsDir string, appMessage json.Ra
 	}
 }
 
+// sortJSONKeys unmarshals JSON and re-marshals with sorted keys for deterministic output.
+// encoding/json sorts map keys when marshaling, so round-tripping achieves this.
+func mustSortJSONKeys(toSortJSON []byte) []byte {
+	var c any
+	err := json.Unmarshal(toSortJSON, &c)
+	if err != nil {
+		panic(err)
+	}
+	js, err := json.Marshal(c)
+	if err != nil {
+		panic(err)
+	}
+	return js
+}
+
 func displayInfo(info printInfo) error {
 	out, err := json.MarshalIndent(info, "", " ")
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(os.Stderr, "%s\n", string(out))
+	_, err = fmt.Fprintf(os.Stderr, "%s\n", string(mustSortJSONKeys(out)))
 
 	return err
 }
