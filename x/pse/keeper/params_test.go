@@ -1,8 +1,12 @@
 package keeper_test
 
 import (
+	"fmt"
+	"math"
+	"runtime"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -225,4 +229,144 @@ func TestUpdateClearingMappings_Authority(t *testing.T) {
 	// Test with correct authority
 	err = pseKeeper.UpdateClearingAccountMappings(ctx, correctAuthority, mappings)
 	requireT.NoError(err, "should accept correct authority")
+}
+
+func TestCollectionsMapIteratorMemoryUsage(t *testing.T) {
+	requireT := require.New(t)
+
+	testCases := []struct {
+		name           string
+		closeImmediate bool // true = close after each iteration, false = defer all closes
+	}{
+		{
+			name:           "close_immediate",
+			closeImmediate: true,
+		},
+		{
+			name:           "close_deferred",
+			closeImmediate: false,
+		},
+	}
+
+	humanize := func(i int64) string {
+		prefix := ""
+		if i < 0 {
+			prefix = "-"
+			i *= -1
+		}
+		s := uint64(i)
+		if s == 0 {
+			return "0 bytes"
+		}
+
+		units := []string{"", "Kilo", "Mega", "Giga", "Tera"}
+
+		// Find the appropriate unit
+		index := 0
+		value := float64(s)
+		for value >= 1024 && index < len(units)-1 {
+			value /= 1024
+			index++
+		}
+
+		// Round to 2 decimal places
+		rounded := math.Round(value*100) / 100
+
+		return fmt.Sprintf("%s%.2f %sbytes", prefix, rounded, units[index])
+	}
+	diff := func(after, before uint64) int64 {
+		if after >= before {
+			return int64(after) - int64(before)
+		}
+		return -(int64(before) - int64(after))
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			testApp := simapp.New()
+			ctx := testApp.NewContext(false)
+			pseKeeper := testApp.PSEKeeper
+
+			// Force GC before starting to get baseline memory
+			runtime.GC()
+			var memStatsBefore runtime.MemStats
+			runtime.ReadMemStats(&memStatsBefore)
+
+			// Add a lot of data to AccountScoreSnapshot map
+			const numEntries = 10000
+			values := make([]sdkmath.Int, 0, numEntries)
+
+			// Populate the map and keep track of values
+			for i := 0; i < numEntries; i++ {
+				addr := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+				value := sdkmath.NewInt(int64(i + 1))
+				values = append(values, value)
+
+				err := pseKeeper.AccountScoreSnapshot.Set(ctx, addr, value)
+				requireT.NoError(err)
+			}
+
+			// Collect all keys first
+			iter, err := pseKeeper.AccountScoreSnapshot.Iterate(ctx, nil)
+			requireT.NoError(err)
+			defer iter.Close()
+
+			keys := make([]sdk.AccAddress, 0, numEntries)
+			for ; iter.Valid(); iter.Next() {
+				kv, err := iter.KeyValue()
+				requireT.NoError(err)
+				keys = append(keys, kv.Key)
+			}
+			iter.Close()
+
+			// For each key, create a new iterator to find matching value
+			for _, key := range keys {
+				// Get the expected value for this key
+				expectedValue, err := pseKeeper.AccountScoreSnapshot.Get(ctx, key)
+				requireT.NoError(err)
+
+				// Create a new iterator to search for this value
+				searchIter, err := pseKeeper.AccountScoreSnapshot.Iterate(ctx, nil)
+				requireT.NoError(err)
+
+				if !tc.closeImmediate {
+					defer searchIter.Close()
+				}
+
+				// Search for the matching value
+				found := false
+				for ; searchIter.Valid(); searchIter.Next() {
+					kv, err := searchIter.KeyValue()
+					requireT.NoError(err)
+
+					if kv.Value.Equal(expectedValue) && kv.Key.Equals(key) {
+						found = true
+						break
+					}
+				}
+
+				requireT.True(found, "should find matching value for key")
+
+				if tc.closeImmediate {
+					// Close immediately after each iteration
+					requireT.NoError(searchIter.Close())
+				}
+			}
+
+			// Force GC and measure memory
+			runtime.GC()
+			var memStatsAfter runtime.MemStats
+			runtime.ReadMemStats(&memStatsAfter)
+
+			// Report memory usage
+			allocDiff := diff(memStatsAfter.Alloc, memStatsBefore.Alloc)
+			sysDiff := diff(memStatsAfter.Sys, memStatsBefore.Sys)
+			heapSysDiff := diff(memStatsAfter.HeapSys, memStatsBefore.HeapSys)
+
+			t.Logf("Memory usage report for %s:", tc.name)
+			t.Logf("  Alloc diff: %d bytes (%s)", allocDiff, humanize(allocDiff))
+			t.Logf("  Sys diff: %d bytes (%s)", sysDiff, humanize(sysDiff))
+			t.Logf("  HeapSys diff: %d bytes (%s)", heapSysDiff, humanize(heapSysDiff))
+		})
+	}
 }
