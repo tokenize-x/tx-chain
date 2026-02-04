@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-
 	"github.com/tokenize-x/tx-chain/v6/app/upgrade"
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
 	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
@@ -60,6 +59,10 @@ func New(
 				return nil, err
 			}
 
+			if err := mintAdditionalSupply(ctx, bankKeeper, stakingKeeper); err != nil {
+				return nil, err
+			}
+
 			// Perform PSE initialization: create schedule, mint, and distribute tokens
 			if err := InitPSEAllocationsAndSchedule(
 				ctx,
@@ -79,6 +82,7 @@ func New(
 			); err != nil {
 				return nil, err
 			}
+
 			return vmap, nil
 		},
 	}

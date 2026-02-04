@@ -13,7 +13,7 @@ func migrateMintParams(ctx context.Context, keeper mintkeeper.Keeper) error {
 		return err
 	}
 	params.InflationRateChange = math.LegacyMustNewDecFromStr("0.04")
-	params.BlocksPerYear = 30_000_000
+	params.BlocksPerYear = 30_000_000 // todo double check.
 	err = keeper.Params.Set(ctx, params)
 	if err != nil {
 		return err
