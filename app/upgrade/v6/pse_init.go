@@ -70,6 +70,19 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 	}
 }
 
+//   - admin: testcore1c6y9nwvu9jxx468qx3js620zq34c6hnpg9qgqu8rz3krjrxqmk9s5vzxkj
+//     created_at: "2026-02-04T17:24:23.552408865Z"
+//     id: "84"
+//     metadata: solo-community-1
+//     total_weight: "1"
+//     version: "2"
+//   - admin: testcore19gcp0mkgml3l9pmm269000f6kxacpus0x5ru9pg95tt37dxjx0ksd30rx9
+//     created_at: "2026-02-04T17:24:23.552408865Z"
+//     id: "85"
+//     metadata: binance-1
+//     total_weight: "1"
+//     version: "2"
+//
 // DefaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.
 // Community clearing account is not included in the mappings.
 // Each clearing account has a single default recipient address.
@@ -91,11 +104,56 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 	// Create mappings for all non-Community clearing accounts
 	// Each starts with a single default recipient (can be modified via governance)
 	var mappings []psetypes.ClearingAccountMapping
-	for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
-		mappings = append(mappings, psetypes.ClearingAccountMapping{
-			ClearingAccount:    clearingAccount,
-			RecipientAddresses: []string{recipientAddress},
-		})
+	if chainID == string(constant.ChainIDTest) {
+		mappings = []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount: psetypes.ClearingAccountFoundation,
+				RecipientAddresses: []string{
+					"testcore17rzcx6c37ypp8m6hrl6pyhhl3mfp2s5d6xhyyl23vsj3laclhpxqx89alr",
+					"testcore19kswr87wtx95gphrmkr785595untfmf9fd4dag4chthl5fxnkuhsc3v7gk",
+					"testcore16vth8ad0anjqpqqmwpfzc09c3w2tj4492vz6zzwr0xk9st6ca0tsm3nyv4",
+					"testcore1hmgca4jxfuxmg8lja9sdet307cldcpm4f6ttacurx8d4d03jz2aq5jgzwm",
+					"testcore1c67vg6kueqn5wd78vu0drfqtq7rurhulngyulc9qc0glk9l36vsq4v8h44",
+					"testcore1590eujlxwl7qsllu77xeu9v8ryuupkn6s0q5tlyp2e8ea6wa39tqpjy9sx",
+					"testcore1xc505dp7agzg7rnzzfzmllmqckw32et0rdnpwck3cplylgplj9hqwnnnvp",
+					"testcore13qrxcrsj69kztezt8pepmjeemen5tzxyx3wkg8mtllg2sexwgp2qs9rg2g",
+					"testcore1kxsc00mvmhx4mqklzhzze3nr56d0ejclpcda3nf8e6cqcap9mvzq2v6gzk",
+					"testcore120xxdn7hydfc8j2aak902zwlmuh9px465ft5jraj7l6qy5ksws4se0ucz7",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountAlliance,
+				RecipientAddresses: []string{
+					"testcore1csd2z5ycyvfumnjdr7qsgw2r0y9uc7nsk4a4596ej275rg0lzwrqr5g4yy",
+					"testcore13egmenzagvcfnldcupxg5zfx5rgjrq44ugzewugku4l7e4jtmvns28sja8",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountPartnership,
+				RecipientAddresses: []string{
+					"testcore1ludesr02ls9gjv4ufzg9kwypdn8uxvxmk65hqznxnf46hkfcsffqx4ktqv",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountInvestors,
+				RecipientAddresses: []string{
+					"testcore16hu0xamesjwemrw4u3tpp23dkv3y2htgxvd2k942v3ekus2gsj5qsenwy3",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountTeam,
+				RecipientAddresses: []string{
+					"testcore1lurev2l3g5pecey8lgywxw8wqvs4zupxqvmw4twmr9s8jlll6pgscmsu38",
+				},
+			},
+		}
+	} else {
+		for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
+			mappings = append(mappings, psetypes.ClearingAccountMapping{
+				ClearingAccount:    clearingAccount,
+				RecipientAddresses: []string{recipientAddress},
+			})
+		}
 	}
 
 	return mappings, nil
