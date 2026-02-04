@@ -75,7 +75,6 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 // Each clearing account has a single default recipient address.
 // TODO: Replace placeholder addresses with actual recipient addresses provided by management.
 func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountMapping, error) {
-
 	// Create mappings for all non-Community clearing accounts
 	// Each starts with a single default recipient (can be modified via governance)
 	var mappings []psetypes.ClearingAccountMapping
