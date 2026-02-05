@@ -1312,3 +1312,55 @@ func fundOrderReserve(
 	}
 	require.NoError(t, testApp.FundAccount(sdkCtx, acc, sdk.NewCoins(orderReserve)))
 }
+
+func TestKeeper_GetAccountDEXReserve(t *testing.T) {
+	testApp := simapp.New()
+	sdkCtx := testApp.NewContext(false)
+	testSet := genTestSet(t, sdkCtx, testApp)
+
+	acc, _ := testApp.GenAccount(sdkCtx)
+
+	// Get the order reserve param
+	params, err := testApp.DEXKeeper.GetParams(sdkCtx)
+	require.NoError(t, err)
+	orderReserve := params.OrderReserve
+
+	// Verify no reserve when no orders exist (empty coin has no denom)
+	reserve, err := testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.NoError(t, err)
+	require.Empty(t, reserve.Denom)
+
+	// Place 3 orders
+	for i := range 3 {
+		order := types.Order{
+			Creator:     acc.String(),
+			Type:        types.ORDER_TYPE_LIMIT,
+			ID:          fmt.Sprintf("order-%d", i),
+			BaseDenom:   testSet.denom1,
+			QuoteDenom:  testSet.denom2,
+			Price:       lo.ToPtr(types.MustNewPriceFromString("1")),
+			Quantity:    defaultQuantityStep,
+			Side:        types.SIDE_SELL,
+			TimeInForce: types.TIME_IN_FORCE_GTC,
+		}
+		lockedBalance, err := order.ComputeLimitOrderLockedBalance()
+		require.NoError(t, err)
+		testApp.MintAndSendCoin(t, sdkCtx, acc, sdk.NewCoins(lockedBalance))
+		fundOrderReserve(t, testApp, sdkCtx, acc)
+		require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
+	}
+
+	// Verify total reserve equals 3 * orderReserve
+	reserve, err = testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.NoError(t, err)
+	expectedReserve := sdk.NewCoin(orderReserve.Denom, orderReserve.Amount.MulRaw(3))
+	require.Equal(t, expectedReserve.String(), reserve.String())
+
+	// Cancel one order and verify reserve decreases
+	require.NoError(t, testApp.DEXKeeper.CancelOrder(sdkCtx, acc, "order-0"))
+
+	reserve, err = testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.NoError(t, err)
+	expectedReserve = sdk.NewCoin(orderReserve.Denom, orderReserve.Amount.MulRaw(2))
+	require.Equal(t, expectedReserve.String(), reserve.String())
+}
