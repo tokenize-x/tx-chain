@@ -96,6 +96,13 @@ func (mast *mintAdditionalSupplyTest) Before(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// test mint additional supply in the dev chain only
+	if sdkCtx.ChainID() != constant.ChainIDDev {
+		t.Skip("Skipping mint additional supply test in non-dev chain")
+		return
+	}
+
 	// Get staking params to determine bond denom
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
 	stakingParams, err := stakingClient.Params(ctx, &stakingtypes.QueryParamsRequest{})
@@ -143,6 +150,13 @@ func (mast *mintAdditionalSupplyTest) Before(t *testing.T) {
 func (mast *mintAdditionalSupplyTest) After(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// test mint additional supply in the dev chain only
+	if sdkCtx.ChainID() != constant.ChainIDDev {
+		t.Skip("Skipping mint additional supply test in non-dev chain")
+		return
+	}
 
 	// Get staking params to determine bond denom
 	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)

@@ -57,11 +57,7 @@ func upgradeV5ToV6(t *testing.T) {
 		&validatorCommission{},
 		&pseInitialDistribution{},
 		&pseStakingSnapshot{},
-	}
-
-	// test mint additional supply in the dev chain only
-	if sdkCtx.ChainID() == constant.ChainIDDev {
-		tests = append(tests, &mintAdditionalSupplyTest{})
+		&mintAdditionalSupplyTest{},
 	}
 
 	for _, test := range tests {
