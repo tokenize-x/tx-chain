@@ -59,6 +59,11 @@ func upgradeV5ToV6(t *testing.T) {
 		&pseStakingSnapshot{},
 	}
 
+	// test mint additional supply in the dev chain only
+	if sdkCtx.ChainID() == constant.ChainIDDev {
+		tests = append(tests, &mintAdditionalSupplyTest{})
+	}
+
 	for _, test := range tests {
 		test.Before(t)
 	}

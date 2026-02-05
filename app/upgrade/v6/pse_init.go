@@ -78,7 +78,16 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 	// Create mappings for all non-Community clearing accounts
 	// Each starts with a single default recipient (can be modified via governance)
 	var mappings []psetypes.ClearingAccountMapping
-	if chainID == string(constant.ChainIDTest) {
+	switch chainID {
+	case string(constant.ChainIDMain):
+		recipientAddress := "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5"
+		for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
+			mappings = append(mappings, psetypes.ClearingAccountMapping{
+				ClearingAccount:    clearingAccount,
+				RecipientAddresses: []string{recipientAddress},
+			})
+		}
+	case string(constant.ChainIDTest):
 		mappings = []psetypes.ClearingAccountMapping{
 			{
 				ClearingAccount: psetypes.ClearingAccountFoundation,
@@ -121,24 +130,51 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 				},
 			},
 		}
-	} else {
-		// Determine the recipient address based on chain ID
-		var recipientAddress string
-		switch chainID {
-		case string(constant.ChainIDMain):
-			recipientAddress = "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5"
-		case string(constant.ChainIDDev):
-			recipientAddress = "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
-		default:
-			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
+	case string(constant.ChainIDDev):
+		mappings = []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount: psetypes.ClearingAccountFoundation,
+				RecipientAddresses: []string{
+					"devcore1kfm48yfnh965ypssfp490aany73jst05fhfapz",
+					"devcore1ct5esnd49w7tjtcn9wktjdc4q02a6skpq5tkfz",
+					"devcore1yw2urtycl5lfqhtr8lj4qk7fnayqmvhv5fjw8m",
+					"devcore1j382ydyytj3tpmjwpx4f3t59vg4f046rluzng5",
+					"devcore1splxgwp434jse6gt3ajqfv8vx2fftkj862wvxa",
+					"devcore18jmpgu5lgremx9nqua2xa2l4j7l5n3jr24gy4g",
+					"devcore10qraeygcztmzqwdk6d2c5rwhkw683az9e9ln0k",
+					"devcore1pf3dgr53edq282p452p42amzw9ga2s3398853h",
+					"devcore1cj7qkawquelsf2ugcceuehqmkatnyrrr4de5yd",
+					"devcore14ewuhx7qwx5gpeh5lzq56a8lkjte46ssgxtl8s",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountAlliance,
+				RecipientAddresses: []string{
+					"devcore1ku77sw8vhr3gkegnsnjpzfg5etvwp9l60dy00x",
+					"devcore1v9g9eam7ulyhc8mgf458q047f4g05d3wpmx707",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountPartnership,
+				RecipientAddresses: []string{
+					"devcore1m5yzpc3sn5vp96eufa8fxcl0fs44yecl0znvl7",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountInvestors,
+				RecipientAddresses: []string{
+					"devcore1cq8p07unjvhnhjmu8v99n8632n29sn5h29tthd",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountTeam,
+				RecipientAddresses: []string{
+					"devcore1cx39e5mv8plhs75ls0uweufqr6senymra0rlza",
+				},
+			},
 		}
-
-		for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
-			mappings = append(mappings, psetypes.ClearingAccountMapping{
-				ClearingAccount:    clearingAccount,
-				RecipientAddresses: []string{recipientAddress},
-			})
-		}
+	default:
+		return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
 	}
 
 	return mappings, nil
