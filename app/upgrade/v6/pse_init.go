@@ -73,6 +73,8 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 // DefaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.
 // Community clearing account is not included in the mappings.
 // Each clearing account has a single default recipient address.
+//
+//nolint:funlen // large switch with chain-specific mapping literals
 func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountMapping, error) {
 	// Create mappings for all non-Community clearing accounts
 	// Each starts with a single default recipient (can be modified via governance)
