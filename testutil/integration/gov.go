@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	submitProposalGas = 400_000
+	submitProposalGas = 600_000 // Increased to accommodate larger clearing account mappings
 )
 
 // Governance keep the test chain predefined account for the governance operations via v1 API only.
