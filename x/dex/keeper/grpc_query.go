@@ -40,6 +40,10 @@ type QueryKeeper interface {
 		acc sdk.AccAddress,
 		denom string,
 	) (uint64, error)
+	GetAccountDEXReserve(
+		ctx sdk.Context,
+		acc sdk.AccAddress,
+	) (sdk.Coin, error)
 }
 
 // QueryService serves grpc query requests for the module.
@@ -158,5 +162,24 @@ func (qs QueryService) AccountDenomOrdersCount(
 
 	return &types.QueryAccountDenomOrdersCountResponse{
 		Count: count,
+	}, nil
+}
+
+// AccountDEXReserve queries the total DEX reserve locked by an account for all open orders.
+func (qs QueryService) AccountDEXReserve(
+	ctx context.Context,
+	req *types.QueryAccountDEXReserveRequest,
+) (*types.QueryAccountDEXReserveResponse, error) {
+	acc, err := sdk.AccAddressFromBech32(req.Account)
+	if err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrInvalidInput, "invalid address: %s", req.Account)
+	}
+	reserve, err := qs.keeper.GetAccountDEXReserve(sdk.UnwrapSDKContext(ctx), acc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryAccountDEXReserveResponse{
+		Reserve: reserve,
 	}, nil
 }
