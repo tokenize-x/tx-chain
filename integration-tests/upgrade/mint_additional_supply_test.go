@@ -98,7 +98,7 @@ func (mast *mintAdditionalSupplyTest) Before(t *testing.T) {
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	// test mint additional supply in the dev chain only
-	if sdkCtx.ChainID() != constant.ChainIDDev {
+	if sdkCtx.ChainID() != string(constant.ChainIDDev) {
 		t.Skip("Skipping mint additional supply test in non-dev chain")
 		return
 	}
@@ -153,7 +153,7 @@ func (mast *mintAdditionalSupplyTest) After(t *testing.T) {
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	// test mint additional supply in the dev chain only
-	if sdkCtx.ChainID() != constant.ChainIDDev {
+	if sdkCtx.ChainID() != string(constant.ChainIDDev) {
 		t.Skip("Skipping mint additional supply test in non-dev chain")
 		return
 	}
