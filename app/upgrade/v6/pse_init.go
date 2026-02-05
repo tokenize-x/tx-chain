@@ -73,12 +73,60 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 // DefaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.
 // Community clearing account is not included in the mappings.
 // Each clearing account has a single default recipient address.
-// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
+//
+//nolint:funlen // large switch with chain-specific mapping literals
 func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountMapping, error) {
 	// Create mappings for all non-Community clearing accounts
 	// Each starts with a single default recipient (can be modified via governance)
 	var mappings []psetypes.ClearingAccountMapping
-	if chainID == string(constant.ChainIDTest) {
+
+	switch chainID {
+	case string(constant.ChainIDMain):
+		mappings = []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount: psetypes.ClearingAccountFoundation,
+				RecipientAddresses: []string{
+					"core142498n8sya3k3s5jftp7dujuqfw3ag4tpzc2ve45ykpwx6zmng8skcw5nw",
+					"core1ys0dhh6x5s55h2g37zrnc7kh630jfq5p77as8pwyn60ax9zzqh9qvpwc0e",
+					"core1wgjpjh42cr7t5sp5hgty4yrzww496a6yaznc9u4wsv9ac3xccu8smqaann",
+					"core1rkml5878l2daw3a7xvg48wqecnh9u9dn2dtl8g57rsctq5pnc00sl0nwak",
+					"core17l6djqrztw0ux668vkw7ff7d2602jvml52w9fyrvryusp7djnhfq7sg29r",
+					"core10ezj2lmcj3flaacqwrzv278aled0pen8cnx257sggeng2fdel53q5gtudn",
+					"core1wfse3z8akyw3pmn8x0htzq6l5wwfgqmc2jgnhxtzm96h4ywhhr0q63uvwl",
+					"core10w37pqels7ya404xdlfkc9vdfemejmc0e6hjlerknys3xjj9xnasuk9uy2",
+					"core13cwsdsetcrhcyd3jeed0mgteg35qaju0q5s0u0drfylagahygwwsj2eanz",
+					"core1jc4mtk0g8ulmvhwmpfy5rrj7rwn85ual4p3w0tlwnp2rsauvf5eq58zdmw",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountAlliance,
+				RecipientAddresses: []string{
+					"core1cfey705ssf6ysclm9u47mvcgr5l6q6q86lk5dtq4jwdu6yjce6ds2tgy6j",
+					"core15629hwdy7rd7satqzffn4f80ftg2sln982xvwcalppg36td7jvuq3pqevw",
+					"core15lch5glk7deu9tk8wrcfcup4tdpz2l8zhhqn4r2zzsr46dfv849qetkah4",
+					"core19rrgcsw8gu8c3rthucqnf6nyyg6q9pq79tt60pvahfsnfu4p5hrsuqajru",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountPartnership,
+				RecipientAddresses: []string{
+					"core12s5tahy3850k3r3080en0pwhuk4l3my5l2cl8vxrsg6kx48de24q7ygamd",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountInvestors,
+				RecipientAddresses: []string{
+					"core1mqevjln5hxv3qgd3c4m5zjeeand5hkc7r33ty82fjukw9shxjh6sr0zafz",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountTeam,
+				RecipientAddresses: []string{
+					"core12xyww2vucfufyzknvyameh5v25cn6gxzzagwgpzhwdq8v35zdmgqd6t6c7",
+				},
+			},
+		}
+	case string(constant.ChainIDTest):
 		mappings = []psetypes.ClearingAccountMapping{
 			{
 				ClearingAccount: psetypes.ClearingAccountFoundation,
@@ -121,24 +169,16 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 				},
 			},
 		}
-	} else {
-		// Determine the recipient address based on chain ID
-		var recipientAddress string
-		switch chainID {
-		case string(constant.ChainIDMain):
-			recipientAddress = "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5"
-		case string(constant.ChainIDDev):
-			recipientAddress = "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
-		default:
-			return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
-		}
-
+	case string(constant.ChainIDDev):
+		recipientAddress := "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
 		for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
 			mappings = append(mappings, psetypes.ClearingAccountMapping{
 				ClearingAccount:    clearingAccount,
 				RecipientAddresses: []string{recipientAddress},
 			})
 		}
+	default:
+		return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
 	}
 
 	return mappings, nil

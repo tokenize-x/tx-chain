@@ -60,7 +60,7 @@ func New(
 				return nil, err
 			}
 
-			if err := mintAdditionalSupply(ctx, bankKeeper, stakingKeeper); err != nil {
+			if err := mintForSoloAndBinance(ctx, bankKeeper, stakingKeeper); err != nil {
 				return nil, err
 			}
 

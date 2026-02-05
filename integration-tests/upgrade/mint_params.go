@@ -55,5 +55,5 @@ func (m *mint) After(t *testing.T) {
 	inflationFloat, err := inflation.Inflation.Float64()
 	requireT.NoError(err)
 	requireT.InDelta(float64(0.001), inflationFloat, 0.0001)
-	requireT.EqualValues(30_000_000, params.Params.BlocksPerYear)
+	requireT.EqualValues(33_000_000, params.Params.BlocksPerYear)
 }
