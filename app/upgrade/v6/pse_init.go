@@ -77,7 +77,9 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 	// Create mappings for all non-Community clearing accounts
 	// Each starts with a single default recipient (can be modified via governance)
 	var mappings []psetypes.ClearingAccountMapping
-	if chainID == string(constant.ChainIDMain) {
+
+	switch chainID {
+	case string(constant.ChainIDMain):
 		mappings = []psetypes.ClearingAccountMapping{
 			{
 				ClearingAccount: psetypes.ClearingAccountFoundation,
@@ -122,7 +124,7 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 				},
 			},
 		}
-	} else if chainID == string(constant.ChainIDTest) {
+	case string(constant.ChainIDTest):
 		mappings = []psetypes.ClearingAccountMapping{
 			{
 				ClearingAccount: psetypes.ClearingAccountFoundation,
@@ -165,7 +167,7 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 				},
 			},
 		}
-	} else {
+	case string(constant.ChainIDDev):
 		recipientAddress := "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
 		for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
 			mappings = append(mappings, psetypes.ClearingAccountMapping{
@@ -173,6 +175,8 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 				RecipientAddresses: []string{recipientAddress},
 			})
 		}
+	default:
+		return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
 	}
 
 	return mappings, nil
