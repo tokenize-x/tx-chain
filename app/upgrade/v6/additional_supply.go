@@ -5,7 +5,7 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
@@ -41,10 +41,10 @@ func mintAdditionalSupply(
 	}
 
 	coinsSOLO := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(txSupplyForSOLOHolders)))
-	if err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, coinsSOLO); err != nil {
+	if err := bankKeeper.MintCoins(ctx, minttypes.ModuleName, coinsSOLO); err != nil {
 		return err
 	}
-	if err := bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, soloHoldersAcc, coinsSOLO); err != nil {
+	if err := bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, soloHoldersAcc, coinsSOLO); err != nil {
 		return err
 	}
 
@@ -60,8 +60,8 @@ func mintAdditionalSupply(
 	}
 
 	coinsBinance := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(txSupplyForBinance)))
-	if err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, coinsBinance); err != nil {
+	if err := bankKeeper.MintCoins(ctx, minttypes.ModuleName, coinsBinance); err != nil {
 		return err
 	}
-	return bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, binanceAcc, coinsBinance)
+	return bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, binanceAcc, coinsBinance)
 }
