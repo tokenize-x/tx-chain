@@ -18,8 +18,7 @@ const (
 	txSupplyForBinance     = 114_949_808_000_000
 )
 
-// TODO: replace with actual addresses.
-func mintAdditionalSupply(
+func mintForSoloAndBinance(
 	ctx context.Context,
 	bankKeeper wbankkeeper.BaseKeeperWrapper,
 	stakingKeeper *stakingkeeper.Keeper,
@@ -32,7 +31,7 @@ func mintAdditionalSupply(
 
 	// SOLO HOLDERS
 	soloHoldersAddress := map[string]string{
-		string(constant.ChainIDMain): "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+		string(constant.ChainIDMain): "core1z02frlf8lj0v9l755cdjmjsjpfgt5psuxwjqa7zd2e8hgja208nswqel20",
 		string(constant.ChainIDTest): "testcore1c6y9nwvu9jxx468qx3js620zq34c6hnpg9qgqu8rz3krjrxqmk9s5vzxkj",
 		string(constant.ChainIDDev):  "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
 	}[sdkCtx.ChainID()]
@@ -51,7 +50,7 @@ func mintAdditionalSupply(
 
 	// BINANCE
 	binanceAddress := map[string]string{
-		string(constant.ChainIDMain): "core17pmq7hp4upvmmveqexzuhzu64v36re3w3447n7dt46uwp594wtps97qlm5",
+		string(constant.ChainIDMain): "core1cf8f57fdpt7neps583v44smdftght8e5ee92np78xakrjf54d6lswr6pur",
 		string(constant.ChainIDTest): "testcore19gcp0mkgml3l9pmm269000f6kxacpus0x5ru9pg95tt37dxjx0ksd30rx9",
 		string(constant.ChainIDDev):  "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
 	}[sdkCtx.ChainID()]
