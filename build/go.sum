@@ -1650,10 +1650,10 @@ github.com/thomaso-mirodin/intmath v0.0.0-20160323211736-5dc6d854e46e/go.mod h1:
 github.com/tidwall/btree v1.7.0 h1:L1fkJH/AuEh5zBnnBbmTwQ5Lt+bRJ5A8EWecslvo9iI=
 github.com/tidwall/btree v1.7.0/go.mod h1:twD9XRA5jj9VUQGELzDO4HPQTNJsoWWfYEL+EUQ2cKY=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
-github.com/tokenize-x/tx-crust v0.0.0-20260210121155-7b32c8260237 h1:LfBAQVVMSqP6M0hsGTAvzpJQpzhLqo5yWBhGafotEPM=
-github.com/tokenize-x/tx-crust v0.0.0-20260210121155-7b32c8260237/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260210121155-7b32c8260237 h1:e9flocsMtTCWHNE4wsCTFqrEqU8WSKT0HlW5nPboKBQ=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260210121155-7b32c8260237/go.mod h1:93TCCNLv8U5QxOQfflfj2BWGzILfvsjsfE9O1DXk+dE=
+github.com/tokenize-x/tx-crust v0.0.0-20260211144101-d49d190136f5 h1:Jfil8XTgZzur4UL+VrsZTknjFLE9D9JxT9L6sliPTt0=
+github.com/tokenize-x/tx-crust v0.0.0-20260211144101-d49d190136f5/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
+github.com/tokenize-x/tx-crust/znet v0.0.0-20260211144101-d49d190136f5 h1:IDrmcgFN6TrhfmzCriL2U/snb6cdl/8ttgm/cnBsu8M=
+github.com/tokenize-x/tx-crust/znet v0.0.0-20260211144101-d49d190136f5/go.mod h1:93TCCNLv8U5QxOQfflfj2BWGzILfvsjsfE9O1DXk+dE=
 github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033 h1:1++kosP83GjVa85RkTBxkzI3qNKPWp0uIRn4UiFQuPY=
 github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033/go.mod h1:tnc0L7WkOv6kah53Wl17fcG8G2MCPGotP1v2ezB/a/g=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
