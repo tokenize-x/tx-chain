@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	deterministicmap "github.com/tokenize-x/tx-chain/v6/pkg/deterministic-map"
 	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
 )
 
@@ -77,7 +77,11 @@ func GetTxCmd() *cobra.Command {
 //
 //nolint:funlen // Despite the length function is still manageable
 func CmdTxIssue() *cobra.Command {
-	allowedFeatures := deterministicmap.FromMap(types.Feature_name).Values()
+	var allowedFeatures []string
+	for _, n := range types.Feature_name {
+		allowedFeatures = append(allowedFeatures, n)
+	}
+	sort.Strings(allowedFeatures)
 	cmd := &cobra.Command{
 		//nolint:lll // breaking this down will make it look worse when printed to user screen.
 		Use:   fmt.Sprintf("issue [symbol] [subunit] [precision] [initial_amount] [description] --from [issuer] --features="+strings.Join(allowedFeatures, ",")+" --burn-rate=0.12 --send-commission-rate=0.2 --uri https://my-token-meta.invalid/1 --uri-hash e000624 --extension-code-id=1 --extension-label=my-extension --extension-funds=100000ABC-%s --extension-instantiation-msg={} --dex-unified-ref-amount=1000.5", constant.AddressSampleTest),

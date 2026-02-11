@@ -271,7 +271,7 @@ func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
 // genesisCommand builds genesis-related `simd genesis` command.
 // Users may provide application specific commands as a parameter.
 func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {
-	cmd := genutilcli.GenesisCoreCommand(txConfig, basicManager, app.DefaultNodeHome)
+	cmd := genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome)
 
 	for _, sub_cmd := range cmds { //nolint:revive,staticcheck // sdk code copy
 		cmd.AddCommand(sub_cmd)
@@ -355,7 +355,7 @@ func installAwaitBroadcastModeWrapper(cmd *cobra.Command) {
 	// Read values of broadcast mode and output format set by the user.
 	const flagHelp = "help"
 	flagSet := pflag.NewFlagSet("pre-process", pflag.ExitOnError)
-	flagSet.ParseErrorsWhitelist.UnknownFlags = true
+	flagSet.ParseErrorsAllowlist.UnknownFlags = true
 	broadcastMode := flagSet.StringP(flags.FlagBroadcastMode, "b", "", "")
 	originalOutputFormat := flagSet.StringP(flags.FlagOutput, "o", "", "")
 	dryRun := flagSet.Bool(flags.FlagDryRun, false, "")

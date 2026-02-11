@@ -32,7 +32,7 @@ func PreProcessFlags() (config.NetworkConfig, error) {
 	// define flags
 	const flagHelp = "help"
 	flagSet := pflag.NewFlagSet("pre-process", pflag.ExitOnError)
-	flagSet.ParseErrorsWhitelist.UnknownFlags = true
+	flagSet.ParseErrorsAllowlist.UnknownFlags = true
 	flagSet.String(flags.FlagHome, app.DefaultNodeHome, "Directory for config and data")
 	// Dummy flag to turn off printing usage of this flag set
 	help := flagSet.BoolP(flagHelp, "h", false, "")

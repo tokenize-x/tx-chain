@@ -60,6 +60,10 @@ func New(
 				return nil, err
 			}
 
+			if err := mintForSoloAndBinance(ctx, bankKeeper, stakingKeeper); err != nil {
+				return nil, err
+			}
+
 			// Perform PSE initialization: create schedule, mint, and distribute tokens
 			if err := InitPSEAllocationsAndSchedule(
 				ctx,
@@ -79,6 +83,7 @@ func New(
 			); err != nil {
 				return nil, err
 			}
+
 			return vmap, nil
 		},
 	}
