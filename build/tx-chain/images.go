@@ -7,7 +7,7 @@ import (
 
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 	"github.com/tokenize-x/tx-chain/build/tx-chain/image"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
 	"github.com/tokenize-x/tx-crust/build/config"
 	"github.com/tokenize-x/tx-crust/build/docker"
 	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
@@ -70,7 +70,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 // ensureReleasedBinaries ensures that all previous cored versions are installed.
 // TODO (v7): Rename all cored to txd.
 func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
-	const binaryTool = txchaintools.CoredV503
+	const binaryTool = txchaintools.TXdV600
 	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}

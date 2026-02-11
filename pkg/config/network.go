@@ -11,8 +11,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/tx-chain/v6/genesis"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/genesis"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
 )
 
 var networkConfigs map[constant.ChainID]NetworkConfig

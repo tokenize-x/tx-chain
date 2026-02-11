@@ -16,10 +16,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	cbig "github.com/tokenize-x/tx-chain/v6/pkg/math/big"
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	cbig "github.com/tokenize-x/tx-chain/v7/pkg/math/big"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 type TestSet struct {

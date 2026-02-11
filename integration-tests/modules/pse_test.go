@@ -5,6 +5,7 @@ package modules
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"testing"
 	"time"
@@ -22,13 +23,27 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	upgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/event"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/event"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
+
+// defaultClearingAccountMappings returns default clearing account mappings for the chain as v7 types.
+func defaultClearingAccountMappings(chainID string, requireT *require.Assertions) []psetypes.ClearingAccountMapping {
+	m, err := upgradev6.DefaultClearingAccountMappings(chainID)
+	requireT.NoError(err)
+	out := make([]psetypes.ClearingAccountMapping, len(m))
+	for i := range m {
+		out[i] = psetypes.ClearingAccountMapping{
+			ClearingAccount:    m[i].ClearingAccount,
+			RecipientAddresses: slices.Clone(m[i].RecipientAddresses),
+		}
+	}
+	return out
+}
 
 func TestPSEDistribution(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
@@ -105,11 +120,7 @@ func TestPSEDistribution(t *testing.T) {
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-			Mappings: func() []psetypes.ClearingAccountMapping {
-				m, err := upgradev6.DefaultClearingAccountMappings(chain.ChainSettings.ChainID)
-				requireT.NoError(err)
-				return m
-			}(),
+			Mappings:  defaultClearingAccountMappings(chain.ChainSettings.ChainID, requireT),
 		},
 		&psetypes.MsgUpdateExcludedAddresses{
 			Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),

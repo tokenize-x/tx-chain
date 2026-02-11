@@ -8,9 +8,9 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 type pseStakingSnapshot struct {

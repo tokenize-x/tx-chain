@@ -18,11 +18,11 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v6/testutil/network"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/client/cli"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v7/testutil/network"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/client/cli"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
 )
 
 func TestQueryClassAndNFT(t *testing.T) {

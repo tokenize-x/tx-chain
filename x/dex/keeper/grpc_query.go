@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 var _ types.QueryServer = QueryService{}

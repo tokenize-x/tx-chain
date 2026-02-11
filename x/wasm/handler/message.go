@@ -11,9 +11,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/wasm/types"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wasm/types"
 )
 
 // assetFTMsg represents asset ft module messages integrated with the wasm handler.

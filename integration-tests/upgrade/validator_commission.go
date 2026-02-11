@@ -9,7 +9,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
 )
 
 type validatorCommission struct{}

@@ -19,8 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
@@ -43,14 +43,14 @@ func TestUpgrade(t *testing.T) {
 	infoRes, err := tmQueryClient.GetNodeInfo(ctx, &cmtservice.GetNodeInfoRequest{})
 	requireT.NoError(err)
 
-	if strings.HasPrefix(infoRes.ApplicationVersion.Version, "v5.") {
-		upgradeV5ToV6(t)
+	if strings.HasPrefix(infoRes.ApplicationVersion.Version, "v6.") {
+		upgradeV6ToV7(t)
 		return
 	}
 	requireT.Failf("not supported txd version", "version: %s", infoRes.ApplicationVersion.Version)
 }
 
-func upgradeV5ToV6(t *testing.T) {
+func upgradeV6ToV7(t *testing.T) {
 	tests := []upgradeTest{
 		&denomSymbol{},
 		&mint{},

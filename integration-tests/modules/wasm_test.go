@@ -26,15 +26,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/event"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	deterministicgastypes "github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v7/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/event"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	deterministicgastypes "github.com/tokenize-x/tx-chain/v7/x/deterministicgas/types"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // authz models

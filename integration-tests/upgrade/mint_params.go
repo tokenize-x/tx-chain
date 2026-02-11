@@ -8,11 +8,10 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
 )
 
-type mint struct {
-}
+type mint struct{}
 
 func (m *mint) Before(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)

@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 type pseInitialDistribution struct {

@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/app"
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v6/testutil/network"
+	"github.com/tokenize-x/tx-chain/v7/app"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v7/testutil/network"
 )
 
 func TestAutoGasPrices(t *testing.T) {
