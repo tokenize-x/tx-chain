@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 	"github.com/tokenize-x/tx-chain/build/tx-chain/image"
@@ -21,17 +22,25 @@ type imageConfig struct {
 	ContainerRegistry string
 	OrgName           string
 	Versions          []string
+	UseLocalBinary    bool
 }
 
 // BuildTXdDockerImage builds txd docker image.
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	deps(BuildTXdInDocker, ensureReleasedBinaries)
 
+	useLocalBinary := false
+	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
+	if runtime.GOOS == txcrusttools.OSLinux {
+		useLocalBinary = true
+	}
+
 	return buildTXdDockerImage(ctx, imageConfig{
 		BinaryPath:      binaryPath,
 		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxLocalArchInDocker},
 		Action:          docker.ActionLoad,
 		Versions:        []string{config.ZNetVersion},
+		UseLocalBinary:  useLocalBinary,
 	})
 }
 
@@ -50,6 +59,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 			string(constant.ChainIDDev),
 			string(constant.ChainIDTest),
 		},
+		InDocker: !cfg.UseLocalBinary,
 	})
 	if err != nil {
 		return err
