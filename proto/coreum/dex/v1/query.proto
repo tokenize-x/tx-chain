@@ -4,6 +4,7 @@ package coreum.dex.v1;
 import "coreum/dex/v1/order.proto";
 import "coreum/dex/v1/params.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
@@ -46,6 +47,11 @@ service Query {
   rpc AccountDenomOrdersCount(QueryAccountDenomOrdersCountRequest) returns (QueryAccountDenomOrdersCountResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/coreum/dex/v1/accounts/{account}/denoms/{denom}/orders-count";
+  }
+  // AccountDEXReserve queries the total DEX reserve locked by an account for all open orders.
+  rpc AccountDEXReserve(QueryAccountDEXReserveRequest) returns (QueryAccountDEXReserveResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/coreum/dex/v1/accounts/{account}/dex-reserve";
   }
 }
 
@@ -155,4 +161,19 @@ message QueryAccountDenomOrdersCountRequest {
 // QueryAccountDenomOrdersCountResponse defines the response type for the `AccountDenomOrdersCount` query.
 message QueryAccountDenomOrdersCountResponse {
   uint64 count = 1;
+}
+
+// QueryAccountDEXReserveRequest defines the request type for the `AccountDEXReserve` query.
+message QueryAccountDEXReserveRequest {
+  // account is the address to query DEX reserve for.
+  string account = 1;
+}
+
+// QueryAccountDEXReserveResponse defines the response type for the `AccountDEXReserve` query.
+message QueryAccountDEXReserveResponse {
+  // reserve is the total reserve locked by the account for all open orders.
+  cosmos.base.v1beta1.Coin reserve = 1 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Coin"
+  ];
 }

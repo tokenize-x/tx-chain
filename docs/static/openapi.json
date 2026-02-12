@@ -1074,6 +1074,38 @@
         ]
       }
     },
+    "/coreum/dex/v1/accounts/{account}/dex-reserve": {
+      "get": {
+        "operationId": "GithubComTokenizeXTxChainV6XDexTypesAccountDEXReserve",
+        "parameters": [
+          {
+            "name": "account",
+            "description": "account is the address to query DEX reserve for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/coreum.dex.v1.QueryAccountDEXReserveResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "summary": "AccountDEXReserve queries the total DEX reserve locked by an account for all open orders.",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/coreum/dex/v1/order-book-params": {
       "get": {
         "operationId": "GithubComTokenizeXTxChainV6XDexTypesOrderBookParams",
@@ -10316,6 +10348,16 @@
         }
       },
       "description": "Params keeps gov manageable parameters."
+    },
+    "coreum.dex.v1.QueryAccountDEXReserveResponse": {
+      "type": "object",
+      "properties": {
+        "reserve": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "reserve is the total reserve locked by the account for all open orders."
+        }
+      },
+      "description": "QueryAccountDEXReserveResponse defines the response type for the `AccountDEXReserve` query."
     },
     "coreum.dex.v1.QueryAccountDenomOrdersCountResponse": {
       "type": "object",
