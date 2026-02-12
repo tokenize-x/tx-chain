@@ -77,8 +77,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 	})
 }
 
-// ensureReleasedBinaries ensures that all previous cored versions are installed.
-// TODO (v7): Rename all cored to txd.
+// ensureReleasedBinaries ensures that all previous txd versions are installed.
 func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
 	const binaryTool = txchaintools.TXdV600
 	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
