@@ -5,11 +5,11 @@ package modules
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strconv"
 	"testing"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	tmtypes "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,27 +22,127 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
-	upgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
 	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
 	"github.com/tokenize-x/tx-chain/v7/testutil/event"
 	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
 	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
 	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
-// defaultClearingAccountMappings returns default clearing account mappings for the chain as v7 types.
-func defaultClearingAccountMappings(chainID string, requireT *require.Assertions) []psetypes.ClearingAccountMapping {
-	m, err := upgradev6.DefaultClearingAccountMappings(chainID)
-	requireT.NoError(err)
-	out := make([]psetypes.ClearingAccountMapping, len(m))
-	for i := range m {
-		out[i] = psetypes.ClearingAccountMapping{
-			ClearingAccount:    m[i].ClearingAccount,
-			RecipientAddresses: slices.Clone(m[i].RecipientAddresses),
+// defaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.
+// Community clearing account is not included in the mappings.
+// Each clearing account has a single default recipient address.
+//
+//nolint:funlen // large switch with chain-specific mapping literals
+func defaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountMapping, error) {
+	// Create mappings for all non-Community clearing accounts
+	// Each starts with a single default recipient (can be modified via governance)
+	var mappings []psetypes.ClearingAccountMapping
+
+	switch chainID {
+	case string(constant.ChainIDMain):
+		mappings = []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount: psetypes.ClearingAccountFoundation,
+				RecipientAddresses: []string{
+					"core142498n8sya3k3s5jftp7dujuqfw3ag4tpzc2ve45ykpwx6zmng8skcw5nw",
+					"core1ys0dhh6x5s55h2g37zrnc7kh630jfq5p77as8pwyn60ax9zzqh9qvpwc0e",
+					"core1wgjpjh42cr7t5sp5hgty4yrzww496a6yaznc9u4wsv9ac3xccu8smqaann",
+					"core1rkml5878l2daw3a7xvg48wqecnh9u9dn2dtl8g57rsctq5pnc00sl0nwak",
+					"core17l6djqrztw0ux668vkw7ff7d2602jvml52w9fyrvryusp7djnhfq7sg29r",
+					"core10ezj2lmcj3flaacqwrzv278aled0pen8cnx257sggeng2fdel53q5gtudn",
+					"core1wfse3z8akyw3pmn8x0htzq6l5wwfgqmc2jgnhxtzm96h4ywhhr0q63uvwl",
+					"core10w37pqels7ya404xdlfkc9vdfemejmc0e6hjlerknys3xjj9xnasuk9uy2",
+					"core13cwsdsetcrhcyd3jeed0mgteg35qaju0q5s0u0drfylagahygwwsj2eanz",
+					"core1jc4mtk0g8ulmvhwmpfy5rrj7rwn85ual4p3w0tlwnp2rsauvf5eq58zdmw",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountAlliance,
+				RecipientAddresses: []string{
+					"core1cfey705ssf6ysclm9u47mvcgr5l6q6q86lk5dtq4jwdu6yjce6ds2tgy6j",
+					"core15629hwdy7rd7satqzffn4f80ftg2sln982xvwcalppg36td7jvuq3pqevw",
+					"core15lch5glk7deu9tk8wrcfcup4tdpz2l8zhhqn4r2zzsr46dfv849qetkah4",
+					"core19rrgcsw8gu8c3rthucqnf6nyyg6q9pq79tt60pvahfsnfu4p5hrsuqajru",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountPartnership,
+				RecipientAddresses: []string{
+					"core12s5tahy3850k3r3080en0pwhuk4l3my5l2cl8vxrsg6kx48de24q7ygamd",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountInvestors,
+				RecipientAddresses: []string{
+					"core1mqevjln5hxv3qgd3c4m5zjeeand5hkc7r33ty82fjukw9shxjh6sr0zafz",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountTeam,
+				RecipientAddresses: []string{
+					"core12xyww2vucfufyzknvyameh5v25cn6gxzzagwgpzhwdq8v35zdmgqd6t6c7",
+				},
+			},
 		}
+	case string(constant.ChainIDTest):
+		mappings = []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount: psetypes.ClearingAccountFoundation,
+				RecipientAddresses: []string{
+					"testcore17rzcx6c37ypp8m6hrl6pyhhl3mfp2s5d6xhyyl23vsj3laclhpxqx89alr",
+					"testcore19kswr87wtx95gphrmkr785595untfmf9fd4dag4chthl5fxnkuhsc3v7gk",
+					"testcore16vth8ad0anjqpqqmwpfzc09c3w2tj4492vz6zzwr0xk9st6ca0tsm3nyv4",
+					"testcore1hmgca4jxfuxmg8lja9sdet307cldcpm4f6ttacurx8d4d03jz2aq5jgzwm",
+					"testcore1c67vg6kueqn5wd78vu0drfqtq7rurhulngyulc9qc0glk9l36vsq4v8h44",
+					"testcore1590eujlxwl7qsllu77xeu9v8ryuupkn6s0q5tlyp2e8ea6wa39tqpjy9sx",
+					"testcore1xc505dp7agzg7rnzzfzmllmqckw32et0rdnpwck3cplylgplj9hqwnnnvp",
+					"testcore13qrxcrsj69kztezt8pepmjeemen5tzxyx3wkg8mtllg2sexwgp2qs9rg2g",
+					"testcore1kxsc00mvmhx4mqklzhzze3nr56d0ejclpcda3nf8e6cqcap9mvzq2v6gzk",
+					"testcore120xxdn7hydfc8j2aak902zwlmuh9px465ft5jraj7l6qy5ksws4se0ucz7",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountAlliance,
+				RecipientAddresses: []string{
+					"testcore1csd2z5ycyvfumnjdr7qsgw2r0y9uc7nsk4a4596ej275rg0lzwrqr5g4yy",
+					"testcore13egmenzagvcfnldcupxg5zfx5rgjrq44ugzewugku4l7e4jtmvns28sja8",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountPartnership,
+				RecipientAddresses: []string{
+					"testcore1ludesr02ls9gjv4ufzg9kwypdn8uxvxmk65hqznxnf46hkfcsffqx4ktqv",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountInvestors,
+				RecipientAddresses: []string{
+					"testcore16hu0xamesjwemrw4u3tpp23dkv3y2htgxvd2k942v3ekus2gsj5qsenwy3",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountTeam,
+				RecipientAddresses: []string{
+					"testcore1lurev2l3g5pecey8lgywxw8wqvs4zupxqvmw4twmr9s8jlll6pgscmsu38",
+				},
+			},
+		}
+	case string(constant.ChainIDDev):
+		recipientAddress := "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
+		for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
+			mappings = append(mappings, psetypes.ClearingAccountMapping{
+				ClearingAccount:    clearingAccount,
+				RecipientAddresses: []string{recipientAddress},
+			})
+		}
+	default:
+		return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
 	}
-	return out
+
+	return mappings, nil
 }
 
 func TestPSEDistribution(t *testing.T) {
@@ -120,7 +220,11 @@ func TestPSEDistribution(t *testing.T) {
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-			Mappings:  defaultClearingAccountMappings(chain.ChainSettings.ChainID, requireT),
+			Mappings: func() []psetypes.ClearingAccountMapping {
+				m, err := defaultClearingAccountMappings(chain.ChainSettings.ChainID)
+				requireT.NoError(err)
+				return m
+			}(),
 		},
 		&psetypes.MsgUpdateExcludedAddresses{
 			Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),

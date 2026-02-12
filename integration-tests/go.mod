@@ -15,6 +15,7 @@ replace (
 
 require (
 	cosmossdk.io/core v0.11.3
+	cosmossdk.io/errors v1.0.2
 	cosmossdk.io/math v1.5.3
 	cosmossdk.io/x/feegrant v0.1.1
 	cosmossdk.io/x/nft v0.1.1
@@ -30,7 +31,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.11.1
-	github.com/tokenize-x/tx-chain/v6 v6.0.0
 	github.com/tokenize-x/tx-chain/v7 v7.0.0-20260211080000-000000000000
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 	google.golang.org/grpc v1.78.0
@@ -49,7 +49,6 @@ require (
 	cosmossdk.io/client/v2 v2.0.0-beta.5 // indirect
 	cosmossdk.io/collections v1.3.1 // indirect
 	cosmossdk.io/depinject v1.2.1 // indirect
-	cosmossdk.io/errors v1.0.2 // indirect
 	cosmossdk.io/log v1.6.1 // indirect
 	cosmossdk.io/schema v1.1.0 // indirect
 	cosmossdk.io/store v1.1.2 // indirect

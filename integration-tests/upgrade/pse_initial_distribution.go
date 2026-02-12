@@ -14,13 +14,63 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	v6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
 	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
+// TODO: Discuss if we need it anymore
+const (
+	// initialTotalMint is the total amount to mint during initialization
+	// 100 billion tokens (in base denomination units).
+	initialTotalMint = 100_000_000_000_000_000
+
+	// totalAllocationMonths is the total number of distribution months for the allocation schedule.
+	// Each month is one calendar month (same day each month).
+	// 84 months = exactly 7 years.
+	totalAllocationMonths = 84
+)
+
 type pseInitialDistribution struct {
 	totalSupplyBefore sdk.Coin
+}
+
+// initialFundAllocation defines the token funding allocation for a module account during initialization.
+type initialFundAllocation struct {
+	ClearingAccount string
+	Percentage      sdkmath.LegacyDec // Percentage of total mint amount (0-1)
+}
+
+// defaultInitialFundAllocations returns the default token funding percentages for module accounts.
+// These percentages should sum to 1.0 (100%).
+// All clearing accounts receive tokens and are included in the distribution schedule.
+// Community uses score-based distribution, while others use direct recipient transfers.
+func defaultInitialFundAllocations() []initialFundAllocation {
+	return []initialFundAllocation{
+		{
+			ClearingAccount: psetypes.ClearingAccountCommunity,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.40"), // 40% - uses score-based distribution
+		},
+		{
+			ClearingAccount: psetypes.ClearingAccountFoundation,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.30"), // 30%
+		},
+		{
+			ClearingAccount: psetypes.ClearingAccountAlliance,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.20"), // 20%
+		},
+		{
+			ClearingAccount: psetypes.ClearingAccountPartnership,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.03"), // 3%
+		},
+		{
+			ClearingAccount: psetypes.ClearingAccountInvestors,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.05"), // 5%
+		},
+		{
+			ClearingAccount: psetypes.ClearingAccountTeam,
+			Percentage:      sdkmath.LegacyMustNewDecFromStr("0.02"), // 2%
+		},
+	}
 }
 
 func (pid *pseInitialDistribution) Before(t *testing.T) {
@@ -92,13 +142,13 @@ func (pid *pseInitialDistribution) verifyTotalSupplyIncreaseAfter(
 	totalSupplyAfter := supplyResp.Amount
 
 	actualSupplyIncrease := totalSupplyAfter.Amount.Sub(pid.totalSupplyBefore.Amount)
-	requireT.True(actualSupplyIncrease.GTE(sdkmath.NewInt(v6.InitialTotalMint)),
+	requireT.True(actualSupplyIncrease.GTE(sdkmath.NewInt(initialTotalMint)),
 		"total supply should increase by at least InitialTotalMint (%s), actual increase: %s",
-		sdkmath.NewInt(v6.InitialTotalMint), actualSupplyIncrease)
+		sdkmath.NewInt(initialTotalMint), actualSupplyIncrease)
 
 	t.Logf("Total supply before: %s", pid.totalSupplyBefore)
 	t.Logf("Total supply after: %s", totalSupplyAfter)
-	t.Logf("Supply increase: %s (expected at least: %s)", actualSupplyIncrease, sdkmath.NewInt(v6.InitialTotalMint))
+	t.Logf("Supply increase: %s (expected at least: %s)", actualSupplyIncrease, sdkmath.NewInt(initialTotalMint))
 }
 
 func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
@@ -107,20 +157,20 @@ func (pid *pseInitialDistribution) verifyClearingAccountAllocations(
 	bankClient banktypes.QueryClient,
 	bondDenom string,
 	remainingSchedule []psetypes.ScheduledDistribution,
-) []v6.InitialFundAllocation {
+) []initialFundAllocation {
 	requireT := require.New(t)
-	allocations := v6.DefaultInitialFundAllocations()
+	allocations := defaultInitialFundAllocations()
 	allClearingAccounts := psetypes.GetAllClearingAccounts()
 
 	requireT.Len(allocations, len(allClearingAccounts),
 		"allocations should match the number of all clearing accounts (%d)", len(allClearingAccounts))
 
-	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
+	totalMintAmount := sdkmath.NewInt(initialTotalMint)
 
 	// Verify all scheduled distributions are still pending (none processed yet)
 	// Since distributions start from next month, immediately after upgrade all should remain
-	requireT.Len(remainingSchedule, v6.TotalAllocationMonths,
-		"all %d distributions should still be scheduled (none processed yet)", v6.TotalAllocationMonths)
+	requireT.Len(remainingSchedule, totalAllocationMonths,
+		"all %d distributions should still be scheduled (none processed yet)", totalAllocationMonths)
 
 	totalExpectedBalance := sdkmath.ZeroInt()
 	totalActualBalance := sdkmath.ZeroInt()
@@ -181,8 +231,8 @@ func (pid *pseInitialDistribution) verifyDistributionScheduleAfter(
 	requireT.NotNil(scheduleResp)
 
 	schedule := scheduleResp.ScheduledDistributions
-	requireT.Len(schedule, v6.TotalAllocationMonths,
-		"should have %d monthly distributions", v6.TotalAllocationMonths)
+	requireT.Len(schedule, totalAllocationMonths,
+		"should have %d monthly distributions", totalAllocationMonths)
 
 	t.Logf("Distribution schedule created with %d periods", len(schedule))
 	return schedule
@@ -197,10 +247,10 @@ func (pid *pseInitialDistribution) verifyDistributionTimestampsAfter(
 	firstDistTime := time.Unix(int64(schedule[0].Timestamp), 0).UTC()
 	t.Logf("First distribution scheduled for: %s", firstDistTime.Format(time.RFC3339))
 
-	lastDistTime := time.Unix(int64(schedule[v6.TotalAllocationMonths-1].Timestamp), 0).UTC()
+	lastDistTime := time.Unix(int64(schedule[totalAllocationMonths-1].Timestamp), 0).UTC()
 	t.Logf("Last distribution scheduled for: %s", lastDistTime.Format(time.RFC3339))
 
-	requireT.Greater(schedule[v6.TotalAllocationMonths-1].Timestamp,
+	requireT.Greater(schedule[totalAllocationMonths-1].Timestamp,
 		schedule[0].Timestamp,
 		"last distribution should be after start time")
 
@@ -228,11 +278,11 @@ func (pid *pseInitialDistribution) verifyDistributionTimestampsAfter(
 
 func (pid *pseInitialDistribution) verifyPeriodAllocationsAfter(
 	t *testing.T,
-	allocations []v6.InitialFundAllocation,
+	allocations []initialFundAllocation,
 	schedule []psetypes.ScheduledDistribution,
 ) {
 	requireT := require.New(t)
-	totalMintAmount := sdkmath.NewInt(v6.InitialTotalMint)
+	totalMintAmount := sdkmath.NewInt(initialTotalMint)
 
 	for i, period := range schedule {
 		requireT.Len(period.Allocations, len(allocations),
@@ -247,15 +297,15 @@ func (pid *pseInitialDistribution) verifyPeriodAllocationsAfter(
 					break
 				}
 			}
-			expectedMonthly := expectedTotal.QuoRaw(v6.TotalAllocationMonths)
+			expectedMonthly := expectedTotal.QuoRaw(totalAllocationMonths)
 			requireT.Equal(expectedMonthly.String(), periodAlloc.Amount.String(),
 				"period %d: monthly amount for %s should be 1/%d of total",
-				i, periodAlloc.ClearingAccount, v6.TotalAllocationMonths)
+				i, periodAlloc.ClearingAccount, totalAllocationMonths)
 
 			periodTotal = periodTotal.Add(periodAlloc.Amount)
 		}
 
-		if i == 0 || i == v6.TotalAllocationMonths-1 {
+		if i == 0 || i == totalAllocationMonths-1 {
 			t.Logf("Period %d total allocation: %s", i, periodTotal)
 		}
 	}

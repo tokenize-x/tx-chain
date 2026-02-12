@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
+	appupgradev7 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v7"
 	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
 	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
@@ -63,7 +63,7 @@ func upgradeV6ToV7(t *testing.T) {
 		test.Before(t)
 	}
 
-	runUpgrade(t, appupgradev6.Name, upgradeDelayInBlocks)
+	runUpgrade(t, appupgradev7.Name, upgradeDelayInBlocks)
 
 	for _, test := range tests {
 		test.After(t)
