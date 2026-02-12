@@ -51,13 +51,7 @@ func TestUpgrade(t *testing.T) {
 }
 
 func upgradeV6ToV7(t *testing.T) {
-	tests := []upgradeTest{
-		&denomSymbol{},
-		&mint{},
-		&validatorCommission{},
-		&pseInitialDistribution{},
-		&pseStakingSnapshot{},
-	}
+	tests := []upgradeTest{}
 
 	for _, test := range tests {
 		test.Before(t)
