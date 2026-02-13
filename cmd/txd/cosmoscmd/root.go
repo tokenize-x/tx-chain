@@ -231,12 +231,14 @@ func initRootCmd(
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
+	keysCmd := keys.Commands()
+	keysCmd.AddCommand(MigrateKeyringCmd())
 	rootCmd.AddCommand(
 		server.StatusCommand(),
 		genesisCommand(encodingConfig.TxConfig, basicManager),
 		queryCommand(),
 		txCommand(),
-		keys.Commands(),
+		keysCmd,
 	)
 
 	// add rosetta
