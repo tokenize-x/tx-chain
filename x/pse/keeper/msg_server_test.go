@@ -10,9 +10,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	"github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 // TestMsgUpdateClearingAccountMappings tests the message server integration for updating clearing account mappings.

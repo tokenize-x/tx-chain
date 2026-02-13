@@ -12,8 +12,8 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 func TestKeeper_Hooks(t *testing.T) {
@@ -281,7 +281,8 @@ func assertScoreResetAction(r *runEnv) {
 	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
 	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil,
 		func(
-			key collections.Pair[sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry) (bool, error) {
+			key collections.Pair[sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry,
+		) (bool, error) {
 			r.requireT.Equal(blockTimeUnixSeconds, value.LastChangedUnixSec)
 			return false, nil
 		})

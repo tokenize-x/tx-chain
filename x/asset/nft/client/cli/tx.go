@@ -18,8 +18,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
 )
 
 // Flags defined on transactions.

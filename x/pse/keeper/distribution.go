@@ -7,7 +7,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 // ProcessNextDistribution processes the next due distribution from the schedule.

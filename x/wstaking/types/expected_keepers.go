@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
 )
 
 // CustomParamsKeeper defines the custom params keeper interface required for the module.

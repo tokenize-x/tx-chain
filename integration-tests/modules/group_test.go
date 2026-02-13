@@ -14,10 +14,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
 )
 
 // TestGroupCreationAndBankSend creates group & group policy and then sends funds from group policy account.

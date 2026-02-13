@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 )
 
 // QueryKeeper defines subscope of keeper methods required by query service.

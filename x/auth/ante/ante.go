@@ -16,10 +16,10 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v10/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 
-	authkeeper "github.com/tokenize-x/tx-chain/v6/x/auth/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
-	deterministicgasante "github.com/tokenize-x/tx-chain/v6/x/deterministicgas/ante"
-	feemodelante "github.com/tokenize-x/tx-chain/v6/x/feemodel/ante"
+	authkeeper "github.com/tokenize-x/tx-chain/v7/x/auth/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
+	deterministicgasante "github.com/tokenize-x/tx-chain/v7/x/deterministicgas/ante"
+	feemodelante "github.com/tokenize-x/tx-chain/v7/x/feemodel/ante"
 )
 
 // HandlerOptions are the options required for constructing a default SDK AnteHandler.

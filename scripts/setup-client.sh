@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="v5.0.3"
+VERSION="v6.0.0"
 BIN_PATH="./txd"
 
 URL_LINUX_AMD64="https://github.com/tokenize-x/tx-chain/releases/download/${VERSION}/txd-linux-amd64"

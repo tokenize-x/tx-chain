@@ -8,7 +8,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 type scoreMap struct {
@@ -107,7 +107,8 @@ func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) er
 }
 
 func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
-	[]collections.KeyValue[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry], error) {
+	[]collections.KeyValue[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry], error,
+) {
 	var allDelegationTimeEntries []collections.KeyValue[
 		collections.Pair[sdk.AccAddress, sdk.ValAddress],
 		types.DelegationTimeEntry,

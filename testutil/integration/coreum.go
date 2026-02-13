@@ -13,11 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // TXChain is configured tx-chain chain.

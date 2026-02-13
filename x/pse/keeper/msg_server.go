@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 var _ types.MsgServer = MsgServer{}

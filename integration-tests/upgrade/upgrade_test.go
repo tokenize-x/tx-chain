@@ -18,9 +18,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	appupgradev7 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v7"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
@@ -43,27 +43,21 @@ func TestUpgrade(t *testing.T) {
 	infoRes, err := tmQueryClient.GetNodeInfo(ctx, &cmtservice.GetNodeInfoRequest{})
 	requireT.NoError(err)
 
-	if strings.HasPrefix(infoRes.ApplicationVersion.Version, "v5.") {
-		upgradeV5ToV6(t)
+	if strings.HasPrefix(infoRes.ApplicationVersion.Version, "v6.") {
+		upgradeV6ToV7(t)
 		return
 	}
 	requireT.Failf("not supported txd version", "version: %s", infoRes.ApplicationVersion.Version)
 }
 
-func upgradeV5ToV6(t *testing.T) {
-	tests := []upgradeTest{
-		&denomSymbol{},
-		&mint{},
-		&validatorCommission{},
-		&pseInitialDistribution{},
-		&pseStakingSnapshot{},
-	}
+func upgradeV6ToV7(t *testing.T) {
+	tests := []upgradeTest{}
 
 	for _, test := range tests {
 		test.Before(t)
 	}
 
-	runUpgrade(t, appupgradev6.Name, upgradeDelayInBlocks)
+	runUpgrade(t, appupgradev7.Name, upgradeDelayInBlocks)
 
 	for _, test := range tests {
 		test.After(t)

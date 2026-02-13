@@ -10,7 +10,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
 	"github.com/tokenize-x/tx-crust/build/golang"
 	"github.com/tokenize-x/tx-crust/build/types"
 	"github.com/tokenize-x/tx-crust/znet/infra"
@@ -98,7 +98,7 @@ func RunIntegrationTestsUpgrade(runUnsafe bool) types.CommandFunc {
 
 		znetConfig := defaultZNetConfig()
 		znetConfig.Profiles = []string{apps.Profile3TXd, apps.ProfileIBC}
-		znetConfig.TXdVersion = "v5.0.3"
+		znetConfig.TXdVersion = "v6.0.0"
 
 		return runIntegrationTests(ctx, deps, runUnsafe, true, znetConfig, TestUpgrade, TestIBC, TestModules)
 	}

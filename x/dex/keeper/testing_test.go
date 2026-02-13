@@ -3,8 +3,8 @@ package keeper_test
 import (
 	sdkmath "cosmossdk.io/math"
 
-	"github.com/tokenize-x/tx-chain/v6/x/dex/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // defaultQuantityStep is currently equal to 10000 for default UnifiedRefAmount=10^6 and QuantityStepExponent=-2.

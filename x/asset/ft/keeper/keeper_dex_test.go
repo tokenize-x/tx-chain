@@ -20,10 +20,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	testcontracts "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper/test-contracts"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	testcontracts "github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper/test-contracts"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v7/x/wasm/types"
 )
 
 func TestKeeper_ValidateSpendableNotFT(t *testing.T) {

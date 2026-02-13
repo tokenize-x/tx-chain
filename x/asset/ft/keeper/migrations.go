@@ -3,7 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	v4 "github.com/tokenize-x/tx-chain/v6/x/asset/ft/migrations/v4"
+	v4 "github.com/tokenize-x/tx-chain/v7/x/asset/ft/migrations/v4"
 )
 
 // Migrator is a struct for handling in-place store migrations.

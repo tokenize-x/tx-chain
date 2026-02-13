@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 )
 
 // TestFeeModelQueryingMinGasPrice check that it's possible to query current minimum gas price required by the network.

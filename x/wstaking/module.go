@@ -10,8 +10,8 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/tokenize-x/tx-chain/v6/x/wstaking/keeper"
-	wstakingtypes "github.com/tokenize-x/tx-chain/v6/x/wstaking/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wstaking/keeper"
+	wstakingtypes "github.com/tokenize-x/tx-chain/v7/x/wstaking/types"
 )
 
 // AppModule implements an application module for the wrapped staking module.

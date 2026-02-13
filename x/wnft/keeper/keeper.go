@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/tokenize-x/tx-chain/v6/x/wnft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wnft/types"
 )
 
 // Wrapper wraps the original nft keeper and intercepts its original methods if needed.

@@ -3,7 +3,7 @@ package coreum.dex.v1;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/tokenize-x/tx-chain/v6/x/dex/types";
+option go_package = "github.com/tokenize-x/tx-chain/v7/x/dex/types";
 
 // EventOrderPlaced is emitted when a new order is placed and new sequence is generated for it.
 message EventOrderPlaced {

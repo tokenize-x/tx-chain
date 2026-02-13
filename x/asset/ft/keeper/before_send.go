@@ -8,10 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/wasm"
-	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
-	wibctransfertypes "github.com/tokenize-x/tx-chain/v6/x/wibctransfer/types"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wasm"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v7/x/wasm/types"
+	wibctransfertypes "github.com/tokenize-x/tx-chain/v7/x/wibctransfer/types"
 )
 
 // ExtensionTransferMethod the function name of the extension smart contract, which will be invoked

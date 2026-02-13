@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/event"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	deterministicgastypes "github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/event"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	deterministicgastypes "github.com/tokenize-x/tx-chain/v7/x/deterministicgas/types"
 )
 
 var maxMemo = strings.Repeat("-", 256) // cosmos sdk is configured to accept maximum memo of 256 characters by default

@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 )
 
 const afterFlag = "after"

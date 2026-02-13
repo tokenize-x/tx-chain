@@ -10,8 +10,8 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 
-	cbig "github.com/tokenize-x/tx-chain/v6/pkg/math/big"
-	"github.com/tokenize-x/tx-chain/v6/pkg/store"
+	cbig "github.com/tokenize-x/tx-chain/v7/pkg/math/big"
+	"github.com/tokenize-x/tx-chain/v7/pkg/store"
 )
 
 var (

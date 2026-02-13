@@ -25,7 +25,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 

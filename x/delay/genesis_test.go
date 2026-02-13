@@ -8,10 +8,10 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/delay"
-	"github.com/tokenize-x/tx-chain/v6/x/delay/types"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/delay"
+	"github.com/tokenize-x/tx-chain/v7/x/delay/types"
 )
 
 func TestInitAndExportGenesis(t *testing.T) {

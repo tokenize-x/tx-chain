@@ -13,9 +13,9 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/samber/lo"
 
-	"github.com/tokenize-x/tx-chain/v6/x/wasm"
-	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
-	"github.com/tokenize-x/tx-chain/v6/x/wbank/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wasm"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v7/x/wasm/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wbank/types"
 )
 
 // BaseKeeperWrapper is a wrapper of the cosmos-sdk bank module.

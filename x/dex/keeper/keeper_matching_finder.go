@@ -8,8 +8,8 @@ import (
 	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	cbig "github.com/tokenize-x/tx-chain/v6/pkg/math/big"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	cbig "github.com/tokenize-x/tx-chain/v7/pkg/math/big"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // MatchingFinder is responsible for finding orders with the best price and priority.

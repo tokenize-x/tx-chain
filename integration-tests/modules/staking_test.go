@@ -18,10 +18,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
 )
 
 // TestStakingProposalParamChange checks that staking param change proposal works correctly.

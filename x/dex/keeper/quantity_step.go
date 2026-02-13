@@ -6,8 +6,8 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 
-	cbig "github.com/tokenize-x/tx-chain/v6/pkg/math/big"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	cbig "github.com/tokenize-x/tx-chain/v7/pkg/math/big"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 func validateQuantityStep(quantity *big.Int, baseURA sdkmath.LegacyDec, quantityStepExponent int32) error {
