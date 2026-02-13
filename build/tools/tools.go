@@ -22,7 +22,6 @@ const (
 	// Hermes is an Inter-Blockchain Communication (IBC) relayer.
 	Hermes tools.Name = "hermes"
 	// TXdV600 is the version of txd used for testing chain upgrades.
-	// TODO (v8): Should be renamed to TXdV700.
 	TXdV600 tools.Name = "txd-v6.0.0"
 	// Buf is a tool for working with Protocol Buffers.
 	Buf tools.Name = "buf"
