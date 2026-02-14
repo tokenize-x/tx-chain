@@ -7,11 +7,12 @@ import (
 // DefaultGenesisState returns genesis state with default values.
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		Params:                 DefaultParams(),
-		ScheduledDistributions: []ScheduledDistribution{},
-		DelegationTimeEntries:  []DelegationTimeEntryExport{},
-		AccountScores:          []AccountScore{},
-		DistributionsDisabled:  false,
+		Params:                       DefaultParams(),
+		ScheduledDistributions:       []ScheduledDistribution{},
+		DelegationTimeEntries:        []DelegationTimeEntryExport{},
+		AccountScores:                []AccountScore{},
+		CommunityDistributionEntries: []CommunityDistributionEntry{},
+		DistributionsDisabled:        false,
 	}
 }
 
@@ -56,6 +57,38 @@ func (m *GenesisState) Validate() error {
 		}
 		if accountScore.Score.IsNegative() {
 			return errorsmod.Wrapf(ErrInvalidInput, "score cannot be negative")
+		}
+	}
+
+	// Validate community distribution entries
+	for _, entry := range m.CommunityDistributionEntries {
+		if entry.DelegatorAddress == "" {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution entry address cannot be empty")
+		}
+		if entry.Score.IsNil() {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution entry score cannot be nil")
+		}
+		if entry.Score.IsNegative() {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution entry score cannot be negative")
+		}
+	}
+
+	if m.CommunityDistributionJob != nil {
+		job := m.CommunityDistributionJob
+		if job.ScheduledAt == 0 {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution job scheduled_at cannot be zero")
+		}
+		if job.TotalAmount.IsNil() || job.TotalAmount.IsNegative() {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution job total_amount must be non-negative")
+		}
+		if job.TotalScore.IsNil() || job.TotalScore.IsNegative() {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution job total_score must be non-negative")
+		}
+		if job.Leftover.IsNil() || job.Leftover.IsNegative() {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution job leftover must be non-negative")
+		}
+		if job.ProcessedEntries > job.TotalEntries {
+			return errorsmod.Wrapf(ErrInvalidInput, "community distribution job processed_entries exceeds total_entries")
 		}
 	}
 

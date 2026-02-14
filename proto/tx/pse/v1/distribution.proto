@@ -56,3 +56,67 @@ message ScheduledDistribution {
   ];
 }
 
+// CommunityDistributionJob tracks an in-progress community distribution batch job.
+message CommunityDistributionJob {
+  // scheduled_at is the Unix timestamp of the distribution period being paid out.
+  uint64 scheduled_at = 1 [
+    (gogoproto.moretags) = "yaml:\"scheduled_at\""
+  ];
+
+  // total_amount is the total amount to distribute for this period.
+  string total_amount = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"total_amount\""
+  ];
+
+  // total_score is the sum of all eligible delegator scores at snapshot time.
+  string total_score = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"total_score\""
+  ];
+
+  // leftover tracks undistributed amount to be sent to the community pool at completion.
+  string leftover = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"leftover\""
+  ];
+
+  // next_address is the exclusive cursor for the next delegator to process.
+  // Empty means start from the beginning of the address-ordered map.
+  string next_address = 5 [
+    (cosmos_proto.scalar) = "cosmos.AddressString",
+    (gogoproto.moretags) = "yaml:\"next_address\""
+  ];
+
+  // total_entries is the number of delegators included in this snapshot.
+  uint64 total_entries = 6 [
+    (gogoproto.moretags) = "yaml:\"total_entries\""
+  ];
+
+  // processed_entries is the number of delegators already processed.
+  uint64 processed_entries = 7 [
+    (gogoproto.moretags) = "yaml:\"processed_entries\""
+  ];
+}
+
+// CommunityDistributionEntry stores a delegator score for a snapshot period.
+message CommunityDistributionEntry {
+  string delegator_address = 1 [
+    (cosmos_proto.scalar) = "cosmos.AddressString",
+    (gogoproto.moretags) = "yaml:\"delegator_address\""
+  ];
+
+  string score = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"score\""
+  ];
+}
+

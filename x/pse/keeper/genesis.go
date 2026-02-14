@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"cosmossdk.io/collections"
 	sdkmath "cosmossdk.io/math"
@@ -53,6 +54,22 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 			return err
 		}
 		if err := k.AccountScoreSnapshot.Set(ctx, addr, accountScore.Score); err != nil {
+			return err
+		}
+	}
+
+	// Populate community distribution job and scores from genesis state
+	if genState.CommunityDistributionJob != nil {
+		if err := k.CommunityJob.Set(ctx, *genState.CommunityDistributionJob); err != nil {
+			return err
+		}
+	}
+	for _, entry := range genState.CommunityDistributionEntries {
+		addr, err := k.addressCodec.StringToBytes(entry.DelegatorAddress)
+		if err != nil {
+			return err
+		}
+		if err := k.CommunityScores.Set(ctx, addr, entry.Score); err != nil {
 			return err
 		}
 	}
@@ -119,6 +136,32 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	genesis.DistributionsDisabled, err = k.DistributionDisabled.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	job, err := k.CommunityJob.Get(ctx)
+	if err == nil {
+		genesis.CommunityDistributionJob = &job
+	} else if !errors.Is(err, collections.ErrNotFound) {
+		return nil, err
+	}
+
+	// Export community distribution entries from state
+	err = k.CommunityScores.Walk(ctx, nil,
+		func(key sdk.AccAddress, value sdkmath.Int) (stop bool, err error) {
+			addr, err := k.addressCodec.BytesToString(key)
+			if err != nil {
+				return false, err
+			}
+			genesis.CommunityDistributionEntries = append(genesis.CommunityDistributionEntries,
+				types.CommunityDistributionEntry{
+					DelegatorAddress: addr,
+					Score:            value,
+				},
+			)
+			return false, nil
+		})
 	if err != nil {
 		return nil, err
 	}

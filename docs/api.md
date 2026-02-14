@@ -273,6 +273,8 @@
 - [tx/pse/v1/distribution.proto](#tx/pse/v1/distribution.proto)
     - [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation)
     - [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping)
+    - [CommunityDistributionEntry](#tx.pse.v1.CommunityDistributionEntry)
+    - [CommunityDistributionJob](#tx.pse.v1.CommunityDistributionJob)
     - [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution)
   
 - [tx/pse/v1/event.proto](#tx/pse/v1/event.proto)
@@ -5770,6 +5772,51 @@ During distribution, the allocated amount is split equally among all recipients.
 
 
 
+<a name="tx.pse.v1.CommunityDistributionEntry"></a>
+
+### CommunityDistributionEntry
+
+```
+CommunityDistributionEntry stores a delegator score for a snapshot period.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `delegator_address` | [string](#string) |  |    |
+| `score` | [string](#string) |  |    |
+
+
+
+
+
+
+<a name="tx.pse.v1.CommunityDistributionJob"></a>
+
+### CommunityDistributionJob
+
+```
+CommunityDistributionJob tracks an in-progress community distribution batch job.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp of the distribution period being paid out.`  |
+| `total_amount` | [string](#string) |  |  `total_amount is the total amount to distribute for this period.`  |
+| `total_score` | [string](#string) |  |  `total_score is the sum of all eligible delegator scores at snapshot time.`  |
+| `leftover` | [string](#string) |  |  `leftover tracks undistributed amount to be sent to the community pool at completion.`  |
+| `next_address` | [string](#string) |  |  `next_address is the exclusive cursor for the next delegator to process. Empty means start from the beginning of the address-ordered map.`  |
+| `total_entries` | [uint64](#uint64) |  |  `total_entries is the number of delegators included in this snapshot.`  |
+| `processed_entries` | [uint64](#uint64) |  |  `processed_entries is the number of delegators already processed.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.ScheduledDistribution"></a>
 
 ### ScheduledDistribution
@@ -5919,6 +5966,8 @@ GenesisState defines the module's genesis state.
 | `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 | `distributions_disabled` | [bool](#bool) |  |    |
+| `community_distribution_job` | [CommunityDistributionJob](#tx.pse.v1.CommunityDistributionJob) |  |  `community_distribution_job stores the active community distribution batch job, if any.`  |
+| `community_distribution_entries` | [CommunityDistributionEntry](#tx.pse.v1.CommunityDistributionEntry) | repeated |  `community_distribution_entries store the snapshot scores for the active job, if any.`  |
 
 
 

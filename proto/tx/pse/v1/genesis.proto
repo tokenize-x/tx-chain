@@ -35,6 +35,17 @@ message GenesisState {
   bool distributions_disabled = 5 [
     (gogoproto.moretags) = "yaml:\"distributions_disabled\""
   ];
+
+  // community_distribution_job stores the active community distribution batch job, if any.
+  CommunityDistributionJob community_distribution_job = 6 [
+    (gogoproto.moretags) = "yaml:\"community_distribution_job\""
+  ];
+
+  // community_distribution_entries store the snapshot scores for the active job, if any.
+  repeated CommunityDistributionEntry community_distribution_entries = 7 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"community_distribution_entries\""
+  ];
 }
 
 message DelegationTimeEntryExport {

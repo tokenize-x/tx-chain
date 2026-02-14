@@ -3,6 +3,7 @@ package pse
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"cosmossdk.io/core/appmodule"
 	errorsmod "cosmossdk.io/errors"
@@ -147,13 +148,28 @@ func (am AppModule) EndBlock(c context.Context) error {
 		ctx.Logger().Info("skipping distribution because it was marked as disabled")
 		return nil
 	}
-	cacheCtx, writeCache := ctx.CacheContext()
-	err = am.keeper.ProcessNextDistribution(cacheCtx) //nolint:contextcheck // this is correct context passing
+	scheduleCtx, writeSchedule := ctx.CacheContext()
+	err = am.keeper.ProcessNextDistribution(scheduleCtx) //nolint:contextcheck // this is correct context passing
 	if err != nil {
-		ctx.Logger().Error("failed to process next distribution, disabling all future distributions", "error", err)
+		if errors.Is(err, types.ErrCommunityJobInProgress) {
+			ctx.Logger().Info("skipping scheduled distribution because a community job is in progress")
+		} else {
+			ctx.Logger().Error("failed to process next distribution, disabling all future distributions", "error", err)
+			return am.keeper.DistributionDisabled.Set(c, true)
+		}
+	} else {
+		writeSchedule()
+	}
+
+	batchCtx, writeBatch := ctx.CacheContext()
+	if err := am.keeper.ProcessCommunityDistributionBatch(
+		batchCtx,
+		keeper.CommunityDistributionBatchSize(),
+	); err != nil {
+		ctx.Logger().Error("failed to process community distribution batch, disabling all future distributions", "error", err)
 		return am.keeper.DistributionDisabled.Set(c, true)
 	}
-	writeCache()
+	writeBatch()
 	return nil
 }
 

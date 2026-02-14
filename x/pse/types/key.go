@@ -17,4 +17,6 @@ var (
 	AccountScoreKey         = collections.NewPrefix(2)
 	AllocationScheduleKey   = collections.NewPrefix(3) // Map: timestamp -> ScheduledDistribution
 	DistributionDisabledKey = collections.NewPrefix(4)
+	CommunityJobKey         = collections.NewPrefix(5)
+	CommunityScoreKey       = collections.NewPrefix(6)
 )

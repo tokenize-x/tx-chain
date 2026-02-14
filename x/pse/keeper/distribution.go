@@ -2,7 +2,9 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -25,6 +27,14 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	// Return early if schedule is empty or not ready to process
 	if !shouldProcess {
 		return nil
+	}
+
+	if hasCommunityAllocation(scheduledDistribution) {
+		if _, err := k.CommunityJob.Get(ctx); err == nil {
+			return types.ErrCommunityJobInProgress
+		} else if !errors.Is(err, collections.ErrNotFound) {
+			return err
+		}
 	}
 
 	timestamp := scheduledDistribution.Timestamp
@@ -58,6 +68,15 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 		"timestamp", timestamp)
 
 	return nil
+}
+
+func hasCommunityAllocation(distribution types.ScheduledDistribution) bool {
+	for _, allocation := range distribution.Allocations {
+		if allocation.ClearingAccount == types.ClearingAccountCommunity && !allocation.Amount.IsZero() {
+			return true
+		}
+	}
+	return false
 }
 
 // PeekNextAllocationSchedule returns the earliest scheduled distribution and whether it should be processed.

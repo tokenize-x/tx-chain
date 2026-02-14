@@ -22,4 +22,7 @@ var (
 
 	// ErrInvalidParam is returned when a parameter is invalid.
 	ErrInvalidParam = sdkerrors.Register(ModuleName, 7, "invalid parameter")
+
+	// ErrCommunityJobInProgress is returned when a community distribution job is already running.
+	ErrCommunityJobInProgress = sdkerrors.Register(ModuleName, 8, "community distribution job in progress")
 )

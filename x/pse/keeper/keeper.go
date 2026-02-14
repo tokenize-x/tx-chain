@@ -36,6 +36,8 @@ type Keeper struct {
 	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
 	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: timestamp -> ScheduledDistribution
 	DistributionDisabled  collections.Item[bool]
+	CommunityJob          collections.Item[types.CommunityDistributionJob]
+	CommunityScores       collections.Map[sdk.AccAddress, sdkmath.Int]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -94,6 +96,19 @@ func NewKeeper(
 			types.DistributionDisabledKey,
 			"distribution_disabled",
 			codec.BoolValue,
+		),
+		CommunityJob: collections.NewItem(
+			sb,
+			types.CommunityJobKey,
+			"community_job",
+			codec.CollValue[types.CommunityDistributionJob](cdc),
+		),
+		CommunityScores: collections.NewMap(
+			sb,
+			types.CommunityScoreKey,
+			"community_scores",
+			sdk.AccAddressKey,
+			sdk.IntValue,
 		),
 	}
 

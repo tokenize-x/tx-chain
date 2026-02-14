@@ -1,8 +1,12 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
+	"errors"
 
+	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -10,14 +14,37 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
-// DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
+const communityDistributionBatchSize uint64 = 1000
+
+// DistributeCommunityPSE creates a community distribution job for batched payouts.
+// The actual payouts are handled by ProcessCommunityDistributionBatch.
 func (k Keeper) DistributeCommunityPSE(
 	ctx context.Context,
-	bondDenom string,
+	_ string,
 	totalPSEAmount sdkmath.Int,
 	scheduledAt uint64,
 ) error {
-	// iterate all delegation time entries and calculate uncalculated score.
+	return k.StartCommunityDistributionJob(ctx, totalPSEAmount, scheduledAt)
+}
+
+// StartCommunityDistributionJob snapshots scores and creates a new community distribution job.
+func (k Keeper) StartCommunityDistributionJob(
+	ctx context.Context,
+	totalPSEAmount sdkmath.Int,
+	scheduledAt uint64,
+) error {
+	if totalPSEAmount.IsZero() {
+		return nil
+	}
+
+	_, err := k.CommunityJob.Get(ctx)
+	if err == nil {
+		return errorsmod.Wrap(types.ErrCommunityJobInProgress, "community job already exists")
+	}
+	if !errors.Is(err, collections.ErrNotFound) {
+		return err
+	}
+
 	params, err := k.GetParams(ctx)
 	if err != nil {
 		return err
@@ -57,50 +84,140 @@ func (k Keeper) DistributeCommunityPSE(
 		}
 	}
 
-	// distribute total pse coin based on per delegator score.
-	totalPSEScore := finalScoreMap.totalScore
+	if err := k.CommunityScores.Clear(ctx, nil); err != nil {
+		return err
+	}
 
-	// leftover is the amount of pse coin that is not distributed to any delegator.
-	// It will be sent to CommunityPool.
-	// there are 2 sources of leftover:
-	// 1. rounding errors due to division.
-	// 2. some delegators have no delegation.
-	leftover := totalPSEAmount
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if totalPSEScore.IsPositive() {
-		err = finalScoreMap.walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
-			userAmount := totalPSEAmount.Mul(score).Quo(totalPSEScore)
-			distributedAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
-			if err != nil {
-				return err
-			}
-			leftover = leftover.Sub(distributedAmount)
-			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
-				DelegatorAddress: addr.String(),
-				Score:            score,
-				TotalPseScore:    totalPSEScore,
-				Amount:           userAmount,
-				ScheduledAt:      scheduledAt,
-			}); err != nil {
-				sdkCtx.Logger().Error("failed to emit community distributed event", "error", err)
-			}
+	var totalEntries uint64
+	err = finalScoreMap.walk(func(addr sdk.AccAddress, score sdkmath.Int) error {
+		if score.IsZero() {
 			return nil
-		})
+		}
+		if err := k.CommunityScores.Set(ctx, addr, score); err != nil {
+			return err
+		}
+		totalEntries++
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return k.CommunityJob.Set(ctx, types.CommunityDistributionJob{
+		ScheduledAt:      scheduledAt,
+		TotalAmount:      totalPSEAmount,
+		TotalScore:       finalScoreMap.totalScore,
+		Leftover:         totalPSEAmount,
+		NextAddress:      "",
+		TotalEntries:     totalEntries,
+		ProcessedEntries: 0,
+	})
+}
+
+// ProcessCommunityDistributionBatch processes a fixed-size batch of community payouts per block.
+func (k Keeper) ProcessCommunityDistributionBatch(ctx context.Context, batchSize uint64) error {
+	job, err := k.CommunityJob.Get(ctx)
+	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	if !job.TotalScore.IsPositive() || job.TotalEntries == 0 {
+		return k.completeCommunityJob(ctx, job)
+	}
+
+	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+	if err != nil {
+		return err
+	}
+
+	var nextAddrBytes []byte
+	if job.NextAddress != "" {
+		nextAddrBytes, err = k.addressCodec.StringToBytes(job.NextAddress)
 		if err != nil {
 			return err
 		}
 	}
 
-	// send leftover to CommunityPool.
-	if leftover.IsPositive() {
+	iter, err := k.CommunityScores.Iterate(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer iter.Close()
+
+	processed := uint64(0)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	for ; iter.Valid() && processed < batchSize; iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			return err
+		}
+		if len(nextAddrBytes) > 0 && bytes.Compare(kv.Key, nextAddrBytes) <= 0 {
+			continue
+		}
+
+		addr := kv.Key
+		score := kv.Value
+		userAmount := job.TotalAmount.Mul(score).Quo(job.TotalScore)
+		distributedAmount, err := k.distributeToDelegator(ctx, addr, userAmount, bondDenom)
+		if err != nil {
+			return err
+		}
+		job.Leftover = job.Leftover.Sub(distributedAmount)
+		job.ProcessedEntries++
+		processed++
+
+		addrStr, err := k.addressCodec.BytesToString(addr)
+		if err != nil {
+			return err
+		}
+		job.NextAddress = addrStr
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
+			DelegatorAddress: addrStr,
+			Score:            score,
+			TotalPseScore:    job.TotalScore,
+			Amount:           userAmount,
+			ScheduledAt:      job.ScheduledAt,
+		}); err != nil {
+			sdkCtx.Logger().Error("failed to emit community distributed event", "error", err)
+		}
+	}
+
+	if job.ProcessedEntries >= job.TotalEntries {
+		return k.completeCommunityJob(ctx, job)
+	}
+
+	return k.CommunityJob.Set(ctx, job)
+}
+
+func (k Keeper) completeCommunityJob(ctx context.Context, job types.CommunityDistributionJob) error {
+	if job.Leftover.IsPositive() {
+		bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+		if err != nil {
+			return err
+		}
 		pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
-		err = k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, leftover)), pseModuleAddress)
-		if err != nil {
+		if err := k.distributionKeeper.FundCommunityPool(
+			ctx,
+			sdk.NewCoins(sdk.NewCoin(bondDenom, job.Leftover)),
+			pseModuleAddress,
+		); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	if err := k.CommunityScores.Clear(ctx, nil); err != nil {
+		return err
+	}
+
+	return k.CommunityJob.Remove(ctx)
+}
+
+// CommunityDistributionBatchSize returns the default community distribution batch size per block.
+func CommunityDistributionBatchSize() uint64 {
+	return communityDistributionBatchSize
 }
 
 func (k Keeper) distributeToDelegator(
