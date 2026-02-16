@@ -391,7 +391,7 @@ mod tests {
         // No acks
         query(deps.as_ref(), env.clone(), get_msg.clone()).unwrap_err();
 
-        let msg = SudoMsg::IBCLifecycleComplete(IBCLifecycleComplete::IBCAck {
+        let msg = SudoMsg::ReceiveAck {
             channel: "channel-0".to_string(),
             sequence: 1,
             ack: String::new(),
@@ -404,7 +404,7 @@ mod tests {
         let value: GetCountResponse = from_json(&res).unwrap();
         assert_eq!(1, value.count);
 
-        let msg = SudoMsg::IBCLifecycleComplete(IBCLifecycleComplete::IBCAck {
+        let msg = SudoMsg::ReceiveAck {
             channel: "channel-0".to_string(),
             sequence: 1,
             ack: String::new(),
