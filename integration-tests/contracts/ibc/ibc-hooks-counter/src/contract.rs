@@ -396,7 +396,7 @@ mod tests {
             sequence: 1,
             ack: String::new(),
             success: true,
-        });
+        };
         let _res = sudo(deps.as_mut(), env.clone(), msg).unwrap();
 
         // should increase counter by 1
@@ -409,7 +409,7 @@ mod tests {
             sequence: 1,
             ack: String::new(),
             success: true,
-        });
+        };
         let _res = sudo(deps.as_mut(), env.clone(), msg).unwrap();
 
         // should increase counter by 1
