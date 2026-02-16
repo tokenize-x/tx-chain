@@ -101,7 +101,7 @@ Run the query again, and you will see that there are now funds in the newly gene
 
 ## Connect to Running Chains
 TX Blockchain has `mainnet`, `testnet` and `devnet` chains running. In order to connect to any of those networks, get the
-network variables from the docs <!-- markdown-link-check-disable -->[here](https://docs.tx.dev/docs/next/nodes-and-validators/essentials/network-variables)<!-- markdown-link-check-enable -->, and
+network variables from the docs <!-- markdown-link-check-disable -->[here](https://docs.tx.org/docs/next/nodes-and-validators/essentials/network-variables)<!-- markdown-link-check-enable -->, and
 provide the correct `node` and `chain-id` flags to the cli command. 
 As an example here is a command to connect to the testnet to get the status:
 
@@ -111,4 +111,4 @@ $ txd status --chain-id=coreum-testnet-1 --node=https://full-node.testnet-1.tx.d
 It should also be mentioned that for development purposes testnet is more stable than devnet.
 
 You can also find block explorers for each chain by this
-<!-- markdown-link-check-disable -->[link](https://docs.tx.dev/docs/tools-and-ecosystem/blockchain-explorers)<!-- markdown-link-check-enable -->.
+<!-- markdown-link-check-disable -->[link](https://docs.tx.org/docs/tools-and-ecosystem/blockchain-explorers)<!-- markdown-link-check-enable -->.
