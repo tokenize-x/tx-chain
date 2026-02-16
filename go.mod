@@ -38,8 +38,8 @@ require (
 	cosmossdk.io/x/nft v0.1.1
 	cosmossdk.io/x/tx v0.14.0
 	cosmossdk.io/x/upgrade v0.2.0
-	github.com/CosmWasm/wasmd v0.60.5
-	github.com/CosmWasm/wasmvm/v2 v2.3.2
+	github.com/CosmWasm/wasmd v0.54.6
+	github.com/CosmWasm/wasmvm/v2 v2.2.6
 	github.com/cometbft/cometbft v0.38.21
 	github.com/cosmos/btcutil v1.0.5
 	github.com/cosmos/cosmos-db v1.1.3
@@ -122,7 +122,7 @@ require (
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/iavl v1.2.4 // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
-	github.com/cosmos/ibc-go/v8 v8.7.0 // indirect
+	github.com/cosmos/ibc-go/v8 v8.8.0 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v1.0.0 // indirect
 	github.com/cosmos/rosetta-sdk-go v0.10.0 // indirect
