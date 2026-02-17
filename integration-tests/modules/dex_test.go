@@ -464,6 +464,13 @@ func TestOrderCancellation(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Equal(uint64(1), countRes.Count)
 
+	// check that account DEX reserve equals the order reserve after placing an order
+	dexReserveRes, err := dexClient.AccountDEXReserve(ctx, &dextypes.QueryAccountDEXReserveRequest{
+		Account: acc1.String(),
+	})
+	requireT.NoError(err)
+	requireT.Equal(dexParamsRes.Params.OrderReserve.String(), dexReserveRes.Reserve.String())
+
 	cancelOrderMsg := &dextypes.MsgCancelOrder{
 		Sender: placeSellOrderMsg.Sender,
 		ID:     placeSellOrderMsg.ID,
@@ -510,6 +517,12 @@ func TestOrderCancellation(t *testing.T) {
 	})
 	requireT.NoError(err)
 	requireT.Equal(uint64(0), countRes.Count)
+
+	dexReserveRes, err = dexClient.AccountDEXReserve(ctx, &dextypes.QueryAccountDEXReserveRequest{
+		Account: acc1.String(),
+	})
+	requireT.NoError(err)
+	requireT.Empty(dexReserveRes.Reserve.Denom)
 }
 
 // TestOrderTilBlockHeight tests the dex modules ability to place cancel placed order with good til block height.
