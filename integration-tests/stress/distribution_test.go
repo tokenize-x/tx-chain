@@ -12,10 +12,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
 )
 
 // TestDistributionWithdrawRewardWithDeterministicGas checks that withdraw reward works correctly and

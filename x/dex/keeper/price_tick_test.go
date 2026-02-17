@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	cbig "github.com/tokenize-x/tx-chain/v6/pkg/math/big"
+	cbig "github.com/tokenize-x/tx-chain/v7/pkg/math/big"
 )
 
 func Test_computePriceTick(t *testing.T) {

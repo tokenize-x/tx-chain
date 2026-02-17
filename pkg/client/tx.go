@@ -27,7 +27,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pkg/errors"
 
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
