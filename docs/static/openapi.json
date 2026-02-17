@@ -1076,7 +1076,7 @@
     },
     "/coreum/dex/v1/accounts/{account}/dex-reserve": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV6XDexTypesAccountDEXReserve",
+        "operationId": "GithubComTokenizeXTxChainV7XDexTypesAccountDEXReserve",
         "parameters": [
           {
             "name": "account",
