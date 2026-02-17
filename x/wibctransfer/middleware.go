@@ -6,7 +6,7 @@ import (
 	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 
-	"github.com/tokenize-x/tx-chain/v6/x/wibctransfer/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wibctransfer/types"
 )
 
 var _ porttypes.IBCModule = PurposeMiddleware{}

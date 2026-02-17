@@ -35,12 +35,12 @@ import (
 	"github.com/hashicorp/go-metrics"
 	"github.com/samber/lo"
 
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 // These constants define gas for messages which have custom calculation logic.

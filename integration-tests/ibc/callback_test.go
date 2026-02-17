@@ -14,9 +14,9 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	ibcwasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/ibc"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	ibcwasm "github.com/tokenize-x/tx-chain/v7/integration-tests/contracts/ibc"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
 )
 
 // TestIBCWASMCallback tests ibc-callback integration by deploying the ibc-callbacks-counter WASM contract

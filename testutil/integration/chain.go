@@ -41,10 +41,10 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/tokenize-x/tx-chain/v6/app"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	txchainkeyring "github.com/tokenize-x/tx-chain/v6/pkg/keyring"
+	"github.com/tokenize-x/tx-chain/v7/app"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	txchainkeyring "github.com/tokenize-x/tx-chain/v7/pkg/keyring"
 )
 
 // defaultGasAdjustment is gas adjustment used for the nondeterministic gas messages.

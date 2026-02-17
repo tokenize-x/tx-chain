@@ -8,7 +8,7 @@ import (
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/samber/lo"
 
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
 )
 
 const tokenUpgradeV1Version = 1

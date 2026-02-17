@@ -13,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/app"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/app"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 )
 
 // stringsFlag allows setting a value multiple times to collect a list, as in -I=val1 -I=val2.

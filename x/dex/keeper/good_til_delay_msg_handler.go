@@ -6,7 +6,7 @@ import (
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
 
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // CancelOrderKeeper is keeper interface required for CancelGoodTil.
