@@ -6,6 +6,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	"github.com/cosmos/cosmos-sdk/version"
 
 	"github.com/tokenize-x/tx-chain/v7/app"
 	"github.com/tokenize-x/tx-chain/v7/cmd/txd/cosmoscmd"
@@ -14,6 +15,9 @@ import (
 const txChainEnvPrefix = "TXD"
 
 func main() {
+	// OS keyring backend uses version.Name as namespace label.
+	version.Name = "tx-chain"
+
 	network, err := cosmoscmd.PreProcessFlags()
 	if err != nil {
 		fmt.Printf("Error processing chain id flag, err: %s", err)
