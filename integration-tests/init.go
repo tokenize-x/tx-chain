@@ -13,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/app"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/app"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 )
 
 // stringsFlag allows setting a value multiple times to collect a list, as in -I=val1 -I=val2.
@@ -69,7 +69,7 @@ var (
 
 //nolint:lll // this function contains flag description and mnemonic which cannot be broken down.
 func init() {
-	flag.BoolVar(&runUnsafe, "run-unsafe", true, "run unsafe tests for example ones related to governance")
+	flag.BoolVar(&runUnsafe, "run-unsafe", false, "run unsafe tests for example ones related to governance")
 
 	flag.StringVar(&txGRPCAddress, "tx-grpc-address", "localhost:9090", "GRPC address of txd node started by znet")
 	flag.StringVar(&txRPCAddress, "tx-rpc-address", "http://localhost:26657", "RPC address of txd node started by znet")

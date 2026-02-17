@@ -10,7 +10,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/samber/lo"
 
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 // GetParams returns the current pse module parameters.
@@ -105,38 +105,45 @@ func (k Keeper) UpdateExcludedAddresses(
 
 	params.ExcludedAddresses = append(params.ExcludedAddresses, toActuallyAdd...)
 
-	// Clear AccountScoreSnapshot AND DelegationTimeEntries for newly excluded addresses.
-	// Removing DelegationTimeEntries ensures they start completely fresh when re-included.
-	// Entries will be recreated naturally when hooks fire after re-inclusion.
 	for _, addrStr := range toActuallyAdd {
-		addr, err := k.addressCodec.StringToBytes(addrStr)
-		if err != nil {
+		if err = k.removeExcludedAccountData(ctx, addrStr); err != nil {
 			return err
-		}
-
-		// Remove snapshot if it exists
-		_ = k.AccountScoreSnapshot.Remove(ctx, addr)
-
-		// Remove all delegation time entries for this address
-		rng := collections.NewPrefixedPairRange[sdk.AccAddress, sdk.ValAddress](addr)
-		iter, err := k.DelegationTimeEntries.Iterate(ctx, rng)
-		if err != nil {
-			return err
-		}
-		defer iter.Close()
-
-		for ; iter.Valid(); iter.Next() {
-			kv, err := iter.KeyValue()
-			if err != nil {
-				return err
-			}
-			if err := k.DelegationTimeEntries.Remove(ctx, kv.Key); err != nil {
-				return err
-			}
 		}
 	}
 
 	return k.SetParams(ctx, params)
+}
+
+// removeExcludedAccountData clears AccountScoreSnapshot AND DelegationTimeEntries for newly excluded addresses.
+// Removing DelegationTimeEntries ensures they start completely fresh when re-included.
+// Entries will be recreated naturally when hooks fire after re-inclusion.
+func (k Keeper) removeExcludedAccountData(ctx context.Context, addrStr string) error {
+	addr, err := k.addressCodec.StringToBytes(addrStr)
+	if err != nil {
+		return err
+	}
+
+	// Remove snapshot if it exists
+	_ = k.AccountScoreSnapshot.Remove(ctx, addr)
+
+	// Remove all delegation time entries for this address
+	rng := collections.NewPrefixedPairRange[sdk.AccAddress, sdk.ValAddress](addr)
+	iter, err := k.DelegationTimeEntries.Iterate(ctx, rng)
+	if err != nil {
+		return err
+	}
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			return err
+		}
+		if err := k.DelegationTimeEntries.Remove(ctx, kv.Key); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // UpdateClearingAccountMappings updates the recipient mappings in params via governance.

@@ -5,7 +5,7 @@ package tx.pse.v1;
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 
-option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
 
 message DelegationTimeEntry {
   option (gogoproto.equal)           = false;

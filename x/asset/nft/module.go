@@ -16,13 +16,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/client/cli"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/client/cli"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
 )
 
 var (
-	_ module.AppModule           = AppModule{}
 	_ module.AppModuleBasic      = AppModule{}
 	_ module.AppModuleSimulation = AppModule{}
 	_ module.HasGenesis          = AppModule{}

@@ -12,8 +12,8 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
 )
 
 //go:generate go run . ./README.md
@@ -35,7 +35,7 @@ func main() {
 	)
 
 	cfg := deterministicgas.DefaultConfig()
-	for msgURL, gasFunc := range cfg.GasByMessageMap() { //nolint:deterministicmaplint // the results are sorted later
+	for msgURL, gasFunc := range cfg.GasByMessageMap() {
 		fnFullName := runtime.FuncForPC(reflect.ValueOf(gasFunc).Pointer()).Name()
 		fnParts := strings.Split(fnFullName, "/")
 		fnShortName := fnParts[len(fnParts)-1]

@@ -16,15 +16,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/client/cli"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper"
-	v4 "github.com/tokenize-x/tx-chain/v6/x/asset/ft/migrations/v4"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/simulation"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/client/cli"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper"
+	v4 "github.com/tokenize-x/tx-chain/v7/x/asset/ft/migrations/v4"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/simulation"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
 )
 
 var (
-	_ module.AppModule           = AppModule{}
 	_ module.AppModuleBasic      = AppModule{}
 	_ module.AppModuleSimulation = AppModule{}
 	_ module.HasGenesis          = AppModule{}

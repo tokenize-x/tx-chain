@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	integrationtests "github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/testutil/integration"
 )
 
 // SimpleState is a structure used to initizlize the simple state contract

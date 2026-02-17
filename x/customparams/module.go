@@ -16,12 +16,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/x/customparams/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/customparams/types"
+	"github.com/tokenize-x/tx-chain/v7/x/customparams/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/customparams/types"
 )
 
 var (
-	_ module.AppModule           = AppModule{}
 	_ module.AppModuleBasic      = AppModule{}
 	_ module.AppModuleSimulation = AppModule{}
 	_ module.HasGenesis          = AppModule{}

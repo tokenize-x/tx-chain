@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/tokenize-x/tx-chain/v6/app"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/app"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
 )
 
 // OverwriteDefaultChainIDFlags searches for the DefaultChainID flag and replaces its value of the current default.
@@ -32,7 +32,7 @@ func PreProcessFlags() (config.NetworkConfig, error) {
 	// define flags
 	const flagHelp = "help"
 	flagSet := pflag.NewFlagSet("pre-process", pflag.ExitOnError)
-	flagSet.ParseErrorsWhitelist.UnknownFlags = true
+	flagSet.ParseErrorsAllowlist.UnknownFlags = true
 	flagSet.String(flags.FlagHome, app.DefaultNodeHome, "Directory for config and data")
 	// Dummy flag to turn off printing usage of this flag set
 	help := flagSet.BoolP(flagHelp, "h", false, "")

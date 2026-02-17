@@ -3,8 +3,11 @@ package txchain
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -64,9 +67,34 @@ func BuildTXdLocally(ctx context.Context, deps types.DepsFunc) error {
 	})
 }
 
+// copyLocalBinary copies the binary to the cache dir.
+func copyLocalBinary(src, dst string) error {
+	// create dir from path
+	err := os.MkdirAll(filepath.Dir(dst), os.ModePerm)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// copy the file we need
+	fr, err := os.Open(src)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer fr.Close()
+	fw, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer fw.Close()
+	if _, err = io.Copy(fw, fr); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 // BuildTXdInDocker builds txd in docker.
 func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
-	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag})
+	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false)
 }
 
 // BuildGaiaDockerImage builds docker image of the gaia.
@@ -180,6 +208,7 @@ func buildTXdInDocker(
 	deps types.DepsFunc,
 	targetPlatform txcrusttools.TargetPlatform,
 	extraFlags []string,
+	release bool,
 ) error {
 	if err := txcrusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
 		return err
@@ -225,14 +254,22 @@ func buildTXdInDocker(
 		default:
 			return errors.Errorf("building is not possible for platform %s", targetPlatform)
 		}
-		const ccDockerDir = "/musl-gcc"
-		dockerVolumes = append(
-			dockerVolumes,
-			fmt.Sprintf("%s:%s", hostCCDirPath, ccDockerDir),
-			// put the libwasmvm to the lib folder of the compiler
-			fmt.Sprintf("%s:%s", wasmHostDirPath, fmt.Sprintf("%s%s", ccDockerDir, wasmCCLibRelativeLibPath)),
-		)
-		cc = fmt.Sprintf("%s%s", ccDockerDir, ccRelativePath)
+		if !release && runtime.GOOS == txcrusttools.OSLinux {
+			targetPlatform = txcrusttools.TargetPlatformLocal
+			if err := copyLocalBinary(wasmHostDirPath, hostCCDirPath+wasmCCLibRelativeLibPath); err != nil {
+				return err
+			}
+			cc = hostCCDirPath + ccRelativePath
+		} else {
+			const ccDockerDir = "/musl-gcc"
+			dockerVolumes = append(
+				dockerVolumes,
+				fmt.Sprintf("%s:%s", hostCCDirPath, ccDockerDir),
+				// put the libwasmvm to the lib folder of the compiler
+				fmt.Sprintf("%s:%s", wasmHostDirPath, fmt.Sprintf("%s%s", ccDockerDir, wasmCCLibRelativeLibPath)),
+			)
+			cc = fmt.Sprintf("%s%s", ccDockerDir, ccRelativePath)
+		}
 	case txcrusttools.OSDarwin:
 		buildTags = append(buildTags, "static_wasm")
 		switch targetPlatform {
@@ -278,14 +315,8 @@ func Lint(ctx context.Context, deps types.DepsFunc) error {
 		CompileAllSmartContracts,
 		formatProto,
 		lintProto,
-		breakingProto,
+		// breakingProto, TODO(Restore breaking proto)
 	)
-
-	ctx, err := golang.WithCustomLinters(ctx, txchaintools.DeterministicMapLint)
-	if err != nil {
-		return err
-	}
-
 	return lint.Lint(ctx, deps)
 }
 

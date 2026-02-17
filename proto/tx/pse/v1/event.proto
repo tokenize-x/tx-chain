@@ -4,7 +4,7 @@ package tx.pse.v1;
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 
-option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
 
 // EventAllocationDistributed is emitted when a scheduled allocation is successfully distributed.
 // The total amount is split equally among recipients using integer division.

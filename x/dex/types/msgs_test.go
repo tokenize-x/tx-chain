@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
@@ -248,7 +248,7 @@ func TestAmino(t *testing.T) {
 				Authority: address,
 				Params:    types.DefaultParams(),
 			},
-			wantAminoJSON: `{"type":"dex/MsgUpdateParams","value":{"authority":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","params":{"default_unified_ref_amount":"1000000.000000000000000000","max_orders_per_denom":"100","order_reserve":{"amount":"10000000","denom":"stake"},"price_tick_exponent":-6,"quantity_step_exponent":-2}}}`,
+			wantAminoJSON: `{"type":"dex/MsgUpdateParams","value":{"authority":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","params":{"default_unified_ref_amount":"1000000.000000000000000000","price_tick_exponent":-6,"quantity_step_exponent":-2,"max_orders_per_denom":"100","order_reserve":{"denom":"stake","amount":"10000000"}}}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgPlaceOrder{}),
@@ -263,7 +263,7 @@ func TestAmino(t *testing.T) {
 				Side:        types.SIDE_SELL,
 				TimeInForce: types.TIME_IN_FORCE_GTC,
 			},
-			wantAminoJSON: `{"type":"dex/MsgPlaceOrder","value":{"base_denom":"denom1","id":"id1","price":"1e-1","quantity":"100","quote_denom":"denom2","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","side":2,"time_in_force":1,"type":1}}`,
+			wantAminoJSON: `{"type":"dex/MsgPlaceOrder","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","type":1,"id":"id1","base_denom":"denom1","quote_denom":"denom2","price":"1e-1","quantity":"100","side":2,"time_in_force":1}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgCancelOrder{}),
@@ -271,7 +271,7 @@ func TestAmino(t *testing.T) {
 				Sender: address,
 				ID:     "id1",
 			},
-			wantAminoJSON: `{"type":"dex/MsgCancelOrder","value":{"id":"id1","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"dex/MsgCancelOrder","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","id":"id1"}}`,
 		},
 		{
 			name: sdk.MsgTypeURL(&types.MsgCancelOrdersByDenom{}),
@@ -280,7 +280,7 @@ func TestAmino(t *testing.T) {
 				Account: address,
 				Denom:   "denom1",
 			},
-			wantAminoJSON: `{"type":"dex/MsgCancelOrdersByDenom","value":{"account":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","denom":"denom1","sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5"}}`,
+			wantAminoJSON: `{"type":"dex/MsgCancelOrdersByDenom","value":{"sender":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","account":"devcore172rc5sz2uclpsy3vvx3y79ah5dk450z5ruq2r5","denom":"denom1"}}`,
 		},
 	}
 
@@ -289,7 +289,7 @@ func TestAmino(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			generatedJSON := legacyAmino.Amino.MustMarshalJSON(tt.msg)
-			require.Equal(t, tt.wantAminoJSON, string(sdk.MustSortJSON(generatedJSON)))
+			require.JSONEq(t, tt.wantAminoJSON, string(generatedJSON))
 		})
 	}
 }

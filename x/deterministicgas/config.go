@@ -1,8 +1,6 @@
 package deterministicgas
 
 import (
-	"maps"
-
 	storetypes "cosmossdk.io/store/types"
 	evidencetypes "cosmossdk.io/x/evidence/types"
 	feegranttypes "cosmossdk.io/x/feegrant"
@@ -37,12 +35,12 @@ import (
 	"github.com/hashicorp/go-metrics"
 	"github.com/samber/lo"
 
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 // These constants define gas for messages which have custom calculation logic.
@@ -404,7 +402,11 @@ func (cfg Config) GasRequiredByMessage(msg sdk.Msg) (uint64, bool) {
 
 // GasByMessageMap returns copy mapping of message types and functions to calculate gas for specific type.
 func (cfg Config) GasByMessageMap() map[MsgURL]gasByMsgFunc {
-	return maps.Clone(cfg.gasByMsg)
+	newGasByMsg := make(map[MsgURL]gasByMsgFunc, len(cfg.gasByMsg))
+	for k, v := range cfg.gasByMsg {
+		newGasByMsg[k] = v
+	}
+	return newGasByMsg
 }
 
 // MsgToMsgURL returns TypeURL of a msg in cosmos SDK style.

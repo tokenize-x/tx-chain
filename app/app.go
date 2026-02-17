@@ -132,46 +132,45 @@ import (
 	"github.com/spf13/cast"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
-	"github.com/tokenize-x/tx-chain/v6/app/openapi"
-	appupgrade "github.com/tokenize-x/tx-chain/v6/app/upgrade"
-	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
-	"github.com/tokenize-x/tx-chain/v6/docs"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	deterministicmap "github.com/tokenize-x/tx-chain/v6/pkg/deterministic-map"
-	assetft "github.com/tokenize-x/tx-chain/v6/x/asset/ft"
-	assetftkeeper "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnft "github.com/tokenize-x/tx-chain/v6/x/asset/nft"
-	assetnftkeeper "github.com/tokenize-x/tx-chain/v6/x/asset/nft/keeper"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/auth/ante"
-	"github.com/tokenize-x/tx-chain/v6/x/customparams"
-	customparamskeeper "github.com/tokenize-x/tx-chain/v6/x/customparams/keeper"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	"github.com/tokenize-x/tx-chain/v6/x/delay"
-	delaykeeper "github.com/tokenize-x/tx-chain/v6/x/delay/keeper"
-	delaytypes "github.com/tokenize-x/tx-chain/v6/x/delay/types"
-	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
-	deterministicgastypes "github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
-	"github.com/tokenize-x/tx-chain/v6/x/dex"
-	dexkeeper "github.com/tokenize-x/tx-chain/v6/x/dex/keeper"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel"
-	feemodelkeeper "github.com/tokenize-x/tx-chain/v6/x/feemodel/keeper"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
-	"github.com/tokenize-x/tx-chain/v6/x/pse"
-	psekeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
-	wasmcustomhandler "github.com/tokenize-x/tx-chain/v6/x/wasm/handler"
-	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
-	"github.com/tokenize-x/tx-chain/v6/x/wbank"
-	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/wibctransfer"
-	wibctransferkeeper "github.com/tokenize-x/tx-chain/v6/x/wibctransfer/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/wnft"
-	wnftkeeper "github.com/tokenize-x/tx-chain/v6/x/wnft/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/wstaking"
+	"github.com/tokenize-x/tx-chain/v7/app/openapi"
+	appupgrade "github.com/tokenize-x/tx-chain/v7/app/upgrade"
+	appupgradev7 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v7"
+	"github.com/tokenize-x/tx-chain/v7/docs"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	assetft "github.com/tokenize-x/tx-chain/v7/x/asset/ft"
+	assetftkeeper "github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnft "github.com/tokenize-x/tx-chain/v7/x/asset/nft"
+	assetnftkeeper "github.com/tokenize-x/tx-chain/v7/x/asset/nft/keeper"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/auth/ante"
+	"github.com/tokenize-x/tx-chain/v7/x/customparams"
+	customparamskeeper "github.com/tokenize-x/tx-chain/v7/x/customparams/keeper"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	"github.com/tokenize-x/tx-chain/v7/x/delay"
+	delaykeeper "github.com/tokenize-x/tx-chain/v7/x/delay/keeper"
+	delaytypes "github.com/tokenize-x/tx-chain/v7/x/delay/types"
+	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
+	deterministicgastypes "github.com/tokenize-x/tx-chain/v7/x/deterministicgas/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex"
+	dexkeeper "github.com/tokenize-x/tx-chain/v7/x/dex/keeper"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel"
+	feemodelkeeper "github.com/tokenize-x/tx-chain/v7/x/feemodel/keeper"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse"
+	psekeeper "github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
+	wasmcustomhandler "github.com/tokenize-x/tx-chain/v7/x/wasm/handler"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v7/x/wasm/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wbank"
+	wbankkeeper "github.com/tokenize-x/tx-chain/v7/x/wbank/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/wibctransfer"
+	wibctransferkeeper "github.com/tokenize-x/tx-chain/v7/x/wibctransfer/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/wnft"
+	wnftkeeper "github.com/tokenize-x/tx-chain/v7/x/wnft/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/wstaking"
 )
 
 const (
@@ -1208,7 +1207,7 @@ func New(
 
 	/**** Upgrades ****/
 	upgrades := []appupgrade.Upgrade{
-		appupgradev6.New(
+		appupgradev7.New(
 			app.ModuleManager,
 			app.configurator,
 			app.BankKeeper,
@@ -1331,7 +1330,7 @@ func (app *App) LoadHeight(height int64) error {
 // ModuleAccountAddrs returns all the app's module account addresses.
 func (app *App) ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
-	for acc := range maccPerms { //nolint:deterministicmaplint // The result suppose to be map because Cosmos needs it
+	for acc := range maccPerms {
 		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
 	}
 
@@ -1439,18 +1438,16 @@ func (app *App) RegisterNodeService(clientCtx client.Context, cfg serverconfig.C
 
 // AutoCliOpts returns the autocli options for the app.
 func (app *App) AutoCliOpts() autocli.AppOptions {
-	modules := make(map[string]appmodule.AppModule)
+	modules := make(map[string]appmodule.AppModule, 0)
 
-	deterministicModules := deterministicmap.FromMap(app.ModuleManager.Modules)
-	_ = deterministicModules.Range(func(_ string, m any) error {
+	for _, m := range app.ModuleManager.Modules {
 		if moduleWithName, ok := m.(module.HasName); ok {
 			moduleName := moduleWithName.Name()
 			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
 				modules[moduleName] = appModule
 			}
 		}
-		return nil
-	})
+	}
 
 	return autocli.AppOptions{
 		Modules:               modules,
@@ -1486,20 +1483,18 @@ func initParamsKeeper(
 }
 
 func excludeModules(modules map[string]interface{}, modulesToExclude []string) map[string]interface{} {
-	filteredModules := make(map[string]interface{})
+	filteredModules := make(map[string]interface{}, 0)
 
 	modulesToExcludeMap := lo.SliceToMap(modulesToExclude, func(k string) (string, struct{}) {
 		return k, struct{}{}
 	})
-	deterministicModules := deterministicmap.FromMap(modules)
-	_ = deterministicModules.Range(func(n string, m any) error {
+	for n, m := range modules {
 		if _, ok := modulesToExcludeMap[n]; ok {
-			return nil
+			continue
 		}
 
 		filteredModules[n] = m
-		return nil
-	})
+	}
 
 	return filteredModules
 }

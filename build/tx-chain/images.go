@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 	"github.com/tokenize-x/tx-chain/build/tx-chain/image"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
 	"github.com/tokenize-x/tx-crust/build/config"
 	"github.com/tokenize-x/tx-crust/build/docker"
 	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
@@ -21,17 +22,25 @@ type imageConfig struct {
 	ContainerRegistry string
 	OrgName           string
 	Versions          []string
+	UseLocalBinary    bool
 }
 
 // BuildTXdDockerImage builds txd docker image.
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	deps(BuildTXdInDocker, ensureReleasedBinaries)
 
+	useLocalBinary := false
+	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
+	if runtime.GOOS == txcrusttools.OSLinux {
+		useLocalBinary = true
+	}
+
 	return buildTXdDockerImage(ctx, imageConfig{
 		BinaryPath:      binaryPath,
 		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxLocalArchInDocker},
 		Action:          docker.ActionLoad,
 		Versions:        []string{config.ZNetVersion},
+		UseLocalBinary:  useLocalBinary,
 	})
 }
 
@@ -50,6 +59,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 			string(constant.ChainIDDev),
 			string(constant.ChainIDTest),
 		},
+		InDocker: !cfg.UseLocalBinary,
 	})
 	if err != nil {
 		return err
@@ -67,10 +77,9 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 	})
 }
 
-// ensureReleasedBinaries ensures that all previous cored versions are installed.
-// TODO (v7): Rename all cored to txd.
+// ensureReleasedBinaries ensures that all previous txd versions are installed.
 func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
-	const binaryTool = txchaintools.CoredV503
+	const binaryTool = txchaintools.TXdV600
 	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}
