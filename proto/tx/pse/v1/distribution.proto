@@ -4,7 +4,7 @@ package tx.pse.v1;
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 
-option go_package = "github.com/tokenize-x/tx-chain/v6/x/pse/types";
+option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
 
 // ClearingAccountMapping defines the mapping between a clearing account (module account) and its recipients (sub account multisig wallets).
 // This mapping can be modified via governance proposals.

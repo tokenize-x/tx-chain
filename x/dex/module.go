@@ -16,9 +16,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/x/dex/client/cli"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/client/cli"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 var (

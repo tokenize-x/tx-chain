@@ -4,8 +4,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
 )
 
 // InitGenesis initializes the asset module's state from a provided genesis state.
