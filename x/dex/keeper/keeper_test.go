@@ -1400,4 +1400,28 @@ func TestKeeper_GetAccountDEXReserve(t *testing.T) {
 	// Verify this differs from the naive frontend calculation (count × current param)
 	frontendCalc := sdk.NewCoin(orderReserve.Denom, newReserveAmount.MulRaw(4))
 	require.NotEqual(t, frontendCalc.String(), reserve.String())
+
+	// Change OrderReserve denom and place a new order — query should return denom mismatch error
+	params.OrderReserve = sdk.NewCoin(testSet.denom1, sdkmath.NewInt(100))
+	require.NoError(t, testApp.DEXKeeper.SetParams(sdkCtx, params))
+
+	order := types.Order{
+		Creator:     acc.String(),
+		Type:        types.ORDER_TYPE_LIMIT,
+		ID:          "order-denom-change",
+		BaseDenom:   testSet.denom1,
+		QuoteDenom:  testSet.denom2,
+		Price:       lo.ToPtr(types.MustNewPriceFromString("1")),
+		Quantity:    defaultQuantityStep,
+		Side:        types.SIDE_SELL,
+		TimeInForce: types.TIME_IN_FORCE_GTC,
+	}
+	lockedBalance, err := order.ComputeLimitOrderLockedBalance()
+	require.NoError(t, err)
+	testApp.MintAndSendCoin(t, sdkCtx, acc, sdk.NewCoins(lockedBalance))
+	fundOrderReserve(t, testApp, sdkCtx, acc)
+	require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
+
+	_, err = testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.ErrorContains(t, err, "reserve denom mismatch")
 }
