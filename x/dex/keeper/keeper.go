@@ -425,15 +425,16 @@ func (k Keeper) GetAccountDEXReserve(ctx sdk.Context, acc sdk.AccAddress) (sdk.C
 		}
 
 		if orderData.Reserve.IsPositive() {
-			if totalReserve.Denom == "" {
+			switch {
+			case totalReserve.Denom == "":
 				totalReserve = orderData.Reserve
-			} else if totalReserve.Denom != orderData.Reserve.Denom {
+			case totalReserve.Denom != orderData.Reserve.Denom:
 				return sdk.Coin{}, sdkerrors.Wrapf(
 					types.ErrInvalidInput,
 					"reserve denom mismatch: expected %s, got %s",
 					totalReserve.Denom, orderData.Reserve.Denom,
 				)
-			} else {
+			default:
 				totalReserve = totalReserve.Add(orderData.Reserve)
 			}
 		}
