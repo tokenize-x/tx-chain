@@ -221,7 +221,8 @@ func buildTXdInDocker(
 	dockerVolumes := make([]string, 0)
 	switch targetPlatform.OS {
 	case txcrusttools.OSLinux:
-		// use cc not installed on the image we use for the build
+		// Linux builds must use muslc + static linking so the binary runs in Alpine (txd Docker image).
+		// Using glibc or dynamic wasmvm leads to SIGABRT in wasmvm/cgo when the binary runs in-container.
 		if err := txcrusttools.Ensure(ctx, txchaintools.MuslCC, targetPlatform); err != nil {
 			return err
 		}
@@ -229,13 +230,11 @@ func buildTXdInDocker(
 		ldFlags = append(ldFlags, "-extldflags '-static'")
 		var (
 			hostCCDirPath string
-			// path inside hostCCDirPath to the CC
 			ccRelativePath string
-
 			wasmHostDirPath string
-			// path to the wasm lib in the CC
 			wasmCCLibRelativeLibPath string
 		)
+		// Use targetPlatform for all tool paths so local and in-Docker builds use the same toolchain.
 		switch targetPlatform {
 		case txcrusttools.TargetPlatformLinuxAMD64InDocker:
 			hostCCDirPath = filepath.Dir(
@@ -251,9 +250,29 @@ func buildTXdInDocker(
 			ccRelativePath = "/bin/aarch64-linux-musl-gcc"
 			wasmHostDirPath = txcrusttools.Path("lib/libwasmvm_muslc.aarch64.a", targetPlatform)
 			wasmCCLibRelativeLibPath = "/aarch64-linux-musl/lib/libwasmvm_muslc.aarch64.a"
+		case txcrusttools.TargetPlatformLinuxLocalArchInDocker:
+			// Same toolchain as fixed arch above, chosen by runtime.GOARCH (CI can be amd64 or arm64).
+			if targetPlatform.Arch == txcrusttools.ArchAMD64 {
+				hostCCDirPath = filepath.Dir(
+					filepath.Dir(txcrusttools.Path("bin/x86_64-linux-musl-gcc", targetPlatform)),
+				)
+				ccRelativePath = "/bin/x86_64-linux-musl-gcc"
+				wasmHostDirPath = txcrusttools.Path("lib/libwasmvm_muslc.x86_64.a", targetPlatform)
+				wasmCCLibRelativeLibPath = "/x86_64-linux-musl/lib/libwasmvm_muslc.x86_64.a"
+			} else if targetPlatform.Arch == txcrusttools.ArchARM64 {
+				hostCCDirPath = filepath.Dir(
+					filepath.Dir(txcrusttools.Path("bin/aarch64-linux-musl-gcc", targetPlatform)),
+				)
+				ccRelativePath = "/bin/aarch64-linux-musl-gcc"
+				wasmHostDirPath = txcrusttools.Path("lib/libwasmvm_muslc.aarch64.a", targetPlatform)
+				wasmCCLibRelativeLibPath = "/aarch64-linux-musl/lib/libwasmvm_muslc.aarch64.a"
+			} else {
+				return errors.Errorf("building is not possible for platform %s", targetPlatform)
+			}
 		default:
 			return errors.Errorf("building is not possible for platform %s", targetPlatform)
 		}
+		// Local Linux build: same muslc/static config as in-Docker, output to cache for Docker image.
 		if !release && runtime.GOOS == txcrusttools.OSLinux {
 			targetPlatform = txcrusttools.TargetPlatformLocal
 			if err := copyLocalBinary(wasmHostDirPath, hostCCDirPath+wasmCCLibRelativeLibPath); err != nil {
