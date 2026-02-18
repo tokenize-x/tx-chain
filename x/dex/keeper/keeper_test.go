@@ -1312,3 +1312,116 @@ func fundOrderReserve(
 	}
 	require.NoError(t, testApp.FundAccount(sdkCtx, acc, sdk.NewCoins(orderReserve)))
 }
+
+func TestKeeper_GetAccountDEXReserve(t *testing.T) {
+	testApp := simapp.New()
+	sdkCtx := testApp.NewContext(false)
+	testSet := genTestSet(t, sdkCtx, testApp)
+
+	acc, _ := testApp.GenAccount(sdkCtx)
+
+	// Get the order reserve param
+	params, err := testApp.DEXKeeper.GetParams(sdkCtx)
+	require.NoError(t, err)
+	orderReserve := params.OrderReserve
+
+	// Verify no reserve when no orders exist (empty coin has no denom)
+	reserve, err := testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.NoError(t, err)
+	require.Empty(t, reserve.Denom)
+
+	// Place 3 orders
+	for i := range 3 {
+		order := types.Order{
+			Creator:     acc.String(),
+			Type:        types.ORDER_TYPE_LIMIT,
+			ID:          fmt.Sprintf("order-%d", i),
+			BaseDenom:   testSet.denom1,
+			QuoteDenom:  testSet.denom2,
+			Price:       lo.ToPtr(types.MustNewPriceFromString("1")),
+			Quantity:    defaultQuantityStep,
+			Side:        types.SIDE_SELL,
+			TimeInForce: types.TIME_IN_FORCE_GTC,
+		}
+		lockedBalance, err := order.ComputeLimitOrderLockedBalance()
+		require.NoError(t, err)
+		testApp.MintAndSendCoin(t, sdkCtx, acc, sdk.NewCoins(lockedBalance))
+		fundOrderReserve(t, testApp, sdkCtx, acc)
+		require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
+	}
+
+	// Verify total reserve equals 3 * orderReserve
+	reserve, err = testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.NoError(t, err)
+	expectedReserve := sdk.NewCoin(orderReserve.Denom, orderReserve.Amount.MulRaw(3))
+	require.Equal(t, expectedReserve.String(), reserve.String())
+
+	// Cancel one order and verify reserve decreases
+	require.NoError(t, testApp.DEXKeeper.CancelOrder(sdkCtx, acc, "order-0"))
+
+	reserve, err = testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.NoError(t, err)
+	expectedReserve = sdk.NewCoin(orderReserve.Denom, orderReserve.Amount.MulRaw(2))
+	require.Equal(t, expectedReserve.String(), reserve.String())
+
+	// Change OrderReserve param (simulating governance proposal)
+	oldReserve := orderReserve
+	newReserveAmount := orderReserve.Amount.MulRaw(3) // triple the reserve
+	params.OrderReserve = sdk.NewCoin(orderReserve.Denom, newReserveAmount)
+	require.NoError(t, testApp.DEXKeeper.SetParams(sdkCtx, params))
+
+	// Place 2 more orders with the new param
+	for i := range 2 {
+		order := types.Order{
+			Creator:     acc.String(),
+			Type:        types.ORDER_TYPE_LIMIT,
+			ID:          fmt.Sprintf("order-new-%d", i),
+			BaseDenom:   testSet.denom1,
+			QuoteDenom:  testSet.denom2,
+			Price:       lo.ToPtr(types.MustNewPriceFromString("1")),
+			Quantity:    defaultQuantityStep,
+			Side:        types.SIDE_SELL,
+			TimeInForce: types.TIME_IN_FORCE_GTC,
+		}
+		lockedBalance, err := order.ComputeLimitOrderLockedBalance()
+		require.NoError(t, err)
+		testApp.MintAndSendCoin(t, sdkCtx, acc, sdk.NewCoins(lockedBalance))
+		fundOrderReserve(t, testApp, sdkCtx, acc)
+		require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
+	}
+
+	// Total should be: (2 old orders × oldReserve) + (2 new orders × newReserve)
+	reserve, err = testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.NoError(t, err)
+	expectedTotal := oldReserve.Amount.MulRaw(2).Add(newReserveAmount.MulRaw(2))
+	expectedReserve = sdk.NewCoin(orderReserve.Denom, expectedTotal)
+	require.Equal(t, expectedReserve.String(), reserve.String())
+
+	// Verify this differs from the naive frontend calculation (count × current param)
+	frontendCalc := sdk.NewCoin(orderReserve.Denom, newReserveAmount.MulRaw(4))
+	require.NotEqual(t, frontendCalc.String(), reserve.String())
+
+	// Change OrderReserve denom and place a new order — query should return denom mismatch error
+	params.OrderReserve = sdk.NewCoin(testSet.denom1, sdkmath.NewInt(100))
+	require.NoError(t, testApp.DEXKeeper.SetParams(sdkCtx, params))
+
+	order := types.Order{
+		Creator:     acc.String(),
+		Type:        types.ORDER_TYPE_LIMIT,
+		ID:          "order-denom-change",
+		BaseDenom:   testSet.denom1,
+		QuoteDenom:  testSet.denom2,
+		Price:       lo.ToPtr(types.MustNewPriceFromString("1")),
+		Quantity:    defaultQuantityStep,
+		Side:        types.SIDE_SELL,
+		TimeInForce: types.TIME_IN_FORCE_GTC,
+	}
+	lockedBalance, err := order.ComputeLimitOrderLockedBalance()
+	require.NoError(t, err)
+	testApp.MintAndSendCoin(t, sdkCtx, acc, sdk.NewCoins(lockedBalance))
+	fundOrderReserve(t, testApp, sdkCtx, acc)
+	require.NoError(t, testApp.DEXKeeper.PlaceOrder(sdkCtx, order))
+
+	_, err = testApp.DEXKeeper.GetAccountDEXReserve(sdkCtx, acc)
+	require.ErrorContains(t, err, "reserve denom mismatch")
+}

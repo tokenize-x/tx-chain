@@ -221,6 +221,8 @@
     - [Params](#coreum.dex.v1.Params)
   
 - [coreum/dex/v1/query.proto](#coreum/dex/v1/query.proto)
+    - [QueryAccountDEXReserveRequest](#coreum.dex.v1.QueryAccountDEXReserveRequest)
+    - [QueryAccountDEXReserveResponse](#coreum.dex.v1.QueryAccountDEXReserveResponse)
     - [QueryAccountDenomOrdersCountRequest](#coreum.dex.v1.QueryAccountDenomOrdersCountRequest)
     - [QueryAccountDenomOrdersCountResponse](#coreum.dex.v1.QueryAccountDenomOrdersCountResponse)
     - [QueryOrderBookOrdersRequest](#coreum.dex.v1.QueryOrderBookOrdersRequest)
@@ -4997,6 +4999,44 @@ Params keeps gov manageable parameters.
 
 
 
+<a name="coreum.dex.v1.QueryAccountDEXReserveRequest"></a>
+
+### QueryAccountDEXReserveRequest
+
+```
+QueryAccountDEXReserveRequest defines the request type for the `AccountDEXReserve` query.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `account` | [string](#string) |  |  `account is the address to query DEX reserve for.`  |
+
+
+
+
+
+
+<a name="coreum.dex.v1.QueryAccountDEXReserveResponse"></a>
+
+### QueryAccountDEXReserveResponse
+
+```
+QueryAccountDEXReserveResponse defines the response type for the `AccountDEXReserve` query.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `reserve` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  `reserve is the total reserve locked by the account for all open orders.`  |
+
+
+
+
+
+
 <a name="coreum.dex.v1.QueryAccountDenomOrdersCountRequest"></a>
 
 ### QueryAccountDenomOrdersCountRequest
@@ -5295,6 +5335,7 @@ Query defines the gRPC query service.
 | `OrderBookParams` | [QueryOrderBookParamsRequest](#coreum.dex.v1.QueryOrderBookParamsRequest) | [QueryOrderBookParamsResponse](#coreum.dex.v1.QueryOrderBookParamsResponse) | `OrderBookParams queries order book params.` | GET|/coreum/dex/v1/order-book-params |
 | `OrderBookOrders` | [QueryOrderBookOrdersRequest](#coreum.dex.v1.QueryOrderBookOrdersRequest) | [QueryOrderBookOrdersResponse](#coreum.dex.v1.QueryOrderBookOrdersResponse) | `OrderBookOrders queries order book orders.` | GET|/coreum/dex/v1/order-books/{base_denom}/{quote_denom}/orders |
 | `AccountDenomOrdersCount` | [QueryAccountDenomOrdersCountRequest](#coreum.dex.v1.QueryAccountDenomOrdersCountRequest) | [QueryAccountDenomOrdersCountResponse](#coreum.dex.v1.QueryAccountDenomOrdersCountResponse) | `AccountDenomOrdersCount queries account denom orders count.` | GET|/coreum/dex/v1/accounts/{account}/denoms/{denom}/orders-count |
+| `AccountDEXReserve` | [QueryAccountDEXReserveRequest](#coreum.dex.v1.QueryAccountDEXReserveRequest) | [QueryAccountDEXReserveResponse](#coreum.dex.v1.QueryAccountDEXReserveResponse) | `AccountDEXReserve queries the total DEX reserve locked by an account for all open orders.` | GET|/coreum/dex/v1/accounts/{account}/dex-reserve |
 
  <!-- end services -->
 
