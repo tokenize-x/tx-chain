@@ -290,7 +290,7 @@ func buildTXdInDocker(
 				// put the libwasmvm to the lib folder of the compiler
 				fmt.Sprintf("%s:%s%s", tc.wasmHostDirPath, ccDockerDir, tc.wasmCCLibRelativeLibPath),
 			)
-			cc = ccDockerDir + tc.ccRelativePath
+			cc = fmt.Sprintf("%s%s", ccDockerDir, tc.ccRelativePath)
 		}
 	case txcrusttools.OSDarwin:
 		buildTags = append(buildTags, "static_wasm")
