@@ -156,7 +156,7 @@ dependencies = [
  "cw-storage-plus",
  "cw-utils",
  "cw2",
- "prost",
+ "prost 0.12.6",
  "thiserror",
  "tx-wasm-sdk",
 ]
@@ -271,15 +271,15 @@ checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
 name = "cosmwasm-core"
-version = "2.2.2"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35b6dc17e7fd89d0a0a58f12ef33f0bbdf09a6a14c3dfb383eae665e5889250e"
+checksum = "f96ba2dd3c228d9e04a901307502096f56e5a547980a30656118503773a25c7c"
 
 [[package]]
 name = "cosmwasm-crypto"
-version = "2.2.2"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa2f53285517db3e33d825b3e46301efe845135778527e1295154413b2f0469e"
+checksum = "cc2040bedb37918da4701f83dd8635749d99d7baa6c0129f290f503dcde90e5c"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",
@@ -301,9 +301,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-derive"
-version = "2.2.2"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a782b93fae93e57ca8ad3e9e994e784583f5933aeaaa5c80a545c4b437be2047"
+checksum = "82e8c609b837282a093d87f45099f648b5c2f36203c6223f67883f13c3c1453a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -312,9 +312,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-schema"
-version = "2.2.2"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6984ab21b47a096e17ae4c73cea2123a704d4b6686c39421247ad67020d76f95"
+checksum = "61d8debcf3b9cb23ed4c42a8c17fa224a422312d09f123816cc844c18c59246c"
 dependencies = [
  "cosmwasm-schema-derive",
  "schemars",
@@ -325,9 +325,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-schema-derive"
-version = "2.2.2"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e01c9214319017f6ebd8e299036e1f717fa9bb6724e758f7d6fb2477599d1a29"
+checksum = "9efbbf2d78ec255fdae93ae363cc67490878fe5682f1266e4951321cd20888ef"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -336,9 +336,9 @@ dependencies = [
 
 [[package]]
 name = "cosmwasm-std"
-version = "2.2.2"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf82335c14bd94eeb4d3c461b7aa419ecd7ea13c2efe24b97cd972bdb8044e7d"
+checksum = "80d40d789c6d5d9b560927712c836237a3f29ea75fb09ef8718d4036bf2b8965"
 dependencies = [
  "base64",
  "bech32",
@@ -893,7 +893,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "deb1435c188b76130da55f17a466d252ff7b1418b2ad3e037d127b94e3411f29"
 dependencies = [
  "bytes",
- "prost-derive",
+ "prost-derive 0.12.6",
+]
+
+[[package]]
+name = "prost"
+version = "0.14.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2ea70524a2f82d518bce41317d0fae74151505651af45faf1ffbd6fd33f0568"
+dependencies = [
+ "bytes",
+ "prost-derive 0.14.3",
 ]
 
 [[package]]
@@ -910,12 +920,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "prost-types"
-version = "0.12.6"
+name = "prost-derive"
+version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9091c90b0a32608e984ff2fa4091273cbdd755d54935c51d520887f4a1dbd5b0"
+checksum = "27c6023962132f4b30eb4c172c91ce92d933da334c59c23cddee82358ddafb0b"
 dependencies = [
- "prost",
+ "anyhow",
+ "itertools 0.12.1",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.100",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.14.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8991c4cbdb8bc5b11f0b074ffe286c30e523de90fee5ba8132f1399f23cb3dd7"
+dependencies = [
+ "prost 0.14.3",
 ]
 
 [[package]]
@@ -1216,11 +1239,11 @@ dependencies = [
 [[package]]
 name = "tx-std-derive"
 version = "0.20.1"
-source = "git+https://github.com/tokenize-x/tx-std-derive?rev=cd5b47afb760d03be6a28d9ce50cb93da78774da#cd5b47afb760d03be6a28d9ce50cb93da78774da"
+source = "git+https://github.com/tokenize-x/tx-std-derive?rev=98660dfdebae83c5a6251c9cf029c966f95c30fc#98660dfdebae83c5a6251c9cf029c966f95c30fc"
 dependencies = [
  "itertools 0.10.5",
  "proc-macro2",
- "prost",
+ "prost 0.14.3",
  "quote",
  "syn 1.0.109",
 ]
@@ -1228,12 +1251,12 @@ dependencies = [
 [[package]]
 name = "tx-wasm-sdk"
 version = "1.2.1"
-source = "git+https://github.com/tokenize-x/tx-wasm-sdk.git?rev=c29f14ed02c068689f6dab00ca9534602257b9f7#c29f14ed02c068689f6dab00ca9534602257b9f7"
+source = "git+https://github.com/tokenize-x/tx-wasm-sdk.git?rev=5c620b0861f032037ed1fc507e1e24c6cffeba43#5c620b0861f032037ed1fc507e1e24c6cffeba43"
 dependencies = [
  "chrono",
  "cosmwasm-schema",
  "cosmwasm-std",
- "prost",
+ "prost 0.14.3",
  "prost-types",
  "schemars",
  "serde",

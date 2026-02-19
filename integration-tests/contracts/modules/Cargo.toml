@@ -30,13 +30,13 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [workspace.dependencies]
-cosmwasm-std = { version = "2.1.4", features = ["cosmwasm_2_0", "stargate"] }
-cosmwasm-schema = "2.1.4"
+cosmwasm-std = { version = "2.2.7", features = ["cosmwasm_2_0", "stargate"] }
+cosmwasm-schema = "2.2.7"
 cw-storage-plus = "2.0.0"
 cw2 = "2.0.0"
 thiserror = "1.0.59"
 schemars = "0.8.10"
-tx-wasm-sdk = { git = "https://github.com/tokenize-x/tx-wasm-sdk.git", rev = "c29f14ed02c068689f6dab00ca9534602257b9f7" }
+tx-wasm-sdk = { git = "https://github.com/tokenize-x/tx-wasm-sdk.git", rev = "5c620b0861f032037ed1fc507e1e24c6cffeba43" }
 cw-utils = "2.0.0"
 cw-ownable = "2.1.0"
 prost = "0.12.6"
