@@ -352,7 +352,6 @@ func DefaultConfig() Config {
 			&ibcchanneltypes.MsgAcknowledgement{},
 
 			// ibc/core/channel/v2
-			// TODO: MsgSendPacket is the user-facing message that initiates the transfer, so it should be deterministic.
 			&ibcv2channeltypes.MsgSendPacket{},
 			&ibcv2channeltypes.MsgRecvPacket{},
 			&ibcv2channeltypes.MsgTimeout{},

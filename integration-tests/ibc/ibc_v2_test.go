@@ -67,7 +67,7 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 	txChain := chains.TXChain
 	gaiaChain := chains.Gaia
 
-	// --- Step 1: Relayer accounts ---
+	// Relayer accounts
 	// We use dedicated relayer accounts (not the default faucet) so we control client creation
 	// and packet relay. They must be funded to pay for MsgCreateClient, MsgRegisterCounterparty,
 	// and MsgRecvPacket.
@@ -75,7 +75,7 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 	gaiaRelayer := gaiaChain.GenAccount()
 	fundRelayers(t, ctx, txChain, gaiaChain, txRelayer, gaiaRelayer)
 
-	// --- Step 2: IBC v2 client setup (replaces legacy connection + channel handshake) ---
+	// IBC v2 client setup (replaces legacy connection + channel handshake)
 	// Each chain creates a Tendermint light client that tracks the other chain's consensus.
 	// Then we register the counterparty: this tells IBC Core how to route packets between
 	// this client and the other chain's client (Merkle path to the provable store).
@@ -84,13 +84,13 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 	registerCounterparty(t, ctx, txChain.Chain, txRelayer, txClientID, gaiaClientID)
 	registerCounterparty(t, ctx, gaiaChain, gaiaRelayer, gaiaClientID, txClientID)
 
-	// --- Step 3: Sender and recipient; fund sender ---
+	// Sender and recipient; fund sender
 	sender := txChain.GenAccount()
 	recipient := gaiaChain.GenAccount()
 	amount := txChain.NewCoin(sdkmath.NewInt(transferAmount))
 	fundSenderForTransfer(t, ctx, txChain, sender)
 
-	// --- Step 4: Build and send v2 packet ---
+	// Build and send v2 packet
 	// V2 uses MsgSendPacket with source client ID (not channel). The payload is a wrapped
 	// transfer packet (port, version, encoding, and serialized FungibleTokenPacketData).
 	timeoutTS := uint64(time.Now().Add(packetTimeout).Unix())
@@ -113,14 +113,14 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 	require.Greater(t, txResp.Height, int64(0), "tx height must be set for proof query")
 	t.Logf("v2 transfer sent, tx hash: %s", txResp.TxHash)
 
-	// --- Step 5: Obtain packet commitment proof ---
+	// Obtain packet commitment proof
 	// The commitment was written at txResp.Height. We query that height with Prove=true to get
 	// a merkle proof. The destination chain will verify this proof against its light client's
 	// consensus state at proofHeight (height+1 per ibc-go convention).
 	sequence := nextSequenceSend(t, ctx, txChain.Chain, txClientID) - 1
 	proofBz, proofHeight := packetCommitmentProof(t, ctx, txChain.Chain, txClientID, sequence, txResp.Height)
 
-	// --- Step 6: Sync light client on Gaia and relay packet ---
+	// Sync light client on Gaia and relay packet
 	// Gaia's client must have a consensus state at proofHeight before it can verify the proof.
 	// We wait until the source chain has committed that block, then submit a header update
 	// so the client stores the root at proofHeight. Then MsgRecvPacket verifies the proof
@@ -145,7 +145,7 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("v2 recv packet relayed, tx hash: %s", recvTxResp.TxHash)
 
-	// --- Step 7: Assert recipient balance and packet receipt ---
+	// Assert recipient balance and packet receipt
 	// IBC denom in v2 is derived from (port, clientID, base denom); either source or dest
 	// client ID may be used depending on how the receiving module mints. We check the
 	// receipt to confirm the packet was processed.
