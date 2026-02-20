@@ -63,7 +63,8 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	// Create and store allocation schedule with all clearing accounts
 	schedule := []types.ScheduledDistribution{
 		{
-			Timestamp: time1,
+			DistributionId: 1,
+			Timestamp:      time1,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(5000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
@@ -74,7 +75,8 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 			},
 		},
 		{
-			Timestamp: time2,
+			DistributionId: 2,
+			Timestamp:      time2,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(10000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
