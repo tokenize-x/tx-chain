@@ -5998,6 +5998,7 @@ Params store gov manageable parameters.
 | ----- | ---- | ----- | ----------- |
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
 | `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
+| `min_distribution_gap_seconds` | [uint64](#uint64) |  |  `min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions.`  |
 
 
 

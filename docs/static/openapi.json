@@ -16804,6 +16804,11 @@
             "$ref": "#/definitions/tx.pse.v1.ClearingAccountMapping"
           },
           "description": "clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets).\nThese mappings can be modified via governance proposals."
+        },
+        "min_distribution_gap_seconds": {
+          "type": "string",
+          "format": "uint64",
+          "description": "min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions."
         }
       },
       "description": "Params store gov manageable parameters."
