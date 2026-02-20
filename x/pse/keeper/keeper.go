@@ -34,7 +34,7 @@ type Keeper struct {
 	Params                collections.Item[types.Params]
 	DelegationTimeEntries collections.Map[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry]
 	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
-	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: distributionID -> ScheduledDistribution
+	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: id -> ScheduledDistribution
 	DistributionDisabled  collections.Item[bool]
 }
 

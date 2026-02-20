@@ -43,7 +43,7 @@ message ClearingAccountAllocation {
 
 // ScheduledDistribution defines a single allocation event at a specific timestamp.
 // Multiple clearing accounts can allocate tokens at the same time.
-// Each distribution is identified by a unique, sequential distribution_id.
+// Each distribution is identified by a unique, sequential id.
 message ScheduledDistribution {
   // timestamp is when this allocation should occur (Unix timestamp in seconds).
   uint64 timestamp = 1 [
@@ -56,10 +56,10 @@ message ScheduledDistribution {
     (gogoproto.moretags) = "yaml:\"allocations\""
   ];
 
-  // distribution_id is the unique, sequential identifier for this distribution.
+  // id is the unique, sequential identifier for this distribution.
   // Used as the storage key in the AllocationSchedule map.
-  uint64 distribution_id = 3 [
-    (gogoproto.moretags) = "yaml:\"distribution_id\""
+  uint64 id = 3 [
+    (gogoproto.moretags) = "yaml:\"id\""
   ];
 }
 

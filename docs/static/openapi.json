@@ -16880,13 +16880,13 @@
           },
           "description": "allocations is the list of amounts to allocate from each clearing account at this time."
         },
-        "distribution_id": {
+        "id": {
           "type": "string",
           "format": "uint64",
-          "description": "distribution_id is the unique, sequential identifier for this distribution.\nUsed as the storage key in the AllocationSchedule map."
+          "description": "id is the unique, sequential identifier for this distribution.\nUsed as the storage key in the AllocationSchedule map."
         }
       },
-      "description": "ScheduledDistribution defines a single allocation event at a specific timestamp.\nMultiple clearing accounts can allocate tokens at the same time.\nEach distribution is identified by a unique, sequential distribution_id."
+      "description": "ScheduledDistribution defines a single allocation event at a specific timestamp.\nMultiple clearing accounts can allocate tokens at the same time.\nEach distribution is identified by a unique, sequential id."
     }
   }
 }

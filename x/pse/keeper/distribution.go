@@ -50,7 +50,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	}
 
 	// Remove the completed distribution from the schedule
-	if err := k.AllocationSchedule.Remove(ctx, scheduledDistribution.DistributionId); err != nil {
+	if err := k.AllocationSchedule.Remove(ctx, scheduledDistribution.Id); err != nil {
 		return err
 	}
 
@@ -76,7 +76,7 @@ func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.Scheduled
 		return types.ScheduledDistribution{}, false, nil
 	}
 
-	// Extract the earliest scheduled distribution (sorted by distributionID ascending)
+	// Extract the earliest scheduled distribution (sorted by id ascending)
 	kv, err := iter.KeyValue()
 	if err != nil {
 		return types.ScheduledDistribution{}, false, err
@@ -85,7 +85,7 @@ func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.Scheduled
 	scheduledDist := kv.Value
 
 	// Check if distribution time has arrived
-	// Since distributionIDs are sequential and timestamps are monotonically increasing,
+	// Since IDs are sequential and timestamps are monotonically increasing,
 	// the first item by ID is also the earliest by time.
 	shouldProcess := scheduledDist.Timestamp <= uint64(sdkCtx.BlockTime().Unix())
 
@@ -217,18 +217,18 @@ func (k Keeper) distributeAllocatedTokens(
 }
 
 // SaveDistributionSchedule persists the distribution schedule to blockchain state.
-// Each scheduled distribution is stored in the AllocationSchedule map, indexed by its timestamp.
+// Each scheduled distribution is stored in the AllocationSchedule map, indexed by its ID.
 func (k Keeper) SaveDistributionSchedule(ctx context.Context, schedule []types.ScheduledDistribution) error {
 	for _, scheduledDist := range schedule {
-		if err := k.AllocationSchedule.Set(ctx, scheduledDist.DistributionId, scheduledDist); err != nil {
-			return errorsmod.Wrapf(err, "failed to save distribution with id %d", scheduledDist.DistributionId)
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Id, scheduledDist); err != nil {
+			return errorsmod.Wrapf(err, "failed to save distribution with id %d", scheduledDist.Id)
 		}
 	}
 	return nil
 }
 
 // GetDistributionSchedule returns the complete allocation schedule as a sorted list.
-// The schedule is sorted by distributionID in ascending order.
+// The schedule is sorted by id in ascending order.
 // Returns an empty slice if no allocations are scheduled.
 // Note: Past schedule allocations removed after processing, so this only contains future schedule allocations.
 func (k Keeper) GetDistributionSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {
@@ -248,7 +248,7 @@ func (k Keeper) GetDistributionSchedule(ctx context.Context) ([]types.ScheduledD
 		schedule = append(schedule, kv.Value)
 	}
 
-	// Note: Collections map iterates in ascending order of keys (distributionIDs),
+	// Note: Collections map iterates in ascending order of keys (IDs),
 	// so the schedule is already sorted. No need to sort again.
 	return schedule, nil
 }

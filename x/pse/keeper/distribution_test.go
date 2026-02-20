@@ -63,7 +63,7 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	// Create and store allocation schedule with all clearing accounts
 	schedule := []types.ScheduledDistribution{
 		{
-			DistributionId: 1,
+			Id: 1,
 			Timestamp:      time1,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(5000)},
@@ -75,7 +75,7 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 			},
 		},
 		{
-			DistributionId: 2,
+			Id: 2,
 			Timestamp:      time2,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(10000)},
@@ -90,7 +90,7 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 
 	// Store in allocation schedule map
 	for _, scheduledDist := range schedule {
-		err = pseKeeper.AllocationSchedule.Set(ctx, scheduledDist.DistributionId, scheduledDist)
+		err = pseKeeper.AllocationSchedule.Set(ctx, scheduledDist.Id, scheduledDist)
 		requireT.NoError(err)
 	}
 
@@ -185,7 +185,7 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
 	schedule := []types.ScheduledDistribution{
 		{
-			DistributionId: 1,
+			Id: 1,
 			Timestamp:      startTime,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
@@ -317,7 +317,7 @@ func TestDistribution_EndBlockFailure(t *testing.T) {
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
 	schedule := []types.ScheduledDistribution{
 		{
-			DistributionId: 1,
+			Id: 1,
 			Timestamp:      startTime,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},

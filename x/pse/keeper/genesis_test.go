@@ -136,7 +136,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 				// Only include 4 accounts, missing Community and Team
 				gs.ScheduledDistributions = []types.ScheduledDistribution{
 					{
-						DistributionId: 1,
+						Id: 1,
 						Timestamp:      now,
 						Allocations: []types.ClearingAccountAllocation{
 							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
@@ -156,7 +156,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 				// Include only non-Community accounts, missing Community
 				gs.ScheduledDistributions = []types.ScheduledDistribution{
 					{
-						DistributionId: 1,
+						Id: 1,
 						Timestamp:      now,
 						Allocations: []types.ClearingAccountAllocation{
 							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
