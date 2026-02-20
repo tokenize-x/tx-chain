@@ -266,6 +266,15 @@ func (k Keeper) UpdateDistributionSchedule(
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
+	// Validate minimum gap between distributions
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	if err := types.ValidateDistributionGap(newSchedule, params.MinDistributionGapSeconds); err != nil {
+		return err
+	}
+
 	// Clear all existing schedule entries
 	if err := k.AllocationSchedule.Clear(ctx, nil); err != nil {
 		return errorsmod.Wrap(err, "failed to clear existing allocation schedule")

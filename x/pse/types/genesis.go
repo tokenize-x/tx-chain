@@ -27,6 +27,11 @@ func (m *GenesisState) Validate() error {
 		return errorsmod.Wrapf(err, "invalid allocation schedule")
 	}
 
+	// Validate minimum gap between distributions using the param from genesis state
+	if err := ValidateDistributionGap(m.ScheduledDistributions, m.Params.MinDistributionGapSeconds); err != nil {
+		return errorsmod.Wrapf(err, "invalid distribution gap")
+	}
+
 	// Validate delegation time entries
 	for _, delegationTimeEntry := range m.DelegationTimeEntries {
 		if delegationTimeEntry.ValidatorAddress == "" {

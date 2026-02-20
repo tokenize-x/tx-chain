@@ -43,8 +43,9 @@ func GetNonCommunityClearingAccounts() []string {
 // DefaultParams returns default pse clearing account parameters.
 func DefaultParams() Params {
 	return Params{
-		ExcludedAddresses:       []string{},
-		ClearingAccountMappings: []ClearingAccountMapping{},
+		ExcludedAddresses:         []string{},
+		ClearingAccountMappings:   []ClearingAccountMapping{},
+		MinDistributionGapSeconds: uint64(24 * 60 * 60), // 1 day
 	}
 }
 
@@ -132,14 +133,26 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 	var lastTime uint64
 
 	for i, period := range schedule {
+		// Validate distribution_id is non-zero
+		if period.DistributionId == 0 {
+			return errorsmod.Wrapf(ErrInvalidParam, "period %d: distribution_id cannot be zero", i)
+		}
+
+		// Validate distribution_id is strictly increasing and sequential (each ID = previous + 1).
+		if i > 0 && period.DistributionId != schedule[i-1].DistributionId+1 {
+			return errorsmod.Wrapf(ErrInvalidParam,
+				"period %d: distribution_id must be sequential, expected %d but got %d",
+				i, schedule[i-1].DistributionId+1, period.DistributionId)
+		}
+
 		// Validate timestamp is not zero
 		if period.Timestamp == 0 {
-			return errorsmod.Wrapf(ErrInvalidParam, "timestamp cannot be zero")
+			return errorsmod.Wrapf(ErrInvalidParam, "period %d: timestamp cannot be zero", i)
 		}
 
 		// Check for duplicate timestamps
 		if seenTimestamps[period.Timestamp] {
-			return errorsmod.Wrapf(ErrInvalidParam, "duplicate timestamp")
+			return errorsmod.Wrapf(ErrInvalidParam, "period %d: duplicate timestamp", i)
 		}
 		seenTimestamps[period.Timestamp] = true
 
@@ -225,5 +238,18 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 		}
 	}
 
+	return nil
+}
+
+// ValidateDistributionGap validates that consecutive distributions have at least minGapSeconds between them.
+func ValidateDistributionGap(schedule []ScheduledDistribution, minGapSeconds uint64) error {
+	for i := 1; i < len(schedule); i++ {
+		gap := schedule[i].Timestamp - schedule[i-1].Timestamp
+		if gap < minGapSeconds {
+			return errorsmod.Wrapf(ErrInvalidParam,
+				"period %d: minimum gap between distributions is %d seconds, got %d seconds",
+				i, minGapSeconds, gap)
+		}
+	}
 	return nil
 }
