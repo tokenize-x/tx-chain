@@ -5818,6 +5818,7 @@ During distribution, the allocated amount is split equally among all recipients.
 ```
 ScheduledDistribution defines a single allocation event at a specific timestamp.
 Multiple clearing accounts can allocate tokens at the same time.
+Each distribution is identified by a unique, sequential distribution_id.
 ```
 
 
@@ -5826,6 +5827,7 @@ Multiple clearing accounts can allocate tokens at the same time.
 | ----- | ---- | ----- | ----------- |
 | `timestamp` | [uint64](#uint64) |  |  `timestamp is when this allocation should occur (Unix timestamp in seconds).`  |
 | `allocations` | [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation) | repeated |  `allocations is the list of amounts to allocate from each clearing account at this time.`  |
+| `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique, sequential identifier for this distribution. Used as the storage key in the AllocationSchedule map.`  |
 
 
 
