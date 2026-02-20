@@ -90,7 +90,7 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 
 	// Store in allocation schedule map
 	for _, scheduledDist := range schedule {
-		err = pseKeeper.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist)
+		err = pseKeeper.AllocationSchedule.Set(ctx, scheduledDist.DistributionId, scheduledDist)
 		requireT.NoError(err)
 	}
 
@@ -185,7 +185,8 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
 	schedule := []types.ScheduledDistribution{
 		{
-			Timestamp: startTime,
+			DistributionId: 1,
+			Timestamp:      startTime,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},
@@ -316,7 +317,8 @@ func TestDistribution_EndBlockFailure(t *testing.T) {
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
 	schedule := []types.ScheduledDistribution{
 		{
-			Timestamp: startTime,
+			DistributionId: 1,
+			Timestamp:      startTime,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},

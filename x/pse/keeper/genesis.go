@@ -23,7 +23,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 
 	// Populate allocation schedule from genesis state
 	for _, scheduledDist := range genState.ScheduledDistributions {
-		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist); err != nil {
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.DistributionId, scheduledDist); err != nil {
 			return err
 		}
 	}
@@ -70,7 +70,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, err
 	}
 
-	// Export allocation schedule using keeper method (already sorted by timestamp)
+	// Export allocation schedule using keeper method (already sorted by distributionID)
 	genesis.ScheduledDistributions, err = k.GetDistributionSchedule(ctx)
 	if err != nil {
 		return nil, err

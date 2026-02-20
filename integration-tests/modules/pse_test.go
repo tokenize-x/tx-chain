@@ -213,9 +213,9 @@ func TestPSEDistribution(t *testing.T) {
 		&psetypes.MsgUpdateDistributionSchedule{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Schedule: []psetypes.ScheduledDistribution{
-				{Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
-				{Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
-				{Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
+				{DistributionId: 1, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
+				{DistributionId: 2, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
+				{DistributionId: 3, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
 			},
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{

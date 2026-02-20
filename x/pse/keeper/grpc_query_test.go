@@ -285,13 +285,15 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		// Create schedule allocations at different future times
 		schedule1 := types.ScheduledDistribution{
-			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
+			DistributionId: 1,
+			Timestamp:      uint64(currentTime.Add(1 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
 			},
 		}
 		schedule2 := types.ScheduledDistribution{
-			Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()),
+			DistributionId: 2,
+			Timestamp:      uint64(currentTime.Add(2 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(3000)},
 			},
@@ -315,7 +317,8 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
 		schedule := types.ScheduledDistribution{
-			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
+			DistributionId: 1,
+			Timestamp:      uint64(currentTime.Add(1 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
@@ -332,28 +335,31 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		requireT.Len(resp.ScheduledDistributions[0].Allocations, 3)
 	})
 
-	t.Run("schedule sorted by timestamp", func(t *testing.T) {
+	t.Run("schedule sorted by distributionID", func(t *testing.T) {
 		requireT := require.New(t)
 		testApp := simapp.New()
 		currentTime := time.Now()
 		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
 		queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
-		// Save schedule item in non-chronological order
+		// Save schedule items in non-sequential order of distributionID
 		schedule3 := types.ScheduledDistribution{
-			Timestamp: uint64(currentTime.Add(3 * time.Hour).Unix()),
+			DistributionId: 3,
+			Timestamp:      uint64(currentTime.Add(3 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(3000)},
 			},
 		}
 		schedule1 := types.ScheduledDistribution{
-			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
+			DistributionId: 1,
+			Timestamp:      uint64(currentTime.Add(1 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(1000)},
 			},
 		}
 		schedule2 := types.ScheduledDistribution{
-			Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()),
+			DistributionId: 2,
+			Timestamp:      uint64(currentTime.Add(2 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(2000)},
 			},
@@ -365,7 +371,7 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		resp, err := queryService.ScheduledDistributions(ctx, &types.QueryScheduledDistributionsRequest{})
 		requireT.NoError(err)
 		requireT.Len(resp.ScheduledDistributions, 3)
-		// Verify schedule are sorted by timestamp in ascending order
+		// Verify schedule items are sorted by distributionID in ascending order
 		requireT.Equal(schedule1.Timestamp, resp.ScheduledDistributions[0].Timestamp)
 		requireT.Equal(schedule2.Timestamp, resp.ScheduledDistributions[1].Timestamp)
 		requireT.Equal(schedule3.Timestamp, resp.ScheduledDistributions[2].Timestamp)
