@@ -8,4 +8,4 @@ use ./build
 
 use ./integration-tests
 
-replace github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 => github.com/tokenize-x/ibc-apps/modules/ibc-hooks/v8 v8.0.0-20250801064028-4db66ba3f6f8
+replace github.com/cosmos/ibc-go/v10 => github.com/tokenize-x/ibc-go/v10 v10.0.0-20260217122659-7416630b53cc
