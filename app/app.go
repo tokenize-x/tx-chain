@@ -114,12 +114,15 @@ import (
 	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
 	ibccallbacks "github.com/cosmos/ibc-go/v10/modules/apps/callbacks"
+	ibccallbacksv2 "github.com/cosmos/ibc-go/v10/modules/apps/callbacks/v2"
 	"github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	transferv2 "github.com/cosmos/ibc-go/v10/modules/apps/transfer/v2"
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
 	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
 	ibcporttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
+	ibcapi "github.com/cosmos/ibc-go/v10/modules/core/api"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
@@ -825,6 +828,17 @@ func New(
 		AddRoute(icacontrollertypes.SubModuleName, icaControllerStack).
 		AddRoute(wasmtypes.ModuleName, ibcWasmStack)
 	app.IBCKeeper.SetRouter(ibcRouter)
+
+	// Create IBCv2 Transfer Stack
+	var transferStackV2 ibcapi.IBCModule
+	transferStackV2 = transferv2.NewIBCModule(app.TransferKeeper.Keeper)
+	transferStackV2 = ibccallbacksv2.NewIBCMiddleware(transferStackV2, app.IBCKeeper.ChannelKeeperV2,
+		ibcWasmStack, app.IBCKeeper.ChannelKeeperV2, maxCallbackGas)
+
+	// Create IBCv2 Router & seal
+	ibcv2Router := ibcapi.NewRouter().
+		AddRoute(ibctransfertypes.PortID, transferStackV2)
+	app.IBCKeeper.SetRouterV2(ibcv2Router)
 
 	app.DEXKeeper = dexkeeper.NewKeeper(
 		appCodec,
