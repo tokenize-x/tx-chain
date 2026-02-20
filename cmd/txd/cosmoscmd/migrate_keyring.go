@@ -103,7 +103,7 @@ func runMigrateKeyring(cmd *cobra.Command, args []string) error {
 
 		// After migrating a .info entry, also migrate its .address reverse-lookup entry.
 		if strings.HasSuffix(key, ".info") {
-			migrated += migrateAddressEntry(cmd, srcKr, destKr, item.Data)
+			migrateAddressEntry(cmd, srcKr, destKr, item.Data)
 		}
 	}
 
