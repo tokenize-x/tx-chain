@@ -214,24 +214,22 @@ type linuxMuslToolchain struct {
 // linuxMuslToolchainFor returns the musl toolchain config for the given Linux platform.
 // targetPlatform is used for all Path() lookups so local and in-Docker builds use the same toolchain.
 func linuxMuslToolchainFor(targetPlatform txcrusttools.TargetPlatform) (linuxMuslToolchain, error) {
-	switch targetPlatform {
-	case txcrusttools.TargetPlatformLinuxAMD64InDocker,
-		txcrusttools.TargetPlatformLinuxARM64InDocker,
-		txcrusttools.TargetPlatformLinuxLocalArchInDocker:
-		// fall through to arch switch
-	default:
+	if targetPlatform.OS != txcrusttools.OSLinux {
 		return linuxMuslToolchain{}, errors.Errorf("building is not possible for platform %s", targetPlatform)
 	}
 
-	var gccBin, wasmLib, wasmSubdir string
+	var arch string
 	switch targetPlatform.Arch {
 	case txcrusttools.ArchAMD64:
-		gccBin, wasmLib, wasmSubdir = "bin/x86_64-linux-musl-gcc", "lib/libwasmvm_muslc.x86_64.a", "/x86_64-linux-musl/lib/libwasmvm_muslc.x86_64.a"
+		arch = "x86_64"
 	case txcrusttools.ArchARM64:
-		gccBin, wasmLib, wasmSubdir = "bin/aarch64-linux-musl-gcc", "lib/libwasmvm_muslc.aarch64.a", "/aarch64-linux-musl/lib/libwasmvm_muslc.aarch64.a"
+		arch = "aarch64"
 	default:
 		return linuxMuslToolchain{}, errors.Errorf("building is not possible for platform %s", targetPlatform)
 	}
+	gccBin := fmt.Sprintf("bin/%s-linux-musl-gcc", arch)
+	wasmLib := fmt.Sprintf("lib/libwasmvm_muslc.%s.a", arch)
+	wasmSubdir := fmt.Sprintf("/%s-linux-musl/lib/libwasmvm_muslc.%s.a", arch, arch)
 
 	hostCCDirPath := filepath.Dir(filepath.Dir(txcrusttools.Path(gccBin, targetPlatform)))
 	ccRelativePath := "/" + gccBin
