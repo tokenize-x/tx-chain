@@ -66,6 +66,26 @@ func (k Keeper) DEXExecuteActions(ctx sdk.Context, actions types.DEXActions) err
 	}
 
 	for _, send := range actions.Send {
+		// Validate frozen balances before sending to prevent transferring frozen tokens
+		def, err := k.getDefinitionOrNil(ctx, send.Coin.Denom)
+		if err != nil {
+			return err
+		}
+		if def != nil && def.IsFeatureEnabled(types.Feature_freezing) && !def.HasAdminPrivileges(send.FromAddress) {
+			balance := k.bankKeeper.GetBalance(ctx, send.FromAddress, send.Coin.Denom)
+			dexLocked := k.GetDEXLockedBalance(ctx, send.FromAddress, send.Coin.Denom).Amount
+			bankLocked := k.bankKeeper.LockedCoins(ctx, send.FromAddress).AmountOf(send.Coin.Denom)
+			frozenBalance, err := k.GetFrozenBalance(ctx, send.FromAddress, send.Coin.Denom)
+			if err != nil {
+				return err
+			}
+			available := balance.Amount.Sub(dexLocked).Sub(bankLocked).Sub(frozenBalance.Amount)
+			if available.LT(send.Coin.Amount) {
+				return sdkerrors.Wrapf(cosmoserrors.ErrInsufficientFunds,
+					"cannot send %s: insufficient spendable balance (frozen tokens cannot be transferred)",
+					send.Coin.String())
+			}
+		}
 		k.logger(ctx).Debug(
 			"DEX sending coin",
 			"from", send.FromAddress.String(),
@@ -664,6 +684,24 @@ func (k Keeper) validateCoinIsNotLockedByDEXAndBank(
 	if availableAmt.LT(coin.Amount) {
 		return sdkerrors.Wrapf(cosmoserrors.ErrInsufficientFunds, "%s is not available, available %s%s",
 			coin.String(), availableAmt.String(), coin.Denom)
+	}
+
+	// validate that we don't use frozen coins (if freezing feature is enabled)
+	def, err := k.getDefinitionOrNil(ctx, coin.Denom)
+	if err != nil {
+		return err
+	}
+	if def != nil && def.IsFeatureEnabled(types.Feature_freezing) && !def.HasAdminPrivileges(addr) {
+		frozenBalance, err := k.GetFrozenBalance(ctx, addr, coin.Denom)
+		if err != nil {
+			return err
+		}
+		frozenAmt := frozenBalance.Amount
+		notFrozenAmt := availableAmt.Sub(frozenAmt)
+		if notFrozenAmt.LT(coin.Amount) {
+			return sdkerrors.Wrapf(cosmoserrors.ErrInsufficientFunds, "%s is not available, available %s%s",
+				coin.String(), notFrozenAmt.String(), coin.Denom)
+		}
 	}
 
 	return nil

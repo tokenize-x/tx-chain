@@ -3046,3 +3046,196 @@ func assertBalance(
 	require.NoError(t, err)
 	require.Equal(t, sdkmath.NewInt(expectedBalance).String(), acc1Denom2BalanceRes.Balance.Amount.String())
 }
+
+// TestFrozenTokenEscapeViaDEX verifies that frozen tokens cannot be DEX-locked
+// or transferred via DEX settlement.
+//
+// This is the integration test counterpart of TestKeeper_FrozenTokenEscapeViaDEX.
+// If the fix were missing: placing multiple sell orders could lock frozen tokens
+// (DEXIncreaseLocked had no frozen check), and DEX settlement would transfer them
+// via raw bank keeper. This test asserts the fix: the second order (which would
+// lock frozen tokens) must be rejected.
+func TestFrozenTokenEscapeViaDEX(t *testing.T) {
+	t.Parallel()
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+
+	requireT := require.New(t)
+	assetFTClient := assetfttypes.NewQueryClient(chain.ClientContext)
+	dexClient := dextypes.NewQueryClient(chain.ClientContext)
+
+	dexParamsRes, err := dexClient.Params(ctx, &dextypes.QueryParamsRequest{})
+	requireT.NoError(err)
+
+	// ========================================================================
+	// SETUP: Create token with Feature_freezing, fund Alice, freeze tokens
+	// ========================================================================
+
+	// Issue base token with freezing feature (the token Alice sells)
+	// issuer already has the initial amount from issuance
+	issuer, denom := genAccountAndIssueFT(
+		ctx, t, chain, 1_000_000, sdkmath.NewInt(1_000_000), assetfttypes.Feature_freezing,
+	)
+
+	// Issue quote token (the token Bob uses to buy) - issuer issues both tokens
+	quoteDenom := issueFT(ctx, t, chain, issuer, sdkmath.NewInt(1_000_000))
+
+	alice := chain.GenAccount()
+	bob := chain.GenAccount()
+
+	// Fund accounts with necessary messages and amounts
+	chain.FundAccountsWithOptions(ctx, t, []integration.AccWithBalancesOptions{
+		{
+			Acc: issuer,
+			Options: integration.BalancesOptions{
+				Messages: []sdk.Msg{
+					&banktypes.MsgSend{},
+					&banktypes.MsgSend{},
+					&assetfttypes.MsgFreeze{},
+				},
+			},
+		},
+		{
+			Acc: alice,
+			Options: integration.BalancesOptions{
+				Amount: dexParamsRes.Params.OrderReserve.Amount.MulRaw(3).Add(sdkmath.NewInt(100_000)),
+			},
+		},
+		{
+			Acc: bob,
+			Options: integration.BalancesOptions{
+				Amount: dexParamsRes.Params.OrderReserve.Amount.Add(sdkmath.NewInt(100_000)),
+			},
+		},
+	})
+
+	// Fund Alice with 1,000,000 base tokens (100 * 10,000 to meet quantity step requirement)
+	aliceBaseAmount := int64(1_000_000)
+	sendMsg := &banktypes.MsgSend{
+		FromAddress: issuer.String(),
+		ToAddress:   alice.String(),
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(denom, aliceBaseAmount)),
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(issuer),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendMsg)),
+		sendMsg,
+	)
+	requireT.NoError(err)
+
+	// Fund Bob with 1,000,000 quote tokens (for buying)
+	bobQuoteAmount := int64(1_000_000)
+	bobSendMsg := &banktypes.MsgSend{
+		FromAddress: issuer.String(),
+		ToAddress:   bob.String(),
+		Amount:      sdk.NewCoins(sdk.NewInt64Coin(quoteDenom, bobQuoteAmount)),
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(issuer),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(bobSendMsg)),
+		bobSendMsg,
+	)
+	requireT.NoError(err)
+
+	// Admin freezes 600,000 of Alice's base tokens (60 * 10,000)
+	frozenAmount := int64(600_000)
+	freezeMsg := &assetfttypes.MsgFreeze{
+		Sender:  issuer.String(),
+		Account: alice.String(),
+		Coin:    sdk.NewInt64Coin(denom, frozenAmount),
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(issuer),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(freezeMsg)),
+		freezeMsg,
+	)
+	requireT.NoError(err)
+
+	// Verify initial state
+	balanceRes, err := assetFTClient.Balance(ctx, &assetfttypes.QueryBalanceRequest{
+		Account: alice.String(),
+		Denom:   denom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(aliceBaseAmount, balanceRes.Balance.Int64(), "Alice should have 1,000,000 tokens")
+	requireT.Equal(frozenAmount, balanceRes.Frozen.Int64(), "Alice should have 600,000 frozen tokens")
+	spendableAmount := aliceBaseAmount - frozenAmount // 400,000
+	spendable := balanceRes.Balance.Sub(balanceRes.Frozen).Sub(balanceRes.LockedInDEX)
+	requireT.Equal(spendableAmount, spendable.Int64(), "Alice should have 400,000 spendable tokens")
+
+	t.Logf("=== Initial state: balance=%d, frozen=%d, dexLocked=0, spendable=%d ===",
+		aliceBaseAmount, frozenAmount, spendableAmount)
+
+	// ========================================================================
+	// PHASE 1: Verify that frozen tokens cannot be DEX-locked via orders
+	//
+	// If the fix were missing: we could place multiple sell orders that together
+	// lock more than spendable (400k + 400k + 200k = 1M, but only 400k spendable).
+	// Each order would pass because validation checked (balance - dexLocked)
+	// without subtracting frozen. The fix ensures only spendable tokens can be locked.
+	// ========================================================================
+
+	// Step 1: Place first sell order for 400,000 tokens (the unfrozen portion) — must succeed
+	order1Amount := int64(400_000) // 40 * 10,000
+	placeOrder1 := &dextypes.MsgPlaceOrder{
+		Sender:      alice.String(),
+		Type:        dextypes.ORDER_TYPE_LIMIT,
+		ID:          "order1",
+		BaseDenom:   denom,
+		QuoteDenom:  quoteDenom,
+		Price:       lo.ToPtr(dextypes.MustNewPriceFromString("1")),
+		Quantity:    sdkmath.NewInt(order1Amount),
+		Side:        dextypes.SIDE_SELL,
+		TimeInForce: dextypes.TIME_IN_FORCE_GTC,
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(alice),
+		chain.TxFactoryAuto(),
+		placeOrder1,
+	)
+	requireT.NoError(err, "First order of 400,000 should pass (400,000 unfrozen available)")
+
+	balanceRes, err = assetFTClient.Balance(ctx, &assetfttypes.QueryBalanceRequest{
+		Account: alice.String(),
+		Denom:   denom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(order1Amount, balanceRes.LockedInDEX.Int64(), "400,000 tokens should be DEX-locked")
+	t.Logf("Step 1: Placed order for %d tokens. dexLocked=%d", order1Amount, order1Amount)
+
+	// Step 2: Place second sell order for 400,000 MORE tokens — must FAIL
+	// Available spendable = 1,000,000 - 400,000 (dexLocked) - 600,000 (frozen) = 0.
+	// If the fix were missing, (balance - dexLocked) = 600,000 >= 400,000 would incorrectly pass.
+	order2Amount := int64(400_000) // 40 * 10,000
+	placeOrder2 := &dextypes.MsgPlaceOrder{
+		Sender:      alice.String(),
+		Type:        dextypes.ORDER_TYPE_LIMIT,
+		ID:          "order2",
+		BaseDenom:   denom,
+		QuoteDenom:  quoteDenom,
+		Price:       lo.ToPtr(dextypes.MustNewPriceFromString("1")),
+		Quantity:    sdkmath.NewInt(order2Amount),
+		Side:        dextypes.SIDE_SELL,
+		TimeInForce: dextypes.TIME_IN_FORCE_GTC,
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(alice),
+		chain.TxFactoryAuto(),
+		placeOrder2,
+	)
+	requireT.Error(err, "Second order of 400,000 must fail: it would lock frozen tokens; available spendable is 0")
+	t.Logf("Step 2: Second order of %d correctly rejected — frozen tokens cannot be DEX-locked", order2Amount)
+
+	// Verify state unchanged: still 400,000 DEX-locked, 600,000 frozen
+	balanceRes, err = assetFTClient.Balance(ctx, &assetfttypes.QueryBalanceRequest{
+		Account: alice.String(),
+		Denom:   denom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(order1Amount, balanceRes.LockedInDEX.Int64(), "DEX-locked should remain 400,000")
+	requireT.Equal(frozenAmount, balanceRes.Frozen.Int64(), "Frozen should remain 600,000")
+}
