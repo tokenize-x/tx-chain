@@ -64,7 +64,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.ScheduledDistribution, bool, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// Get iterator for the allocation schedule (sorted by timestamp ascending)
+	// Get iterator for the allocation schedule (sorted by id ascending)
 	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
 	if err != nil {
 		return types.ScheduledDistribution{}, false, err
