@@ -284,6 +284,35 @@ func (k Keeper) UpdateDistributionSchedule(
 	return k.SaveDistributionSchedule(ctx, newSchedule)
 }
 
+// UpdateMinDistributionGap updates the minimum time gap between distributions via governance.
+// The new gap is validated against the existing on-chain schedule to ensure consistency.
+func (k Keeper) UpdateMinDistributionGap(
+	ctx context.Context,
+	authority string,
+	minGapSeconds uint64,
+) error {
+	if k.authority != authority {
+		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+	}
+
+	// Validate new gap against existing schedule
+	schedule, err := k.GetDistributionSchedule(ctx)
+	if err != nil {
+		return err
+	}
+	if err := types.ValidateDistributionGap(schedule, minGapSeconds); err != nil {
+		return errorsmod.Wrapf(err, "existing schedule violates proposed min gap of %d seconds", minGapSeconds)
+	}
+
+	// Update params
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	params.MinDistributionGapSeconds = minGapSeconds
+	return k.SetParams(ctx, params)
+}
+
 // DisableDistributions is a governance operation that disables distributions.
 func (k Keeper) DisableDistributions(ctx context.Context, authority string) error {
 	// Check authority

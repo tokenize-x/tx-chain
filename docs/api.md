@@ -311,6 +311,7 @@
     - [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings)
     - [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule)
     - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
+    - [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap)
   
     - [Msg](#tx.pse.v1.Msg)
   
@@ -6330,6 +6331,28 @@ All existing distributions are removed and replaced with the provided distributi
 
 
 
+
+<a name="tx.pse.v1.MsgUpdateMinDistributionGap"></a>
+
+### MsgUpdateMinDistributionGap
+
+```
+MsgUpdateMinDistributionGap is a governance operation to update the minimum time gap
+between consecutive scheduled distributions. The new gap is validated against the
+existing on-chain schedule to ensure consistency.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  `authority is the address authorized to update the gap (governance module address).`  |
+| `min_distribution_gap_seconds` | [uint64](#uint64) |  |  `min_distribution_gap_seconds is the minimum time gap (in seconds) between consecutive distributions.`  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -6352,6 +6375,7 @@ Msg defines the Msg service.
 | `UpdateClearingAccountMappings` | [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateClearingAccountMappings is a governance operation to update clearing account to recipient mappings.` |  |
 | `UpdateDistributionSchedule` | [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionSchedule is a governance operation to update the distribution schedule.` |  |
 | `DisableDistributions` | [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `DisableDistributions is a governance operation to disable distributions.` |  |
+| `UpdateMinDistributionGap` | [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateMinDistributionGap is a governance operation to update the minimum gap between distributions.` |  |
 
  <!-- end services -->
 
