@@ -2,6 +2,7 @@ package cosmoscmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/99designs/keyring"
 	sdkversion "github.com/cosmos/cosmos-sdk/version"
@@ -14,11 +15,17 @@ const legacyServiceName = "coreum"
 // MigrateKeyringCmd migrates OS keyring keys from legacy service namespaces into the current one.
 func MigrateKeyringCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "migrate-keyring",
+		Use:   "migrate-keyring [key-names...]",
 		Short: "Migrate OS keyring keys from coreum namespace into tx-chain",
 		Long: `Copies OS keyring keys from "coreum" Keychain service into "tx-chain".
-Only affects the "os" keyring backend.`,
-		Args: cobra.NoArgs,
+Only affects the "os" keyring backend.
+
+When key names are provided, only matching keys are migrated.
+Without arguments, all keys are migrated.
+
+Usage:
+  txd keys migrate-keyring              # migrate all keys
+  txd keys migrate-keyring alice bob    # migrate only alice and bob`,
 		RunE: runMigrateKeyring,
 	}
 	return cmd
@@ -32,7 +39,7 @@ func openOSKeyring(serviceName string) (keyring.Keyring, error) {
 	})
 }
 
-func runMigrateKeyring(cmd *cobra.Command, _ []string) error {
+func runMigrateKeyring(cmd *cobra.Command, args []string) error {
 	targetName := sdkversion.Name // "tx-chain"
 
 	if legacyServiceName == targetName {
@@ -58,6 +65,15 @@ func runMigrateKeyring(cmd *cobra.Command, _ []string) error {
 	if len(keys) == 0 {
 		cmd.Printf("No keys found in %q namespace.\n", legacyServiceName)
 		return nil
+	}
+
+	// If key names provided, filter to only matching entries.
+	if len(args) > 0 {
+		keys = filterKeys(keys, args)
+		if len(keys) == 0 {
+			cmd.Println("No matching keys found in source namespace.")
+			return nil
+		}
 	}
 
 	migrated := 0
@@ -88,4 +104,26 @@ func runMigrateKeyring(cmd *cobra.Command, _ []string) error {
 	}
 
 	return nil
+}
+
+// filterKeys returns keyring entries whose key name matches any of the given names.
+func filterKeys(allKeys []string, names []string) []string {
+	selected := make(map[string]bool, len(names))
+	for _, n := range names {
+		selected[n] = true
+	}
+
+	var result []string
+	for _, key := range allKeys {
+		// Match exact key or bare name prefix (e.g. "alice" matches "alice.info").
+		if selected[key] {
+			result = append(result, key)
+			continue
+		}
+		baseName := strings.SplitN(key, ".", 2)[0]
+		if selected[baseName] {
+			result = append(result, key)
+		}
+	}
+	return result
 }
