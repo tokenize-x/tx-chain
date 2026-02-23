@@ -413,7 +413,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "duplicate timestamp",
+			errMsg:    "timestamp must be monotonically increasing",
 		},
 		{
 			name: "invalid_unsorted_schedule",
@@ -430,7 +430,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 				},
 			},
 			expectErr: true,
-			errMsg:    "must be sorted by timestamp in ascending order",
+			errMsg:    "timestamp must be monotonically increasing",
 		},
 		{
 			name: "invalid_empty_allocations_array",

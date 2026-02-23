@@ -129,20 +129,10 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 	// All clearing accounts (including Community) should be in the schedule
 	allClearingAccounts := GetAllClearingAccounts()
 
-	seenTimestamps := make(map[uint64]bool)
-	var lastTime uint64
-
 	for i, period := range schedule {
 		// Validate id is non-zero
 		if period.ID == 0 {
 			return errorsmod.Wrapf(ErrInvalidParam, "period %d: id cannot be zero", i)
-		}
-
-		// Validate id is strictly increasing and sequential (each ID = previous + 1).
-		if i > 0 && period.ID != schedule[i-1].ID+1 {
-			return errorsmod.Wrapf(ErrInvalidParam,
-				"period %d: id must be sequential, expected %d but got %d",
-				i, schedule[i-1].ID+1, period.ID)
 		}
 
 		// Validate timestamp is not zero
@@ -150,17 +140,19 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 			return errorsmod.Wrapf(ErrInvalidParam, "period %d: timestamp cannot be zero", i)
 		}
 
-		// Check for duplicate timestamps
-		if seenTimestamps[period.Timestamp] {
-			return errorsmod.Wrapf(ErrInvalidParam, "period %d: duplicate timestamp", i)
+		// Validate ordering against previous period: IDs must be sequential, timestamps must be monotonically increasing.
+		if i > 0 {
+			if period.ID != schedule[i-1].ID+1 {
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d: id must be sequential, expected %d but got %d",
+					i, schedule[i-1].ID+1, period.ID)
+			}
+			if period.Timestamp <= schedule[i-1].Timestamp {
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d: timestamp must be monotonically increasing, got %d after %d",
+					i, period.Timestamp, schedule[i-1].Timestamp)
+			}
 		}
-		seenTimestamps[period.Timestamp] = true
-
-		// Validate schedule is sorted in ascending order
-		if i > 0 && period.Timestamp <= lastTime {
-			return errorsmod.Wrapf(ErrInvalidParam, "periods must be sorted by timestamp in ascending order")
-		}
-		lastTime = period.Timestamp
 
 		// Validate allocations array is not empty
 		if len(period.Allocations) == 0 {
