@@ -182,7 +182,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 		baseTimestamp := uint64(1700000000) // Some future timestamp
 		for i := range numPeriods {
 			schedule[i] = types.ScheduledDistribution{
-				Id:          uint64(i + 1),
+				ID:          uint64(i + 1),
 				Timestamp:   baseTimestamp + uint64(i*86400), // One day apart
 				Allocations: createAllAllocations(amount),
 			}
@@ -226,7 +226,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 				Authority: authority,
 				Schedule: []types.ScheduledDistribution{
 					{
-						Id:        1,
+						ID:        1,
 						Timestamp: uint64(1700000000),
 						Allocations: []types.ClearingAccountAllocation{
 							{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000000)},
@@ -315,7 +315,7 @@ func TestMsgUpdateMinDistributionGap(t *testing.T) {
 	daySeconds := uint64(86400)
 	schedule := []types.ScheduledDistribution{
 		{
-			Id:        1,
+			ID:        1,
 			Timestamp: baseTimestamp,
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},
@@ -327,7 +327,7 @@ func TestMsgUpdateMinDistributionGap(t *testing.T) {
 			},
 		},
 		{
-			Id:        2,
+			ID:        2,
 			Timestamp: baseTimestamp + daySeconds, // 1 day later
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},

@@ -134,15 +134,15 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 
 	for i, period := range schedule {
 		// Validate id is non-zero
-		if period.Id == 0 {
+		if period.ID == 0 {
 			return errorsmod.Wrapf(ErrInvalidParam, "period %d: id cannot be zero", i)
 		}
 
 		// Validate id is strictly increasing and sequential (each ID = previous + 1).
-		if i > 0 && period.Id != schedule[i-1].Id+1 {
+		if i > 0 && period.ID != schedule[i-1].ID+1 {
 			return errorsmod.Wrapf(ErrInvalidParam,
 				"period %d: id must be sequential, expected %d but got %d",
-				i, schedule[i-1].Id+1, period.Id)
+				i, schedule[i-1].ID+1, period.ID)
 		}
 
 		// Validate timestamp is not zero

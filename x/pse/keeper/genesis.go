@@ -23,7 +23,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 
 	// Populate allocation schedule from genesis state
 	for _, scheduledDist := range genState.ScheduledDistributions {
-		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Id, scheduledDist); err != nil {
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.ID, scheduledDist); err != nil {
 			return err
 		}
 	}

@@ -50,7 +50,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	}
 
 	// Remove the completed distribution from the schedule
-	if err := k.AllocationSchedule.Remove(ctx, scheduledDistribution.Id); err != nil {
+	if err := k.AllocationSchedule.Remove(ctx, scheduledDistribution.ID); err != nil {
 		return err
 	}
 
@@ -220,8 +220,8 @@ func (k Keeper) distributeAllocatedTokens(
 // Each scheduled distribution is stored in the AllocationSchedule map, indexed by its ID.
 func (k Keeper) SaveDistributionSchedule(ctx context.Context, schedule []types.ScheduledDistribution) error {
 	for _, scheduledDist := range schedule {
-		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Id, scheduledDist); err != nil {
-			return errorsmod.Wrapf(err, "failed to save distribution with id %d", scheduledDist.Id)
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.ID, scheduledDist); err != nil {
+			return errorsmod.Wrapf(err, "failed to save distribution with id %d", scheduledDist.ID)
 		}
 	}
 	return nil

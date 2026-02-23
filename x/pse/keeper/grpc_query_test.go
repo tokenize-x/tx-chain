@@ -285,14 +285,14 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		// Create schedule allocations at different future times
 		schedule1 := types.ScheduledDistribution{
-			Id:        1,
+			ID:        1,
 			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(2000)},
 			},
 		}
 		schedule2 := types.ScheduledDistribution{
-			Id:        2,
+			ID:        2,
 			Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(3000)},
@@ -317,7 +317,7 @@ func TestQueryAllocationSchedule(t *testing.T) {
 		queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
 		schedule := types.ScheduledDistribution{
-			Id:        1,
+			ID:        1,
 			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},
@@ -344,21 +344,21 @@ func TestQueryAllocationSchedule(t *testing.T) {
 
 		// Save schedule items in non-sequential order of id
 		schedule3 := types.ScheduledDistribution{
-			Id:        3,
+			ID:        3,
 			Timestamp: uint64(currentTime.Add(3 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(3000)},
 			},
 		}
 		schedule1 := types.ScheduledDistribution{
-			Id:        1,
+			ID:        1,
 			Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(1000)},
 			},
 		}
 		schedule2 := types.ScheduledDistribution{
-			Id:        2,
+			ID:        2,
 			Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()),
 			Allocations: []types.ClearingAccountAllocation{
 				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(2000)},

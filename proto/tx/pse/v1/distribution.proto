@@ -59,6 +59,7 @@ message ScheduledDistribution {
   // id is the unique, sequential identifier for this distribution.
   // Used as the storage key in the AllocationSchedule map.
   uint64 id = 3 [
+    (gogoproto.customname) = "ID",
     (gogoproto.moretags) = "yaml:\"id\""
   ];
 }
