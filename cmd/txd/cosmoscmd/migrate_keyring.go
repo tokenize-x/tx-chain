@@ -103,7 +103,9 @@ func runMigrateKeyring(cmd *cobra.Command, args []string) error {
 
 		// After migrating a .info entry, also migrate its .address reverse-lookup entry.
 		if strings.HasSuffix(key, ".info") {
-			migrateAddressEntry(cmd, srcKr, destKr, item.Data)
+			if err := migrateAddressEntry(srcKr, destKr, item.Data); err != nil {
+				cmd.PrintErrf("  Warning: could not migrate address entry for %q: %v\n", key, err)
+			}
 		}
 	}
 
@@ -117,41 +119,37 @@ func runMigrateKeyring(cmd *cobra.Command, args []string) error {
 }
 
 // migrateAddressEntry extracts and migrates the corresponding <hex>.address reverse-lookup entry.
-func migrateAddressEntry(cmd *cobra.Command, srcKr, destKr keyring.Keyring, infoData []byte) int {
+func migrateAddressEntry(srcKr, destKr keyring.Keyring, infoData []byte) error {
 	ir := codectypes.NewInterfaceRegistry()
 	cryptocodec.RegisterInterfaces(ir)
 	cdc := codec.NewProtoCodec(ir)
 
 	var record sdkkeyring.Record
 	if err := cdc.Unmarshal(infoData, &record); err != nil {
-		cmd.PrintErrf("  Warning: could not unmarshal record: %v\n", err)
-		return 0
+		return fmt.Errorf("unmarshal record: %w", err)
 	}
 
 	pubKey, err := record.GetPubKey()
 	if err != nil {
-		cmd.PrintErrf("  Warning: could not extract public key: %v\n", err)
-		return 0
+		return fmt.Errorf("extract public key: %w", err)
 	}
 
 	addrKey := hex.EncodeToString(pubKey.Address()) + ".address"
 
 	if _, err := destKr.Get(addrKey); err == nil {
-		return 0 // already exists
+		return nil // already exists
 	}
 
 	addrItem, err := srcKr.Get(addrKey)
 	if err != nil {
-		cmd.PrintErrf("  Warning: could not read %q: %v\n", addrKey, err)
-		return 0
+		return fmt.Errorf("read %q from source: %w", addrKey, err)
 	}
 
 	if err := destKr.Set(addrItem); err != nil {
-		cmd.PrintErrf("  Warning: could not write %q: %v\n", addrKey, err)
-		return 0
+		return fmt.Errorf("write %q to destination: %w", addrKey, err)
 	}
 
-	return 1
+	return nil
 }
 
 // filterKeys returns keyring entries whose key name matches any of the given names.
