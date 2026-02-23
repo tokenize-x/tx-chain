@@ -210,6 +210,10 @@ func TestPSEDistribution(t *testing.T) {
 
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
 		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
+		&psetypes.MsgUpdateMinDistributionGap{
+			Authority:                 authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			MinDistributionGapSeconds: 0,
+		},
 		&psetypes.MsgUpdateDistributionSchedule{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Schedule: []psetypes.ScheduledDistribution{
