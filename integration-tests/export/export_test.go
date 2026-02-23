@@ -92,28 +92,25 @@ func syncAppsHeights(
 	exportedApp *app.App, initiatedApp *app.App,
 	initChainReq *abci.RequestInitChain,
 ) {
-	// load the latest version from the exported app
-	// the initial height is the height that need to gets finalized in the initiated app
-	nodeAppStateHeight := initChainReq.InitialHeight - 1
-	err := exportedApp.LoadVersion(nodeAppStateHeight)
-	requireT.NoError(err, "failed to load version %d from exported app", nodeAppStateHeight)
+	// Bring the exported app to initialHeight. The node DB may already contain that version
+	initialHeight := initChainReq.InitialHeight
+	err := exportedApp.LoadVersion(initialHeight)
+	if err != nil {
+		// Version not in DB (e.g. export was taken before that block); load previous and replay one block.
+		requireT.NoError(exportedApp.LoadVersion(initialHeight-1), "failed to load version %d from exported app", initialHeight-1)
+		_, err = exportedApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: initialHeight})
+		requireT.NoError(err)
+		_, err = exportedApp.Commit()
+		requireT.NoError(err)
+	}
 
-	// finalize new block for the exported app
-	_, err = exportedApp.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height: initChainReq.InitialHeight,
-	})
-	require.NoError(t, err)
-	_, err = exportedApp.Commit()
-	require.NoError(t, err)
-
-	// finalize new block for the initiated app
+	// Advance the initiated app (fresh from genesis) to the same height.
 	_, err = initiatedApp.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height: initChainReq.InitialHeight,
+		Height: initialHeight,
 	})
-	require.NoError(t, err)
-
+	requireT.NoError(err)
 	_, err = initiatedApp.Commit()
-	require.NoError(t, err)
+	requireT.NoError(err)
 }
 
 func checkModuleStoreMismatches(
