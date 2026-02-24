@@ -28,6 +28,12 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
+	// TODO revise this logic for distribution id and genesis state
+	var currentDistributionID uint64
+	if len(genState.ScheduledDistributions) > 0 {
+		currentDistributionID = genState.ScheduledDistributions[0].Timestamp
+	}
+
 	// Populate delegation time entries from genesis state
 	for _, delegationTimeEntryExported := range genState.DelegationTimeEntries {
 		valAddr, err := k.valAddressCodec.StringToBytes(delegationTimeEntryExported.ValidatorAddress)
@@ -96,6 +102,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 			if err != nil {
 				return false, err
 			}
+			// TODO revise this logic for distribution id and genesis state
 			delegationTimeEntriesExported = append(delegationTimeEntriesExported, types.DelegationTimeEntryExport{
 				DistributionID:     key.K1(),
 				ValidatorAddress:   valAddr,
@@ -117,6 +124,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 			if err != nil {
 				return false, err
 			}
+			// TODO revise this logic for distribution id and genesis state
 			genesis.AccountScores = append(genesis.AccountScores, types.AccountScore{
 				DistributionID: key.K1(),
 				Address:        addr,

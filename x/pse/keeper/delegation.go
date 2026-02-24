@@ -56,12 +56,7 @@ func (k Keeper) GetDelegatorScore(
 }
 
 // SetDelegatorScore sets the score for a delegator.
-func (k Keeper) SetDelegatorScore(
-	ctx context.Context,
-	distributionID uint64,
-	delAddr sdk.AccAddress,
-	score sdkmath.Int,
-) error {
+func (k Keeper) SetDelegatorScore(ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int) error {
 	key := collections.Join(distributionID, delAddr)
 	return k.AccountScoreSnapshot.Set(ctx, key, score)
 }

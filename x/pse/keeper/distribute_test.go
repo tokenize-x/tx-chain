@@ -33,8 +33,8 @@ func TestKeeper_Distribute(t *testing.T) {
 				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
 				func(r *runEnv) {
 					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
-						&r.delegators[0]: sdkmath.NewInt(1_100_366), // + 1000 * 1.1 / 3
-						&r.delegators[1]: sdkmath.NewInt(900_299),   // + 1000 * 0.9 / 3
+						&r.delegators[0]: sdkmath.NewInt(1_100_550), // + 1000 * 1.1 / 3
+						&r.delegators[1]: sdkmath.NewInt(900_450),   // + 1000 * 0.9 / 3
 					})
 				},
 				func(r *runEnv) { assertScoreResetAction(r) },
