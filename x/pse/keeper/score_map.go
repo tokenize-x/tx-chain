@@ -16,13 +16,18 @@ type scoreMap struct {
 		addr  sdk.AccAddress
 		score sdkmath.Int
 	}
+	distributionID    uint64
 	indexMap          map[string]int
 	addressCodec      addresscodec.Codec
 	totalScore        sdkmath.Int
 	excludedAddresses []sdk.AccAddress
 }
 
-func newScoreMap(addressCodec addresscodec.Codec, excludedAddressesStr []string) (*scoreMap, error) {
+func newScoreMap(
+	distributionID uint64,
+	addressCodec addresscodec.Codec,
+	excludedAddressesStr []string,
+) (*scoreMap, error) {
 	excludedAddresses := make([]sdk.AccAddress, len(excludedAddressesStr))
 	for i, addr := range excludedAddressesStr {
 		var err error
@@ -36,6 +41,7 @@ func newScoreMap(addressCodec addresscodec.Codec, excludedAddressesStr []string)
 			addr  sdk.AccAddress
 			score sdkmath.Int
 		}, 0),
+		distributionID:    distributionID,
 		indexMap:          make(map[string]int),
 		addressCodec:      addressCodec,
 		totalScore:        sdkmath.NewInt(0),
@@ -82,7 +88,10 @@ func (m *scoreMap) walk(fn func(addr sdk.AccAddress, score sdkmath.Int) error) e
 }
 
 func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) error {
-	iter, err := k.AccountScoreSnapshot.Iterate(ctx, nil)
+	iter, err := k.AccountScoreSnapshot.Iterate(
+		ctx,
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](m.distributionID),
+	)
 	if err != nil {
 		return err
 	}
@@ -93,7 +102,7 @@ func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) er
 			return err
 		}
 		score := kv.Value
-		delAddr := kv.Key
+		delAddr := kv.Key.K2()
 		if m.isExcludedAddress(delAddr) {
 			continue
 		}
@@ -107,13 +116,16 @@ func (m *scoreMap) iterateAccountScoreSnapshot(ctx context.Context, k Keeper) er
 }
 
 func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
-	[]collections.KeyValue[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry], error,
+	[]collections.KeyValue[collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry], error,
 ) {
 	var allDelegationTimeEntries []collections.KeyValue[
-		collections.Pair[sdk.AccAddress, sdk.ValAddress],
+		collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress],
 		types.DelegationTimeEntry,
 	]
-	delegationTimeEntriesIterator, err := k.DelegationTimeEntries.Iterate(ctx, nil)
+	delegationTimeEntriesIterator, err := k.DelegationTimeEntries.Iterate(
+		ctx,
+		collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](m.distributionID),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +137,8 @@ func (m *scoreMap) iterateDelegationTimeEntries(ctx context.Context, k Keeper) (
 			return nil, err
 		}
 		allDelegationTimeEntries = append(allDelegationTimeEntries, kv)
-		delAddr := kv.Key.K1()
-		valAddr := kv.Key.K2()
+		delAddr := kv.Key.K2()
+		valAddr := kv.Key.K3()
 		if m.isExcludedAddress(delAddr) {
 			continue
 		}

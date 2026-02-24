@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/collections"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -15,14 +16,17 @@ func (k Keeper) DistributeCommunityPSE(
 	ctx context.Context,
 	bondDenom string,
 	totalPSEAmount sdkmath.Int,
-	scheduledAt uint64,
+	scheduledDistribution types.ScheduledDistribution,
 ) error {
+	scheduledAt := scheduledDistribution.Timestamp
+	// TODO update to use distribution ID, also consider period splits
+	distributionID := scheduledDistribution.ID
 	// iterate all delegation time entries and calculate uncalculated score.
 	params, err := k.GetParams(ctx)
 	if err != nil {
 		return err
 	}
-	finalScoreMap, err := newScoreMap(k.addressCodec, params.ExcludedAddresses)
+	finalScoreMap, err := newScoreMap(distributionID, k.addressCodec, params.ExcludedAddresses)
 	if err != nil {
 		return err
 	}
@@ -43,15 +47,28 @@ func (k Keeper) DistributeCommunityPSE(
 	// Clear all account score snapshots.
 	// Excluded addresses should not have snapshots (cleared when added to exclusion list),
 	// but we clear unconditionally for all addresses.
-	if err := k.AccountScoreSnapshot.Clear(ctx, nil); err != nil {
+	// TODO review all the logic for score reset
+	if err := k.AccountScoreSnapshot.Clear(
+		ctx,
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](distributionID),
+	); err != nil {
 		return err
 	}
 
 	// reset all delegation time entries LastChangedUnixSec to the current block time.
+	err = k.DelegationTimeEntries.Clear(
+		ctx,
+		collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](distributionID),
+	)
+	if err != nil {
+		return err
+	}
 	currentBlockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	for _, kv := range allDelegationTimeEntries {
 		kv.Value.LastChangedUnixSec = currentBlockTime
-		err = k.DelegationTimeEntries.Set(ctx, kv.Key, kv.Value)
+		// TODO review all the logic for score reset
+		key := collections.Join3(distributionID+1, kv.Key.K2(), kv.Key.K3())
+		err = k.DelegationTimeEntries.Set(ctx, key, kv.Value)
 		if err != nil {
 			return err
 		}

@@ -28,6 +28,12 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
+	// TODO revise this logic for distribution id and genesis state
+	var currentDistributionID uint64
+	if len(genState.ScheduledDistributions) > 0 {
+		currentDistributionID = genState.ScheduledDistributions[0].Timestamp
+	}
+
 	// Populate delegation time entries from genesis state
 	for _, delegationTimeEntryExported := range genState.DelegationTimeEntries {
 		valAddr, err := k.valAddressCodec.StringToBytes(delegationTimeEntryExported.ValidatorAddress)
@@ -38,7 +44,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		if err != nil {
 			return err
 		}
-		if err = k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
+		if err = k.SetDelegationTimeEntry(ctx, currentDistributionID, valAddr, delAddr, types.DelegationTimeEntry{
 			Shares:             delegationTimeEntryExported.Shares,
 			LastChangedUnixSec: delegationTimeEntryExported.LastChangedUnixSec,
 		}); err != nil {
@@ -52,7 +58,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		if err != nil {
 			return err
 		}
-		if err := k.AccountScoreSnapshot.Set(ctx, addr, accountScore.Score); err != nil {
+		if err := k.SetDelegatorScore(ctx, currentDistributionID, addr, accountScore.Score); err != nil {
 			return err
 		}
 	}
@@ -79,15 +85,19 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	// Export delegation time entries from genesis state
 	delegationTimeEntriesExported := make([]types.DelegationTimeEntryExport, 0)
 	err = k.DelegationTimeEntries.Walk(ctx, nil,
-		func(key collections.Pair[sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry) (stop bool, err error) {
-			delAddr, err := k.addressCodec.BytesToString(key.K1())
+		func(
+			key collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress],
+			value types.DelegationTimeEntry,
+		) (stop bool, err error) {
+			delAddr, err := k.addressCodec.BytesToString(key.K2())
 			if err != nil {
 				return false, err
 			}
-			valAddr, err := k.valAddressCodec.BytesToString(key.K2())
+			valAddr, err := k.valAddressCodec.BytesToString(key.K3())
 			if err != nil {
 				return false, err
 			}
+			// TODO revise this logic for distribution id and genesis state
 			delegationTimeEntriesExported = append(delegationTimeEntriesExported, types.DelegationTimeEntryExport{
 				ValidatorAddress:   valAddr,
 				DelegatorAddress:   delAddr,
@@ -103,11 +113,12 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 
 	// Export account scores from genesis state
 	err = k.AccountScoreSnapshot.Walk(ctx, nil,
-		func(key sdk.AccAddress, value sdkmath.Int) (stop bool, err error) {
-			addr, err := k.addressCodec.BytesToString(key)
+		func(key collections.Pair[uint64, sdk.AccAddress], value sdkmath.Int) (stop bool, err error) {
+			addr, err := k.addressCodec.BytesToString(key.K2())
 			if err != nil {
 				return false, err
 			}
+			// TODO revise this logic for distribution id and genesis state
 			genesis.AccountScores = append(genesis.AccountScores, types.AccountScore{
 				Address: addr,
 				Score:   value,
