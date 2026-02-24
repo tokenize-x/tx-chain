@@ -666,24 +666,6 @@ func (k Keeper) validateCoinIsNotLockedByDEXAndBank(
 			coin.String(), availableAmt.String(), coin.Denom)
 	}
 
-	// validate that we don't use frozen coins (if freezing feature is enabled)
-	def, err := k.getDefinitionOrNil(ctx, coin.Denom)
-	if err != nil {
-		return err
-	}
-	if def != nil && def.IsFeatureEnabled(types.Feature_freezing) && !def.HasAdminPrivileges(addr) {
-		frozenBalance, err := k.GetFrozenBalance(ctx, addr, coin.Denom)
-		if err != nil {
-			return err
-		}
-		frozenAmt := frozenBalance.Amount
-		notFrozenAmt := availableAmt.Sub(frozenAmt)
-		if notFrozenAmt.LT(coin.Amount) {
-			return sdkerrors.Wrapf(cosmoserrors.ErrInsufficientFunds, "%s is not available, available %s%s",
-				coin.String(), notFrozenAmt.String(), coin.Denom)
-		}
-	}
-
 	return nil
 }
 
