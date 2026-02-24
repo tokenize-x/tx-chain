@@ -66,26 +66,6 @@ func (k Keeper) DEXExecuteActions(ctx sdk.Context, actions types.DEXActions) err
 	}
 
 	for _, send := range actions.Send {
-		// Validate frozen balances before sending to prevent transferring frozen tokens
-		def, err := k.getDefinitionOrNil(ctx, send.Coin.Denom)
-		if err != nil {
-			return err
-		}
-		if def != nil && def.IsFeatureEnabled(types.Feature_freezing) && !def.HasAdminPrivileges(send.FromAddress) {
-			balance := k.bankKeeper.GetBalance(ctx, send.FromAddress, send.Coin.Denom)
-			dexLocked := k.GetDEXLockedBalance(ctx, send.FromAddress, send.Coin.Denom).Amount
-			bankLocked := k.bankKeeper.LockedCoins(ctx, send.FromAddress).AmountOf(send.Coin.Denom)
-			frozenBalance, err := k.GetFrozenBalance(ctx, send.FromAddress, send.Coin.Denom)
-			if err != nil {
-				return err
-			}
-			available := balance.Amount.Sub(dexLocked).Sub(bankLocked).Sub(frozenBalance.Amount)
-			if available.LT(send.Coin.Amount) {
-				return sdkerrors.Wrapf(cosmoserrors.ErrInsufficientFunds,
-					"cannot send %s: insufficient spendable balance (frozen tokens cannot be transferred)",
-					send.Coin.String())
-			}
-		}
 		k.logger(ctx).Debug(
 			"DEX sending coin",
 			"from", send.FromAddress.String(),
