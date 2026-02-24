@@ -3230,6 +3230,50 @@ func TestFrozenTokenEscapeViaDEX(t *testing.T) {
 	requireT.Error(err, "Second order of 400,000 must fail: it would lock frozen tokens; available spendable is 0")
 	t.Logf("Step 2: Second order of %d correctly rejected — frozen tokens cannot be DEX-locked", order2Amount)
 
+	// Step 2b: Try to lock 100,000 more — must FAIL (smaller portion of frozen)
+	order2bAmount := int64(100_000)
+	placeOrder2b := &dextypes.MsgPlaceOrder{
+		Sender:      alice.String(),
+		Type:        dextypes.ORDER_TYPE_LIMIT,
+		ID:          "order2b",
+		BaseDenom:   denom,
+		QuoteDenom:  quoteDenom,
+		Price:       lo.ToPtr(dextypes.MustNewPriceFromString("1")),
+		Quantity:    sdkmath.NewInt(order2bAmount),
+		Side:        dextypes.SIDE_SELL,
+		TimeInForce: dextypes.TIME_IN_FORCE_GTC,
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(alice),
+		chain.TxFactoryAuto(),
+		placeOrder2b,
+	)
+	requireT.Error(err, "Order of 100,000 must fail: it would lock frozen tokens; available spendable is 0")
+	t.Logf("Step 2b: Order of %d correctly rejected — no portion of frozen tokens can be DEX-locked", order2bAmount)
+
+	// Step 2c: Try to lock 10,000 more — must FAIL (even smaller portion of frozen)
+	order2cAmount := int64(10_000)
+	placeOrder2c := &dextypes.MsgPlaceOrder{
+		Sender:      alice.String(),
+		Type:        dextypes.ORDER_TYPE_LIMIT,
+		ID:          "order2c",
+		BaseDenom:   denom,
+		QuoteDenom:  quoteDenom,
+		Price:       lo.ToPtr(dextypes.MustNewPriceFromString("1")),
+		Quantity:    sdkmath.NewInt(order2cAmount),
+		Side:        dextypes.SIDE_SELL,
+		TimeInForce: dextypes.TIME_IN_FORCE_GTC,
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(alice),
+		chain.TxFactoryAuto(),
+		placeOrder2c,
+	)
+	requireT.Error(err, "Order of 10,000 must fail: it would lock frozen tokens; available spendable is 0")
+	t.Logf("Step 2c: Order of %d correctly rejected — no portion of frozen tokens can be DEX-locked", order2cAmount)
+
 	// Verify state unchanged: still 400,000 DEX-locked, 600,000 frozen
 	balanceRes, err = assetFTClient.Balance(ctx, &assetfttypes.QueryBalanceRequest{
 		Account: alice.String(),
