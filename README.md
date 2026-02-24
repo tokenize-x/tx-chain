@@ -110,5 +110,7 @@ $ txd status --chain-id=coreum-testnet-1 --node=https://full-node.testnet-1.tx.d
 ```
 It should also be mentioned that for development purposes testnet is more stable than devnet.
 
+<!-- markdown-link-check-disable -->
 You can also find block explorers for each chain by this
-<!-- markdown-link-check-disable -->[link](https://docs.tx.dev/docs/tools-and-ecosystem/blockchain-explorers)<!-- markdown-link-check-enable -->.
+[link](https://docs.tx.dev/docs/tools-and-ecosystem/blockchain-explorers)
+<!-- markdown-link-check-enable -->.
