@@ -93,22 +93,21 @@ func syncAppsHeights(
 	exportedApp *app.App, initiatedApp *app.App,
 	initChainReq *abci.RequestInitChain,
 ) {
-	// Bring the exported app to initialHeight. The node DB may already contain that version
 	initialHeight := initChainReq.InitialHeight
-	err := exportedApp.LoadVersion(initialHeight)
-	if err != nil {
-		// Version not in DB (e.g. export was taken before that block); load previous and replay one block.
+
+	// Check if the target version is already in the exported app's DB (e.g. chain was at this height when exported).
+	targetVersionAvailable := exportedApp.LoadVersion(initialHeight) == nil
+	if !targetVersionAvailable {
+		// Target version not in DB: load previous version and replay one block (finalize + commit).
 		requireT.NoError(exportedApp.LoadVersion(initialHeight-1), "failed to load version %d from exported app", initialHeight-1)
-		_, err = exportedApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: initialHeight})
+		_, err := exportedApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: initialHeight})
 		requireT.NoError(err)
 		_, err = exportedApp.Commit()
 		requireT.NoError(err)
 	}
 
 	// Advance the initiated app (fresh from genesis) to the same height.
-	_, err = initiatedApp.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height: initialHeight,
-	})
+	_, err := initiatedApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: initialHeight})
 	requireT.NoError(err)
 	_, err = initiatedApp.Commit()
 	requireT.NoError(err)
