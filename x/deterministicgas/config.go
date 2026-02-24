@@ -350,6 +350,8 @@ func DefaultConfig() Config {
 			&ibcchanneltypes.MsgTimeout{},
 			&ibcchanneltypes.MsgTimeoutOnClose{},
 			&ibcchanneltypes.MsgAcknowledgement{},
+
+			// ibc/core/channel/v2
 			&ibcv2channeltypes.MsgSendPacket{},
 			&ibcv2channeltypes.MsgRecvPacket{},
 			&ibcv2channeltypes.MsgTimeout{},
