@@ -306,6 +306,7 @@ and the formula for them is
 | `/tx.pse.v1.MsgUpdateClearingAccountMappings`                          |
 | `/tx.pse.v1.MsgUpdateDistributionSchedule`                             |
 | `/tx.pse.v1.MsgUpdateExcludedAddresses`                                |
+| `/tx.pse.v1.MsgUpdateMinDistributionGap`                               |
 
 [//]: # (GENERATED DOC.)
 [//]: # (DO NOT EDIT MANUALLY!!!)

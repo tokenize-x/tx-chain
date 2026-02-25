@@ -210,12 +210,16 @@ func TestPSEDistribution(t *testing.T) {
 
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
 		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
+		&psetypes.MsgUpdateMinDistributionGap{
+			Authority:                 authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			MinDistributionGapSeconds: 0,
+		},
 		&psetypes.MsgUpdateDistributionSchedule{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Schedule: []psetypes.ScheduledDistribution{
-				{Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
-				{Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
-				{Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
+				{ID: 1, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
+				{ID: 2, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
+				{ID: 3, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
 			},
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{

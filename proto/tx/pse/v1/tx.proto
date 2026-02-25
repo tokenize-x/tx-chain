@@ -24,6 +24,9 @@ service Msg {
   
   // DisableDistributions is a governance operation to disable distributions.
   rpc DisableDistributions(MsgDisableDistributions) returns (EmptyResponse);
+
+  // UpdateMinDistributionGap is a governance operation to update the minimum gap between distributions.
+  rpc UpdateMinDistributionGap(MsgUpdateMinDistributionGap) returns (EmptyResponse);
 }
 
 message MsgDisableDistributions {
@@ -87,6 +90,22 @@ message MsgUpdateDistributionSchedule {
   repeated ScheduledDistribution schedule = 2 [
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"schedule\""
+  ];
+}
+
+// MsgUpdateMinDistributionGap is a governance operation to update the minimum time gap
+// between consecutive scheduled distributions. The new gap is validated against the
+// existing on-chain schedule to ensure consistency.
+message MsgUpdateMinDistributionGap {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "pse/MsgUpdateMinDistributionGap";
+
+  // authority is the address authorized to update the gap (governance module address).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // min_distribution_gap_seconds is the minimum time gap (in seconds) between consecutive distributions.
+  uint64 min_distribution_gap_seconds = 2 [
+    (gogoproto.moretags) = "yaml:\"min_distribution_gap_seconds\""
   ];
 }
 
