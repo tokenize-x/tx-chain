@@ -50,7 +50,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	}
 
 	// Remove the completed distribution from the schedule
-	if err := k.AllocationSchedule.Remove(ctx, timestamp); err != nil {
+	if err := k.AllocationSchedule.Remove(ctx, scheduledDistribution.ID); err != nil {
 		return err
 	}
 
@@ -64,7 +64,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.ScheduledDistribution, bool, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// Get iterator for the allocation schedule (sorted by timestamp ascending)
+	// Get iterator for the allocation schedule (sorted by id ascending)
 	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
 	if err != nil {
 		return types.ScheduledDistribution{}, false, err
@@ -76,18 +76,18 @@ func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.Scheduled
 		return types.ScheduledDistribution{}, false, nil
 	}
 
-	// Extract the earliest scheduled distribution
+	// Extract the earliest scheduled distribution (sorted by id ascending)
 	kv, err := iter.KeyValue()
 	if err != nil {
 		return types.ScheduledDistribution{}, false, err
 	}
 
-	timestamp := kv.Key
 	scheduledDist := kv.Value
 
 	// Check if distribution time has arrived
-	// Since the map is sorted by timestamp, if the first item is in the future, all items are
-	shouldProcess := timestamp <= uint64(sdkCtx.BlockTime().Unix())
+	// Since IDs are sequential and timestamps are monotonically increasing,
+	// the first item by ID is also the earliest by time.
+	shouldProcess := scheduledDist.Timestamp <= uint64(sdkCtx.BlockTime().Unix())
 
 	return scheduledDist, shouldProcess, nil
 }
@@ -217,18 +217,18 @@ func (k Keeper) distributeAllocatedTokens(
 }
 
 // SaveDistributionSchedule persists the distribution schedule to blockchain state.
-// Each scheduled distribution is stored in the AllocationSchedule map, indexed by its timestamp.
+// Each scheduled distribution is stored in the AllocationSchedule map, indexed by its ID.
 func (k Keeper) SaveDistributionSchedule(ctx context.Context, schedule []types.ScheduledDistribution) error {
 	for _, scheduledDist := range schedule {
-		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist); err != nil {
-			return errorsmod.Wrapf(err, "failed to save distribution at timestamp %d", scheduledDist.Timestamp)
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.ID, scheduledDist); err != nil {
+			return errorsmod.Wrapf(err, "failed to save distribution with id %d", scheduledDist.ID)
 		}
 	}
 	return nil
 }
 
 // GetDistributionSchedule returns the complete allocation schedule as a sorted list.
-// The schedule is sorted by timestamp in ascending order.
+// The schedule is sorted by id in ascending order.
 // Returns an empty slice if no allocations are scheduled.
 // Note: Past schedule allocations removed after processing, so this only contains future schedule allocations.
 func (k Keeper) GetDistributionSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {
@@ -248,7 +248,7 @@ func (k Keeper) GetDistributionSchedule(ctx context.Context) ([]types.ScheduledD
 		schedule = append(schedule, kv.Value)
 	}
 
-	// Note: Collections map iterates in ascending order of keys (timestamps),
+	// Note: Collections map iterates in ascending order of keys (IDs),
 	// so the schedule is already sorted. No need to sort again.
 	return schedule, nil
 }
@@ -266,6 +266,15 @@ func (k Keeper) UpdateDistributionSchedule(
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
+	// Validate minimum gap between distributions
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	if err := types.ValidateDistributionGap(newSchedule, params.MinDistributionGapSeconds); err != nil {
+		return err
+	}
+
 	// Clear all existing schedule entries
 	if err := k.AllocationSchedule.Clear(ctx, nil); err != nil {
 		return errorsmod.Wrap(err, "failed to clear existing allocation schedule")
@@ -273,6 +282,35 @@ func (k Keeper) UpdateDistributionSchedule(
 
 	// Save the new schedule
 	return k.SaveDistributionSchedule(ctx, newSchedule)
+}
+
+// UpdateMinDistributionGap updates the minimum time gap between distributions via governance.
+// The new gap is validated against the existing on-chain schedule to ensure consistency.
+func (k Keeper) UpdateMinDistributionGap(
+	ctx context.Context,
+	authority string,
+	minGapSeconds uint64,
+) error {
+	if k.authority != authority {
+		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+	}
+
+	// Validate new gap against existing schedule
+	schedule, err := k.GetDistributionSchedule(ctx)
+	if err != nil {
+		return err
+	}
+	if err := types.ValidateDistributionGap(schedule, minGapSeconds); err != nil {
+		return errorsmod.Wrapf(err, "existing schedule violates proposed min gap of %d seconds", minGapSeconds)
+	}
+
+	// Update params
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	params.MinDistributionGapSeconds = minGapSeconds
+	return k.SetParams(ctx, params)
 }
 
 // DisableDistributions is a governance operation that disables distributions.

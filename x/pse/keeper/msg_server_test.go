@@ -182,6 +182,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 		baseTimestamp := uint64(1700000000) // Some future timestamp
 		for i := range numPeriods {
 			schedule[i] = types.ScheduledDistribution{
+				ID:          uint64(i + 1),
 				Timestamp:   baseTimestamp + uint64(i*86400), // One day apart
 				Allocations: createAllAllocations(amount),
 			}
@@ -225,6 +226,7 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 				Authority: authority,
 				Schedule: []types.ScheduledDistribution{
 					{
+						ID:        1,
 						Timestamp: uint64(1700000000),
 						Allocations: []types.ClearingAccountAllocation{
 							{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000000)},
@@ -296,4 +298,113 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMsgUpdateMinDistributionGap(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	msgServer := keeper.NewMsgServer(testApp.PSEKeeper)
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	invalidAuthority := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+
+	// Set up a schedule with 1-day gaps
+	baseTimestamp := uint64(1700000000)
+	daySeconds := uint64(86400)
+	schedule := []types.ScheduledDistribution{
+		{
+			ID:        1,
+			Timestamp: baseTimestamp,
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(1000)},
+			},
+		},
+		{
+			ID:        2,
+			Timestamp: baseTimestamp + daySeconds, // 1 day later
+			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountAlliance, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountPartnership, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountInvestors, Amount: sdkmath.NewInt(1000)},
+				{ClearingAccount: types.ClearingAccountTeam, Amount: sdkmath.NewInt(1000)},
+			},
+		},
+	}
+
+	// Save schedule directly
+	err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, schedule)
+	requireT.NoError(err)
+
+	t.Run("valid - set gap less than existing interval", func(t *testing.T) {
+		resp, err := msgServer.UpdateMinDistributionGap(ctx, &types.MsgUpdateMinDistributionGap{
+			Authority:                 authority,
+			MinDistributionGapSeconds: daySeconds / 2, // 12 hours, schedule has 1-day gaps
+		})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+
+		// Verify param was updated
+		params, err := testApp.PSEKeeper.GetParams(ctx)
+		requireT.NoError(err)
+		requireT.Equal(daySeconds/2, params.MinDistributionGapSeconds)
+	})
+
+	t.Run("valid - set gap equal to existing interval", func(t *testing.T) {
+		resp, err := msgServer.UpdateMinDistributionGap(ctx, &types.MsgUpdateMinDistributionGap{
+			Authority:                 authority,
+			MinDistributionGapSeconds: daySeconds, // exactly 1 day (matches schedule)
+		})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+
+		params, err := testApp.PSEKeeper.GetParams(ctx)
+		requireT.NoError(err)
+		requireT.Equal(daySeconds, params.MinDistributionGapSeconds)
+	})
+
+	t.Run("invalid - gap larger than existing schedule interval", func(t *testing.T) {
+		resp, err := msgServer.UpdateMinDistributionGap(ctx, &types.MsgUpdateMinDistributionGap{
+			Authority:                 authority,
+			MinDistributionGapSeconds: daySeconds * 2, // 2 days, but schedule has 1-day gaps
+		})
+		requireT.Error(err)
+		requireT.Nil(resp)
+		requireT.Contains(err.Error(), "existing schedule violates proposed min gap")
+	})
+
+	t.Run("invalid - wrong authority", func(t *testing.T) {
+		resp, err := msgServer.UpdateMinDistributionGap(ctx, &types.MsgUpdateMinDistributionGap{
+			Authority:                 invalidAuthority,
+			MinDistributionGapSeconds: daySeconds / 2,
+		})
+		requireT.Error(err)
+		requireT.Nil(resp)
+		requireT.Contains(err.Error(), "invalid authority")
+	})
+
+	t.Run("valid - zero gap with empty schedule", func(t *testing.T) {
+		// Clear schedule
+		err := testApp.PSEKeeper.AllocationSchedule.Clear(ctx, nil)
+		requireT.NoError(err)
+
+		resp, err := msgServer.UpdateMinDistributionGap(ctx, &types.MsgUpdateMinDistributionGap{
+			Authority:                 authority,
+			MinDistributionGapSeconds: 0,
+		})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+
+		params, err := testApp.PSEKeeper.GetParams(ctx)
+		requireT.NoError(err)
+		requireT.Equal(uint64(0), params.MinDistributionGapSeconds)
+	})
 }
