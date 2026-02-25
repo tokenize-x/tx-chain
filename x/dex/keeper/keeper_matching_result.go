@@ -5,8 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	matchingengine "github.com/tokenize-x/tx-chain/v6/x/dex/matching-engine"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	matchingengine "github.com/tokenize-x/tx-chain/v7/x/dex/matching-engine"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // RecordToAddress maps an account address to an order book record.

@@ -13,14 +13,14 @@ import (
 	sdkmath "cosmossdk.io/math"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/keeper"
+	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	ibcwasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/ibc"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	ibcwasm "github.com/tokenize-x/tx-chain/v7/integration-tests/contracts/ibc"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 

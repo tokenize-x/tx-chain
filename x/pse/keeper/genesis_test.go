@@ -9,8 +9,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 func TestGenesis(t *testing.T) {
@@ -136,6 +136,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 				// Only include 4 accounts, missing Community and Team
 				gs.ScheduledDistributions = []types.ScheduledDistribution{
 					{
+						ID:        1,
 						Timestamp: now,
 						Allocations: []types.ClearingAccountAllocation{
 							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
@@ -155,6 +156,7 @@ func TestGenesis_InvalidState(t *testing.T) {
 				// Include only non-Community accounts, missing Community
 				gs.ScheduledDistributions = []types.ScheduledDistribution{
 					{
+						ID:        1,
 						Timestamp: now,
 						Allocations: []types.ClearingAccountAllocation{
 							{ClearingAccount: types.ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},

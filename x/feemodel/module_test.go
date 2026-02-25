@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel"
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 )
 
 func newKeeperMock(genesisState types.GenesisState) *keeperMock {

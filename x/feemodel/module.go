@@ -17,9 +17,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel/client/cli"
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel/client/cli"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
 )
 
 var (

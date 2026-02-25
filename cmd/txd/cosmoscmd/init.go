@@ -22,8 +22,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/app"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/app"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
 )
 
 const (

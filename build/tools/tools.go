@@ -21,9 +21,8 @@ const (
 	Osmosis tools.Name = "osmosis"
 	// Hermes is an Inter-Blockchain Communication (IBC) relayer.
 	Hermes tools.Name = "hermes"
-	// CoredV503 is an older version of cored used for testing chain upgrades.
-	// TODO (v7): Should be renamed to TXdV600.
-	CoredV503 tools.Name = "cored-v5.0.3"
+	// TXdV600 is the version of txd used for testing chain upgrades.
+	TXdV600 tools.Name = "txd-v6.0.0"
 	// Buf is a tool for working with Protocol Buffers.
 	Buf tools.Name = "buf"
 	// Protoc is the Protocol Buffers compiler.
@@ -89,32 +88,32 @@ var Tools = []tools.Tool{
 	// Check compatibility with wasmd before upgrading: https://github.com/CosmWasm/wasmd
 	tools.BinaryTool{
 		Name:    LibWASM,
-		Version: "v2.2.4",
+		Version: "v2.3.2",
 		Sources: tools.Sources{
 			tools.TargetPlatformLinuxAMD64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.2.4/libwasmvm_muslc.x86_64.a",
-				Hash: "sha256:70c989684d2b48ca17bbd55bb694bbb136d75c393c067ef3bdbca31d2b23b578",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm_muslc.x86_64.a",
+				Hash: "sha256:4d03a4bf508c89a303e8d7d0236feac44a40f6b6e221df4076968abe9d1e49c6",
 				Binaries: map[string]string{
 					"lib/libwasmvm_muslc.x86_64.a": "libwasmvm_muslc.x86_64.a",
 				},
 			},
 			tools.TargetPlatformLinuxARM64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.2.4/libwasmvm_muslc.aarch64.a",
-				Hash: "sha256:27fb13821dbc519119f4f98c30a42cb32429b111b0fdc883686c34a41777488f",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm_muslc.aarch64.a",
+				Hash: "sha256:4b87af3c8aac1756ee1aa1e06daefe3a7f5a3469a3c8d77ad07513539606f8a6",
 				Binaries: map[string]string{
 					"lib/libwasmvm_muslc.aarch64.a": "libwasmvm_muslc.aarch64.a",
 				},
 			},
 			tools.TargetPlatformDarwinAMD64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.2.4/libwasmvmstatic_darwin.a",
-				Hash: "sha256:43f1341015143c626b634a709872efe848e45ad24444c091496f9c648fd71a67",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvmstatic_darwin.a",
+				Hash: "sha256:5c2aac650d13fc7e34e895878a0f69266f74c539db6bf5d90d3d4d66d2982a11",
 				Binaries: map[string]string{
 					"lib/libwasmvmstatic_darwin.a": "libwasmvmstatic_darwin.a",
 				},
 			},
 			tools.TargetPlatformDarwinARM64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.2.4/libwasmvmstatic_darwin.a",
-				Hash: "sha256:43f1341015143c626b634a709872efe848e45ad24444c091496f9c648fd71a67",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvmstatic_darwin.a",
+				Hash: "sha256:5c2aac650d13fc7e34e895878a0f69266f74c539db6bf5d90d3d4d66d2982a11",
 				Binaries: map[string]string{
 					"lib/libwasmvmstatic_darwin.a": "libwasmvmstatic_darwin.a",
 				},
@@ -221,49 +220,49 @@ var Tools = []tools.Tool{
 
 	// https://github.com/CoreumFoundation/coreum/releases
 	tools.BinaryTool{
-		Name:    CoredV503,
-		Version: "v5.0.3",
+		Name:    TXdV600,
+		Version: "v6.0.0",
 		Sources: tools.Sources{
 			tools.TargetPlatformLinuxAMD64InDocker: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-amd64",
-				Hash: "sha256:238fca20014f885613ded2cf0490bfc8b672a25d33bc8a19892c3ac3b0418cf5",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-amd64",
+				Hash: "sha256:68a91363b4f8fcfc32f01675f93c92c80fdcb54bc5d2e3779b293308cbfdd984",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.3": "cored-linux-amd64",
+					"bin/txd-v6.0.0": "txd-linux-amd64",
 				},
 			},
 			tools.TargetPlatformLinuxARM64InDocker: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-arm64",
-				Hash: "sha256:2752e17ac4d993256687e044247cde2a24b660106d134eadb224beb6ec707303",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-arm64",
+				Hash: "sha256:c815d4a388d9d4d39c61dbb20c74c1bc3d5abf918e5b3a81316098831072aac2",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.3": "cored-linux-arm64",
+					"bin/txd-v6.0.0": "txd-linux-arm64",
 				},
 			},
 			tools.TargetPlatformLinuxAMD64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-amd64",
-				Hash: "sha256:238fca20014f885613ded2cf0490bfc8b672a25d33bc8a19892c3ac3b0418cf5",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-amd64",
+				Hash: "sha256:68a91363b4f8fcfc32f01675f93c92c80fdcb54bc5d2e3779b293308cbfdd984",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.3": "cored-linux-amd64",
+					"bin/txd-v6.0.0": "txd-linux-amd64",
 				},
 			},
 			tools.TargetPlatformLinuxARM64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-linux-arm64",
-				Hash: "sha256:2752e17ac4d993256687e044247cde2a24b660106d134eadb224beb6ec707303",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-arm64",
+				Hash: "sha256:c815d4a388d9d4d39c61dbb20c74c1bc3d5abf918e5b3a81316098831072aac2",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.3": "cored-linux-arm64",
+					"bin/txd-v6.0.0": "txd-linux-arm64",
 				},
 			},
 			tools.TargetPlatformDarwinAMD64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-darwin-amd64",
-				Hash: "sha256:4de3948b524df48ba7f300f4948a0e9e490e038e7845be2c2ef76b0e2fdaeb0b",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-darwin-amd64",
+				Hash: "sha256:aa417cea9aaeca87ac7ad553a677486936f67304e7a9d62198c142e8de63ad7a",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.3": "cored-darwin-amd64",
+					"bin/txd-v6.0.0": "txd-darwin-amd64",
 				},
 			},
 			tools.TargetPlatformDarwinARM64: {
-				URL:  "https://github.com/CoreumFoundation/coreum/releases/download/v5.0.3/cored-darwin-arm64",
-				Hash: "sha256:eff5ea0be58b655a1e0ddd07eb361cc9717058aae50eeac5cfffcfcfbf9b9184",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-darwin-arm64",
+				Hash: "sha256:28b34bc86b6377e12b6423152e42bf2cf7a47e4d0dfeeb52a94ea612999ddcd0",
 				Binaries: map[string]string{
-					"bin/cored-v5.0.3": "cored-darwin-arm64",
+					"bin/txd-v6.0.0": "txd-darwin-arm64",
 				},
 			},
 		},

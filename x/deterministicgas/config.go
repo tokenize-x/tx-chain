@@ -35,12 +35,12 @@ import (
 	"github.com/hashicorp/go-metrics"
 	"github.com/samber/lo"
 
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 // These constants define gas for messages which have custom calculation logic.
@@ -239,6 +239,7 @@ func DefaultConfig() Config {
 			&psetypes.MsgUpdateClearingAccountMappings{},
 			&psetypes.MsgUpdateDistributionSchedule{},
 			&psetypes.MsgDisableDistributions{},
+			&psetypes.MsgUpdateMinDistributionGap{},
 
 			// distribution
 			&distributiontypes.MsgUpdateParams{},       // This is non-deterministic because all the gov proposals are non-deterministic anyway
@@ -350,6 +351,8 @@ func DefaultConfig() Config {
 			&ibcchanneltypes.MsgTimeout{},
 			&ibcchanneltypes.MsgTimeoutOnClose{},
 			&ibcchanneltypes.MsgAcknowledgement{},
+
+			// ibc/core/channel/v2
 			&ibcv2channeltypes.MsgSendPacket{},
 			&ibcv2channeltypes.MsgRecvPacket{},
 			&ibcv2channeltypes.MsgTimeout{},

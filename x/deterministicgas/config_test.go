@@ -19,11 +19,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
-	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
+	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas/types"
 )
 
 // To access private variable from github.com/cosmos/gogoproto we link it to local variable.
@@ -97,10 +97,10 @@ func TestDeterministicGas_DeterministicMessages(t *testing.T) {
 	// To make sure we do not increase/decrease deterministic and extension types accidentally,
 	// we assert length to be equal to exact number, so each change requires
 	// explicit adjustment of tests.
-	assert.Equal(t, 94, nondeterministicMsgCount)
+	assert.Equal(t, 95, nondeterministicMsgCount)
 	assert.Equal(t, 68, deterministicMsgCount)
 	assert.Equal(t, 12, extensionMsgCount)
-	assert.Equal(t, 150, nonExtensionMsgCount)
+	assert.Equal(t, 151, nonExtensionMsgCount)
 }
 
 func TestDeterministicGas_GasRequiredByMessage(t *testing.T) {

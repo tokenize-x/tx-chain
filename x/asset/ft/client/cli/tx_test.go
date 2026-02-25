@@ -23,14 +23,14 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/app"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v6/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v6/testutil/event"
-	"github.com/tokenize-x/tx-chain/v6/testutil/network"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/client/cli"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/app"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v7/testutil/event"
+	"github.com/tokenize-x/tx-chain/v7/testutil/network"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/client/cli"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
 )
 
 func TestIssue(t *testing.T) {
@@ -223,6 +223,44 @@ func TestMintBurn(t *testing.T) {
 
 	txchainclitestutil.ExecRootQueryCmd(t, ctx, []string{banktypes.ModuleName, "total-supply-of", denom}, &supplyRes)
 	requireT.Equal(sdk.NewInt64Coin(denom, 777).String(), supplyRes.Amount.String())
+}
+
+func TestBurnGovernanceDenom(t *testing.T) {
+	requireT := require.New(t)
+	testNetwork := network.New(t)
+
+	ctx := testNetwork.Validators[0].ClientCtx
+	burner := testNetwork.Validators[0].Address
+
+	var balanceBeforeRes banktypes.QueryBalanceResponse
+	txchainclitestutil.ExecRootQueryCmd(
+		t,
+		ctx,
+		[]string{banktypes.ModuleName, "balance", burner.String(), testNetwork.Config.BondDenom},
+		&balanceBeforeRes,
+	)
+	balanceBefore := balanceBeforeRes.Balance.Amount
+
+	burnAmount := sdk.NewInt64Coin(testNetwork.Config.BondDenom, 1000000)
+	args := append([]string{burnAmount.String()}, txValidator1Args(testNetwork)...)
+	_, err := txchainclitestutil.ExecTxCmd(ctx, testNetwork, cli.CmdTxBurn(), args)
+	requireT.NoError(err)
+
+	var balanceAfterRes banktypes.QueryBalanceResponse
+	txchainclitestutil.ExecRootQueryCmd(
+		t,
+		ctx,
+		[]string{banktypes.ModuleName, "balance", burner.String(), testNetwork.Config.BondDenom},
+		&balanceAfterRes,
+	)
+	balanceDecrease := balanceBefore.Sub(balanceAfterRes.Balance.Amount)
+	requireT.True(
+		balanceDecrease.GTE(burnAmount.Amount),
+		"balance should decrease by at least burn amount, got %s, expected at least %s",
+		balanceDecrease,
+		burnAmount.Amount,
+	)
+	requireT.True(balanceAfterRes.Balance.Amount.LT(balanceBefore), "balance should decrease after burn")
 }
 
 func TestFreezeAndQueryFrozen(t *testing.T) {

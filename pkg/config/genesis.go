@@ -27,10 +27,10 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // GenesisInitConfig is used to pass genesis creating parameters to txd.

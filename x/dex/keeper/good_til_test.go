@@ -10,8 +10,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 func TestKeeper_GoodTil(t *testing.T) {

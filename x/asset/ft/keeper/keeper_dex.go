@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v7/x/wasm/types"
 )
 
 // ExtensionPlaceOrderMethod is the function name of the extension smart contract, which will be invoked

@@ -16,9 +16,9 @@ import (
 	gogotypes "github.com/cosmos/gogoproto/types"
 	"github.com/samber/lo"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/store"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/pkg/store"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
 )
 
 // Keeper is the dex module keeper.
@@ -398,6 +398,49 @@ func (k Keeper) GetAccountDenomOrdersCount(
 	}
 
 	return k.getAccountDenomOrdersCounter(ctx, accNumber, denom)
+}
+
+// GetAccountDEXReserve returns the total DEX reserve locked by an account for all open orders.
+func (k Keeper) GetAccountDEXReserve(ctx sdk.Context, acc sdk.AccAddress) (sdk.Coin, error) {
+	accNumber, err := k.getAccountNumber(ctx, acc)
+	if err != nil {
+		return sdk.Coin{}, err
+	}
+
+	moduleStore := k.storeService.OpenKVStore(ctx)
+	store := prefix.NewStore(runtime.KVStoreAdapter(moduleStore), types.CreateOrderIDToSequenceKeyPrefix(accNumber))
+	iterator := store.Iterator(nil, nil)
+	defer iterator.Close()
+
+	totalReserve := sdk.Coin{}
+	for ; iterator.Valid(); iterator.Next() {
+		var orderSequenceVal gogotypes.UInt64Value
+		if err := k.cdc.Unmarshal(iterator.Value(), &orderSequenceVal); err != nil {
+			return sdk.Coin{}, err
+		}
+
+		orderData, err := k.GetOrderData(ctx, orderSequenceVal.Value)
+		if err != nil {
+			return sdk.Coin{}, err
+		}
+
+		if orderData.Reserve.IsPositive() {
+			switch {
+			case totalReserve.Denom == "":
+				totalReserve = orderData.Reserve
+			case totalReserve.Denom != orderData.Reserve.Denom:
+				return sdk.Coin{}, sdkerrors.Wrapf(
+					types.ErrInvalidInput,
+					"reserve denom mismatch: expected %s, got %s",
+					totalReserve.Denom, orderData.Reserve.Denom,
+				)
+			default:
+				totalReserve = totalReserve.Add(orderData.Reserve)
+			}
+		}
+	}
+
+	return totalReserve, nil
 }
 
 // GetAccountsDenomsOrdersCounts returns accounts denoms orders count.

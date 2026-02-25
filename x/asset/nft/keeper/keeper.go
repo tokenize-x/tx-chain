@@ -18,8 +18,8 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 
-	pkgstore "github.com/tokenize-x/tx-chain/v6/pkg/store"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
+	pkgstore "github.com/tokenize-x/tx-chain/v7/pkg/store"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
 )
 
 // Keeper is the asset module non-fungible token nftKeeper.

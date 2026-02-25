@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 var _ types.MsgServer = MsgServer{}
@@ -62,6 +62,22 @@ func (ms MsgServer) UpdateDistributionSchedule(
 		goCtx,
 		req.Authority,
 		req.Schedule,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &types.EmptyResponse{}, nil
+}
+
+// UpdateMinDistributionGap is a governance operation that updates the minimum distribution gap.
+func (ms MsgServer) UpdateMinDistributionGap(
+	goCtx context.Context,
+	req *types.MsgUpdateMinDistributionGap,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.UpdateMinDistributionGap(
+		goCtx,
+		req.Authority,
+		req.MinDistributionGapSeconds,
 	)
 	if err != nil {
 		return nil, err

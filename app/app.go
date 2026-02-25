@@ -102,9 +102,9 @@ import (
 	"github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward"
 	packetforwardkeeper "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/keeper"
 	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10/packetforward/types"
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8"
-	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/keeper"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/types"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
+	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/keeper"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
 	ica "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts"
 	icacontroller "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller"
 	icacontrollerkeeper "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/controller/keeper"
@@ -114,12 +114,15 @@ import (
 	icahosttypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v10/modules/apps/27-interchain-accounts/types"
 	ibccallbacks "github.com/cosmos/ibc-go/v10/modules/apps/callbacks"
+	ibccallbacksv2 "github.com/cosmos/ibc-go/v10/modules/apps/callbacks/v2"
 	"github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	transferv2 "github.com/cosmos/ibc-go/v10/modules/apps/transfer/v2"
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
 	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
 	ibcporttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
+	ibcapi "github.com/cosmos/ibc-go/v10/modules/core/api"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	ibctm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
@@ -129,45 +132,45 @@ import (
 	"github.com/spf13/cast"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
-	"github.com/tokenize-x/tx-chain/v6/app/openapi"
-	appupgrade "github.com/tokenize-x/tx-chain/v6/app/upgrade"
-	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
-	"github.com/tokenize-x/tx-chain/v6/docs"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config"
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	assetft "github.com/tokenize-x/tx-chain/v6/x/asset/ft"
-	assetftkeeper "github.com/tokenize-x/tx-chain/v6/x/asset/ft/keeper"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	assetnft "github.com/tokenize-x/tx-chain/v6/x/asset/nft"
-	assetnftkeeper "github.com/tokenize-x/tx-chain/v6/x/asset/nft/keeper"
-	assetnfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/nft/types"
-	"github.com/tokenize-x/tx-chain/v6/x/auth/ante"
-	"github.com/tokenize-x/tx-chain/v6/x/customparams"
-	customparamskeeper "github.com/tokenize-x/tx-chain/v6/x/customparams/keeper"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	"github.com/tokenize-x/tx-chain/v6/x/delay"
-	delaykeeper "github.com/tokenize-x/tx-chain/v6/x/delay/keeper"
-	delaytypes "github.com/tokenize-x/tx-chain/v6/x/delay/types"
-	"github.com/tokenize-x/tx-chain/v6/x/deterministicgas"
-	deterministicgastypes "github.com/tokenize-x/tx-chain/v6/x/deterministicgas/types"
-	"github.com/tokenize-x/tx-chain/v6/x/dex"
-	dexkeeper "github.com/tokenize-x/tx-chain/v6/x/dex/keeper"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
-	"github.com/tokenize-x/tx-chain/v6/x/feemodel"
-	feemodelkeeper "github.com/tokenize-x/tx-chain/v6/x/feemodel/keeper"
-	feemodeltypes "github.com/tokenize-x/tx-chain/v6/x/feemodel/types"
-	"github.com/tokenize-x/tx-chain/v6/x/pse"
-	psekeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
-	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
-	wasmcustomhandler "github.com/tokenize-x/tx-chain/v6/x/wasm/handler"
-	cwasmtypes "github.com/tokenize-x/tx-chain/v6/x/wasm/types"
-	"github.com/tokenize-x/tx-chain/v6/x/wbank"
-	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/wibctransfer"
-	wibctransferkeeper "github.com/tokenize-x/tx-chain/v6/x/wibctransfer/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/wnft"
-	wnftkeeper "github.com/tokenize-x/tx-chain/v6/x/wnft/keeper"
-	"github.com/tokenize-x/tx-chain/v6/x/wstaking"
+	"github.com/tokenize-x/tx-chain/v7/app/openapi"
+	appupgrade "github.com/tokenize-x/tx-chain/v7/app/upgrade"
+	appupgradev7 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v7"
+	"github.com/tokenize-x/tx-chain/v7/docs"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	assetft "github.com/tokenize-x/tx-chain/v7/x/asset/ft"
+	assetftkeeper "github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	assetnft "github.com/tokenize-x/tx-chain/v7/x/asset/nft"
+	assetnftkeeper "github.com/tokenize-x/tx-chain/v7/x/asset/nft/keeper"
+	assetnfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/auth/ante"
+	"github.com/tokenize-x/tx-chain/v7/x/customparams"
+	customparamskeeper "github.com/tokenize-x/tx-chain/v7/x/customparams/keeper"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	"github.com/tokenize-x/tx-chain/v7/x/delay"
+	delaykeeper "github.com/tokenize-x/tx-chain/v7/x/delay/keeper"
+	delaytypes "github.com/tokenize-x/tx-chain/v7/x/delay/types"
+	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
+	deterministicgastypes "github.com/tokenize-x/tx-chain/v7/x/deterministicgas/types"
+	"github.com/tokenize-x/tx-chain/v7/x/dex"
+	dexkeeper "github.com/tokenize-x/tx-chain/v7/x/dex/keeper"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v7/x/feemodel"
+	feemodelkeeper "github.com/tokenize-x/tx-chain/v7/x/feemodel/keeper"
+	feemodeltypes "github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse"
+	psekeeper "github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
+	wasmcustomhandler "github.com/tokenize-x/tx-chain/v7/x/wasm/handler"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v7/x/wasm/types"
+	"github.com/tokenize-x/tx-chain/v7/x/wbank"
+	wbankkeeper "github.com/tokenize-x/tx-chain/v7/x/wbank/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/wibctransfer"
+	wibctransferkeeper "github.com/tokenize-x/tx-chain/v7/x/wibctransfer/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/wnft"
+	wnftkeeper "github.com/tokenize-x/tx-chain/v7/x/wnft/keeper"
+	"github.com/tokenize-x/tx-chain/v7/x/wstaking"
 )
 
 const (
@@ -826,6 +829,17 @@ func New(
 		AddRoute(wasmtypes.ModuleName, ibcWasmStack)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
+	// Create IBCv2 Transfer Stack
+	var transferStackV2 ibcapi.IBCModule
+	transferStackV2 = transferv2.NewIBCModule(app.TransferKeeper.Keeper)
+	transferStackV2 = ibccallbacksv2.NewIBCMiddleware(transferStackV2, app.IBCKeeper.ChannelKeeperV2,
+		ibcWasmStack, app.IBCKeeper.ChannelKeeperV2, maxCallbackGas)
+
+	// Create IBCv2 Router & seal
+	ibcv2Router := ibcapi.NewRouter().
+		AddRoute(ibctransfertypes.PortID, transferStackV2)
+	app.IBCKeeper.SetRouterV2(ibcv2Router)
+
 	app.DEXKeeper = dexkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[dextypes.StoreKey]),
@@ -1193,7 +1207,7 @@ func New(
 
 	/**** Upgrades ****/
 	upgrades := []appupgrade.Upgrade{
-		appupgradev6.New(
+		appupgradev7.New(
 			app.ModuleManager,
 			app.configurator,
 			app.BankKeeper,

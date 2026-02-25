@@ -24,15 +24,15 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v6/integration-tests"
-	moduleswasm "github.com/tokenize-x/tx-chain/v6/integration-tests/contracts/modules"
-	"github.com/tokenize-x/tx-chain/v6/pkg/client"
-	"github.com/tokenize-x/tx-chain/v6/testutil/event"
-	"github.com/tokenize-x/tx-chain/v6/testutil/integration"
-	assetfttypes "github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
-	customparamstypes "github.com/tokenize-x/tx-chain/v6/x/customparams/types"
-	testcontracts "github.com/tokenize-x/tx-chain/v6/x/dex/keeper/test-contracts"
-	dextypes "github.com/tokenize-x/tx-chain/v6/x/dex/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v7/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v7/pkg/client"
+	"github.com/tokenize-x/tx-chain/v7/testutil/event"
+	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	testcontracts "github.com/tokenize-x/tx-chain/v7/x/dex/keeper/test-contracts"
+	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
@@ -464,6 +464,13 @@ func TestOrderCancellation(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Equal(uint64(1), countRes.Count)
 
+	// check that account DEX reserve equals the order reserve after placing an order
+	dexReserveRes, err := dexClient.AccountDEXReserve(ctx, &dextypes.QueryAccountDEXReserveRequest{
+		Account: acc1.String(),
+	})
+	requireT.NoError(err)
+	requireT.Equal(dexParamsRes.Params.OrderReserve.String(), dexReserveRes.Reserve.String())
+
 	cancelOrderMsg := &dextypes.MsgCancelOrder{
 		Sender: placeSellOrderMsg.Sender,
 		ID:     placeSellOrderMsg.ID,
@@ -510,6 +517,12 @@ func TestOrderCancellation(t *testing.T) {
 	})
 	requireT.NoError(err)
 	requireT.Equal(uint64(0), countRes.Count)
+
+	dexReserveRes, err = dexClient.AccountDEXReserve(ctx, &dextypes.QueryAccountDEXReserveRequest{
+		Account: acc1.String(),
+	})
+	requireT.NoError(err)
+	requireT.Empty(dexReserveRes.Reserve.Denom)
 }
 
 // TestOrderTilBlockHeight tests the dex modules ability to place cancel placed order with good til block height.

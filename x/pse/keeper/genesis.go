@@ -7,7 +7,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.
@@ -23,7 +23,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 
 	// Populate allocation schedule from genesis state
 	for _, scheduledDist := range genState.ScheduledDistributions {
-		if err := k.AllocationSchedule.Set(ctx, scheduledDist.Timestamp, scheduledDist); err != nil {
+		if err := k.AllocationSchedule.Set(ctx, scheduledDist.ID, scheduledDist); err != nil {
 			return err
 		}
 	}
@@ -70,7 +70,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, err
 	}
 
-	// Export allocation schedule using keeper method (already sorted by timestamp)
+	// Export allocation schedule using keeper method (already sorted by id)
 	genesis.ScheduledDistributions, err = k.GetDistributionSchedule(ctx)
 	if err != nil {
 		return nil, err

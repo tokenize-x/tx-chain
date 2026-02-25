@@ -221,6 +221,8 @@
     - [Params](#coreum.dex.v1.Params)
   
 - [coreum/dex/v1/query.proto](#coreum/dex/v1/query.proto)
+    - [QueryAccountDEXReserveRequest](#coreum.dex.v1.QueryAccountDEXReserveRequest)
+    - [QueryAccountDEXReserveResponse](#coreum.dex.v1.QueryAccountDEXReserveResponse)
     - [QueryAccountDenomOrdersCountRequest](#coreum.dex.v1.QueryAccountDenomOrdersCountRequest)
     - [QueryAccountDenomOrdersCountResponse](#coreum.dex.v1.QueryAccountDenomOrdersCountResponse)
     - [QueryOrderBookOrdersRequest](#coreum.dex.v1.QueryOrderBookOrdersRequest)
@@ -309,6 +311,7 @@
     - [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings)
     - [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule)
     - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
+    - [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap)
   
     - [Msg](#tx.pse.v1.Msg)
   
@@ -4997,6 +5000,44 @@ Params keeps gov manageable parameters.
 
 
 
+<a name="coreum.dex.v1.QueryAccountDEXReserveRequest"></a>
+
+### QueryAccountDEXReserveRequest
+
+```
+QueryAccountDEXReserveRequest defines the request type for the `AccountDEXReserve` query.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `account` | [string](#string) |  |  `account is the address to query DEX reserve for.`  |
+
+
+
+
+
+
+<a name="coreum.dex.v1.QueryAccountDEXReserveResponse"></a>
+
+### QueryAccountDEXReserveResponse
+
+```
+QueryAccountDEXReserveResponse defines the response type for the `AccountDEXReserve` query.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `reserve` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  `reserve is the total reserve locked by the account for all open orders.`  |
+
+
+
+
+
+
 <a name="coreum.dex.v1.QueryAccountDenomOrdersCountRequest"></a>
 
 ### QueryAccountDenomOrdersCountRequest
@@ -5295,6 +5336,7 @@ Query defines the gRPC query service.
 | `OrderBookParams` | [QueryOrderBookParamsRequest](#coreum.dex.v1.QueryOrderBookParamsRequest) | [QueryOrderBookParamsResponse](#coreum.dex.v1.QueryOrderBookParamsResponse) | `OrderBookParams queries order book params.` | GET|/coreum/dex/v1/order-book-params |
 | `OrderBookOrders` | [QueryOrderBookOrdersRequest](#coreum.dex.v1.QueryOrderBookOrdersRequest) | [QueryOrderBookOrdersResponse](#coreum.dex.v1.QueryOrderBookOrdersResponse) | `OrderBookOrders queries order book orders.` | GET|/coreum/dex/v1/order-books/{base_denom}/{quote_denom}/orders |
 | `AccountDenomOrdersCount` | [QueryAccountDenomOrdersCountRequest](#coreum.dex.v1.QueryAccountDenomOrdersCountRequest) | [QueryAccountDenomOrdersCountResponse](#coreum.dex.v1.QueryAccountDenomOrdersCountResponse) | `AccountDenomOrdersCount queries account denom orders count.` | GET|/coreum/dex/v1/accounts/{account}/denoms/{denom}/orders-count |
+| `AccountDEXReserve` | [QueryAccountDEXReserveRequest](#coreum.dex.v1.QueryAccountDEXReserveRequest) | [QueryAccountDEXReserveResponse](#coreum.dex.v1.QueryAccountDEXReserveResponse) | `AccountDEXReserve queries the total DEX reserve locked by an account for all open orders.` | GET|/coreum/dex/v1/accounts/{account}/dex-reserve |
 
  <!-- end services -->
 
@@ -5777,6 +5819,7 @@ During distribution, the allocated amount is split equally among all recipients.
 ```
 ScheduledDistribution defines a single allocation event at a specific timestamp.
 Multiple clearing accounts can allocate tokens at the same time.
+Each distribution is identified by a unique, sequential id.
 ```
 
 
@@ -5785,6 +5828,7 @@ Multiple clearing accounts can allocate tokens at the same time.
 | ----- | ---- | ----- | ----------- |
 | `timestamp` | [uint64](#uint64) |  |  `timestamp is when this allocation should occur (Unix timestamp in seconds).`  |
 | `allocations` | [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation) | repeated |  `allocations is the list of amounts to allocate from each clearing account at this time.`  |
+| `id` | [uint64](#uint64) |  |  `id is the unique, sequential identifier for this distribution. Used as the storage key in the AllocationSchedule map.`  |
 
 
 
@@ -5955,6 +5999,7 @@ Params store gov manageable parameters.
 | ----- | ---- | ----- | ----------- |
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
 | `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
+| `min_distribution_gap_seconds` | [uint64](#uint64) |  |  `min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions.`  |
 
 
 
@@ -6286,6 +6331,28 @@ All existing distributions are removed and replaced with the provided distributi
 
 
 
+
+<a name="tx.pse.v1.MsgUpdateMinDistributionGap"></a>
+
+### MsgUpdateMinDistributionGap
+
+```
+MsgUpdateMinDistributionGap is a governance operation to update the minimum time gap
+between consecutive scheduled distributions. The new gap is validated against the
+existing on-chain schedule to ensure consistency.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  `authority is the address authorized to update the gap (governance module address).`  |
+| `min_distribution_gap_seconds` | [uint64](#uint64) |  |  `min_distribution_gap_seconds is the minimum time gap (in seconds) between consecutive distributions.`  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -6308,6 +6375,7 @@ Msg defines the Msg service.
 | `UpdateClearingAccountMappings` | [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateClearingAccountMappings is a governance operation to update clearing account to recipient mappings.` |  |
 | `UpdateDistributionSchedule` | [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionSchedule is a governance operation to update the distribution schedule.` |  |
 | `DisableDistributions` | [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `DisableDistributions is a governance operation to disable distributions.` |  |
+| `UpdateMinDistributionGap` | [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateMinDistributionGap is a governance operation to update the minimum gap between distributions.` |  |
 
  <!-- end services -->
 

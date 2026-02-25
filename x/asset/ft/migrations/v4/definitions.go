@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
 )
 
 // FTKeeper represents ft keeper.
@@ -36,7 +36,6 @@ func MigrateDefinitions(ctx sdk.Context, keeper FTKeeper) error {
 
 		return false, nil
 	})
-
 	if err != nil {
 		return err
 	}

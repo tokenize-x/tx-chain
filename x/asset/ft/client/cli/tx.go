@@ -18,8 +18,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
-	"github.com/tokenize-x/tx-chain/v6/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
 )
 
 // Flags defined on transactions.
@@ -315,14 +315,19 @@ func CmdTxBurn() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "burn [amount] --from [sender]",
 		Args:  cobra.ExactArgs(1),
-		Short: "burn some amount of fungible token",
+		Short: "burn some amount of fungible token or governance denom",
 		Long: strings.TrimSpace(
-			fmt.Sprintf(`Burn some amount of fungible token.
+			fmt.Sprintf(`Burn some amount of fungible token or the governance/bond denom (core/testcore/devcore).
 
-Example:
-$ %s tx %s burn 100000ABC-%s --from [sender]
+For AssetFT tokens, the token must have the burning feature enabled.
+For the governance denom, no token definition is required.
+
+Examples:
+$ %s tx %s burn 100000ABC-%s --from [sender]  # Burn AssetFT token
+$ %s tx %s burn 50000udevcore --from [sender]  # Burn governance denom
 `,
 				version.AppName, types.ModuleName, constant.AddressSampleTest,
+				version.AppName, types.ModuleName,
 			),
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {

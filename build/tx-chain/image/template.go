@@ -25,6 +25,9 @@ type Data struct {
 
 	// Networks is the list of available networks
 	Networks []string
+
+	// InDocker indicates whether the execution environment is inside a Docker container.
+	InDocker bool
 }
 
 // Execute executes dockerfile template and returns complete dockerfile.
