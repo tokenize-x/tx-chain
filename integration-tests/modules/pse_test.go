@@ -338,7 +338,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
 	requireT.NoError(err)
-	requireT.Len(scheduledDistributions, 0)
+	requireT.Empty(scheduledDistributions)
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
@@ -390,7 +390,7 @@ func TestPSEDistribution(t *testing.T) {
 		DelegatorAddr: excludedDelegator,
 	})
 	requireT.NoError(err)
-	requireT.Len(delRespAfter.DelegationResponses, 0, "Should have zero delegations after full undelegation")
+	requireT.Empty(delRespAfter.DelegationResponses, "Should have zero delegations after full undelegation")
 
 	t.Logf("Re-included delegator successfully undelegated full amount (%s)", currentDelegation.String())
 }
