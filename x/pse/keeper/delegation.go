@@ -56,7 +56,12 @@ func (k Keeper) GetDelegatorScore(
 }
 
 // SetDelegatorScore sets the score for a delegator.
-func (k Keeper) SetDelegatorScore(ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int) error {
+func (k Keeper) SetDelegatorScore(
+	ctx context.Context,
+	distributionID uint64,
+	delAddr sdk.AccAddress,
+	score sdkmath.Int,
+) error {
 	key := collections.Join(distributionID, delAddr)
 	return k.AccountScoreSnapshot.Set(ctx, key, score)
 }
@@ -77,7 +82,7 @@ func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddr
 	if err != nil {
 		return sdkmath.Int{}, err
 	}
-	distributionID := distribution.Timestamp // TODO update to use distribution ID
+	distributionID := distribution.ID // TODO update to use distribution ID
 
 	// Start with the accumulated score from the snapshot (previous periods)
 	accumulatedScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)

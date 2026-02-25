@@ -31,11 +31,12 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// TODO handle empty distribution schedule in all places.
 	distribution, _, err := h.k.PeekNextAllocationSchedule(ctx)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+	if err != nil {
 		return err
 	}
-	distributionID := distribution.Timestamp // TODO update to use distribution ID
+	distributionID := distribution.ID // TODO update to use distribution ID
 
 	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
