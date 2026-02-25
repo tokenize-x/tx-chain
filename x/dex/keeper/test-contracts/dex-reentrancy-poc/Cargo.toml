@@ -28,7 +28,7 @@ overflow-checks = true
 incremental = true
 
 [dependencies]
-tx-wasm-sdk = { git = "https://github.com/tokenize-x/tx-wasm-sdk.git", rev = "bdc2d6aaf002907a68045d974dab208e3ec770da" }
+tx-wasm-sdk = { git = "https://github.com/tokenize-x/tx-wasm-sdk.git", rev = "67537efc36755154980ca7c79c77d67c78d853e4" }
 cosmwasm-schema = "2.3.2"
 cosmwasm-std = { version = "2.3.2", features = ["cosmwasm_2_0"] }
 cw-storage-plus = "2.0.0"
