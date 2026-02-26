@@ -82,32 +82,40 @@ func TestExportGenesisModuleHashes(t *testing.T) {
 	initiatedApp, _, _, initChainReq, _ := simapp.NewWithGenesis(exportedGenesisBuf.Bytes())
 
 	// sync heights of both apps stores
-	syncAppsHeights(t, requireT, exportedApp, &initiatedApp.App, initChainReq)
+	syncAppsHeights(requireT, exportedApp, &initiatedApp.App, initChainReq)
 
 	// check that the module hashes of both apps match
 	checkModuleStoreMismatches(t, requireT, exportedApp, &initiatedApp.App, initChainReq.InitialHeight)
 }
 
 func syncAppsHeights(
-	t *testing.T, requireT *require.Assertions,
+	requireT *require.Assertions,
 	exportedApp *app.App, initiatedApp *app.App,
 	initChainReq *abci.RequestInitChain,
 ) {
-	initialHeight := initChainReq.InitialHeight
+	// load the latest version from the exported app
+	// the initial height is the height that need to gets finalized in the initiated app
+	nodeAppStateHeight := initChainReq.InitialHeight - 1
+	err := exportedApp.LoadVersion(nodeAppStateHeight)
+	requireT.NoError(err, "failed to load version %d from exported app", nodeAppStateHeight)
 
-	// Check if the target version is already in the exported app's DB (e.g. chain was at this height when exported).
-	targetVersionAvailable := exportedApp.LoadVersion(initialHeight) == nil
-	if !targetVersionAvailable {
-		// Target version not in DB: load previous version and replay one block (finalize + commit).
-		requireT.NoError(exportedApp.LoadVersion(initialHeight-1), "failed to load version %d from exported app", initialHeight-1)
-		_, err := exportedApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: initialHeight})
-		requireT.NoError(err)
-		_, err = exportedApp.Commit()
-		requireT.NoError(err)
-	}
+	// RollbackToVersion calls LoadVersionForOverwriting on every IAVL subtree, which
+	// deletes all DB entries above nodeAppStateHeight.
+	err = exportedApp.CommitMultiStore().RollbackToVersion(nodeAppStateHeight)
+	requireT.NoError(err, "failed to roll back exported app to version %d", nodeAppStateHeight)
 
-	// Advance the initiated app (fresh from genesis) to the same height.
-	_, err := initiatedApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: initialHeight})
+	// finalize new block for the exported app
+	_, err = exportedApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height: initChainReq.InitialHeight,
+	})
+	requireT.NoError(err)
+	_, err = exportedApp.Commit()
+	requireT.NoError(err)
+
+	// finalize new block for the initiated app
+	_, err = initiatedApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height: initChainReq.InitialHeight,
+	})
 	requireT.NoError(err)
 	_, err = initiatedApp.Commit()
 	requireT.NoError(err)
