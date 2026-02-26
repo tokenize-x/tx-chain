@@ -67,6 +67,34 @@ func (k Keeper) RemoveDelegatorScore(ctx context.Context, distributionID uint64,
 	return k.AccountScoreSnapshot.Remove(ctx, key)
 }
 
+// addToScore atomically adds a score value to a delegator's score snapshot.
+func (k Keeper) addToScore(ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int) error {
+	if score.IsZero() {
+		return nil
+	}
+	lastScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastScore = sdkmath.NewInt(0)
+	} else if err != nil {
+		return err
+	}
+	return k.SetDelegatorScore(ctx, distributionID, delAddr, lastScore.Add(score))
+}
+
+// addToTotalScore atomically adds a score value to a distribution's total score.
+func (k Keeper) addToTotalScore(ctx context.Context, distributionID uint64, score sdkmath.Int) error {
+	if score.IsZero() {
+		return nil
+	}
+	current, err := k.TotalScore.Get(ctx, distributionID)
+	if errors.Is(err, collections.ErrNotFound) {
+		current = sdkmath.NewInt(0)
+	} else if err != nil {
+		return err
+	}
+	return k.TotalScore.Set(ctx, distributionID, current.Add(score))
+}
+
 // CalculateDelegatorScore calculates the current total score for a delegator.
 // This includes both the accumulated score snapshot (from previous periods)
 // and the current period score calculated on-demand from active delegations.
@@ -77,7 +105,7 @@ func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddr
 	if err != nil {
 		return sdkmath.Int{}, err
 	}
-	distributionID := distribution.ID // TODO update to handle distribution ID properly.
+	distributionID := distribution.ID
 
 	// Start with the accumulated score from the snapshot (previous periods)
 	accumulatedScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)
