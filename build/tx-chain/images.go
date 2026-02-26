@@ -29,11 +29,8 @@ type imageConfig struct {
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	deps(BuildTXdInDocker, ensureReleasedBinaries)
 
-	useLocalBinary := false
 	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
-	if runtime.GOOS == txcrusttools.OSLinux {
-		useLocalBinary = true
-	}
+	useLocalBinary := runtime.GOOS == txcrusttools.OSLinux
 
 	return buildTXdDockerImage(ctx, imageConfig{
 		BinaryPath:      binaryPath,
