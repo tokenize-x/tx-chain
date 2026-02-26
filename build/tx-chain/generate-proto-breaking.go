@@ -22,7 +22,7 @@ import (
 )
 
 //go:embed proto-breaking.tmpl.json
-var configBreakingTmpl string
+var configBreakingTmpl string //nolint:unused // used by template
 
 func breakingProto(ctx context.Context, deps types.DepsFunc) error {
 	deps(golang.Tidy, txchaintools.EnsureProtoc, txchaintools.EnsureProtocGenBufBreaking)
