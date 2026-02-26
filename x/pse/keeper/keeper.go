@@ -37,7 +37,9 @@ type Keeper struct {
 		types.DelegationTimeEntry,
 	]
 	AccountScoreSnapshot collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
-	AllocationSchedule   collections.Map[uint64, types.ScheduledDistribution] // Map: id -> ScheduledDistribution
+	AllocationSchedule  collections.Map[uint64, types.ScheduledDistribution] // Map: ID -> ScheduledDistribution
+	TotalScore          collections.Map[uint64, sdkmath.Int]                // Map: ID -> total accumulated score
+	OngoingDistribution collections.Item[types.ScheduledDistribution]       // Currently processing distribution
 	DistributionDisabled collections.Item[bool]
 }
 
@@ -90,6 +92,19 @@ func NewKeeper(
 			types.AllocationScheduleKey,
 			"allocation_schedule",
 			collections.Uint64Key,
+			codec.CollValue[types.ScheduledDistribution](cdc),
+		),
+		TotalScore: collections.NewMap(
+			sb,
+			types.TotalScoreKey,
+			"total_score",
+			collections.Uint64Key,
+			sdk.IntValue,
+		),
+		OngoingDistribution: collections.NewItem(
+			sb,
+			types.OngoingDistributionKey,
+			"ongoing_distribution",
 			codec.CollValue[types.ScheduledDistribution](cdc),
 		),
 		DistributionDisabled: collections.NewItem(
