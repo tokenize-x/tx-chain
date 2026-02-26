@@ -36,7 +36,10 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	if err != nil {
 		return err
 	}
-	distributionID := distribution.ID // TODO update to handle distribution ID properly.
+	// TODO update to handle distribution ID properly.
+	// We should update the logic to find the active distribution (probably via a new store called OngoingDistribution)
+	// and check for period splits
+	distributionID := distribution.ID
 
 	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)

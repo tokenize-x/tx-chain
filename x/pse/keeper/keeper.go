@@ -38,7 +38,6 @@ type Keeper struct {
 	]
 	AccountScoreSnapshot collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
 	AllocationSchedule   collections.Map[uint64, types.ScheduledDistribution] // Map: id -> ScheduledDistribution
-	// OngoingDistribution   collections.Item[uint64]
 	DistributionDisabled collections.Item[bool]
 }
 

@@ -5922,6 +5922,7 @@ Any remainder from division is sent to the community pool.
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |    |
 | `score` | [string](#string) |  |    |
+| `distribution_id` | [uint64](#uint64) |  |    |
 
 
 
@@ -5940,6 +5941,7 @@ Any remainder from division is sent to the community pool.
 | `delegator_address` | [string](#string) |  |    |
 | `shares` | [string](#string) |  |    |
 | `last_changed_unix_sec` | [int64](#int64) |  |    |
+| `distribution_id` | [uint64](#uint64) |  |    |
 
 
 

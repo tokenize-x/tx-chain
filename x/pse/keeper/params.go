@@ -111,7 +111,7 @@ func (k Keeper) UpdateExcludedAddresses(
 	params.ExcludedAddresses = append(params.ExcludedAddresses, toActuallyAdd...)
 
 	for _, addrStr := range toActuallyAdd {
-		if err = k.removeExcludedAccountData(ctx, addrStr, distributionID); err != nil {
+		if err = k.removeExcludedAccountData(ctx, distributionID, addrStr); err != nil {
 			return err
 		}
 	}
@@ -122,7 +122,7 @@ func (k Keeper) UpdateExcludedAddresses(
 // removeExcludedAccountData clears AccountScoreSnapshot AND DelegationTimeEntries for newly excluded addresses.
 // Removing DelegationTimeEntries ensures they start completely fresh when re-included.
 // Entries will be recreated naturally when hooks fire after re-inclusion.
-func (k Keeper) removeExcludedAccountData(ctx context.Context, addrStr string, distributionID uint64) error {
+func (k Keeper) removeExcludedAccountData(ctx context.Context, distributionID uint64, addrStr string) error {
 	addr, err := k.addressCodec.StringToBytes(addrStr)
 	if err != nil {
 		return err

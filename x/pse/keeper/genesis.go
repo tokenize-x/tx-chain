@@ -28,12 +28,6 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
-	// TODO revise this logic for distribution id and genesis state
-	var currentDistributionID uint64
-	if len(genState.ScheduledDistributions) > 0 {
-		currentDistributionID = genState.ScheduledDistributions[0].Timestamp
-	}
-
 	// Populate delegation time entries from genesis state
 	for _, delegationTimeEntryExported := range genState.DelegationTimeEntries {
 		valAddr, err := k.valAddressCodec.StringToBytes(delegationTimeEntryExported.ValidatorAddress)
@@ -44,10 +38,15 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		if err != nil {
 			return err
 		}
-		if err = k.SetDelegationTimeEntry(ctx, currentDistributionID, valAddr, delAddr, types.DelegationTimeEntry{
-			Shares:             delegationTimeEntryExported.Shares,
-			LastChangedUnixSec: delegationTimeEntryExported.LastChangedUnixSec,
-		}); err != nil {
+		if err = k.SetDelegationTimeEntry(
+			ctx,
+			delegationTimeEntryExported.DistributionID,
+			valAddr,
+			delAddr,
+			types.DelegationTimeEntry{
+				Shares:             delegationTimeEntryExported.Shares,
+				LastChangedUnixSec: delegationTimeEntryExported.LastChangedUnixSec,
+			}); err != nil {
 			return err
 		}
 	}
@@ -58,7 +57,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		if err != nil {
 			return err
 		}
-		if err := k.SetDelegatorScore(ctx, currentDistributionID, addr, accountScore.Score); err != nil {
+		if err := k.SetDelegatorScore(ctx, accountScore.DistributionID, addr, accountScore.Score); err != nil {
 			return err
 		}
 	}
@@ -97,8 +96,8 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 			if err != nil {
 				return false, err
 			}
-			// TODO revise this logic for distribution id and genesis state
 			delegationTimeEntriesExported = append(delegationTimeEntriesExported, types.DelegationTimeEntryExport{
+				DistributionID:     key.K1(),
 				ValidatorAddress:   valAddr,
 				DelegatorAddress:   delAddr,
 				Shares:             value.Shares,
@@ -118,10 +117,10 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 			if err != nil {
 				return false, err
 			}
-			// TODO revise this logic for distribution id and genesis state
 			genesis.AccountScores = append(genesis.AccountScores, types.AccountScore{
-				Address: addr,
-				Score:   value,
+				DistributionID: key.K1(),
+				Address:        addr,
+				Score:          value,
 			})
 			return false, nil
 		})
