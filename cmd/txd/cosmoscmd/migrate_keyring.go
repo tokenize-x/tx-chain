@@ -1,10 +1,15 @@
 package cosmoscmd
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/99designs/keyring"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	sdkkeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdkversion "github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 )
@@ -95,12 +100,53 @@ func runMigrateKeyring(cmd *cobra.Command, args []string) error {
 		}
 
 		migrated++
+
+		// After migrating a .info entry, also migrate its .address reverse-lookup entry.
+		if strings.HasSuffix(key, ".info") {
+			if err := migrateAddressEntry(srcKr, destKr, item.Data); err != nil {
+				cmd.PrintErrf("  Warning: could not migrate address entry for %q: %v\n", key, err)
+			}
+		}
 	}
 
 	if migrated == 0 {
 		cmd.Println("No keys needed migration.")
 	} else {
 		cmd.Printf("Migrated %d key(s) from %q to %q.\n", migrated, legacyServiceName, targetName)
+	}
+
+	return nil
+}
+
+// migrateAddressEntry extracts and migrates the corresponding <hex>.address reverse-lookup entry.
+func migrateAddressEntry(srcKr, destKr keyring.Keyring, infoData []byte) error {
+	ir := codectypes.NewInterfaceRegistry()
+	cryptocodec.RegisterInterfaces(ir)
+	cdc := codec.NewProtoCodec(ir)
+
+	var record sdkkeyring.Record
+	if err := cdc.Unmarshal(infoData, &record); err != nil {
+		return fmt.Errorf("unmarshal record: %w", err)
+	}
+
+	pubKey, err := record.GetPubKey()
+	if err != nil {
+		return fmt.Errorf("extract public key: %w", err)
+	}
+
+	addrKey := hex.EncodeToString(pubKey.Address()) + ".address"
+
+	if _, err := destKr.Get(addrKey); err == nil {
+		return nil // already exists
+	}
+
+	addrItem, err := srcKr.Get(addrKey)
+	if err != nil {
+		return fmt.Errorf("read %q from source: %w", addrKey, err)
+	}
+
+	if err := destKr.Set(addrItem); err != nil {
+		return fmt.Errorf("write %q to destination: %w", addrKey, err)
 	}
 
 	return nil

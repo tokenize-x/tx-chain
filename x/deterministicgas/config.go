@@ -239,6 +239,7 @@ func DefaultConfig() Config {
 			&psetypes.MsgUpdateClearingAccountMappings{},
 			&psetypes.MsgUpdateDistributionSchedule{},
 			&psetypes.MsgDisableDistributions{},
+			&psetypes.MsgUpdateMinDistributionGap{},
 
 			// distribution
 			&distributiontypes.MsgUpdateParams{},       // This is non-deterministic because all the gov proposals are non-deterministic anyway
@@ -350,6 +351,8 @@ func DefaultConfig() Config {
 			&ibcchanneltypes.MsgTimeout{},
 			&ibcchanneltypes.MsgTimeoutOnClose{},
 			&ibcchanneltypes.MsgAcknowledgement{},
+
+			// ibc/core/channel/v2
 			&ibcv2channeltypes.MsgSendPacket{},
 			&ibcv2channeltypes.MsgRecvPacket{},
 			&ibcv2channeltypes.MsgTimeout{},

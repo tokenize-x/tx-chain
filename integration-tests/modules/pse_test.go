@@ -210,12 +210,16 @@ func TestPSEDistribution(t *testing.T) {
 
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
 		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
+		&psetypes.MsgUpdateMinDistributionGap{
+			Authority:                 authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			MinDistributionGapSeconds: 0,
+		},
 		&psetypes.MsgUpdateDistributionSchedule{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Schedule: []psetypes.ScheduledDistribution{
-				{Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
-				{Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
-				{Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
+				{ID: 1, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
+				{ID: 2, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
+				{ID: 3, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
 			},
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{
@@ -334,7 +338,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
 	requireT.NoError(err)
-	requireT.Len(scheduledDistributions, 0)
+	requireT.Empty(scheduledDistributions)
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
@@ -386,7 +390,7 @@ func TestPSEDistribution(t *testing.T) {
 		DelegatorAddr: excludedDelegator,
 	})
 	requireT.NoError(err)
-	requireT.Len(delRespAfter.DelegationResponses, 0, "Should have zero delegations after full undelegation")
+	requireT.Empty(delRespAfter.DelegationResponses, "Should have zero delegations after full undelegation")
 
 	t.Logf("Re-included delegator successfully undelegated full amount (%s)", currentDelegation.String())
 }

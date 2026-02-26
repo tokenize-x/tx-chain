@@ -126,7 +126,7 @@ State managed by the PSE module:
 - **Params**: `0x00 | -> Params`
 - **DelegationTimeEntries**: `0x01 | delegator_address | validator_address -> DelegationTimeEntry`
 - **AccountScoreSnapshot**: `0x02 | delegator_address -> Int`
-- **AllocationSchedule**: `0x03 | timestamp (uint64) -> ScheduledDistribution`
+- **AllocationSchedule**: `0x03 | id (uint64) -> ScheduledDistribution`
 
 ### Params
 
@@ -134,6 +134,7 @@ Module parameters containing:
 
 - `ExcludedAddresses`: List of addresses excluded from Community distributions
 - `ClearingAccountMappings`: Recipient address mappings for non-Community clearing accounts
+- `MinDistributionGapSeconds`: Minimum time gap (in seconds) between consecutive scheduled distributions (default: 86400 = 1 day)
 
 ### DelegationTimeEntry
 
@@ -155,12 +156,13 @@ Stores the accumulated score for each delegator address over the current 1-month
 
 ### AllocationSchedule
 
-Maps timestamps to scheduled distributions:
+Maps distribution IDs to scheduled distributions:
 
 ```protobuf
 message ScheduledDistribution {
   uint64 timestamp = 1;                               // Unix timestamp when distribution should occur
   repeated ClearingAccountAllocation allocations = 2; // Allocations for each clearing account
+  uint64 id = 3;                                      // Unique, sequential identifier (storage key)
 }
 
 message ClearingAccountAllocation {

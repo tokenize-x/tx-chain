@@ -313,6 +313,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "valid_single_period",
 			schedule: []ScheduledDistribution{
 				{
+					ID:          1,
 					Timestamp:   getTestTimestamp(0),
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
@@ -323,10 +324,12 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "valid_multiple_periods_sorted",
 			schedule: []ScheduledDistribution{
 				{
+					ID:          1,
 					Timestamp:   getTestTimestamp(0),
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 				{
+					ID:          2,
 					Timestamp:   getTestTimestamp(12),
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
 				},
@@ -337,6 +340,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "valid_with_community_account",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						// All clearing accounts (including Community) should be in schedule
@@ -352,9 +356,39 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			expectErr: false,
 		},
 		{
+			name: "invalid_zero_id",
+			schedule: []ScheduledDistribution{
+				{
+					ID:          0,
+					Timestamp:   getTestTimestamp(0),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
+				},
+			},
+			expectErr: true,
+			errMsg:    "id cannot be zero",
+		},
+		{
+			name: "invalid_non_sequential_id",
+			schedule: []ScheduledDistribution{
+				{
+					ID:          1,
+					Timestamp:   getTestTimestamp(0),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
+				},
+				{
+					ID:          5,
+					Timestamp:   getTestTimestamp(12),
+					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
+				},
+			},
+			expectErr: true,
+			errMsg:    "id must be sequential",
+		},
+		{
 			name: "invalid_zero_timestamp",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: 0,
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
@@ -368,36 +402,41 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_duplicate_timestamp",
 			schedule: []ScheduledDistribution{
 				{
+					ID:          1,
 					Timestamp:   getTestTimestamp(0),
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 				{
+					ID:          2,
 					Timestamp:   getTestTimestamp(0),
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
 				},
 			},
 			expectErr: true,
-			errMsg:    "duplicate timestamp",
+			errMsg:    "timestamp must be monotonically increasing",
 		},
 		{
 			name: "invalid_unsorted_schedule",
 			schedule: []ScheduledDistribution{
 				{
+					ID:          1,
 					Timestamp:   getTestTimestamp(12),
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(2000)),
 				},
 				{
+					ID:          2,
 					Timestamp:   getTestTimestamp(0),
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 			},
 			expectErr: true,
-			errMsg:    "must be sorted by timestamp in ascending order",
+			errMsg:    "timestamp must be monotonically increasing",
 		},
 		{
 			name: "invalid_empty_allocations_array",
 			schedule: []ScheduledDistribution{
 				{
+					ID:          1,
 					Timestamp:   getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{},
 				},
@@ -409,6 +448,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_too_few_allocations",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
@@ -422,6 +462,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_empty_clearing_account",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: "", Amount: sdkmath.NewInt(1000)},
@@ -439,6 +480,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_unknown_clearing_account",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: "unknown_module", Amount: sdkmath.NewInt(1000)},
@@ -458,6 +500,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_duplicate_clearing_account_in_period",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
@@ -476,6 +519,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_missing_clearing_account",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(1000)},
@@ -493,6 +537,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_nil_amount",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.Int{}},
@@ -510,6 +555,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_negative_amount",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.NewInt(-1000)},
@@ -527,6 +573,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 			name: "invalid_zero_amount",
 			schedule: []ScheduledDistribution{
 				{
+					ID:        1,
 					Timestamp: getTestTimestamp(0),
 					Allocations: []ClearingAccountAllocation{
 						{ClearingAccount: ClearingAccountFoundation, Amount: sdkmath.ZeroInt()},

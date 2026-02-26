@@ -69,6 +69,22 @@ func (ms MsgServer) UpdateDistributionSchedule(
 	return &types.EmptyResponse{}, nil
 }
 
+// UpdateMinDistributionGap is a governance operation that updates the minimum distribution gap.
+func (ms MsgServer) UpdateMinDistributionGap(
+	goCtx context.Context,
+	req *types.MsgUpdateMinDistributionGap,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.UpdateMinDistributionGap(
+		goCtx,
+		req.Authority,
+		req.MinDistributionGapSeconds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &types.EmptyResponse{}, nil
+}
+
 // DisableDistributions is a governance operation that disables distributions.
 func (ms MsgServer) DisableDistributions(
 	goCtx context.Context,

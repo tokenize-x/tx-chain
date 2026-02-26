@@ -23,4 +23,9 @@ message Params {
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"clearing_account_mappings\""
   ];
+
+  // min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions.
+  uint64 min_distribution_gap_seconds = 3 [
+    (gogoproto.moretags) = "yaml:\"min_distribution_gap_seconds\""
+  ];
 }
