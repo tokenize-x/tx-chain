@@ -81,20 +81,6 @@ func (k Keeper) addToScore(ctx context.Context, distributionID uint64, delAddr s
 	return k.SetDelegatorScore(ctx, distributionID, delAddr, lastScore.Add(score))
 }
 
-// addToTotalScore atomically adds a score value to a distribution's total score.
-func (k Keeper) addToTotalScore(ctx context.Context, distributionID uint64, score sdkmath.Int) error {
-	if score.IsZero() {
-		return nil
-	}
-	current, err := k.TotalScore.Get(ctx, distributionID)
-	if errors.Is(err, collections.ErrNotFound) {
-		current = sdkmath.NewInt(0)
-	} else if err != nil {
-		return err
-	}
-	return k.TotalScore.Set(ctx, distributionID, current.Add(score))
-}
-
 // CalculateDelegatorScore calculates the current total score for a delegator.
 // This includes both the accumulated score snapshot (from previous periods)
 // and the current period score calculated on-demand from active delegations.
