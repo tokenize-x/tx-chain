@@ -36,7 +36,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	if err != nil {
 		return err
 	}
-	distributionID := distribution.ID // TODO update to use distribution ID
+	distributionID := distribution.ID // TODO update to handle distribution ID properly.
 
 	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
@@ -89,7 +89,7 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	if err != nil {
 		return err
 	}
-	distributionID := distribution.Timestamp // TODO update to use distribution ID, also consider period splits
+	distributionID := distribution.ID // TODO update to handle distribution ID properly.
 
 	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	if err != nil {

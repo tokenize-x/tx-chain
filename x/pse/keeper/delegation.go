@@ -82,7 +82,7 @@ func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddr
 	if err != nil {
 		return sdkmath.Int{}, err
 	}
-	distributionID := distribution.ID // TODO update to use distribution ID
+	distributionID := distribution.ID // TODO update to handle distribution ID properly.
 
 	// Start with the accumulated score from the snapshot (previous periods)
 	accumulatedScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)

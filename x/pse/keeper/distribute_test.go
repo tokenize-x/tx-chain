@@ -33,8 +33,8 @@ func TestKeeper_Distribute(t *testing.T) {
 				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
 				func(r *runEnv) {
 					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
-						&r.delegators[0]: sdkmath.NewInt(1_100_366), // + 1000 * 1.1 / 2
-						&r.delegators[1]: sdkmath.NewInt(900_299),   // + 1000 * 0.9 / 2
+						&r.delegators[0]: sdkmath.NewInt(1_100_366), // + 1000 * 1.1 / 3
+						&r.delegators[1]: sdkmath.NewInt(900_299),   // + 1000 * 0.9 / 3
 					})
 				},
 				func(r *runEnv) { assertScoreResetAction(r) },
@@ -267,6 +267,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		ctx, delAddr, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000))),
 	))
 
+	// TODO depending on the decision on the id zero check, this should be updated.
 	distributionID := uint64(0)
 
 	// Step 1: Address accumulates score - delegate and wait for score to build up
@@ -346,6 +347,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	))
 	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
 		Timestamp: uint64(ctx.BlockTime().Unix()),
 	}
 	balanceBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
