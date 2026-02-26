@@ -43,8 +43,9 @@ func GetNonCommunityClearingAccounts() []string {
 // DefaultParams returns default pse clearing account parameters.
 func DefaultParams() Params {
 	return Params{
-		ExcludedAddresses:       []string{},
-		ClearingAccountMappings: []ClearingAccountMapping{},
+		ExcludedAddresses:         []string{},
+		ClearingAccountMappings:   []ClearingAccountMapping{},
+		MinDistributionGapSeconds: uint64(24 * 60 * 60), // 1 day
 	}
 }
 
@@ -128,26 +129,30 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 	// All clearing accounts (including Community) should be in the schedule
 	allClearingAccounts := GetAllClearingAccounts()
 
-	seenTimestamps := make(map[uint64]bool)
-	var lastTime uint64
-
 	for i, period := range schedule {
+		// Validate id is non-zero
+		if period.ID == 0 {
+			return errorsmod.Wrapf(ErrInvalidParam, "period %d: id cannot be zero", i)
+		}
+
 		// Validate timestamp is not zero
 		if period.Timestamp == 0 {
-			return errorsmod.Wrapf(ErrInvalidParam, "timestamp cannot be zero")
+			return errorsmod.Wrapf(ErrInvalidParam, "period %d: timestamp cannot be zero", i)
 		}
 
-		// Check for duplicate timestamps
-		if seenTimestamps[period.Timestamp] {
-			return errorsmod.Wrapf(ErrInvalidParam, "duplicate timestamp")
+		// Validate ordering against previous period: IDs must be sequential, timestamps must be monotonically increasing.
+		if i > 0 {
+			if period.ID != schedule[i-1].ID+1 {
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d: id must be sequential, expected %d but got %d",
+					i, schedule[i-1].ID+1, period.ID)
+			}
+			if period.Timestamp <= schedule[i-1].Timestamp {
+				return errorsmod.Wrapf(ErrInvalidParam,
+					"period %d: timestamp must be monotonically increasing, got %d after %d",
+					i, period.Timestamp, schedule[i-1].Timestamp)
+			}
 		}
-		seenTimestamps[period.Timestamp] = true
-
-		// Validate schedule is sorted in ascending order
-		if i > 0 && period.Timestamp <= lastTime {
-			return errorsmod.Wrapf(ErrInvalidParam, "periods must be sorted by timestamp in ascending order")
-		}
-		lastTime = period.Timestamp
 
 		// Validate allocations array is not empty
 		if len(period.Allocations) == 0 {
@@ -225,5 +230,18 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 		}
 	}
 
+	return nil
+}
+
+// ValidateDistributionGap validates that consecutive distributions have at least minGapSeconds between them.
+func ValidateDistributionGap(schedule []ScheduledDistribution, minGapSeconds uint64) error {
+	for i := 1; i < len(schedule); i++ {
+		gap := schedule[i].Timestamp - schedule[i-1].Timestamp
+		if gap < minGapSeconds {
+			return errorsmod.Wrapf(ErrInvalidParam,
+				"period %d: minimum gap between distributions is %d seconds, got %d seconds",
+				i, minGapSeconds, gap)
+		}
+	}
 	return nil
 }
