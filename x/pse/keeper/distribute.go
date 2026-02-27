@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"cosmossdk.io/collections"
 	sdkmath "cosmossdk.io/math"
@@ -120,6 +121,170 @@ func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) er
 	}
 
 	return k.TotalScore.Set(ctx, distributionID, totalScore)
+}
+
+// ProcessPhase2TokenDistribution distributes tokens to delegators in batches based on their computed scores.
+// Uses TotalScore[prevID] for proportion calculation and iterates AccountScoreSnapshot[prevID].
+//
+// For each delegator in the batch:
+//  1. Compute share: userAmount = totalPSEAmount × score / totalScore
+//  2. Distribute via distributeToDelegator (send tokens + auto-delegate)
+//  3. Track cumulative distributed amount
+//  4. Remove the processed snapshot entry
+//
+// When all delegators have been processed, sends leftover (rounding errors + undelegated users) to the community pool.
+// Returns true when distribution is complete and all state has been cleaned up.
+func (k Keeper) ProcessPhase2TokenDistribution(ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string) (bool, error) {
+	prevID := ongoing.ID
+	totalPSEAmount := getCommunityAllocationAmount(ongoing)
+
+	totalScore, err := k.TotalScore.Get(ctx, prevID)
+	if err != nil {
+		return false, err
+	}
+
+	// No score or no amount: send everything to community pool and clean up.
+	if !totalScore.IsPositive() || totalPSEAmount.IsZero() {
+		if totalPSEAmount.IsPositive() {
+			if err := k.sendLeftoverToCommunityPool(ctx, totalPSEAmount, bondDenom); err != nil {
+				return false, err
+			}
+		}
+		return true, k.cleanupDistribution(ctx, prevID)
+	}
+
+	// Collect a batch of score snapshots.
+	iter, err := k.AccountScoreSnapshot.Iterate(
+		ctx,
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](prevID),
+	)
+	if err != nil {
+		return false, err
+	}
+
+	type scoreEntry struct {
+		delAddr sdk.AccAddress
+		score   sdkmath.Int
+	}
+
+	batch := make([]scoreEntry, 0, defaultBatchSize)
+	for ; iter.Valid() && len(batch) < defaultBatchSize; iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			iter.Close()
+			return false, err
+		}
+		batch = append(batch, scoreEntry{
+			delAddr: kv.Key.K2(),
+			score:   kv.Value,
+		})
+	}
+	iter.Close()
+
+	// Only triggered when all distributions of this round are completed.
+	// Send leftover to community pool and clean up.
+	if len(batch) == 0 {
+		distributedSoFar, err := k.getDistributedAmount(ctx, prevID)
+		if err != nil {
+			return false, err
+		}
+		leftover := totalPSEAmount.Sub(distributedSoFar)
+		if leftover.IsPositive() {
+			if err := k.sendLeftoverToCommunityPool(ctx, leftover, bondDenom); err != nil {
+				return false, err
+			}
+		}
+		return true, k.cleanupDistribution(ctx, prevID)
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// Distribute rewards to each delegator in the batch proportional to their score.
+	for _, item := range batch {
+		userAmount := totalPSEAmount.Mul(item.score).Quo(totalScore)
+		distributedAmount, err := k.distributeToDelegator(ctx, item.delAddr, userAmount, bondDenom)
+		if err != nil {
+			return false, err
+		}
+
+		if err := k.addToDistributedAmount(ctx, prevID, distributedAmount); err != nil {
+			return false, err
+		}
+
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
+			DelegatorAddress: item.delAddr.String(),
+			Score:            item.score,
+			TotalPseScore:    totalScore,
+			Amount:           userAmount,
+			ScheduledAt:      ongoing.Timestamp,
+		}); err != nil {
+			sdkCtx.Logger().Error("failed to emit community distributed event", "error", err)
+		}
+
+		// Remove processed snapshot.
+		if err := k.RemoveDelegatorScore(ctx, prevID, item.delAddr); err != nil {
+			return false, err
+		}
+	}
+
+	return false, nil
+}
+
+// getCommunityAllocationAmount extracts the community clearing account allocation from a distribution.
+func getCommunityAllocationAmount(dist types.ScheduledDistribution) sdkmath.Int {
+	for _, alloc := range dist.Allocations {
+		if alloc.ClearingAccount == types.ClearingAccountCommunity {
+			return alloc.Amount
+		}
+	}
+	return sdkmath.NewInt(0)
+}
+
+// sendLeftoverToCommunityPool sends remaining undistributed tokens to the community pool.
+func (k Keeper) sendLeftoverToCommunityPool(ctx context.Context, amount sdkmath.Int, bondDenom string) error {
+	pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
+	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), pseModuleAddress)
+}
+
+// cleanupDistribution removes all state associated with a completed distribution.
+func (k Keeper) cleanupDistribution(ctx context.Context, distributionID uint64) error {
+	if err := k.AccountScoreSnapshot.Clear(
+		ctx,
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](distributionID),
+	); err != nil {
+		return err
+	}
+	if err := k.TotalScore.Remove(ctx, distributionID); err != nil {
+		return err
+	}
+	if err := k.DistributedAmount.Remove(ctx, distributionID); err != nil {
+		return err
+	}
+	if err := k.AllocationSchedule.Remove(ctx, distributionID); err != nil {
+		return err
+	}
+	return k.OngoingDistribution.Remove(ctx)
+}
+
+// getDistributedAmount returns the cumulative distributed amount for a distribution, or zero if not set.
+func (k Keeper) getDistributedAmount(ctx context.Context, distributionID uint64) (sdkmath.Int, error) {
+	amount, err := k.DistributedAmount.Get(ctx, distributionID)
+	if errors.Is(err, collections.ErrNotFound) {
+		return sdkmath.NewInt(0), nil
+	}
+	return amount, err
+}
+
+// addToDistributedAmount atomically adds to the cumulative distributed amount.
+func (k Keeper) addToDistributedAmount(ctx context.Context, distributionID uint64, amount sdkmath.Int) error {
+	if amount.IsZero() {
+		return nil
+	}
+	current, err := k.getDistributedAmount(ctx, distributionID)
+	if err != nil {
+		return err
+	}
+	return k.DistributedAmount.Set(ctx, distributionID, current.Add(amount))
 }
 
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
