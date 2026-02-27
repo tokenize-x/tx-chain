@@ -2,7 +2,9 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,52 +12,196 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
-// ProcessNextDistribution processes the next due distribution from the schedule.
-// Checks the earliest scheduled distribution and processes it if the current block time has passed its timestamp.
-// Only one distribution is processed per call. Should be called from EndBlock.
+// ProcessNextDistribution is the EndBlock entry point for distribution processing.
+// It either resumes an ongoing multi-block distribution or starts a new one if due.
+//  1. If OngoingDistribution exists -> resume (Phase 1 or Phase 2)
+//  2. If no ongoing -> peek schedule -> if due:
+//     a. Process non-community allocations immediately (single-block)
+//     b. If community allocation exists -> set OngoingDistribution (Phase 1 starts next block)
+//     c. Else, no community allocation, non-community distribution is already done, remove from AllocationSchedule
 func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// Resume ongoing multi-block distribution if one is in progress.
+	ongoing, err := k.getOngoingDistribution(ctx)
+	if err != nil {
+		return err
+	}
+	if ongoing != nil {
+		return k.resumeOngoingDistribution(ctx, *ongoing)
+	}
 
-	// Peek at the next scheduled distribution
+	// No ongoing distribution — check if next scheduled distribution is due.
 	scheduledDistribution, shouldProcess, err := k.PeekNextAllocationSchedule(ctx)
 	if err != nil {
 		return err
 	}
-
-	// Return early if schedule is empty or not ready to process
 	if !shouldProcess {
 		return nil
 	}
 
-	timestamp := scheduledDistribution.Timestamp
-
-	// Get bond denom from staking params
-	//nolint:contextcheck // this is correct context passing
 	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Get params containing clearing account to recipient address mappings
 	params, err := k.GetParams(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Process all allocations scheduled for this timestamp
-	if err := k.distributeAllocatedTokens(
-		ctx, timestamp, bondDenom, params.ClearingAccountMappings, scheduledDistribution,
+	// Process non-community allocations immediately (single-block).
+	if err := k.distributeNonCommunityAllocations(
+		ctx, scheduledDistribution, bondDenom, params.ClearingAccountMappings,
 	); err != nil {
 		return err
 	}
 
-	// Remove the completed distribution from the schedule
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// If community allocation exists, start multi-block processing.
+	communityAmount := getCommunityAllocationAmount(scheduledDistribution)
+	if communityAmount.IsPositive() {
+		if err := k.OngoingDistribution.Set(ctx, scheduledDistribution); err != nil {
+			return err
+		}
+		sdkCtx.Logger().Info("started multi-block community distribution",
+			"distribution_id", scheduledDistribution.ID,
+			"timestamp", scheduledDistribution.Timestamp)
+		return nil
+	}
+
+	// No community allocation — remove from schedule
 	if err := k.AllocationSchedule.Remove(ctx, scheduledDistribution.ID); err != nil {
 		return err
 	}
 
-	sdkCtx.Logger().Info("processed and removed allocation from schedule",
-		"timestamp", timestamp)
+	sdkCtx.Logger().Info("processed single-block distribution",
+		"distribution_id", scheduledDistribution.ID,
+		"timestamp", scheduledDistribution.Timestamp)
+
+	return nil
+}
+
+// resumeOngoingDistribution continues a multi-block community distribution.
+// Phase is determined by TotalScore existence: absent -> Phase 1, present -> Phase 2.
+func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.ScheduledDistribution) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	prevID := ongoing.ID
+
+	// TotalScore absent -> Phase 1 (score conversion still in progress).
+	_, err := k.TotalScore.Get(ctx, prevID)
+	if errors.Is(err, collections.ErrNotFound) {
+		done, err := k.ProcessPhase1ScoreConversion(ctx, ongoing)
+		if err != nil {
+			return err
+		}
+		if done {
+			sdkCtx.Logger().Info("phase 1 complete, TotalScore computed",
+				"distribution_id", prevID)
+		}
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	// TotalScore present -> Phase 2 (token distribution).
+	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
+	if err != nil {
+		return err
+	}
+	done, err := k.ProcessPhase2TokenDistribution(ctx, ongoing, bondDenom)
+	if err != nil {
+		return err
+	}
+	if done {
+		sdkCtx.Logger().Info("multi-block community distribution complete",
+			"distribution_id", prevID)
+	}
+	return nil
+}
+
+// distributeNonCommunityAllocations processes all non-community allocations in a single block.
+func (k Keeper) distributeNonCommunityAllocations(
+	ctx context.Context,
+	scheduledDistribution types.ScheduledDistribution,
+	bondDenom string,
+	clearingAccountMappings []types.ClearingAccountMapping,
+) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	for _, allocation := range scheduledDistribution.Allocations {
+		if allocation.Amount.IsZero() {
+			continue
+		}
+
+		// Community allocation handled separately via multi-block distribution.
+		if allocation.ClearingAccount == types.ClearingAccountCommunity {
+			continue
+		}
+
+		var recipientAddrs []string
+		for _, mapping := range clearingAccountMappings {
+			if mapping.ClearingAccount == allocation.ClearingAccount {
+				recipientAddrs = mapping.RecipientAddresses
+				break
+			}
+		}
+
+		numRecipients := sdkmath.NewInt(int64(len(recipientAddrs)))
+		if numRecipients.IsZero() {
+			return errorsmod.Wrapf(
+				types.ErrTransferFailed,
+				"no recipients found for clearing account '%s'",
+				allocation.ClearingAccount,
+			)
+		}
+		amountPerRecipient := allocation.Amount.Quo(numRecipients)
+		remainder := allocation.Amount.Mod(numRecipients)
+
+		for _, recipientAddr := range recipientAddrs {
+			recipient := sdk.MustAccAddressFromBech32(recipientAddr)
+			coinsToSend := sdk.NewCoins(sdk.NewCoin(bondDenom, amountPerRecipient))
+
+			if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+				ctx,
+				allocation.ClearingAccount,
+				recipient,
+				coinsToSend,
+			); err != nil {
+				return errorsmod.Wrapf(
+					types.ErrTransferFailed,
+					"failed to transfer from clearing account '%s' to recipient '%s': %v",
+					allocation.ClearingAccount,
+					recipientAddr,
+					err,
+				)
+			}
+		}
+
+		if !remainder.IsZero() {
+			clearingAccountAddr := k.accountKeeper.GetModuleAddress(allocation.ClearingAccount)
+			remainderCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, remainder))
+			if err := k.distributionKeeper.FundCommunityPool(ctx, remainderCoins, clearingAccountAddr); err != nil {
+				return errorsmod.Wrapf(
+					types.ErrTransferFailed,
+					"failed to send remainder to community pool from clearing account '%s': %v",
+					allocation.ClearingAccount,
+					err,
+				)
+			}
+		}
+
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventAllocationDistributed{
+			ClearingAccount:     allocation.ClearingAccount,
+			RecipientAddresses:  recipientAddrs,
+			AmountPerRecipient:  amountPerRecipient,
+			CommunityPoolAmount: remainder,
+			ScheduledAt:         scheduledDistribution.Timestamp,
+			TotalAmount:         allocation.Amount,
+		}); err != nil {
+			sdkCtx.Logger().Error("failed to emit allocation completed event", "error", err)
+		}
+	}
 
 	return nil
 }
