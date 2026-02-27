@@ -19,4 +19,5 @@ var (
 	DistributionDisabledKey = collections.NewPrefix(4)
 	TotalScoreKey           = collections.NewPrefix(5) // Map: ID -> total accumulated score
 	OngoingDistributionKey  = collections.NewPrefix(6) // Item: currently processing ScheduledDistribution
+	DistributedAmountKey    = collections.NewPrefix(7) // Map: ID -> cumulative distributed amount
 )

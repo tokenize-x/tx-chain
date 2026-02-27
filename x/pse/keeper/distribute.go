@@ -11,6 +11,117 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
+// defaultBatchSize is the number of entries processed per EndBlock during multi-block distribution.
+const defaultBatchSize = 100 // TODO: make configurable
+
+// ProcessPhase1ScoreConversion processes a batch of DelegationTimeEntries from the ongoing distribution (prevID),
+// converting each entry into a score snapshot and migrating it to currentID (prevID+1).
+//
+// For each entry in the batch:
+//  1. Calculate score from lastChanged to distribution timestamp → addToScore(prevID)
+//  2. Create new entry in currentID with same shares, lastChanged = distTimestamp
+//  3. Remove entry from prevID
+//
+// Returns true when all prevID entries have been processed and TotalScore is computed.
+func (k Keeper) ProcessPhase1ScoreConversion(ctx context.Context, ongoing types.ScheduledDistribution) (bool, error) {
+	prevID := ongoing.ID
+	currentID := ongoing.ID + 1
+	distTimestamp := int64(ongoing.Timestamp)
+
+	// Collect a batch of entries from prevID.
+	iter, err := k.DelegationTimeEntries.Iterate(
+		ctx,
+		collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](prevID),
+	)
+	if err != nil {
+		return false, err
+	}
+
+	type entryKV struct {
+		delAddr sdk.AccAddress
+		valAddr sdk.ValAddress
+		entry   types.DelegationTimeEntry
+	}
+
+	batch := make([]entryKV, 0, defaultBatchSize)
+	for ; iter.Valid() && len(batch) < defaultBatchSize; iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			iter.Close()
+			return false, err
+		}
+		batch = append(batch, entryKV{
+			delAddr: kv.Key.K2(),
+			valAddr: kv.Key.K3(),
+			entry:   kv.Value,
+		})
+	}
+	iter.Close()
+
+	// Compute TotalScore from all accumulated snapshots.
+	if len(batch) == 0 {
+		if err := k.computeTotalScore(ctx, prevID); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	for _, item := range batch {
+		isExcluded, err := k.IsExcludedAddress(ctx, item.delAddr)
+		if err != nil {
+			return false, err
+		}
+
+		if !isExcluded {
+			score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
+			if err != nil {
+				return false, err
+			}
+			if err := k.addToScore(ctx, prevID, item.delAddr, score); err != nil {
+				return false, err
+			}
+		}
+
+		// Migrate entry to currentID with same shares, reset lastChanged to distribution timestamp.
+		if err := k.SetDelegationTimeEntry(ctx, currentID, item.valAddr, item.delAddr, types.DelegationTimeEntry{
+			LastChangedUnixSec: distTimestamp,
+			Shares:             item.entry.Shares,
+		}); err != nil {
+			return false, err
+		}
+
+		// Remove from prevID.
+		if err := k.RemoveDelegationTimeEntry(ctx, prevID, item.valAddr, item.delAddr); err != nil {
+			return false, err
+		}
+	}
+
+	return false, nil
+}
+
+// computeTotalScore sums all AccountScoreSnapshot entries for a distribution and stores the result in TotalScore.
+func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) error {
+	iter, err := k.AccountScoreSnapshot.Iterate(
+		ctx,
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](distributionID),
+	)
+	if err != nil {
+		return err
+	}
+	defer iter.Close()
+
+	totalScore := sdkmath.NewInt(0)
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			return err
+		}
+		totalScore = totalScore.Add(kv.Value)
+	}
+
+	return k.TotalScore.Set(ctx, distributionID, totalScore)
+}
+
 // DistributeCommunityPSE distributes the total community PSE amount to all delegators based on their score.
 func (k Keeper) DistributeCommunityPSE(
 	ctx context.Context,
