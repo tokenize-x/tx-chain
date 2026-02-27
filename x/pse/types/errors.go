@@ -22,4 +22,7 @@ var (
 
 	// ErrInvalidParam is returned when a parameter is invalid.
 	ErrInvalidParam = sdkerrors.Register(ModuleName, 7, "invalid parameter")
+
+	// ErrOngoingDistribution is returned when a schedule update is attempted during an ongoing distribution.
+	ErrOngoingDistribution = sdkerrors.Register(ModuleName, 8, "distribution is currently in progress")
 )

@@ -412,6 +412,15 @@ func (k Keeper) UpdateDistributionSchedule(
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
+	// Reject if a multi-block distribution is in progress.
+	ongoing, err := k.getOngoingDistribution(ctx)
+	if err != nil {
+		return err
+	}
+	if ongoing != nil {
+		return errorsmod.Wrapf(types.ErrOngoingDistribution, "cannot update schedule while distribution %d is in progress", ongoing.ID)
+	}
+
 	// Validate minimum gap between distributions
 	params, err := k.GetParams(ctx)
 	if err != nil {
