@@ -45,15 +45,15 @@ func (m *mint) After(t *testing.T) {
 	requireT.NoError(err)
 	newMaxInflation, err := params.Params.InflationMax.Float64()
 	requireT.NoError(err)
-	requireT.InDelta(float64(0.20), newMaxInflation, 0.01)
+	requireT.InDelta(float64(0.02), newMaxInflation, 0.01)
 	newInflationRateChange, err := params.Params.InflationRateChange.Float64()
 	requireT.NoError(err)
-	requireT.InDelta(float64(0.04), newInflationRateChange, 0.0001)
+	requireT.InDelta(float64(0.005), newInflationRateChange, 0.0001)
 
 	inflation, err := client.Inflation(ctx, &minttypes.QueryInflationRequest{})
 	requireT.NoError(err)
 	inflationFloat, err := inflation.Inflation.Float64()
 	requireT.NoError(err)
-	requireT.InDelta(float64(0.001), inflationFloat, 0.0001)
+	requireT.InDelta(float64(0.00075), inflationFloat, 0.0001)
 	requireT.EqualValues(33_000_000, params.Params.BlocksPerYear)
 }
