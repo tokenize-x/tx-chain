@@ -38,8 +38,8 @@ func (k Keeper) getOngoingDistribution(ctx context.Context) (*types.ScheduledDis
 
 // getCurrentDistributionID returns the distribution ID that new entries should be written to.
 // If an ongoing distribution exists (ID=N is being processed), returns N+1.
-// Otherwise returns the next scheduled distribution's ID.
-// Returns 0 if no distribution is scheduled and none is ongoing.
+// Otherwise returns the next scheduled distribution's ID (zero-value ID when no schedule exists).
+// TODO: handle empty distribution schedule — currently returns 0 when no schedule exists
 func (k Keeper) getCurrentDistributionID(ctx context.Context) (uint64, error) {
 	ongoing, err := k.getOngoingDistribution(ctx)
 	if err != nil {
@@ -70,9 +70,6 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	currentID, err := h.k.getCurrentDistributionID(ctx)
 	if err != nil {
 		return err
-	}
-	if currentID == 0 {
-		return nil
 	}
 
 	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
@@ -164,9 +161,6 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	currentID, err := h.k.getCurrentDistributionID(ctx)
 	if err != nil {
 		return err
-	}
-	if currentID == 0 {
-		return nil
 	}
 
 	isExcluded, err := h.k.IsExcludedAddress(ctx, delAddr)
