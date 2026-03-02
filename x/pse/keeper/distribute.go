@@ -134,7 +134,9 @@ func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) er
 //
 // When all delegators have been processed, sends leftover (rounding errors + undelegated users) to the community pool.
 // Returns true when distribution is complete and all state has been cleaned up.
-func (k Keeper) ProcessPhase2TokenDistribution(ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string) (bool, error) {
+func (k Keeper) ProcessPhase2TokenDistribution(
+	ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string,
+) (bool, error) {
 	prevID := ongoing.ID
 	totalPSEAmount := getCommunityAllocationAmount(ongoing)
 

@@ -21,12 +21,12 @@ import (
 //     c. Else, no community allocation, non-community distribution is already done, remove from AllocationSchedule
 func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	// Resume ongoing multi-block distribution if one is in progress.
-	ongoing, err := k.getOngoingDistribution(ctx)
+	ongoing, found, err := k.getOngoingDistribution(ctx)
 	if err != nil {
 		return err
 	}
-	if ongoing != nil {
-		return k.resumeOngoingDistribution(ctx, *ongoing)
+	if found {
+		return k.resumeOngoingDistribution(ctx, ongoing)
 	}
 
 	// No ongoing distribution — check if next scheduled distribution is due.
@@ -289,12 +289,15 @@ func (k Keeper) UpdateDistributionSchedule(
 	}
 
 	// Reject if a multi-block distribution is in progress.
-	ongoing, err := k.getOngoingDistribution(ctx)
+	ongoing, ongoingFound, err := k.getOngoingDistribution(ctx)
 	if err != nil {
 		return err
 	}
-	if ongoing != nil {
-		return errorsmod.Wrapf(types.ErrOngoingDistribution, "cannot update schedule while distribution %d is in progress", ongoing.ID)
+	if ongoingFound {
+		return errorsmod.Wrapf(
+			types.ErrOngoingDistribution,
+			"cannot update schedule while distribution %d is in progress", ongoing.ID,
+		)
 	}
 
 	// Validate minimum gap between distributions

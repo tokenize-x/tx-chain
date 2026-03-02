@@ -37,10 +37,10 @@ type Keeper struct {
 		types.DelegationTimeEntry,
 	]
 	AccountScoreSnapshot collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
-	AllocationSchedule  collections.Map[uint64, types.ScheduledDistribution] // Map: ID -> ScheduledDistribution
-	TotalScore          collections.Map[uint64, sdkmath.Int]                // Map: ID -> total accumulated score
-	OngoingDistribution collections.Item[types.ScheduledDistribution]       // Currently processing distribution
-	DistributedAmount   collections.Map[uint64, sdkmath.Int]                // Map: ID -> cumulative distributed amount
+	AllocationSchedule   collections.Map[uint64, types.ScheduledDistribution] // Map: ID -> ScheduledDistribution
+	TotalScore           collections.Map[uint64, sdkmath.Int]                 // Map: ID -> total accumulated score
+	OngoingDistribution  collections.Item[types.ScheduledDistribution]        // Currently processing distribution
+	DistributedAmount    collections.Map[uint64, sdkmath.Int]                 // Map: ID -> cumulative distributed amount
 	DistributionDisabled collections.Item[bool]
 }
 
