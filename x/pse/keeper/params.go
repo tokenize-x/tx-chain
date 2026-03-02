@@ -62,7 +62,7 @@ func (k Keeper) UpdateExcludedAddresses(
 	if err != nil {
 		return err
 	}
-	distributionID := distribution.ID // TODO update to handle distribution ID properly.
+	distributionID := distribution.ID
 	for _, addrStr := range addressesToRemove {
 		addr, err := k.addressCodec.StringToBytes(addrStr)
 		if err != nil {
