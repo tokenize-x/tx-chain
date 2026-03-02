@@ -251,9 +251,7 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	t.Logf("Distribution 1 at height: %d", height)
 
-	scheduledDistributions, err := getScheduledDistribution(ctx, chain)
-	requireT.NoError(err)
-	requireT.Len(scheduledDistributions, 2)
+	awaitScheduleCount(ctx, t, chain, 2)
 
 	balancesBefore, scoresBefore, totalScore := getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
@@ -298,9 +296,7 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	t.Logf("Distribution 2 at height: %d", height)
 
-	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
-	requireT.NoError(err)
-	requireT.Len(scheduledDistributions, 1)
+	awaitScheduleCount(ctx, t, chain, 1)
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
@@ -336,9 +332,7 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	t.Logf("Distribution 3 at height: %d", height)
 
-	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
-	requireT.NoError(err)
-	requireT.Empty(scheduledDistributions)
+	awaitScheduleCount(ctx, t, chain, 0)
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
@@ -836,7 +830,7 @@ func awaitScheduledDistributionEvent(
 ) (int64, communityDistributedEvent, error) {
 	var observedHeight int64
 	err := chain.AwaitState(ctx, func(ctx context.Context) error {
-		query := fmt.Sprintf("tx.pse.v1.EventAllocationDistributed.mode='EndBlock' AND block.height>%d", startHeight)
+		query := fmt.Sprintf("tx.pse.v1.EventCommunityDistributed.mode='EndBlock' AND block.height>%d", startHeight)
 		blocks, err := chain.ClientContext.RPCClient().BlockSearch(ctx, query, nil, nil, "")
 		if err != nil {
 			return err
@@ -878,6 +872,22 @@ func getScheduledDistribution(
 		return nil, err
 	}
 	return pseResponse.ScheduledDistributions, nil
+}
+
+func awaitScheduleCount(ctx context.Context, t *testing.T, chain integration.TXChain, expectedCount int) {
+	t.Helper()
+	requireT := require.New(t)
+	err := chain.AwaitState(ctx, func(ctx context.Context) error {
+		dist, err := getScheduledDistribution(ctx, chain)
+		if err != nil {
+			return err
+		}
+		if len(dist) != expectedCount {
+			return fmt.Errorf("expected %d scheduled distributions, got %d", expectedCount, len(dist))
+		}
+		return nil
+	}, integration.WithAwaitStateTimeout(10*time.Second))
+	requireT.NoError(err)
 }
 
 func removeAttributeFromEvent(events []tmtypes.Event, key string) []tmtypes.Event {
