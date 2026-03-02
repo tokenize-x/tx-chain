@@ -97,8 +97,14 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	// Process first distribution
 	ctx = ctx.WithBlockTime(time.Unix(int64(time1)+10, 0))
 	ctx = ctx.WithBlockHeight(100)
-	err = pseKeeper.ProcessNextDistribution(ctx)
-	requireT.NoError(err)
+	for range 10 {
+		err = pseKeeper.ProcessNextDistribution(ctx)
+		requireT.NoError(err)
+		_, oErr := pseKeeper.OngoingDistribution.Get(ctx)
+		if oErr != nil {
+			break
+		}
+	}
 
 	// Export genesis
 	genesisState, err := pseKeeper.ExportGenesis(ctx)

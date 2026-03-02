@@ -199,9 +199,10 @@ func TestKeeper_Hooks(t *testing.T) {
 			testApp := simapp.New()
 			ctx := testApp.NewContext(false)
 			runContext := &runEnv{
-				testApp:  testApp,
-				ctx:      ctx,
-				requireT: requireT,
+				testApp:       testApp,
+				ctx:           ctx,
+				requireT:      requireT,
+				currentDistID: tempDistributionID,
 			}
 
 			err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
@@ -247,16 +248,17 @@ func TestKeeper_Hooks(t *testing.T) {
 }
 
 type runEnv struct {
-	testApp    *simapp.App
-	ctx        sdk.Context
-	delegators []sdk.AccAddress
-	validators []sdk.ValAddress
-	requireT   *require.Assertions
+	testApp       *simapp.App
+	ctx           sdk.Context
+	delegators    []sdk.AccAddress
+	validators    []sdk.ValAddress
+	requireT      *require.Assertions
+	currentDistID uint64
 }
 
 func assertScoreAction(r *runEnv, delAddr sdk.AccAddress, expectedScore sdkmath.Int) {
 	score, err := r.testApp.PSEKeeper.GetDelegatorScore(
-		r.ctx, tempDistributionID, delAddr,
+		r.ctx, r.currentDistID, delAddr,
 	)
 	r.requireT.NoError(err)
 	r.requireT.Equal(expectedScore, score)
@@ -285,7 +287,9 @@ func assertCommunityPoolBalanceAction(r *runEnv, expectedBalance sdkmath.Int) {
 }
 
 func assertScoreResetAction(r *runEnv) {
-	scoreRanger := collections.NewPrefixedPairRange[uint64, sdk.AccAddress](tempDistributionID)
+	// After cleanup, score snapshots at the previous distribution ID should be cleared.
+	prevID := r.currentDistID - 1
+	scoreRanger := collections.NewPrefixedPairRange[uint64, sdk.AccAddress](prevID)
 	err := r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, scoreRanger,
 		func(key collections.Pair[uint64, sdk.AccAddress], value sdkmath.Int) (bool, error) {
 			r.requireT.Equal(sdkmath.NewInt(0), value)
@@ -293,8 +297,9 @@ func assertScoreResetAction(r *runEnv) {
 		})
 	r.requireT.NoError(err)
 
+	// Entries should exist at the current distribution ID (migrated during Phase 1).
 	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
-	entriesRanger := collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](tempDistributionID)
+	entriesRanger := collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](r.currentDistID)
 	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, entriesRanger,
 		func(
 			key collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry,
@@ -372,10 +377,37 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 	r.requireT.NoError(err)
 	scheduledDistribution := types.ScheduledDistribution{
 		Timestamp: uint64(r.ctx.BlockTime().Unix()),
-		ID:        tempDistributionID,
+		ID:        r.currentDistID,
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          amount,
+		}},
 	}
-	err = r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, bondDenom, amount, scheduledDistribution)
+
+	// Set OngoingDistribution to simulate EndBlocker starting multi-block processing.
+	err = r.testApp.PSEKeeper.OngoingDistribution.Set(r.ctx, scheduledDistribution)
 	r.requireT.NoError(err)
+
+	// Run Phase 1 until done.
+	for {
+		done, err := r.testApp.PSEKeeper.ProcessPhase1ScoreConversion(r.ctx, scheduledDistribution)
+		r.requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Run Phase 2 until done.
+	for {
+		done, err := r.testApp.PSEKeeper.ProcessPhase2TokenDistribution(r.ctx, scheduledDistribution, bondDenom)
+		r.requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Advance to next distribution ID (Phase 1 migrated entries to currentDistID+1).
+	r.currentDistID++
 }
 
 func mintAndSendCoin(r *runEnv, recipient sdk.AccAddress, coins sdk.Coins) {

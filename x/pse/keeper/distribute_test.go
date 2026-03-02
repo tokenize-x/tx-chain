@@ -33,8 +33,8 @@ func TestKeeper_Distribute(t *testing.T) {
 				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
 				func(r *runEnv) {
 					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
-						&r.delegators[0]: sdkmath.NewInt(1_100_550), // + 1000 * 1.1 / 3
-						&r.delegators[1]: sdkmath.NewInt(900_450),   // + 1000 * 0.9 / 3
+						&r.delegators[0]: sdkmath.NewInt(1_100_366), // + 1000 * 1.1 / 2
+						&r.delegators[1]: sdkmath.NewInt(900_299),   // + 1000 * 0.9 / 2
 					})
 				},
 				func(r *runEnv) { assertScoreResetAction(r) },
@@ -193,9 +193,10 @@ func TestKeeper_Distribute(t *testing.T) {
 			ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
 			requireT.NoError(err)
 			runContext := &runEnv{
-				testApp:  testApp,
-				ctx:      ctx,
-				requireT: requireT,
+				testApp:       testApp,
+				ctx:           ctx,
+				requireT:      requireT,
+				currentDistID: tempDistributionID,
 			}
 
 			// add validators.
@@ -349,15 +350,42 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	scheduledDistribution := types.ScheduledDistribution{
 		ID:        distributionID,
 		Timestamp: uint64(ctx.BlockTime().Unix()),
+		ID:        distributionID,
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          amount,
+		}},
 	}
-	balanceBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
-	err = pseKeeper.DistributeCommunityPSE(ctx, bondDenom, amount, scheduledDistribution)
+	err = pseKeeper.OngoingDistribution.Set(ctx, scheduledDistribution)
 	requireT.NoError(err)
+	balanceBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
+	for {
+		done, err := pseKeeper.ProcessPhase1ScoreConversion(ctx, scheduledDistribution)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+	for {
+		done, err := pseKeeper.ProcessPhase2TokenDistribution(ctx, scheduledDistribution, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
 	balanceAfter := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
 	requireT.Equal(
 		balanceBefore.Amount.String(), balanceAfter.Amount.String(),
 		"Excluded address should receive no rewards",
 	)
+
+	// After distribution, entries migrated from distributionID to distributionID+1.
+	// Save a new schedule so hooks and UpdateExcludedAddresses can find it.
+	distributionID++
+	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{Timestamp: distributionID, ID: distributionID},
+	})
+	requireT.NoError(err)
 
 	// Step 6: Verify excluded delegator can fully undelegate after distribution
 	msgUndel := &stakingtypes.MsgUndelegate{
