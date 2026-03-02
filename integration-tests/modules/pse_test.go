@@ -106,9 +106,9 @@ func TestPSEDistribution(t *testing.T) {
 		&psetypes.MsgUpdateClearingAccountMappings{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Mappings: func() []psetypes.ClearingAccountMapping {
-				m, err := upgradev6.DefaultClearingAccountMappings(chain.ChainSettings.ChainID)
+				m, err := upgradev6.DefaultParams(chain.ChainSettings.ChainID)
 				requireT.NoError(err)
-				return m
+				return m.ClearingAccountMappings
 			}(),
 		},
 		&psetypes.MsgUpdateExcludedAddresses{

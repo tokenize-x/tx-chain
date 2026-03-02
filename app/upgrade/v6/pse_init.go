@@ -7,8 +7,6 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/samber/lo"
 
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
@@ -75,10 +73,11 @@ func DefaultInitialFundAllocations() []InitialFundAllocation {
 // Each clearing account has a single default recipient address.
 //
 //nolint:funlen // large switch with chain-specific mapping literals
-func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountMapping, error) {
+func DefaultParams(chainID string) (psetypes.Params, error) {
 	// Create mappings for all non-Community clearing accounts
 	// Each starts with a single default recipient (can be modified via governance)
 	var mappings []psetypes.ClearingAccountMapping
+	var otherFoundationAddresses []string
 
 	switch chainID {
 	case string(constant.ChainIDMain):
@@ -126,6 +125,15 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 				},
 			},
 		}
+		otherFoundationAddresses = []string{
+			"core13xmyzhvl02xpz0pu8v9mqalsvpyy7wvs9q5f90",
+			"core14g6wpzdx8g9txvxxu3fl7fplal9y5ztx34ac5p",
+			"core1zn2ns3ls68jlsv5dgkuz0rxsxt5fhk7n9cfl23",
+			"core1p4gsfkmqm0uxua65phteqwnmu39fwjvtspfkcj",
+			"core1rddqzjzy4f5frxkhds3sux0m03encqtla3ayu9",
+			"core1qe7xz56v5sh4mr0vfq8qycnvjudgrslmjt0n3m",
+			"core17epxygqaytz5l63f0au04058kt4w72w6pkh0as",
+		}
 	case string(constant.ChainIDTest):
 		mappings = []psetypes.ClearingAccountMapping{
 			{
@@ -169,19 +177,67 @@ func DefaultClearingAccountMappings(chainID string) ([]psetypes.ClearingAccountM
 				},
 			},
 		}
+		otherFoundationAddresses = []string{
+			"testcore1efkcsd94u0vrx8rgq9cktjgq7fgwrjap3qu289",
+			"testcore18nfwg708vu74e6mrcu6yjdzcdq5608rmvavt05",
+			"testcore1qrqhjrc2jl36l4vuvhvjlt6kg6d0xqazzlxek7",
+			"testcore12guwnjehw06c9r40knd0js5dn6g924p7xxg48h",
+		}
 	case string(constant.ChainIDDev):
-		recipientAddress := "devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt"
-		for _, clearingAccount := range psetypes.GetNonCommunityClearingAccounts() {
-			mappings = append(mappings, psetypes.ClearingAccountMapping{
-				ClearingAccount:    clearingAccount,
-				RecipientAddresses: []string{recipientAddress},
-			})
+		mappings = []psetypes.ClearingAccountMapping{
+			{
+				ClearingAccount: psetypes.ClearingAccountFoundation,
+				RecipientAddresses: []string{
+					"devcore17cak5uy6k70l0hqqr3zrkrr960whz6jaqyey0d",
+					"devcore1an4p6dscn9r6uq3exsmpus4k0k249quq2n8hlw",
+					"devcore12xl22gjn33gpgtt3vnvtgk4lxveyeuyyj9hk9y",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountAlliance,
+				RecipientAddresses: []string{
+					"devcore1jeq2gxe3kecsmxaevvea6jenzs7wzc38v746pv",
+					"devcore1e4taqtkgj34g5wgs6hjjdgm2g4ydzgghx5vzka",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountPartnership,
+				RecipientAddresses: []string{
+					"devcore1vwsnreaczvgarnchqj0j7sdwd3276japl8rkug",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountInvestors,
+				RecipientAddresses: []string{
+					"devcore1fvzdawu3m6x39sn72k9h9ql8g3paevn8h0ndrc",
+				},
+			},
+			{
+				ClearingAccount: psetypes.ClearingAccountTeam,
+				RecipientAddresses: []string{
+					"devcore17hzjn0smfn98mk25mcd7s64wkztn9j32x3ulvw",
+				},
+			},
+		}
+		otherFoundationAddresses = []string{
+			"devcore1ma6a84s25n9q2f3wlsdwg22a84qknn2fggtrqn",
+			"devcore177xv6sted8f2e8z5elz84ypegr47n2d9hs7k2e",
+			"devcore17we2jgjyxexcz8rg29dn622axt7s9l263fl0zt",
 		}
 	default:
-		return nil, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
+		return psetypes.Params{}, errorsmod.Wrapf(psetypes.ErrInvalidInput, "unknown chain id: %s", chainID)
 	}
 
-	return mappings, nil
+	var allExcludedAddresses []string
+	for _, mapping := range mappings {
+		allExcludedAddresses = append(allExcludedAddresses, mapping.RecipientAddresses...)
+	}
+	allExcludedAddresses = lo.Uniq(append(allExcludedAddresses, otherFoundationAddresses...))
+
+	return psetypes.Params{
+		ExcludedAddresses:       allExcludedAddresses,
+		ClearingAccountMappings: mappings,
+	}, nil
 }
 
 // InitPSEAllocationsAndSchedule initializes the PSE module by creating a distribution schedule,
@@ -235,18 +291,14 @@ func InitPSEAllocationsAndSchedule(
 		}
 	}
 
-	// Step 2: Create clearing account mappings (only for non-Community clearing accounts)
-	// Get chain-specific mappings based on chain ID
-	// TODO: Replace placeholder addresses with actual recipient addresses provided by management.
-	mappings, err := DefaultClearingAccountMappings(sdkCtx.ChainID())
+	// Step 2: Get params based on chain ID (only for non-Community clearing accounts)
+	params, err := DefaultParams(sdkCtx.ChainID())
 	if err != nil {
-		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to get clearing account mappings: %v", err)
+		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to get default PSE params: %v", err)
 	}
-
-	// Get authority (governance module address)
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	if err := pseKeeper.UpdateClearingAccountMappings(ctx, authority, mappings); err != nil {
-		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to create clearing account mappings: %v", err)
+	err = pseKeeper.SetParams(ctx, params)
+	if err != nil {
+		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to set PSE params: %v", err)
 	}
 
 	// Step 3: Generate the n-month distribution schedule for all clearing accounts
