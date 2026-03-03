@@ -301,6 +301,19 @@ func (pid *pseInitialDistribution) verifyClearingAccountMappingsAfter(
 	}
 }
 
+func (pid *pseInitialDistribution) verifyExcludedAddressesAfter(
+	ctx context.Context,
+	t *testing.T,
+	pseClient psetypes.QueryClient,
+) {
+	requireT := require.New(t)
+	paramsResp, err := pseClient.Params(ctx, &psetypes.QueryParamsRequest{})
+	requireT.NoError(err)
+
+	requireT.Equal(11, len(paramsResp.Params.ExcludedAddresses))
+	requireT.Contains(paramsResp.Params.ExcludedAddresses, "devcore1ma6a84s25n9q2f3wlsdwg22a84qknn2fggtrqn")
+}
+
 func (pid *pseInitialDistribution) verifyClearingAccountBalancesAfter(
 	ctx context.Context,
 	t *testing.T,
