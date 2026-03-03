@@ -19,7 +19,7 @@ const defaultBatchSize = 100 // TODO: make configurable
 // converting each entry into a score snapshot and migrating it to currentID (prevID+1).
 //
 // For each entry in the batch:
-//  1. Calculate score from lastChanged to distribution timestamp → addToScore(prevID)
+//  1. Calculate score from lastChanged to distribution timestamp -> addToScore(prevID)
 //  2. Create new entry in currentID with same shares, lastChanged = distTimestamp
 //  3. Remove entry from prevID
 //

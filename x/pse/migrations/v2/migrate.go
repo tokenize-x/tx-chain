@@ -32,6 +32,8 @@ func MigrateStore(
 	return migrateAccountScoreSnapshot(ctx, storeService, distributionID)
 }
 
+// TODO: Currently assigns the first distribution ID to all entries. Implement proper mapping
+// of entries to correct distribution IDs based on timestamps when multiple distributions exist.
 func getFirstDistributionID(
 	ctx context.Context,
 	storeService sdkstore.KVStoreService,

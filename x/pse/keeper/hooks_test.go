@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -405,6 +406,44 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 			break
 		}
 	}
+
+	// Advance to next distribution ID (Phase 1 migrated entries to currentDistID+1).
+	r.currentDistID++
+}
+
+// endBlockerDistributeAction runs distribution through ProcessNextDistribution (the actual EndBlocker entry point)
+// instead of directly calling Phase1/Phase2. This validates the full routing logic.
+func endBlockerDistributeAction(r *runEnv, amount sdkmath.Int) {
+	mintAndSendToPSECommunityClearingAccount(r, amount)
+
+	// Update the AllocationSchedule so ProcessNextDistribution picks it up as due.
+	scheduledDistribution := types.ScheduledDistribution{
+		Timestamp: uint64(r.ctx.BlockTime().Unix()),
+		ID:        r.currentDistID,
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          amount,
+		}},
+	}
+	err := r.testApp.PSEKeeper.AllocationSchedule.Set(r.ctx, scheduledDistribution.ID, scheduledDistribution)
+	r.requireT.NoError(err)
+
+	// Call ProcessNextDistribution repeatedly until distribution completes.
+	for i := range 20 {
+		err = r.testApp.PSEKeeper.ProcessNextDistribution(r.ctx)
+		r.requireT.NoError(err, "ProcessNextDistribution failed at iteration %d", i)
+
+		_, ongoingErr := r.testApp.PSEKeeper.OngoingDistribution.Get(r.ctx)
+		if errors.Is(ongoingErr, collections.ErrNotFound) {
+			// Cleanup done — distribution complete.
+			break
+		}
+		r.requireT.NoError(ongoingErr)
+	}
+
+	// Verify cleanup completed.
+	_, err = r.testApp.PSEKeeper.OngoingDistribution.Get(r.ctx)
+	r.requireT.ErrorIs(err, collections.ErrNotFound, "OngoingDistribution should be removed after distribution")
 
 	// Advance to next distribution ID (Phase 1 migrated entries to currentDistID+1).
 	r.currentDistID++
