@@ -350,7 +350,6 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	scheduledDistribution := types.ScheduledDistribution{
 		ID:        distributionID,
 		Timestamp: uint64(ctx.BlockTime().Unix()),
-		ID:        distributionID,
 		Allocations: []types.ClearingAccountAllocation{{
 			ClearingAccount: types.ClearingAccountCommunity,
 			Amount:          amount,
