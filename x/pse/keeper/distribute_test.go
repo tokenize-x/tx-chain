@@ -223,6 +223,15 @@ func TestKeeper_Distribute(t *testing.T) {
 				runContext.delegators = append(runContext.delegators, delegator)
 			}
 
+			err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+				{
+					// TODO revise this logic for distribution id
+					Timestamp: tempDistributionID,
+					ID:        tempDistributionID,
+				},
+			})
+			requireT.NoError(err)
+
 			// run actions.
 			for _, action := range tc.actions {
 				action(runContext)
@@ -257,6 +266,9 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(
 		ctx, delAddr, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000))),
 	))
+
+	// TODO depending on the decision on the id zero check, this should be updated.
+	distributionID := uint64(0)
 
 	// Step 1: Address accumulates score - delegate and wait for score to build up
 	msg := &stakingtypes.MsgDelegate{
@@ -305,7 +317,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT.NotNil(delegation, "Delegation should still exist")
 
 	// Verify DelegationTimeEntry was removed
-	_, err = pseKeeper.GetDelegationTimeEntry(ctx, valAddr, delAddr)
+	_, err = pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	requireT.ErrorIs(err, collections.ErrNotFound, "DelegationTimeEntry should be removed for excluded address")
 
 	// Step 4: Make delegation change while excluded - should NOT accumulate score
@@ -334,9 +346,12 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	))
-	scheduledAt := uint64(ctx.BlockTime().Unix())
+	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(ctx.BlockTime().Unix()),
+	}
 	balanceBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
-	err = pseKeeper.DistributeCommunityPSE(ctx, bondDenom, amount, scheduledAt)
+	err = pseKeeper.DistributeCommunityPSE(ctx, bondDenom, amount, scheduledDistribution)
 	requireT.NoError(err)
 	balanceAfter := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
 	requireT.Equal(
@@ -374,7 +389,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify DelegationTimeEntry was recreated with current state
-	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, valAddr, delAddr)
+	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	requireT.NoError(err, "DelegationTimeEntry should be recreated on re-inclusion")
 	requireT.Equal(ctx.BlockTime().Unix(), entry.LastChangedUnixSec, "Entry should have current block time")
 

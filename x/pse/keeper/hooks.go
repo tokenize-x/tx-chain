@@ -31,8 +31,18 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
+	// TODO handle empty distribution schedule in all places.
+	distribution, _, err := h.k.PeekNextAllocationSchedule(ctx)
+	if err != nil {
+		return err
+	}
+	// TODO update to handle distribution ID properly.
+	// We should update the logic to find the active distribution (probably via a new store called OngoingDistribution)
+	// and check for period splits
+	distributionID := distribution.ID
+
 	blockTimeUnixSeconds := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
-	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, valAddr, delAddr)
+	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		delegationTimeEntry = types.DelegationTimeEntry{
 			LastChangedUnixSec: blockTimeUnixSeconds,
@@ -52,7 +62,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	}
 
 	// Only update AccountScoreSnapshot for non-excluded addresses
-	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
+	lastScore, err := h.k.GetDelegatorScore(ctx, distributionID, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		lastScore = sdkmath.NewInt(0)
 	} else if err != nil {
@@ -66,19 +76,25 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	newScore := lastScore.Add(addedScore)
 
 	// Update DelegationTimeEntry for non-excluded addresses
-	if err := h.k.SetDelegationTimeEntry(ctx, valAddr, delAddr, types.DelegationTimeEntry{
+	if err := h.k.SetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr, types.DelegationTimeEntry{
 		LastChangedUnixSec: blockTimeUnixSeconds,
 		Shares:             delegation.Shares,
 	}); err != nil {
 		return err
 	}
 
-	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
+	return h.k.SetDelegatorScore(ctx, distributionID, delAddr, newScore)
 }
 
 // BeforeDelegationRemoved implements the staking hooks interface.
 func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
-	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, valAddr, delAddr)
+	distribution, _, err := h.k.PeekNextAllocationSchedule(ctx)
+	if err != nil {
+		return err
+	}
+	distributionID := distribution.ID // TODO update to handle distribution ID properly.
+
+	delegationTimeEntry, err := h.k.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
 			return nil
@@ -96,7 +112,7 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	}
 
 	// Only update AccountScoreSnapshot for non-excluded addresses
-	lastScore, err := h.k.AccountScoreSnapshot.Get(ctx, delAddr)
+	lastScore, err := h.k.GetDelegatorScore(ctx, distributionID, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		lastScore = sdkmath.NewInt(0)
 	} else if err != nil {
@@ -110,11 +126,11 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	newScore := lastScore.Add(addedScore)
 
 	// Remove DelegationTimeEntry for non-excluded addresses
-	if err := h.k.RemoveDelegationTimeEntry(ctx, valAddr, delAddr); err != nil {
+	if err := h.k.RemoveDelegationTimeEntry(ctx, distributionID, valAddr, delAddr); err != nil {
 		return err
 	}
 
-	return h.k.AccountScoreSnapshot.Set(ctx, delAddr, newScore)
+	return h.k.SetDelegatorScore(ctx, distributionID, delAddr, newScore)
 }
 
 func calculateAddedScore(

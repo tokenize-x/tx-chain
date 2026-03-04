@@ -21,11 +21,12 @@ func TestKeeper_AccountScore(t *testing.T) {
 
 	acc := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	score := sdkmath.NewInt(111)
+	distributionID := uint64(1)
 
-	err := pseKeeper.AccountScoreSnapshot.Set(ctx, acc, score)
+	err := pseKeeper.SetDelegatorScore(ctx, distributionID, acc, score)
 	requireT.NoError(err)
 
-	gotScore, err := pseKeeper.AccountScoreSnapshot.Get(ctx, acc)
+	gotScore, err := pseKeeper.GetDelegatorScore(ctx, distributionID, acc)
 	requireT.NoError(err)
 	requireT.Equal(score, gotScore)
 }
