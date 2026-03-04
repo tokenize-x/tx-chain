@@ -20,7 +20,6 @@ import (
 	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
 	"github.com/tokenize-x/tx-chain/v7/pkg/client"
 	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 func TestFeeGrant(t *testing.T) {
@@ -109,10 +108,10 @@ func TestFeeGrant(t *testing.T) {
 			return err
 		}
 		if !header.Time.After(allowanceExpiration) {
-			return retry.Retryable(errors.Errorf(
+			return errors.Errorf(
 				"chain time %s has not passed expiration %s yet",
 				header.Time, allowanceExpiration,
-			))
+			)
 		}
 		return nil
 	}))
