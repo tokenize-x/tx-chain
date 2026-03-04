@@ -23,35 +23,63 @@ type imageConfig struct {
 	OrgName           string
 	Versions          []string
 	UseLocalBinary    bool
+	// BaseImage selects the Docker base OS and its linking strategy.
+	// Leave empty to get the default (docker.AlpineImage, musl/static).
+	//   docker.AlpineImage  — musl static linking. Smallest. Works on Linux/CI.
+	//   docker.UbuntuImage  — glibc dynamic linking. Works on Mac Apple Silicon Docker Desktop.
+	BaseImage string
 }
 
-// BuildTXdDockerImage builds txd docker image.
+// BuildTXdDockerImage builds the txd Docker image using the default Alpine base image.
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	deps(BuildTXdInDocker, ensureReleasedBinaries)
+	return BuildTXdDockerImageFor(docker.AlpineImage)(ctx, deps)
+}
 
-	// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
-	useLocalBinary := runtime.GOOS == txcrusttools.OSLinux
+// BuildTXdDockerImageForUbuntu builds the txd Docker image using Ubuntu/glibc.
+// Use this on Mac Apple Silicon where Alpine's musl static linking causes SIGABRT.
+var BuildTXdDockerImageForUbuntu = BuildTXdDockerImageFor(docker.UbuntuImage)
 
-	return buildTXdDockerImage(ctx, imageConfig{
-		BinaryPath:      binaryPath,
-		TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxLocalArchInDocker},
-		Action:          docker.ActionLoad,
-		Versions:        []string{config.ZNetVersion},
-		UseLocalBinary:  useLocalBinary,
-	})
+// BuildTXdDockerImageFor returns a CommandFunc that builds the txd Docker image using the
+// given base image. The Linux link mode (musl/static vs glibc/dynamic) is derived automatically.
+func BuildTXdDockerImageFor(baseImage string) types.CommandFunc {
+	return func(ctx context.Context, deps types.DepsFunc) error {
+		deps(BuildTXdInDockerFor(baseImage), ensureReleasedBinaries)
+
+		// skip building TXd in docker for Linux builds to avoid using the large GoReleaser when unnecessary
+		useLocalBinary := runtime.GOOS == txcrusttools.OSLinux
+
+		return buildTXdDockerImage(ctx, imageConfig{
+			BinaryPath:      binaryPath,
+			TargetPlatforms: []txcrusttools.TargetPlatform{txcrusttools.TargetPlatformLinuxLocalArchInDocker},
+			Action:          docker.ActionLoad,
+			Versions:        []string{config.ZNetVersion},
+			UseLocalBinary:  useLocalBinary,
+			BaseImage:       baseImage,
+		})
+	}
 }
 
 func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
+	baseImage := cfg.BaseImage
+	if baseImage == "" {
+		baseImage = docker.AlpineImage
+	}
+
 	binaryName := filepath.Base(cfg.BinaryPath)
 	for _, platform := range cfg.TargetPlatforms {
 		if err := ensureCosmovisorWithInstalledBinary(ctx, platform, binaryName); err != nil {
 			return err
 		}
+		if err := ensureWASMLibForDockerContext(ctx, platform, binaryName, linuxLinkModeForImage(baseImage)); err != nil {
+			return err
+		}
 	}
+
 	dockerfile, err := image.Execute(image.Data{
-		From:             docker.AlpineImage,
+		From:             baseImage,
 		TXdBinary:        cfg.BinaryPath,
 		CosmovisorBinary: cosmovisorBinaryPath,
+		IncludeWASMLib:   linuxLinkModeForImage(baseImage) == linuxLinkModeDynamicGlibc,
 		Networks: []string{
 			string(constant.ChainIDDev),
 			string(constant.ChainIDTest),
@@ -72,6 +100,32 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 		OrgName:           cfg.OrgName,
 		Dockerfile:        dockerfile,
 	})
+}
+
+// ensureWASMLibForDockerContext copies libwasmvm into the Docker build context when
+// building for glibc/Ubuntu. For musl/Alpine the binary is statically linked, so this is a no-op.
+func ensureWASMLibForDockerContext(
+	ctx context.Context,
+	platform txcrusttools.TargetPlatform,
+	binaryName string,
+	mode linuxLinkMode,
+) error {
+	if mode == linuxLinkModeStaticMusl {
+		return nil
+	}
+	if err := txcrusttools.Ensure(ctx, txchaintools.LibWASMGlibc, platform); err != nil {
+		return err
+	}
+	arch, err := linuxArchName(platform)
+	if err != nil {
+		return err
+	}
+	return txcrusttools.CopyToolBinaries(
+		txchaintools.LibWASMGlibc,
+		platform,
+		filepath.Join("bin", ".cache", binaryName, platform.String()),
+		fmt.Sprintf("lib/libwasmvm.%s.so", arch),
+	)
 }
 
 // ensureReleasedBinaries ensures that all previous txd versions are installed.

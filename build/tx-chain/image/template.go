@@ -28,6 +28,10 @@ type Data struct {
 
 	// InDocker indicates whether the execution environment is inside a Docker container.
 	InDocker bool
+
+	// IncludeWASMLib controls whether the libwasmvm shared library is copied into the image.
+	// Set to true for glibc/Ubuntu images; false for musl/Alpine images (statically linked).
+	IncludeWASMLib bool
 }
 
 // Execute executes dockerfile template and returns complete dockerfile.

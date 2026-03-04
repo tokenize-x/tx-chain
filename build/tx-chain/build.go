@@ -42,7 +42,26 @@ const (
 	goCoverFlag          = "-cover"
 )
 
-var defaultBuildTags = []string{"netgo", "ledger"}
+var defaultBuildTags = []string{"netgo", "osusergo", "ledger", "goleveldb"}
+
+// linuxLinkMode controls how txd is linked against libwasmvm when building for Linux in Docker.
+type linuxLinkMode int
+
+const (
+	// linuxLinkModeStaticMusl links statically using musl libc. Required for Alpine images and portable release binaries.
+	linuxLinkModeStaticMusl linuxLinkMode = iota
+	// linuxLinkModeDynamicGlibc links dynamically using glibc. Required for Ubuntu images.
+	linuxLinkModeDynamicGlibc
+)
+
+// linuxLinkModeForImage returns the Linux link mode that matches the given Docker base image.
+// Alpine uses musl and static linking; all other images (Ubuntu, Debian Slim, …) use glibc and dynamic linking.
+func linuxLinkModeForImage(baseImage string) linuxLinkMode {
+	if baseImage == docker.AlpineImage {
+		return linuxLinkModeStaticMusl
+	}
+	return linuxLinkModeDynamicGlibc
+}
 
 // BuildTXd builds all the versions of txd binary.
 func BuildTXd(ctx context.Context, deps types.DepsFunc) error {
@@ -92,9 +111,17 @@ func copyLocalBinary(src, dst string) error {
 	return nil
 }
 
-// BuildTXdInDocker builds txd in docker.
+// BuildTXdInDocker builds txd in docker using the default Alpine base image.
 func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
-	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false)
+	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false, docker.AlpineImage)
+}
+
+// BuildTXdInDockerFor returns a CommandFunc that builds txd in docker using the given base image.
+// Use this when you need a specific OS, e.g. docker.UbuntuImage on Mac Apple Silicon.
+func BuildTXdInDockerFor(baseImage string) types.CommandFunc {
+	return func(ctx context.Context, deps types.DepsFunc) error {
+		return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false, baseImage)
+	}
 }
 
 // BuildGaiaDockerImage builds docker image of the gaia.
@@ -211,6 +238,19 @@ type linuxMuslToolchain struct {
 	wasmCCLibRelativeLibPath string
 }
 
+// linuxArchName maps a TargetPlatform arch to the naming convention used by wasmvm and gcc toolchains
+// (e.g. ArchAMD64 → "x86_64", ArchARM64 → "aarch64").
+func linuxArchName(targetPlatform txcrusttools.TargetPlatform) (string, error) {
+	switch targetPlatform.Arch {
+	case txcrusttools.ArchAMD64:
+		return "x86_64", nil
+	case txcrusttools.ArchARM64:
+		return "aarch64", nil
+	default:
+		return "", errors.Errorf("building is not possible for platform %s", targetPlatform)
+	}
+}
+
 // linuxMuslToolchainFor returns the musl toolchain config for the given Linux platform.
 // targetPlatform is used for all Path() lookups so local and in-Docker builds use the same toolchain.
 func linuxMuslToolchainFor(targetPlatform txcrusttools.TargetPlatform) (linuxMuslToolchain, error) {
@@ -218,14 +258,9 @@ func linuxMuslToolchainFor(targetPlatform txcrusttools.TargetPlatform) (linuxMus
 		return linuxMuslToolchain{}, errors.Errorf("building is not possible for platform %s", targetPlatform)
 	}
 
-	var arch string
-	switch targetPlatform.Arch {
-	case txcrusttools.ArchAMD64:
-		arch = "x86_64"
-	case txcrusttools.ArchARM64:
-		arch = "aarch64"
-	default:
-		return linuxMuslToolchain{}, errors.Errorf("building is not possible for platform %s", targetPlatform)
+	arch, err := linuxArchName(targetPlatform)
+	if err != nil {
+		return linuxMuslToolchain{}, err
 	}
 	gccBin := fmt.Sprintf("bin/%s-linux-musl-gcc", arch)
 	wasmLib := fmt.Sprintf("lib/libwasmvm_muslc.%s.a", arch)
@@ -242,17 +277,18 @@ func linuxMuslToolchainFor(targetPlatform txcrusttools.TargetPlatform) (linuxMus
 	}, nil
 }
 
+// buildTXdInDocker compiles txd for the given platform.
+//
+// release=false uses linuxLinkModeForImage(baseImage) and enables a fast native-build path on Linux hosts.
+// release=true always uses linuxLinkModeStaticMusl + goreleaser-cross for portable, reproducible artifacts.
 func buildTXdInDocker(
 	ctx context.Context,
 	deps types.DepsFunc,
 	targetPlatform txcrusttools.TargetPlatform,
 	extraFlags []string,
 	release bool,
+	baseImage string,
 ) error {
-	if err := txcrusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
-		return err
-	}
-
 	ldFlags := make([]string, 0)
 	var cc string
 	buildTags := defaultBuildTags
@@ -260,37 +296,77 @@ func buildTXdInDocker(
 	dockerVolumes := make([]string, 0)
 	switch targetPlatform.OS {
 	case txcrusttools.OSLinux:
-		// Linux builds must use muslc + static linking so the binary runs in Alpine (txd Docker image).
-		// Using glibc or dynamic wasmvm leads to SIGABRT in wasmvm/cgo when the binary runs in-container.
-		if err := txcrusttools.Ensure(ctx, txchaintools.MuslCC, targetPlatform); err != nil {
-			return err
+		mode := linuxLinkModeForImage(baseImage)
+		if release {
+			mode = linuxLinkModeStaticMusl
 		}
-		buildTags = append(buildTags, "muslc")
-		ldFlags = append(ldFlags, "-extldflags '-static'")
-
-		tc, err := linuxMuslToolchainFor(targetPlatform)
-		if err != nil {
-			return err
-		}
-
-		if !release && runtime.GOOS == txcrusttools.OSLinux {
-			// Local Linux build: same muslc/static config as in-Docker, output to cache for Docker image.
-			targetPlatform = txcrusttools.TargetPlatformLocal
-			if err := copyLocalBinary(tc.wasmHostDirPath, tc.hostCCDirPath+tc.wasmCCLibRelativeLibPath); err != nil {
+		switch mode {
+		case linuxLinkModeStaticMusl:
+			// Alpine: fully static binary via musl cross-compiler + libwasmvm_muslc.*.a.
+			if err := txcrusttools.Ensure(ctx, txchaintools.MuslCC, targetPlatform); err != nil {
 				return err
 			}
-			cc = tc.hostCCDirPath + tc.ccRelativePath
-		} else {
-			const ccDockerDir = "/musl-gcc"
-			dockerVolumes = append(
-				dockerVolumes,
-				fmt.Sprintf("%s:%s", tc.hostCCDirPath, ccDockerDir),
-				// put the libwasmvm to the lib folder of the compiler
-				fmt.Sprintf("%s:%s%s", tc.wasmHostDirPath, ccDockerDir, tc.wasmCCLibRelativeLibPath),
-			)
-			cc = fmt.Sprintf("%s%s", ccDockerDir, tc.ccRelativePath)
+			if err := txcrusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
+				return err
+			}
+			buildTags = append(buildTags, "muslc")
+			ldFlags = append(ldFlags, "-extldflags '-static'")
+
+			tc, err := linuxMuslToolchainFor(targetPlatform)
+			if err != nil {
+				return err
+			}
+
+			if !release && runtime.GOOS == txcrusttools.OSLinux {
+				// Native Linux build: copy the wasm lib into the musl toolchain dir and use host musl-gcc.
+				targetPlatform = txcrusttools.TargetPlatformLocal
+				if err := copyLocalBinary(tc.wasmHostDirPath, tc.hostCCDirPath+tc.wasmCCLibRelativeLibPath); err != nil {
+					return err
+				}
+				cc = tc.hostCCDirPath + tc.ccRelativePath
+			} else {
+				const ccDockerDir = "/musl-gcc"
+				dockerVolumes = append(
+					dockerVolumes,
+					fmt.Sprintf("%s:%s", tc.hostCCDirPath, ccDockerDir),
+					fmt.Sprintf("%s:%s%s", tc.wasmHostDirPath, ccDockerDir, tc.wasmCCLibRelativeLibPath),
+				)
+				cc = fmt.Sprintf("%s%s", ccDockerDir, tc.ccRelativePath)
+			}
+
+		case linuxLinkModeDynamicGlibc:
+			// Ubuntu/Debian Slim: dynamically linked binary via glibc cross-compiler + libwasmvm.*.so.
+			if err := txcrusttools.Ensure(ctx, txchaintools.LibWASMGlibc, targetPlatform); err != nil {
+				return err
+			}
+
+			arch, err := linuxArchName(targetPlatform)
+			if err != nil {
+				return err
+			}
+			wasmLibFilename := fmt.Sprintf("libwasmvm.%s.so", arch)
+			gccCrossCompiler := fmt.Sprintf("%s-linux-gnu-gcc", arch)
+			wasmLibHostPath := txcrusttools.Path(filepath.Join("lib", wasmLibFilename), targetPlatform)
+
+			if !release && runtime.GOOS == txcrusttools.OSLinux {
+				// Native Linux build: use system gcc and point CGO to the downloaded .so.
+				targetPlatform = txcrusttools.TargetPlatformLocal
+				cc = "gcc"
+				envs = append(envs, fmt.Sprintf("CGO_LDFLAGS=-L%s -Wl,-rpath,/usr/lib", filepath.Dir(wasmLibHostPath)))
+			} else {
+				const wasmDockerLibDir = "/lib"
+				cc = gccCrossCompiler
+				dockerVolumes = append(dockerVolumes,
+					fmt.Sprintf("%s:%s/%s", wasmLibHostPath, wasmDockerLibDir, wasmLibFilename),
+				)
+				envs = append(envs, fmt.Sprintf("CGO_LDFLAGS=-L%s -Wl,-rpath,/usr/lib", wasmDockerLibDir))
+			}
 		}
+
 	case txcrusttools.OSDarwin:
+		if err := txcrusttools.Ensure(ctx, txchaintools.LibWASM, targetPlatform); err != nil {
+			return err
+		}
 		buildTags = append(buildTags, "static_wasm")
 		switch targetPlatform {
 		case txcrusttools.TargetPlatformDarwinAMD64InDocker:
