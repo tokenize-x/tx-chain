@@ -120,6 +120,38 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	return nil
 }
 
+// PeekNextAllocationSchedule returns the earliest scheduled distribution and whether it should be processed.
+func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.ScheduledDistribution, bool, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// Get iterator for the allocation schedule (sorted by id ascending)
+	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
+	if err != nil {
+		return types.ScheduledDistribution{}, false, err
+	}
+	defer iter.Close()
+
+	// Return early if schedule is empty
+	if !iter.Valid() {
+		return types.ScheduledDistribution{}, false, nil
+	}
+
+	// Extract the earliest scheduled distribution (sorted by id ascending)
+	kv, err := iter.KeyValue()
+	if err != nil {
+		return types.ScheduledDistribution{}, false, err
+	}
+
+	scheduledDist := kv.Value
+
+	// Check if distribution time has arrived
+	// Since IDs are sequential and timestamps are monotonically increasing,
+	// the first item by ID is also the earliest by time.
+	shouldProcess := scheduledDist.Timestamp <= uint64(sdkCtx.BlockTime().Unix())
+
+	return scheduledDist, shouldProcess, nil
+}
+
 // distributeNonCommunityAllocations processes all non-community allocations in a single block.
 func (k Keeper) distributeNonCommunityAllocations(
 	ctx context.Context,
@@ -204,38 +236,6 @@ func (k Keeper) distributeNonCommunityAllocations(
 	}
 
 	return nil
-}
-
-// PeekNextAllocationSchedule returns the earliest scheduled distribution and whether it should be processed.
-func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.ScheduledDistribution, bool, error) {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	// Get iterator for the allocation schedule (sorted by id ascending)
-	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
-	if err != nil {
-		return types.ScheduledDistribution{}, false, err
-	}
-	defer iter.Close()
-
-	// Return early if schedule is empty
-	if !iter.Valid() {
-		return types.ScheduledDistribution{}, false, nil
-	}
-
-	// Extract the earliest scheduled distribution (sorted by id ascending)
-	kv, err := iter.KeyValue()
-	if err != nil {
-		return types.ScheduledDistribution{}, false, err
-	}
-
-	scheduledDist := kv.Value
-
-	// Check if distribution time has arrived
-	// Since IDs are sequential and timestamps are monotonically increasing,
-	// the first item by ID is also the earliest by time.
-	shouldProcess := scheduledDist.Timestamp <= uint64(sdkCtx.BlockTime().Unix())
-
-	return scheduledDist, shouldProcess, nil
 }
 
 // SaveDistributionSchedule persists the distribution schedule to blockchain state.
