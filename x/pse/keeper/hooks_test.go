@@ -343,6 +343,19 @@ func redelegateAction(
 	r.requireT.NoError(err)
 }
 
+func slashAction(r *runEnv, valAddr sdk.ValAddress, fraction string) {
+	val, err := r.testApp.StakingKeeper.GetValidator(r.ctx, valAddr)
+	r.requireT.NoError(err)
+	consAddr, err := val.GetConsAddr()
+	r.requireT.NoError(err)
+	power := val.ConsensusPower(sdk.DefaultPowerReduction)
+	_, err = r.testApp.StakingKeeper.Slash(
+		r.ctx, consAddr, r.ctx.BlockHeight()-1, power,
+		sdkmath.LegacyMustNewDecFromStr(fraction),
+	)
+	r.requireT.NoError(err)
+}
+
 func waitAction(r *runEnv, duration time.Duration) {
 	ctx, _, err := r.testApp.BeginNextBlockAtTime(r.ctx.BlockTime().Add(duration))
 	r.requireT.NoError(err)
