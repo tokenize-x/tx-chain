@@ -9191,3 +9191,83 @@ func TestAssetFTClearAdmin(t *testing.T) {
 	requireT.Error(err)
 	assertT.True(cosmoserrors.ErrUnauthorized.Is(err))
 }
+
+func TestBlockSmartContractsWithMultiSend(t *testing.T) {
+	t.Parallel()
+
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	requireT := require.New(t)
+	issuer := chain.GenAccount()
+	chain.FundAccountWithOptions(ctx, t, issuer, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&assetfttypes.MsgIssue{},
+		},
+		Amount: chain.QueryAssetFTParams(ctx, t).IssueFee.Amount.
+			Add(sdkmath.NewInt(1_000_000)),
+	})
+
+	msgIssue := &assetfttypes.MsgIssue{
+		Issuer:        issuer.String(),
+		Symbol:        "ABC",
+		Subunit:       "uabc",
+		Precision:     6,
+		InitialAmount: sdkmath.NewInt(1000),
+		Features: []assetfttypes.Feature{
+			assetfttypes.Feature_block_smart_contracts,
+		},
+	}
+	denom := assetfttypes.BuildDenom(msgIssue.Subunit, issuer)
+	_, err := client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(issuer),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(msgIssue)),
+		msgIssue,
+	)
+	requireT.NoError(err)
+
+	contractAddr, _, err := chain.Wasm.DeployAndInstantiateWASMContract(
+		ctx,
+		chain.TxFactoryAuto(),
+		issuer,
+		moduleswasm.BankSendWASM,
+		integration.InstantiateConfig{
+			AccessType: wasmtypes.AccessTypeUnspecified,
+			Payload:    moduleswasm.EmptyPayload,
+			Label:      "bank_send",
+		},
+	)
+	requireT.NoError(err)
+
+	// bank send to smart contract must be rejected.
+	sendMsg := &banktypes.MsgMultiSend{
+		Inputs: []banktypes.Input{
+			{
+				Address: issuer.String(),
+				Coins:   sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewInt(10))),
+			},
+		},
+		Outputs: []banktypes.Output{
+			{
+				Address: contractAddr,
+				Coins:   sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewInt(10))),
+			},
+		},
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(issuer),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendMsg)),
+		sendMsg,
+	)
+	requireT.ErrorIs(err, cosmoserrors.ErrUnauthorized)
+
+	// bank send with uppercase address to smart contract must be rejected.
+	sendMsg.Outputs[0].Address = strings.ToUpper(contractAddr)
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(issuer),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendMsg)),
+		sendMsg,
+	)
+	requireT.ErrorIs(err, cosmoserrors.ErrUnauthorized)
+}
