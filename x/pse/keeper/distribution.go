@@ -85,10 +85,10 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 // Phase is determined by TotalScore existence: absent -> Phase 1, present -> Phase 2.
 func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.ScheduledDistribution) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	prevID := ongoing.ID
+	ongoingID := ongoing.ID
 
 	// TotalScore absent -> Phase 1 (score conversion still in progress).
-	_, err := k.TotalScore.Get(ctx, prevID)
+	_, err := k.TotalScore.Get(ctx, ongoingID)
 	if errors.Is(err, collections.ErrNotFound) {
 		done, err := k.ProcessPhase1ScoreConversion(ctx, ongoing)
 		if err != nil {
@@ -96,7 +96,7 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 		}
 		if done {
 			sdkCtx.Logger().Info("phase 1 complete, TotalScore computed",
-				"distribution_id", prevID)
+				"distribution_id", ongoingID)
 		}
 		return nil
 	}
@@ -115,7 +115,7 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	}
 	if done {
 		sdkCtx.Logger().Info("multi-block community distribution complete",
-			"distribution_id", prevID)
+			"distribution_id", ongoingID)
 	}
 	return nil
 }

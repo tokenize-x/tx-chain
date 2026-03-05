@@ -288,9 +288,9 @@ func assertCommunityPoolBalanceAction(r *runEnv, expectedBalance sdkmath.Int) {
 }
 
 func assertScoreResetAction(r *runEnv) {
-	// After cleanup, score snapshots at the previous distribution ID should be cleared.
-	prevID := r.currentDistID - 1
-	scoreRanger := collections.NewPrefixedPairRange[uint64, sdk.AccAddress](prevID)
+	// After cleanup, score snapshots at the ongoing distribution ID should be cleared.
+	ongoingID := r.currentDistID - 1
+	scoreRanger := collections.NewPrefixedPairRange[uint64, sdk.AccAddress](ongoingID)
 	err := r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, scoreRanger,
 		func(key collections.Pair[uint64, sdk.AccAddress], value sdkmath.Int) (bool, error) {
 			r.requireT.Equal(sdkmath.NewInt(0), value)

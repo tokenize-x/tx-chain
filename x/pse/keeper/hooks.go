@@ -36,11 +36,11 @@ func (k Keeper) getOngoingDistribution(ctx context.Context) (types.ScheduledDist
 	return ongoing, true, nil
 }
 
-// getCurrentDistributionID returns the distribution ID that new entries should be written to.
-// If an ongoing distribution exists (ID=N is being processed), returns N+1.
+// getNextDistributionID returns the next distribution ID that new entries should be written to.
+// If an ongoing distribution exists (ongoingID=N is being processed), returns N+1.
 // Otherwise returns the next scheduled distribution's ID (zero-value ID when no schedule exists).
 // TODO: handle empty distribution schedule — currently returns 0 when no schedule exists.
-func (k Keeper) getCurrentDistributionID(ctx context.Context) (uint64, error) {
+func (k Keeper) getNextDistributionID(ctx context.Context) (uint64, error) {
 	ongoing, found, err := k.getOngoingDistribution(ctx)
 	if err != nil {
 		return 0, err
@@ -58,8 +58,8 @@ func (k Keeper) getCurrentDistributionID(ctx context.Context) (uint64, error) {
 
 // AfterDelegationModified implements the staking hooks interface.
 // Handles 3 scenarios based on where the delegator's entry exists:
-//   - Scenario 1: Entry in prevID (ongoing distribution in progress).
-//   - Scenario 2: Entry in currentID — normal score calculation.
+//   - Scenario 1: Entry in ongoingID (ongoing distribution in progress).
+//   - Scenario 2: Entry in nextID — normal score calculation.
 //   - Scenario 3: No entry — create new entry, no score.
 func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
 	delegation, err := h.k.stakingKeeper.GetDelegation(ctx, delAddr, valAddr)
@@ -67,7 +67,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
-	currentID, err := h.k.getCurrentDistributionID(ctx)
+	nextID, err := h.k.getNextDistributionID(ctx)
 	if err != nil {
 		return err
 	}
@@ -83,35 +83,35 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	blockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 
 	// Scenario 1: Entry exists in previous distribution (ongoing distribution in progress).
-	// Split score at distribution timestamp, move entry to currentID.
+	// Split score at distribution timestamp, move entry to nextID.
 	ongoing, ongoingFound, err := h.k.getOngoingDistribution(ctx)
 	if err != nil {
 		return err
 	}
 	if ongoingFound {
-		handled, err := h.migrateOngoingEntry(ctx, ongoing, currentID, delAddr, valAddr, blockTime)
+		handled, err := h.migrateOngoingEntry(ctx, ongoing, nextID, delAddr, valAddr, blockTime)
 		if err != nil {
 			return err
 		}
 		if handled {
-			return h.k.SetDelegationTimeEntry(ctx, currentID, valAddr, delAddr, types.DelegationTimeEntry{
+			return h.k.SetDelegationTimeEntry(ctx, nextID, valAddr, delAddr, types.DelegationTimeEntry{
 				LastChangedUnixSec: blockTime,
 				Shares:             delegation.Shares,
 			})
 		}
 	}
 
-	// Scenario 2: Entry exists in current distribution.
-	currentEntry, err := h.k.GetDelegationTimeEntry(ctx, currentID, valAddr, delAddr)
+	// Scenario 2: Entry exists in next distribution.
+	currentEntry, err := h.k.GetDelegationTimeEntry(ctx, nextID, valAddr, delAddr)
 	if err == nil {
 		score, err := calculateAddedScore(ctx, h.k, valAddr, currentEntry)
 		if err != nil {
 			return err
 		}
-		if err := h.k.addToScore(ctx, currentID, delAddr, score); err != nil {
+		if err := h.k.addToScore(ctx, nextID, delAddr, score); err != nil {
 			return err
 		}
-		return h.k.SetDelegationTimeEntry(ctx, currentID, valAddr, delAddr, types.DelegationTimeEntry{
+		return h.k.SetDelegationTimeEntry(ctx, nextID, valAddr, delAddr, types.DelegationTimeEntry{
 			LastChangedUnixSec: blockTime,
 			Shares:             delegation.Shares,
 		})
@@ -120,8 +120,8 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 
-	// Scenario 3: No entry - create new in currentID (no score, duration = 0).
-	return h.k.SetDelegationTimeEntry(ctx, currentID, valAddr, delAddr, types.DelegationTimeEntry{
+	// Scenario 3: No entry — create new under nextID (no score, duration = 0).
+	return h.k.SetDelegationTimeEntry(ctx, nextID, valAddr, delAddr, types.DelegationTimeEntry{
 		LastChangedUnixSec: blockTime,
 		Shares:             delegation.Shares,
 	})
@@ -129,7 +129,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 
 // BeforeDelegationRemoved implements the staking hooks interface.
 func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) error {
-	currentID, err := h.k.getCurrentDistributionID(ctx)
+	nextID, err := h.k.getNextDistributionID(ctx)
 	if err != nil {
 		return err
 	}
@@ -150,22 +150,22 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 	if ongoingFound {
-		if _, err := h.migrateOngoingEntry(ctx, ongoing, currentID, delAddr, valAddr, blockTime); err != nil {
+		if _, err := h.migrateOngoingEntry(ctx, ongoing, nextID, delAddr, valAddr, blockTime); err != nil {
 			return err
 		}
 	}
 
-	// Scenario 2: Entry exists in current distribution.
-	currentEntry, err := h.k.GetDelegationTimeEntry(ctx, currentID, valAddr, delAddr)
+	// Scenario 2: Entry exists in next distribution.
+	currentEntry, err := h.k.GetDelegationTimeEntry(ctx, nextID, valAddr, delAddr)
 	if err == nil {
 		score, err := calculateAddedScore(ctx, h.k, valAddr, currentEntry)
 		if err != nil {
 			return err
 		}
-		if err := h.k.addToScore(ctx, currentID, delAddr, score); err != nil {
+		if err := h.k.addToScore(ctx, nextID, delAddr, score); err != nil {
 			return err
 		}
-		return h.k.RemoveDelegationTimeEntry(ctx, currentID, valAddr, delAddr)
+		return h.k.RemoveDelegationTimeEntry(ctx, nextID, valAddr, delAddr)
 	}
 	if !errors.Is(err, collections.ErrNotFound) {
 		return err
@@ -256,19 +256,19 @@ func (h Hooks) AfterUnbondingInitiated(_ context.Context, _ uint64) error {
 	return nil
 }
 
-// migrateOngoingEntry handles a delegation entry that still lives in the previous (ongoing) distribution.
-// It calculates score for both the prev and current periods, removes the entry from prevID,
+// migrateOngoingEntry handles a delegation entry that still lives under the ongoing distribution.
+// It calculates score for both the ongoing and next periods, removes the entry from ongoingID,
 // and returns true if the entry was found and processed.
 func (h Hooks) migrateOngoingEntry(
 	ctx context.Context,
 	ongoing types.ScheduledDistribution,
-	currentID uint64,
+	nextID uint64,
 	delAddr sdk.AccAddress,
 	valAddr sdk.ValAddress,
 	blockTime int64,
 ) (bool, error) {
-	prevID := ongoing.ID
-	prevEntry, err := h.k.GetDelegationTimeEntry(ctx, prevID, valAddr, delAddr)
+	ongoingID := ongoing.ID
+	ongoingEntry, err := h.k.GetDelegationTimeEntry(ctx, ongoingID, valAddr, delAddr)
 	if errors.Is(err, collections.ErrNotFound) {
 		return false, nil
 	}
@@ -278,30 +278,30 @@ func (h Hooks) migrateOngoingEntry(
 
 	distTimestamp := int64(ongoing.Timestamp)
 
-	// Score for previous period: lastChanged -> distribution timestamp.
-	prevScore, err := calculateScoreAtTimestamp(ctx, h.k, valAddr, prevEntry, distTimestamp)
+	// Score for ongoing period: lastChanged -> distribution timestamp.
+	ongoingScore, err := calculateScoreAtTimestamp(ctx, h.k, valAddr, ongoingEntry, distTimestamp)
 	if err != nil {
 		return false, err
 	}
-	if err := h.k.addToScore(ctx, prevID, delAddr, prevScore); err != nil {
+	if err := h.k.addToScore(ctx, ongoingID, delAddr, ongoingScore); err != nil {
 		return false, err
 	}
 
-	// Score for current period: distribution timestamp -> now.
-	currentPeriodEntry := types.DelegationTimeEntry{
+	// Score for next period: distribution timestamp -> now.
+	nextPeriodEntry := types.DelegationTimeEntry{
 		LastChangedUnixSec: distTimestamp,
-		Shares:             prevEntry.Shares,
+		Shares:             ongoingEntry.Shares,
 	}
-	currentScore, err := calculateScoreAtTimestamp(ctx, h.k, valAddr, currentPeriodEntry, blockTime)
+	nextScore, err := calculateScoreAtTimestamp(ctx, h.k, valAddr, nextPeriodEntry, blockTime)
 	if err != nil {
 		return false, err
 	}
-	if err := h.k.addToScore(ctx, currentID, delAddr, currentScore); err != nil {
+	if err := h.k.addToScore(ctx, nextID, delAddr, nextScore); err != nil {
 		return false, err
 	}
 
-	// Remove the old entry from prevID to prevent double scoring in Phase 1 batch processing.
-	if err := h.k.RemoveDelegationTimeEntry(ctx, prevID, valAddr, delAddr); err != nil {
+	// Remove the old entry from ongoingID to prevent double scoring in Phase 1 batch processing.
+	if err := h.k.RemoveDelegationTimeEntry(ctx, ongoingID, valAddr, delAddr); err != nil {
 		return false, err
 	}
 

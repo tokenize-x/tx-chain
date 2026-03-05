@@ -15,24 +15,24 @@ import (
 // defaultBatchSize is the number of entries processed per EndBlock during multi-block distribution.
 const defaultBatchSize = 100 // TODO: make configurable
 
-// ProcessPhase1ScoreConversion processes a batch of DelegationTimeEntries from the ongoing distribution (prevID),
-// converting each entry into a score snapshot and migrating it to currentID (prevID+1).
+// ProcessPhase1ScoreConversion processes a batch of DelegationTimeEntries from the ongoing distribution (ongoingID),
+// converting each entry into a score snapshot and migrating it to nextID (ongoingID + 1).
 //
 // For each entry in the batch:
-//  1. Calculate score from lastChanged to distribution timestamp -> addToScore(prevID)
-//  2. Create new entry in currentID with same shares, lastChanged = distTimestamp
-//  3. Remove entry from prevID
+//  1. Calculate score from lastChanged to distribution timestamp -> addToScore(ongoingID)
+//  2. Create new entry under nextID with same shares, lastChanged = distTimestamp
+//  3. Remove entry from ongoingID
 //
-// Returns true when all prevID entries have been processed and TotalScore is computed.
+// Returns true when all ongoingID entries have been processed and TotalScore is computed.
 func (k Keeper) ProcessPhase1ScoreConversion(ctx context.Context, ongoing types.ScheduledDistribution) (bool, error) {
-	prevID := ongoing.ID
-	currentID := ongoing.ID + 1
+	ongoingID := ongoing.ID
+	nextID := ongoing.ID + 1
 	distTimestamp := int64(ongoing.Timestamp)
 
-	// Collect a batch of entries from prevID.
+	// Collect a batch of entries from ongoingID.
 	iter, err := k.DelegationTimeEntries.Iterate(
 		ctx,
-		collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](prevID),
+		collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](ongoingID),
 	)
 	if err != nil {
 		return false, err
@@ -61,7 +61,7 @@ func (k Keeper) ProcessPhase1ScoreConversion(ctx context.Context, ongoing types.
 
 	// Compute TotalScore from all accumulated snapshots.
 	if len(batch) == 0 {
-		if err := k.computeTotalScore(ctx, prevID); err != nil {
+		if err := k.computeTotalScore(ctx, ongoingID); err != nil {
 			return false, err
 		}
 		return true, nil
@@ -78,21 +78,21 @@ func (k Keeper) ProcessPhase1ScoreConversion(ctx context.Context, ongoing types.
 			if err != nil {
 				return false, err
 			}
-			if err := k.addToScore(ctx, prevID, item.delAddr, score); err != nil {
+			if err := k.addToScore(ctx, ongoingID, item.delAddr, score); err != nil {
 				return false, err
 			}
 		}
 
-		// Migrate entry to currentID with same shares, reset lastChanged to distribution timestamp.
-		if err := k.SetDelegationTimeEntry(ctx, currentID, item.valAddr, item.delAddr, types.DelegationTimeEntry{
+		// Migrate entry to nextID with same shares, reset lastChanged to distribution timestamp.
+		if err := k.SetDelegationTimeEntry(ctx, nextID, item.valAddr, item.delAddr, types.DelegationTimeEntry{
 			LastChangedUnixSec: distTimestamp,
 			Shares:             item.entry.Shares,
 		}); err != nil {
 			return false, err
 		}
 
-		// Remove from prevID.
-		if err := k.RemoveDelegationTimeEntry(ctx, prevID, item.valAddr, item.delAddr); err != nil {
+		// Remove from ongoingID.
+		if err := k.RemoveDelegationTimeEntry(ctx, ongoingID, item.valAddr, item.delAddr); err != nil {
 			return false, err
 		}
 	}
@@ -124,7 +124,7 @@ func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) er
 }
 
 // ProcessPhase2TokenDistribution distributes tokens to delegators in batches based on their computed scores.
-// Uses TotalScore[prevID] for proportion calculation and iterates AccountScoreSnapshot[prevID].
+// Uses TotalScore[ongoingID] for proportion calculation and iterates AccountScoreSnapshot[ongoingID].
 //
 // For each delegator in the batch:
 //  1. Compute share: userAmount = totalPSEAmount × score / totalScore
@@ -137,10 +137,10 @@ func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) er
 func (k Keeper) ProcessPhase2TokenDistribution(
 	ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string,
 ) (bool, error) {
-	prevID := ongoing.ID
+	ongoingID := ongoing.ID
 	totalPSEAmount := getCommunityAllocationAmount(ongoing)
 
-	totalScore, err := k.TotalScore.Get(ctx, prevID)
+	totalScore, err := k.TotalScore.Get(ctx, ongoingID)
 	if err != nil {
 		return false, err
 	}
@@ -152,13 +152,13 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 				return false, err
 			}
 		}
-		return true, k.cleanupDistribution(ctx, prevID)
+		return true, k.cleanupDistribution(ctx, ongoingID)
 	}
 
 	// Collect a batch of score snapshots.
 	iter, err := k.AccountScoreSnapshot.Iterate(
 		ctx,
-		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](prevID),
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](ongoingID),
 	)
 	if err != nil {
 		return false, err
@@ -186,7 +186,7 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 	// Only triggered when all distributions of this round are completed.
 	// Send leftover to community pool and clean up.
 	if len(batch) == 0 {
-		distributedSoFar, err := k.getDistributedAmount(ctx, prevID)
+		distributedSoFar, err := k.getDistributedAmount(ctx, ongoingID)
 		if err != nil {
 			return false, err
 		}
@@ -196,7 +196,7 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 				return false, err
 			}
 		}
-		return true, k.cleanupDistribution(ctx, prevID)
+		return true, k.cleanupDistribution(ctx, ongoingID)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -209,7 +209,7 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 			return false, err
 		}
 
-		if err := k.addToDistributedAmount(ctx, prevID, distributedAmount); err != nil {
+		if err := k.addToDistributedAmount(ctx, ongoingID, distributedAmount); err != nil {
 			return false, err
 		}
 
@@ -224,7 +224,7 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 		}
 
 		// Remove processed snapshot.
-		if err := k.RemoveDelegatorScore(ctx, prevID, item.delAddr); err != nil {
+		if err := k.RemoveDelegatorScore(ctx, ongoingID, item.delAddr); err != nil {
 			return false, err
 		}
 	}
