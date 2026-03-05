@@ -150,12 +150,8 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 	if ongoingFound {
-		handled, err := h.migrateOngoingEntry(ctx, ongoing, currentID, delAddr, valAddr, blockTime)
-		if err != nil {
+		if _, err := h.migrateOngoingEntry(ctx, ongoing, currentID, delAddr, valAddr, blockTime); err != nil {
 			return err
-		}
-		if handled {
-			return h.k.RemoveDelegationTimeEntry(ctx, ongoing.ID, valAddr, delAddr)
 		}
 	}
 
@@ -301,6 +297,11 @@ func (h Hooks) migrateOngoingEntry(
 		return false, err
 	}
 	if err := h.k.addToScore(ctx, currentID, delAddr, currentScore); err != nil {
+		return false, err
+	}
+
+	// Remove the old entry from prevID to prevent double scoring in Phase 1 batch processing.
+	if err := h.k.RemoveDelegationTimeEntry(ctx, prevID, valAddr, delAddr); err != nil {
 		return false, err
 	}
 
