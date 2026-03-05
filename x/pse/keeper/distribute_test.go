@@ -183,6 +183,25 @@ func TestKeeper_Distribute(t *testing.T) {
 				func(r *runEnv) { assertScoreResetAction(r) },
 			},
 		},
+		{
+			name: "test delegation with zero balance after slash",
+			actions: []func(*runEnv){
+				func(r *runEnv) {
+					delegateAction(r, r.delegators[0], r.validators[3], 500_000)
+				},
+				func(r *runEnv) {
+					delegateAction(r, r.delegators[1], r.validators[3], 500_000)
+				},
+				func(r *runEnv) { waitAction(r, time.Second*10) },
+				func(r *runEnv) {
+					undelegateAction(r, r.delegators[0], r.validators[3], 499_999)
+				},
+				// Slash 99%: delegator[0]'s 1 share truncates to 0 tokens.
+				func(r *runEnv) { slashAction(r, r.validators[3], "0.99") },
+				// Distribution should not panic (delegator[0] has score but 0 delegation balance).
+				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(10_000)) },
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -198,7 +217,7 @@ func TestKeeper_Distribute(t *testing.T) {
 				requireT: requireT,
 			}
 
-			// add validators.
+			// add validators (indices 0-2: unbonded via AddValidator).
 			for range 3 {
 				validatorOperator, _ := testApp.GenAccount(ctx)
 				requireT.NoError(testApp.FundAccount(
@@ -213,6 +232,14 @@ func TestKeeper_Distribute(t *testing.T) {
 					sdk.MustValAddressFromBech32(validator.GetOperator()),
 				)
 			}
+
+			bondedVals, err := testApp.StakingKeeper.GetBondedValidatorsByPower(ctx)
+			requireT.NoError(err)
+			requireT.NotEmpty(bondedVals)
+			runContext.validators = append(
+				runContext.validators,
+				sdk.MustValAddressFromBech32(bondedVals[0].GetOperator()),
+			)
 
 			// add delegators.
 			for range 3 {
