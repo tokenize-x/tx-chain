@@ -119,9 +119,10 @@ func TestKeeper_Distribute_DelegationWithZeroBalanceAfterSlash(t *testing.T) {
 	requireT.NoError(err)
 	distributeAmount := sdkmath.NewInt(10_000)
 	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
-	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, distributeAmount))))
+	distributeCoin := sdk.NewCoins(sdk.NewCoin(bondDenom, distributeAmount))
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, distributeCoin))
 	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
-		ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, distributeAmount)),
+		ctx, minttypes.ModuleName, macc.GetName(), distributeCoin,
 	))
 	t.Logf("Funded PSE community clearing account with %s", distributeAmount)
 
