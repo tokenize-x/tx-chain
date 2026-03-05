@@ -82,14 +82,14 @@ func TestExportGenesisModuleHashes(t *testing.T) {
 	initiatedApp, _, _, initChainReq, _ := simapp.NewWithGenesis(exportedGenesisBuf.Bytes())
 
 	// sync heights of both apps stores
-	syncAppsHeights(t, requireT, exportedApp, &initiatedApp.App, initChainReq)
+	syncAppsHeights(requireT, exportedApp, &initiatedApp.App, initChainReq)
 
 	// check that the module hashes of both apps match
 	checkModuleStoreMismatches(t, requireT, exportedApp, &initiatedApp.App, initChainReq.InitialHeight)
 }
 
 func syncAppsHeights(
-	t *testing.T, requireT *require.Assertions,
+	requireT *require.Assertions,
 	exportedApp *app.App, initiatedApp *app.App,
 	initChainReq *abci.RequestInitChain,
 ) {
@@ -99,22 +99,26 @@ func syncAppsHeights(
 	err := exportedApp.LoadVersion(nodeAppStateHeight)
 	requireT.NoError(err, "failed to load version %d from exported app", nodeAppStateHeight)
 
+	// RollbackToVersion calls LoadVersionForOverwriting on every IAVL subtree, which
+	// deletes all DB entries above nodeAppStateHeight.
+	err = exportedApp.CommitMultiStore().RollbackToVersion(nodeAppStateHeight)
+	requireT.NoError(err, "failed to roll back exported app to version %d", nodeAppStateHeight)
+
 	// finalize new block for the exported app
 	_, err = exportedApp.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: initChainReq.InitialHeight,
 	})
-	require.NoError(t, err)
+	requireT.NoError(err)
 	_, err = exportedApp.Commit()
-	require.NoError(t, err)
+	requireT.NoError(err)
 
 	// finalize new block for the initiated app
 	_, err = initiatedApp.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: initChainReq.InitialHeight,
 	})
-	require.NoError(t, err)
-
+	requireT.NoError(err)
 	_, err = initiatedApp.Commit()
-	require.NoError(t, err)
+	requireT.NoError(err)
 }
 
 func checkModuleStoreMismatches(
