@@ -32,10 +32,13 @@ type Keeper struct {
 	// collections
 	Schema                collections.Schema
 	Params                collections.Item[types.Params]
-	DelegationTimeEntries collections.Map[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry]
-	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
-	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: id -> ScheduledDistribution
-	DistributionDisabled  collections.Item[bool]
+	DelegationTimeEntries collections.Map[
+		collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress],
+		types.DelegationTimeEntry,
+	]
+	AccountScoreSnapshot collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
+	AllocationSchedule   collections.Map[uint64, types.ScheduledDistribution] // Map: id -> ScheduledDistribution
+	DistributionDisabled collections.Item[bool]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -72,14 +75,14 @@ func NewKeeper(
 			sb,
 			types.StakingTimeKey,
 			"delegation_time_entries",
-			collections.PairKeyCodec(sdk.AccAddressKey, sdk.ValAddressKey),
+			collections.TripleKeyCodec(collections.Uint64Key, sdk.AccAddressKey, sdk.ValAddressKey),
 			codec.CollValue[types.DelegationTimeEntry](cdc),
 		),
 		AccountScoreSnapshot: collections.NewMap(
 			sb,
 			types.AccountScoreKey,
 			"account_score",
-			sdk.AccAddressKey,
+			collections.PairKeyCodec(collections.Uint64Key, sdk.AccAddressKey),
 			sdk.IntValue,
 		),
 		AllocationSchedule: collections.NewMap(

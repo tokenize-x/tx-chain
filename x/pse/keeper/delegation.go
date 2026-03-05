@@ -14,32 +14,62 @@ import (
 // SetDelegationTimeEntry saves DelegationTimeEntry into storages.
 func (k Keeper) SetDelegationTimeEntry(
 	ctx context.Context,
+	distributionID uint64,
 	valAddr sdk.ValAddress,
 	delAddr sdk.AccAddress,
 	entry types.DelegationTimeEntry,
 ) error {
-	key := collections.Join(delAddr, valAddr)
+	key := collections.Join3(distributionID, delAddr, valAddr)
 	return k.DelegationTimeEntries.Set(ctx, key, entry)
 }
 
 // GetDelegationTimeEntry retrieves DelegationTimeEntry from storages.
 func (k Keeper) GetDelegationTimeEntry(
 	ctx context.Context,
+	distributionID uint64,
 	valAddr sdk.ValAddress,
 	delAddr sdk.AccAddress,
 ) (types.DelegationTimeEntry, error) {
-	key := collections.Join(delAddr, valAddr)
+	key := collections.Join3(distributionID, delAddr, valAddr)
 	return k.DelegationTimeEntries.Get(ctx, key)
 }
 
 // RemoveDelegationTimeEntry removes DelegationTimeEntry from storages.
 func (k Keeper) RemoveDelegationTimeEntry(
 	ctx context.Context,
+	distributionID uint64,
 	valAddr sdk.ValAddress,
 	delAddr sdk.AccAddress,
 ) error {
-	key := collections.Join(delAddr, valAddr)
+	key := collections.Join3(distributionID, delAddr, valAddr)
 	return k.DelegationTimeEntries.Remove(ctx, key)
+}
+
+// GetDelegatorScore gets the score for a delegator.
+func (k Keeper) GetDelegatorScore(
+	ctx context.Context,
+	distributionID uint64,
+	delAddr sdk.AccAddress,
+) (sdkmath.Int, error) {
+	key := collections.Join(distributionID, delAddr)
+	return k.AccountScoreSnapshot.Get(ctx, key)
+}
+
+// SetDelegatorScore sets the score for a delegator.
+func (k Keeper) SetDelegatorScore(
+	ctx context.Context,
+	distributionID uint64,
+	delAddr sdk.AccAddress,
+	score sdkmath.Int,
+) error {
+	key := collections.Join(distributionID, delAddr)
+	return k.AccountScoreSnapshot.Set(ctx, key, score)
+}
+
+// RemoveDelegatorScore removes the score for a delegator.
+func (k Keeper) RemoveDelegatorScore(ctx context.Context, distributionID uint64, delAddr sdk.AccAddress) error {
+	key := collections.Join(distributionID, delAddr)
+	return k.AccountScoreSnapshot.Remove(ctx, key)
 }
 
 // CalculateDelegatorScore calculates the current total score for a delegator.
@@ -47,8 +77,15 @@ func (k Keeper) RemoveDelegationTimeEntry(
 // and the current period score calculated on-demand from active delegations.
 // Formula: total_score = accumulated_score + current_period_score.
 func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddress) (sdkmath.Int, error) {
+	// Find current distribution ID
+	distribution, _, err := k.PeekNextAllocationSchedule(ctx)
+	if err != nil {
+		return sdkmath.Int{}, err
+	}
+	distributionID := distribution.ID // TODO update to handle distribution ID properly.
+
 	// Start with the accumulated score from the snapshot (previous periods)
-	accumulatedScore, err := k.AccountScoreSnapshot.Get(ctx, delAddr)
+	accumulatedScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
 			accumulatedScore = sdkmath.NewInt(0)
@@ -59,7 +96,7 @@ func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddr
 
 	// Calculate current period score from delegations for this specific delegator
 	// Use prefix query to efficiently get only this delegator's entries
-	rng := collections.NewPrefixedPairRange[sdk.AccAddress, sdk.ValAddress](delAddr)
+	rng := collections.NewSuperPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](distributionID, delAddr)
 	iter, err := k.DelegationTimeEntries.Iterate(ctx, rng)
 	if err != nil {
 		return sdkmath.Int{}, err
@@ -74,7 +111,7 @@ func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddr
 		}
 
 		// Now we only iterate entries for this specific delegator
-		valAddr := kv.Key.K2()
+		valAddr := kv.Key.K3()
 		delegationTimeEntry := kv.Value
 		addedScore, err := calculateAddedScore(ctx, k, valAddr, delegationTimeEntry)
 		if err != nil {

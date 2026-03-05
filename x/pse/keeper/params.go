@@ -58,6 +58,11 @@ func (k Keeper) UpdateExcludedAddresses(
 	// When addresses are removed from exclusion, recreate their DelegationTimeEntries with current state
 	// so they start accumulating score immediately without requiring a delegation change.
 	currentBlockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
+	distribution, _, err := k.PeekNextAllocationSchedule(ctx) // TODO revise this logic for distribution id
+	if err != nil {
+		return err
+	}
+	distributionID := distribution.ID // TODO update to handle distribution ID properly.
 	for _, addrStr := range addressesToRemove {
 		addr, err := k.addressCodec.StringToBytes(addrStr)
 		if err != nil {
@@ -85,7 +90,7 @@ func (k Keeper) UpdateExcludedAddresses(
 			}
 
 			// Set entry with current block time and current shares
-			if err := k.SetDelegationTimeEntry(ctx, valAddr, addr, types.DelegationTimeEntry{
+			if err := k.SetDelegationTimeEntry(ctx, distributionID, valAddr, addr, types.DelegationTimeEntry{
 				LastChangedUnixSec: currentBlockTime,
 				Shares:             delegation.Delegation.Shares,
 			}); err != nil {
@@ -106,7 +111,7 @@ func (k Keeper) UpdateExcludedAddresses(
 	params.ExcludedAddresses = append(params.ExcludedAddresses, toActuallyAdd...)
 
 	for _, addrStr := range toActuallyAdd {
-		if err = k.removeExcludedAccountData(ctx, addrStr); err != nil {
+		if err = k.removeExcludedAccountData(ctx, distributionID, addrStr); err != nil {
 			return err
 		}
 	}
@@ -117,17 +122,17 @@ func (k Keeper) UpdateExcludedAddresses(
 // removeExcludedAccountData clears AccountScoreSnapshot AND DelegationTimeEntries for newly excluded addresses.
 // Removing DelegationTimeEntries ensures they start completely fresh when re-included.
 // Entries will be recreated naturally when hooks fire after re-inclusion.
-func (k Keeper) removeExcludedAccountData(ctx context.Context, addrStr string) error {
+func (k Keeper) removeExcludedAccountData(ctx context.Context, distributionID uint64, addrStr string) error {
 	addr, err := k.addressCodec.StringToBytes(addrStr)
 	if err != nil {
 		return err
 	}
 
 	// Remove snapshot if it exists
-	_ = k.AccountScoreSnapshot.Remove(ctx, addr)
+	_ = k.RemoveDelegatorScore(ctx, distributionID, addr)
 
 	// Remove all delegation time entries for this address
-	rng := collections.NewPrefixedPairRange[sdk.AccAddress, sdk.ValAddress](addr)
+	rng := collections.NewSuperPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](distributionID, addr)
 	iter, err := k.DelegationTimeEntries.Iterate(ctx, rng)
 	if err != nil {
 		return err

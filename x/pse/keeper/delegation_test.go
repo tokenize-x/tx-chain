@@ -23,15 +23,16 @@ func TestKeeper_Delegation(t *testing.T) {
 
 	delAddr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	valAddr := sdk.ValAddress(secp256k1.GenPrivKey().PubKey().Address())
+	distributionID := uint64(1)
 	entry := types.DelegationTimeEntry{
 		LastChangedUnixSec: time.Now().Unix(),
 		Shares:             sdkmath.LegacyNewDec(10),
 	}
 
-	err := pseKeeper.SetDelegationTimeEntry(ctx, valAddr, delAddr, entry)
+	err := pseKeeper.SetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr, entry)
 	requireT.NoError(err)
 
-	gotEntry, err := pseKeeper.GetDelegationTimeEntry(ctx, valAddr, delAddr)
+	gotEntry, err := pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	requireT.NoError(err)
 	requireT.Equal(entry, gotEntry)
 }

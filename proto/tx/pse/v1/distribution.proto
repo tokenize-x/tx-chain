@@ -1,8 +1,8 @@
 syntax = "proto3";
 package tx.pse.v1;
 
-import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
 
@@ -12,9 +12,7 @@ option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
 // During distribution, the allocated amount is split equally among all recipients.
 message ClearingAccountMapping {
   // clearing_account is the name of the clearing account holding the tokens to be distributed.
-  string clearing_account = 1 [
-    (gogoproto.moretags) = "yaml:\"clearing_account\""
-  ];
+  string clearing_account = 1 [(gogoproto.moretags) = "yaml:\"clearing_account\""];
 
   // recipient_addresses is the list of multisig wallet addresses that will receive the token distributions.
   // Must have at least one address. Distribution amount is split equally among all recipients.
@@ -27,9 +25,7 @@ message ClearingAccountMapping {
 // ClearingAccountAllocation defines the amount to be allocated from a specific clearing account (module account).
 message ClearingAccountAllocation {
   // clearing_account is the name of the clearing account (module account).
-  string clearing_account = 1 [
-    (gogoproto.moretags) = "yaml:\"clearing_account\""
-  ];
+  string clearing_account = 1 [(gogoproto.moretags) = "yaml:\"clearing_account\""];
 
   // amount is the number of tokens to allocate from this clearing account.
   // This amount is for the allocation denom (see AllocationDenom constant).
@@ -46,9 +42,7 @@ message ClearingAccountAllocation {
 // Each distribution is identified by a unique, sequential id.
 message ScheduledDistribution {
   // timestamp is when this allocation should occur (Unix timestamp in seconds).
-  uint64 timestamp = 1 [
-    (gogoproto.moretags) = "yaml:\"timestamp\""
-  ];
+  uint64 timestamp = 1 [(gogoproto.moretags) = "yaml:\"timestamp\""];
 
   // allocations is the list of amounts to allocate from each clearing account at this time.
   repeated ClearingAccountAllocation allocations = 2 [
@@ -63,4 +57,3 @@ message ScheduledDistribution {
     (gogoproto.moretags) = "yaml:\"id\""
   ];
 }
-

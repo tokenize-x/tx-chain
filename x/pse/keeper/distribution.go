@@ -111,7 +111,7 @@ func (k Keeper) distributeAllocatedTokens(
 
 		// Community clearing account has different distribution logic
 		if allocation.ClearingAccount == types.ClearingAccountCommunity {
-			if err := k.DistributeCommunityPSE(ctx, bondDenom, allocation.Amount, scheduledDistribution.Timestamp); err != nil {
+			if err := k.DistributeCommunityPSE(ctx, bondDenom, allocation.Amount, scheduledDistribution); err != nil {
 				return errorsmod.Wrapf(
 					types.ErrTransferFailed,
 					"failed to distribute Community clearing account allocation: %v",
