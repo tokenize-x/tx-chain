@@ -19,6 +19,121 @@ import (
 	"github.com/tokenize-x/tx-chain/v6/x/pse/types"
 )
 
+func TestKeeper_Distribute_DelegationWithZeroBalanceAfterSlash(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	// Using the genesis validator which is already bonded.
+	bondedVals, err := testApp.StakingKeeper.GetBondedValidatorsByPower(ctx)
+	requireT.NoError(err)
+	requireT.NotEmpty(bondedVals, "should have at least one bonded genesis validator")
+	val := bondedVals[0]
+	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
+	consAddr, err := val.GetConsAddr()
+	requireT.NoError(err)
+
+	// Delegator A: delegates 500K amount to build score.
+	delegatorA, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(
+		ctx, delegatorA, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000_000))),
+	))
+	_, err = stakingkeeper.NewMsgServerImpl(testApp.StakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delegatorA.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, 500_000),
+	})
+	requireT.NoError(err)
+	t.Logf("Delegator A delegated 500,000 to validator %s", valAddr)
+
+	// Delegator B: 500K delegation for score comparison.
+	delegatorB, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(
+		ctx, delegatorB, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000_000))),
+	))
+	_, err = stakingkeeper.NewMsgServerImpl(testApp.StakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delegatorB.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, 500_000),
+	})
+	requireT.NoError(err)
+	t.Logf("Delegator B delegated 500,000 to validator %s", valAddr)
+
+	// Wait for score to accumulate (both delegators build equal score).
+	ctx, _, err = testApp.BeginNextBlockAtTime(ctx.BlockTime().Add(10 * time.Second))
+	requireT.NoError(err)
+	t.Log("Advanced 10 seconds for score accumulation")
+
+	// Delegator A undelegates 499,999 - almost everything, keeping only 1 token.
+	// The undelegation hook captures the accumulated score in AccountScoreSnapshot.
+	_, err = stakingkeeper.NewMsgServerImpl(testApp.StakingKeeper).Undelegate(ctx, &stakingtypes.MsgUndelegate{
+		DelegatorAddress: delegatorA.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, 499_999),
+	})
+	requireT.NoError(err)
+	t.Log("Delegator A undelegated 499,999 (keeping 1 token / 1 share)")
+
+	// Slash the validator by 99%.
+	// Delegator A's remaining 1 share → TokensFromShares(1) truncates to 0.
+	valPower := val.ConsensusPower(sdk.DefaultPowerReduction)
+	t.Logf("Slashing validator (power=%d) by 99%%", valPower)
+	_, err = testApp.StakingKeeper.Slash(
+		ctx,
+		consAddr,
+		ctx.BlockHeight()-1,
+		valPower,
+		sdkmath.LegacyMustNewDecFromStr("0.99"),
+	)
+	requireT.NoError(err)
+
+	// Verify delegator A's delegation exists but has zero token balance.
+	stakingQuerier := stakingkeeper.NewQuerier(testApp.StakingKeeper)
+	delegationsRsp, err := stakingQuerier.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+		DelegatorAddr: delegatorA.String(),
+	})
+	requireT.NoError(err)
+	requireT.NotEmpty(delegationsRsp.DelegationResponses, "delegation should still exist (has shares)")
+	totalBalance := sdkmath.NewInt(0)
+	for _, d := range delegationsRsp.DelegationResponses {
+		t.Logf("Delegator A delegation: shares=%s, balance=%s", d.Delegation.Shares, d.Balance.Amount)
+		totalBalance = totalBalance.Add(d.Balance.Amount)
+	}
+	requireT.True(totalBalance.IsZero(),
+		"delegator A's balance should be zero after slash, got %s", totalBalance)
+	t.Logf("Delegator A: delegation exists (shares > 0) but token balance = %s", totalBalance)
+
+	// Verify delegator A has significant score (from the 500,000 * 10s period).
+	scoreA, err := testApp.PSEKeeper.CalculateDelegatorScore(ctx, delegatorA)
+	requireT.NoError(err)
+	requireT.True(scoreA.IsPositive(), "delegator A should have positive score, got %s", scoreA)
+	scoreB, err := testApp.PSEKeeper.CalculateDelegatorScore(ctx, delegatorB)
+	requireT.NoError(err)
+	t.Logf("Scores — delegator A: %s, delegator B: %s", scoreA, scoreB)
+
+	// Fund the PSE community clearing account and distribute.
+	bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+	distributeAmount := sdkmath.NewInt(10_000)
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, distributeAmount))))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, distributeAmount)),
+	))
+	t.Logf("Funded PSE community clearing account with %s", distributeAmount)
+
+	// Should trigger panic with "Division by zero" in distributeToDelegator (if fix is not applied)
+	// because delegator A gets a non-zero amount (has high score) but their totalDelegationAmount is 0.
+	scheduledAt := uint64(ctx.BlockTime().Unix())
+	t.Log("Running DistributeCommunityPSE...")
+	err = testApp.PSEKeeper.DistributeCommunityPSE(ctx, bondDenom, distributeAmount, scheduledAt)
+	requireT.NoError(err)
+	t.Log("Distribution completed successfully (no division by zero panic)")
+}
+
 func TestKeeper_Distribute(t *testing.T) {
 	cases := []struct {
 		name    string
