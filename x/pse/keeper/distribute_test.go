@@ -268,8 +268,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		ctx, delAddr, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000))),
 	))
 
-	// TODO depending on the decision on the id zero check, this should be updated.
-	distributionID := uint64(0)
+	distributionID := uint64(1)
 
 	// Step 1: Address accumulates score - delegate and wait for score to build up
 	msg := &stakingtypes.MsgDelegate{

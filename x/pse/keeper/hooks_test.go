@@ -20,7 +20,7 @@ import (
 // TODO revise this logic for distribution id and genesis state
 // This is a temporary distribution id for tests to pass, it should be handled properly
 // in its own task.
-const tempDistributionID = uint64(0)
+const tempDistributionID = uint64(1)
 
 func TestKeeper_Hooks(t *testing.T) {
 	cases := []struct {

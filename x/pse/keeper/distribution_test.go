@@ -344,7 +344,7 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	requireT.NoError(err)
 
 	// Fund all clearing accounts
-	communityAmount := sdkmath.NewInt(1000)
+	communityAmount := sdkmath.NewInt(10_000_000)
 	nonCommunityAmount := sdkmath.NewInt(100)
 	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		amount := nonCommunityAmount
