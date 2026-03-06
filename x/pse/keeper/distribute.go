@@ -313,7 +313,7 @@ func (k Keeper) distributeToDelegator(
 		totalDelegationAmount = totalDelegationAmount.Add(delegation.Balance.Amount)
 	}
 
-	if len(delegations) == 0 {
+	if len(delegations) == 0 || totalDelegationAmount.IsZero() {
 		return sdkmath.NewInt(0), nil
 	}
 
