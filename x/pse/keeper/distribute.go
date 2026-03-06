@@ -265,6 +265,9 @@ func (k Keeper) cleanupDistribution(ctx context.Context, distributionID uint64) 
 	if err := k.AllocationSchedule.Remove(ctx, distributionID); err != nil {
 		return err
 	}
+	if err := k.LastProcessedDistributionID.Set(ctx, distributionID); err != nil {
+		return err
+	}
 	return k.OngoingDistribution.Remove(ctx)
 }
 
