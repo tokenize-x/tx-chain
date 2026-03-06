@@ -300,6 +300,24 @@ func (k Keeper) UpdateDistributionSchedule(
 		)
 	}
 
+	// Validate that the first schedule ID is not in the past.
+	if len(newSchedule) > 0 {
+		lastProcessed, err := k.LastProcessedDistributionID.Get(ctx)
+		if errors.Is(err, collections.ErrNotFound) {
+			lastProcessed = 0
+		} else if err != nil {
+			return err
+		}
+		nextID := lastProcessed + 1
+		if newSchedule[0].ID < nextID {
+			return errorsmod.Wrapf(
+				types.ErrInvalidInput,
+				"first schedule ID %d must be >= %d (LastProcessedDistributionID + 1)",
+				newSchedule[0].ID, nextID,
+			)
+		}
+	}
+
 	// Validate minimum gap between distributions
 	params, err := k.GetParams(ctx)
 	if err != nil {
