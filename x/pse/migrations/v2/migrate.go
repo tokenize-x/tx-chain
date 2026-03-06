@@ -13,60 +13,32 @@ import (
 )
 
 // MigrateStore migrates the PSE module state from v1 to v2.
-// - DelegationTimeEntries key: Pair[AccAddress, ValAddress] -> Triple[uint64, AccAddress, ValAddress].
-// - AccountScoreSnapshot key: AccAddress -> Pair[uint64, AccAddress].
+// - DelegationTimeEntries key: Pair[AccAddress, ValAddress] -> Triple[uint64, AccAddress, ValAddress] with ID=1.
+// - AccountScoreSnapshot key: AccAddress -> Pair[uint64, AccAddress] with ID=1.
+// - Clears old timestamp-based AllocationSchedule.
+// - Initializes LastProcessedDistributionID = 0 so getNextDistributionID returns 0+1=1.
 func MigrateStore(
 	ctx context.Context,
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
 ) error {
-	distributionID, err := getFirstDistributionID(ctx, storeService, cdc)
-	if err != nil {
-		return err
-	}
+	// All existing entries are re-keyed under distribution ID=1.
+	// getNextDistributionID returns 0+1=1, matching where entries are stored.
+	const distributionID uint64 = 1
 
 	if err := migrateDelegationTimeEntries(ctx, storeService, cdc, distributionID); err != nil {
 		return err
 	}
 
-	return migrateAccountScoreSnapshot(ctx, storeService, distributionID)
-}
-
-// TODO: Currently assigns the first distribution ID to all entries. Implement proper mapping
-// of entries to correct distribution IDs based on timestamps when multiple distributions exist.
-func getFirstDistributionID(
-	ctx context.Context,
-	storeService sdkstore.KVStoreService,
-	cdc codec.BinaryCodec,
-) (uint64, error) {
-	sb := collections.NewSchemaBuilder(storeService)
-	schedule := collections.NewMap(
-		sb,
-		types.AllocationScheduleKey,
-		"allocation_schedule",
-		collections.Uint64Key,
-		codec.CollValue[types.ScheduledDistribution](cdc),
-	)
-	if _, err := sb.Build(); err != nil {
-		return 0, err
+	if err := migrateAccountScoreSnapshot(ctx, storeService, distributionID); err != nil {
+		return err
 	}
 
-	iter, err := schedule.Iterate(ctx, nil)
-	if err != nil {
-		return 0, err
-	}
-	defer iter.Close()
-
-	if !iter.Valid() {
-		return 0, nil
+	if err := clearAllocationSchedule(ctx, storeService, cdc); err != nil {
+		return err
 	}
 
-	kv, err := iter.KeyValue()
-	if err != nil {
-		return 0, err
-	}
-
-	return kv.Value.ID, nil
+	return initLastProcessedDistributionID(ctx, storeService)
 }
 
 func migrateDelegationTimeEntries(
@@ -190,4 +162,46 @@ func migrateAccountScoreSnapshot(
 	}
 
 	return nil
+}
+
+// clearAllocationSchedule removes all entries from the old timestamp-based allocation schedule.
+// The old format is incompatible with the new ID-based format; governance must submit a fresh schedule post-upgrade.
+func clearAllocationSchedule(
+	ctx context.Context,
+	storeService sdkstore.KVStoreService,
+	cdc codec.BinaryCodec,
+) error {
+	sb := collections.NewSchemaBuilder(storeService)
+	schedule := collections.NewMap(
+		sb,
+		types.AllocationScheduleKey,
+		"allocation_schedule",
+		collections.Uint64Key,
+		codec.CollValue[types.ScheduledDistribution](cdc),
+	)
+	if _, err := sb.Build(); err != nil {
+		return err
+	}
+
+	return schedule.Clear(ctx, nil)
+}
+
+// initLastProcessedDistributionID sets LastProcessedDistributionID to 0,
+// so that getNextDistributionID returns 1 after migration.
+func initLastProcessedDistributionID(
+	ctx context.Context,
+	storeService sdkstore.KVStoreService,
+) error {
+	sb := collections.NewSchemaBuilder(storeService)
+	lastProcessedID := collections.NewItem(
+		sb,
+		types.LastProcessedDistributionIDKey,
+		"last_processed_distribution_id",
+		collections.Uint64Value,
+	)
+	if _, err := sb.Build(); err != nil {
+		return err
+	}
+
+	return lastProcessedID.Set(ctx, 0)
 }
