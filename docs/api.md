@@ -5965,6 +5965,7 @@ GenesisState defines the module's genesis state.
 | `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 | `distributions_disabled` | [bool](#bool) |  |    |
+| `last_processed_distribution_id` | [uint64](#uint64) |  |    |
 
 
 

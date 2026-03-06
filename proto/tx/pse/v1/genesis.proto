@@ -33,6 +33,11 @@ message GenesisState {
   ];
 
   bool distributions_disabled = 5 [(gogoproto.moretags) = "yaml:\"distributions_disabled\""];
+
+  uint64 last_processed_distribution_id = 6 [
+    (gogoproto.customname) = "LastProcessedDistributionID",
+    (gogoproto.moretags) = "yaml:\"last_processed_distribution_id\""
+  ];
 }
 
 message DelegationTimeEntryExport {
