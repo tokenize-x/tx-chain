@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"cosmossdk.io/collections"
-	"cosmossdk.io/log"
 	sdkstore "cosmossdk.io/core/store"
+	"cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
@@ -197,9 +197,14 @@ func TestMigrateStore(t *testing.T) {
 
 	// Verify new schedule can be set starting from ID=1 (LastProcessedDistributionID + 1)
 	// This simulates what governance would do post-migration
+	alloc := func(amount int64) []types.ClearingAccountAllocation {
+		return []types.ClearingAccountAllocation{
+			{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(amount)},
+		}
+	}
 	newSchedule := []types.ScheduledDistribution{
-		{ID: 1, Timestamp: 100000, Allocations: []types.ClearingAccountAllocation{{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(1000)}}},
-		{ID: 2, Timestamp: 200000, Allocations: []types.ClearingAccountAllocation{{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(2000)}}},
+		{ID: 1, Timestamp: 100000, Allocations: alloc(1000)},
+		{ID: 2, Timestamp: 200000, Allocations: alloc(2000)},
 	}
 	for _, sd := range newSchedule {
 		requireT.NoError(newScheduleMap.Set(ctx, sd.ID, sd))
