@@ -688,7 +688,7 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 				testApp:       testApp,
 				ctx:           ctx,
 				requireT:      requireT,
-				currentDistID: tempDistributionID,
+				currentDistID: firstDistributionID,
 			}
 
 			// add validators.
@@ -718,8 +718,8 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 
 			err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
 				{
-					Timestamp: tempDistributionID,
-					ID:        tempDistributionID,
+					Timestamp: firstDistributionID,
+					ID:        firstDistributionID,
 				},
 			})
 			requireT.NoError(err)

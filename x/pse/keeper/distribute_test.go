@@ -196,7 +196,7 @@ func TestKeeper_Distribute(t *testing.T) {
 				testApp:       testApp,
 				ctx:           ctx,
 				requireT:      requireT,
-				currentDistID: tempDistributionID,
+				currentDistID: firstDistributionID,
 			}
 
 			// add validators.
@@ -226,9 +226,8 @@ func TestKeeper_Distribute(t *testing.T) {
 
 			err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
 				{
-					// TODO revise this logic for distribution id
-					Timestamp: tempDistributionID,
-					ID:        tempDistributionID,
+					Timestamp: firstDistributionID,
+					ID:        firstDistributionID,
 				},
 			})
 			requireT.NoError(err)
