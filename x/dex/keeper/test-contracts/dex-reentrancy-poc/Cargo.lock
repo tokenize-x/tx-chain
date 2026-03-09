@@ -1123,8 +1123,8 @@ dependencies = [
 
 [[package]]
 name = "tx-std-derive"
-version = "0.20.1"
-source = "git+https://github.com/tokenize-x/tx-std-derive.git?rev=8ece0a2f496add06aa97b27c98c76c19817f849f#8ece0a2f496add06aa97b27c98c76c19817f849f"
+version = "0.21.0"
+source = "git+https://github.com/tokenize-x/tx-std-derive.git?tag=v0.21.0#8a90a69fd9f7444cdc8665401529095617703384"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -1135,8 +1135,8 @@ dependencies = [
 
 [[package]]
 name = "tx-wasm-sdk"
-version = "1.2.1"
-source = "git+https://github.com/tokenize-x/tx-wasm-sdk.git?rev=67537efc36755154980ca7c79c77d67c78d853e4#67537efc36755154980ca7c79c77d67c78d853e4"
+version = "1.3.0"
+source = "git+https://github.com/tokenize-x/tx-wasm-sdk.git?tag=v1.3.0#ce69facf34293311a9478182d21895e0e8d2f2ec"
 dependencies = [
  "chrono",
  "cosmwasm-schema",
