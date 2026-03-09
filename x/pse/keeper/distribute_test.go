@@ -132,13 +132,18 @@ func TestKeeper_Distribute(t *testing.T) {
 				func(r *runEnv) { undelegateAction(r, r.delegators[0], r.validators[0], 1_100_000) },
 				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
 				func(r *runEnv) {
+					// delegators[0] fully undelegated — no auto-delegation, but earned reward sent as liquid tokens
 					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
-						&r.delegators[0]: sdkmath.NewInt(0),       // + 1000 * 1.1 / 3
-						&r.delegators[1]: sdkmath.NewInt(900_299), // + 1000 * 0.9 / 3
+						&r.delegators[0]: sdkmath.NewInt(0),       // staking balance 0 (no active delegation for auto-delegate)
+						&r.delegators[1]: sdkmath.NewInt(900_299), // 900k original + 1000 * 0.9 / 2.4 ≈ 299 auto-delegated
 					})
+					// delegators[0] receives 366 as liquid: 1000 (FundAccount) + 366 (PSE reward) = 1366
+					// undelegated 1,100,000 tokens are in unbonding queue, not liquid
+					balance := r.testApp.BankKeeper.GetBalance(r.ctx, r.delegators[0], sdk.DefaultBondDenom)
+					r.requireT.Equal(sdkmath.NewInt(1366), balance.Amount)
 				},
-				// + 1000 * 1.1 / 3 (from user's share) + 2 (from rounding)
-				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(366+2)) },
+				// only rounding leftover goes to community pool (no forfeited rewards)
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2)) },
 				func(r *runEnv) { assertScoreResetAction(r) },
 			},
 		},
