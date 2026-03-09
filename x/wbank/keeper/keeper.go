@@ -146,7 +146,7 @@ func (k BaseKeeperWrapper) InputOutputCoins(
 			return err
 		}
 		if k.isSmartContract(ctx, addr) {
-			ctx = cwasmtypes.WithSmartContractRecipient(ctx, output.Address)
+			ctx = cwasmtypes.WithSmartContractRecipient(ctx, addr.String())
 		}
 	}
 

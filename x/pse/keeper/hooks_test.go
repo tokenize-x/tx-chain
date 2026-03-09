@@ -16,6 +16,11 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
+// TODO revise this logic for distribution id and genesis state
+// This is a temporary distribution id for tests to pass, it should be handled properly
+// in its own task.
+const tempDistributionID = uint64(0)
+
 func TestKeeper_Hooks(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -199,6 +204,15 @@ func TestKeeper_Hooks(t *testing.T) {
 				requireT: requireT,
 			}
 
+			err := testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+				{
+					// TODO revise this logic for distribution id
+					Timestamp: tempDistributionID,
+					ID:        tempDistributionID,
+				},
+			})
+			requireT.NoError(err)
+
 			// add validators.
 			for range 4 {
 				validatorOperator, _ := testApp.GenAccount(ctx)
@@ -241,8 +255,8 @@ type runEnv struct {
 }
 
 func assertScoreAction(r *runEnv, delAddr sdk.AccAddress, expectedScore sdkmath.Int) {
-	score, err := r.testApp.PSEKeeper.AccountScoreSnapshot.Get(
-		r.ctx, delAddr,
+	score, err := r.testApp.PSEKeeper.GetDelegatorScore(
+		r.ctx, tempDistributionID, delAddr,
 	)
 	r.requireT.NoError(err)
 	r.requireT.Equal(expectedScore, score)
@@ -271,17 +285,19 @@ func assertCommunityPoolBalanceAction(r *runEnv, expectedBalance sdkmath.Int) {
 }
 
 func assertScoreResetAction(r *runEnv) {
-	err := r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, nil,
-		func(key sdk.AccAddress, value sdkmath.Int) (bool, error) {
+	scoreRanger := collections.NewPrefixedPairRange[uint64, sdk.AccAddress](tempDistributionID)
+	err := r.testApp.PSEKeeper.AccountScoreSnapshot.Walk(r.ctx, scoreRanger,
+		func(key collections.Pair[uint64, sdk.AccAddress], value sdkmath.Int) (bool, error) {
 			r.requireT.Equal(sdkmath.NewInt(0), value)
 			return false, nil
 		})
 	r.requireT.NoError(err)
 
 	blockTimeUnixSeconds := r.ctx.BlockTime().Unix()
-	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, nil,
+	entriesRanger := collections.NewPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](tempDistributionID)
+	err = r.testApp.PSEKeeper.DelegationTimeEntries.Walk(r.ctx, entriesRanger,
 		func(
-			key collections.Pair[sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry,
+			key collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress], value types.DelegationTimeEntry,
 		) (bool, error) {
 			r.requireT.Equal(blockTimeUnixSeconds, value.LastChangedUnixSec)
 			return false, nil
@@ -354,8 +370,11 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 	mintAndSendToPSECommunityClearingAccount(r, amount)
 	bondDenom, err := r.testApp.StakingKeeper.BondDenom(r.ctx)
 	r.requireT.NoError(err)
-	scheduledAt := r.ctx.BlockTime().Unix()
-	err = r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, bondDenom, amount, uint64(scheduledAt))
+	scheduledDistribution := types.ScheduledDistribution{
+		Timestamp: uint64(r.ctx.BlockTime().Unix()),
+		ID:        tempDistributionID,
+	}
+	err = r.testApp.PSEKeeper.DistributeCommunityPSE(r.ctx, bondDenom, amount, scheduledDistribution)
 	r.requireT.NoError(err)
 }
 

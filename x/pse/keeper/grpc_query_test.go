@@ -60,12 +60,14 @@ func TestQueryScore_WithAccumulatedScore(t *testing.T) {
 	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 	queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
+	distributionID := uint64(0) // TODO review this
+
 	// Generate delegator address
 	delAddr := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 	// Set an accumulated score in the snapshot
 	expectedScore := sdkmath.NewInt(1000000)
-	err := testApp.PSEKeeper.AccountScoreSnapshot.Set(ctx, delAddr, expectedScore)
+	err := testApp.PSEKeeper.SetDelegatorScore(ctx, distributionID, delAddr, expectedScore)
 	requireT.NoError(err)
 
 	// Query score
@@ -138,6 +140,7 @@ func TestQueryScore_AccumulatedPlusCurrentPeriod(t *testing.T) {
 	testApp := simapp.New()
 	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 	queryService := keeper.NewQueryService(testApp.PSEKeeper)
+	distributionID := uint64(0) // TODO review this
 
 	// Create validator
 	validatorOperator, _ := testApp.GenAccount(ctx)
@@ -165,7 +168,7 @@ func TestQueryScore_AccumulatedPlusCurrentPeriod(t *testing.T) {
 
 	// Set accumulated score from previous periods
 	accumulatedScore := sdkmath.NewInt(10000000)
-	err = testApp.PSEKeeper.AccountScoreSnapshot.Set(ctx, delAddr, accumulatedScore)
+	err = testApp.PSEKeeper.SetDelegatorScore(ctx, distributionID, delAddr, accumulatedScore)
 	requireT.NoError(err)
 
 	// Advance time by 1 hour
