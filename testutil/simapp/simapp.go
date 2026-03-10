@@ -48,7 +48,10 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
 )
 
-const appHash = "sim-app-hash"
+const (
+	appHash    = "sim-app-hash"
+	nodeDBName = "application"
+)
 
 // IgnoredModulesForExport defines module names that should be ignored in entire process.
 var IgnoredModulesForExport = map[string]struct{}{
@@ -443,6 +446,8 @@ func GetModulesToExport() []string {
 
 // ParseExportedGenesisAndApp parses the exported genesis and application state from a val/full node
 // and returns the application instance and the exported genesis as a bytes buffer.
+// The node's database is copied to a temporary directory so that the test can freely
+// call FinalizeBlock + Commit without mutating the original node data.
 func ParseExportedGenesisAndApp(nodeAppDir, exportedGenesisPath string) (*app.App, bytes.Buffer, error) {
 	sdkConfigOnce.Do(func() {
 		network, err := config.NetworkConfigByChainID(constant.ChainIDDev)
@@ -459,10 +464,17 @@ func ParseExportedGenesisAndApp(nodeAppDir, exportedGenesisPath string) (*app.Ap
 	}
 
 	nodeDbDir := filepath.Join(nodeAppDir, "data")
-	var err error
-	settings.db, err = dbm.NewDB("application", dbm.GoLevelDBBackend, nodeDbDir)
+
+	// Copy the application DB to a temporary directory so commits during the test
+	// do not permanently modify the node's real database.
+	tmpDbDir, err := copyNodeAppDB(nodeDbDir)
 	if err != nil {
-		return nil, bytes.Buffer{}, errors.Wrapf(err, "failed to open node DB at %s", nodeDbDir)
+		return nil, bytes.Buffer{}, errors.Wrap(err, "failed to copy node app DB to temp dir")
+	}
+
+	settings.db, err = dbm.NewDB(nodeDBName, dbm.GoLevelDBBackend, tmpDbDir)
+	if err != nil {
+		return nil, bytes.Buffer{}, errors.Wrapf(err, "failed to open copied node DB at %s", tmpDbDir)
 	}
 
 	var exportBuf bytes.Buffer
@@ -484,6 +496,26 @@ func ParseExportedGenesisAndApp(nodeAppDir, exportedGenesisPath string) (*app.Ap
 	})
 
 	return chainNodeApp, exportBuf, err
+}
+
+// copyNodeAppDB copies the application LevelDB from nodeDbDir into a new
+// temporary directory and returns that directory's path.  The caller gets a
+// writable, isolated snapshot of the DB so that operations like Commit() and
+// RollbackToVersion() never touch the original node data.
+func copyNodeAppDB(nodeDbDir string) (string, error) {
+	tmpDir, err := os.MkdirTemp("", "tx-chain-export-test-db-*")
+	if err != nil {
+		return "", err
+	}
+
+	src := filepath.Join(nodeDbDir, nodeDBName+dbm.DBFileSuffix)
+	dst := filepath.Join(tmpDir, nodeDBName+dbm.DBFileSuffix)
+
+	if err = os.CopyFS(dst, os.DirFS(src)); err != nil {
+		return "", errors.Wrapf(err, "failed to copy node DB from %s to %s", src, dst)
+	}
+
+	return tmpDir, nil
 }
 
 func tempDir() string {
