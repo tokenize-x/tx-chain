@@ -213,6 +213,16 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 			return false, err
 		}
 
+		// Fairness bonus: credit the next distribution's score for the reward tokens
+		// from distribution start to now. This normalizes batch processing order.
+		elapsed := sdkCtx.BlockTime().Unix() - int64(ongoing.Timestamp)
+		if elapsed > 0 && distributedAmount.IsPositive() {
+			bonusScore := distributedAmount.MulRaw(elapsed)
+			if err := k.addToScore(ctx, ongoingID+1, item.delAddr, bonusScore); err != nil {
+				return false, err
+			}
+		}
+
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
 			DelegatorAddress: item.delAddr.String(),
 			Score:            item.score,

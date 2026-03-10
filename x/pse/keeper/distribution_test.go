@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -1178,6 +1179,134 @@ func TestEdgeCase_ScheduleUpdateWithPastIDsRejected(t *testing.T) {
 		{ID: 3, Timestamp: uint64(r.ctx.BlockTime().Unix()) + 3600},
 	})
 	requireT.NoError(err)
+}
+
+// TestEdgeCase_Phase2FairnessBonus verifies that after Phase 2 auto-delegates reward tokens,
+// a bonus score of `rewardAmount × (blockTime - distributionTimestamp)` is added to the
+// next distribution's score snapshot. This ensures delegators processed in later batches
+// aren't disadvantaged compared to those processed earlier.
+//
+// Test Flow: delegate -> wait 8s -> start distribution -> Phase 1 -> wait 4s -> Phase 2 -> verify bonus score
+func TestEdgeCase_Phase2FairnessBonus(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	r := &runEnv{
+		testApp:       testApp,
+		ctx:           ctx,
+		requireT:      requireT,
+		currentDistID: firstDistributionID,
+	}
+
+	// Add validators.
+	for range 3 {
+		validatorOperator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		validator, err := testApp.AddValidator(
+			ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil,
+		)
+		requireT.NoError(err)
+		r.validators = append(r.validators, sdk.MustValAddressFromBech32(validator.GetOperator()))
+	}
+
+	// Add delegators.
+	for range 2 {
+		delegator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		r.delegators = append(r.delegators, delegator)
+	}
+
+	err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: firstDistributionID, Timestamp: firstDistributionID},
+	})
+	requireT.NoError(err)
+
+	// T=0s: Delegate.
+	delegateAction(r, r.delegators[0], r.validators[0], 1_100_000)
+	delegateAction(r, r.delegators[1], r.validators[0], 900_000)
+
+	// T=8s: Accumulate score.
+	waitAction(r, time.Second*8)
+
+	// Start ongoing distribution at T=8s.
+	startOngoingDistributionAction(r, sdkmath.NewInt(1000))
+	distTimestamp := r.ctx.BlockTime().Unix()
+
+	// Run Phase 1 to completion.
+	for {
+		done := runPhase1BatchAction(r)
+		if done {
+			break
+		}
+	}
+
+	// Advance 4s so elapsed = 4 when Phase 2 runs.
+	waitAction(r, time.Second*4)
+
+	// Capture scores BEFORE Phase 2 for nextID.
+	nextID := r.currentDistID + 1
+	scoreBefore0, err := testApp.PSEKeeper.GetDelegatorScore(r.ctx, nextID, r.delegators[0])
+	if errors.Is(err, collections.ErrNotFound) {
+		scoreBefore0 = sdkmath.NewInt(0)
+	} else {
+		requireT.NoError(err)
+	}
+	scoreBefore1, err := testApp.PSEKeeper.GetDelegatorScore(r.ctx, nextID, r.delegators[1])
+	if errors.Is(err, collections.ErrNotFound) {
+		scoreBefore1 = sdkmath.NewInt(0)
+	} else {
+		requireT.NoError(err)
+	}
+
+	// Run Phase 2 (distributes rewards and adds fairness bonus).
+	ongoing, err := testApp.PSEKeeper.OngoingDistribution.Get(r.ctx)
+	requireT.NoError(err)
+	bondDenom, err := testApp.StakingKeeper.BondDenom(r.ctx)
+	requireT.NoError(err)
+	for {
+		done, err := testApp.PSEKeeper.ProcessPhase2TokenDistribution(r.ctx, ongoing, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Verify bonus scores were added to nextID.
+	scoreAfter0, err := testApp.PSEKeeper.GetDelegatorScore(r.ctx, nextID, r.delegators[0])
+	requireT.NoError(err)
+	scoreAfter1, err := testApp.PSEKeeper.GetDelegatorScore(r.ctx, nextID, r.delegators[1])
+	requireT.NoError(err)
+
+	scoreAdded0 := scoreAfter0.Sub(scoreBefore0)
+	scoreAdded1 := scoreAfter1.Sub(scoreBefore1)
+
+	elapsed := r.ctx.BlockTime().Unix() - distTimestamp
+
+	// Phase 2 auto-delegation triggers AfterDelegationModified hook (Scenario 2):
+	// hookScore = oldTokens × (blockTime - entry.lastChanged), where lastChanged = distTimestamp.
+	hookScore0 := sdkmath.NewInt(1_100_000).MulRaw(elapsed)
+	hookScore1 := sdkmath.NewInt(900_000).MulRaw(elapsed)
+
+	// Fairness bonus = distributedAmount × elapsed.
+	// TotalScore = 1,100,000×8 + 900,000×8 + genesis(1,000,000×8) + 3 vals(10×8) = 24,000,240
+	// reward[0] = 1000 × 8,800,000 / 24,000,240 = 366
+	// reward[1] = 1000 × 7,200,000 / 24,000,240 = 299
+	fairnessBonus0 := sdkmath.NewInt(366).MulRaw(elapsed)
+	fairnessBonus1 := sdkmath.NewInt(299).MulRaw(elapsed)
+
+	// Total score added = hook score + fairness bonus.
+	requireT.Equal(hookScore0.Add(fairnessBonus0), scoreAdded0,
+		"delegator[0] score delta should include hook score + fairness bonus")
+	requireT.Equal(hookScore1.Add(fairnessBonus1), scoreAdded1,
+		"delegator[1] score delta should include hook score + fairness bonus")
 }
 
 func TestDistribution_EndBlockFailure(t *testing.T) {
