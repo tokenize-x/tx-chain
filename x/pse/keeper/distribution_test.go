@@ -8,6 +8,8 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -1033,6 +1035,149 @@ func TestEdgeCase_ConsecutiveDistributions(t *testing.T) {
 	// Entries should now exist under distID=3.
 	assertEntryExistsUnderDistIDAction(r, 3, r.delegators[0], r.validators[0])
 	assertEntryExistsUnderDistIDAction(r, 3, r.delegators[1], r.validators[0])
+}
+
+// TestEdgeCase_ScheduleUpdateRejectedDuringOngoing verifies that UpdateDistributionSchedule
+// rejects schedule updates while a multi-block distribution is in progress.
+func TestEdgeCase_ScheduleUpdateRejectedDuringOngoing(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	r := &runEnv{
+		testApp:       testApp,
+		ctx:           ctx,
+		requireT:      requireT,
+		currentDistID: firstDistributionID,
+	}
+
+	// Add validators.
+	for range 3 {
+		validatorOperator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		validator, err := testApp.AddValidator(
+			ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil,
+		)
+		requireT.NoError(err)
+		r.validators = append(r.validators, sdk.MustValAddressFromBech32(validator.GetOperator()))
+	}
+
+	// Add delegator.
+	delegator, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(
+		ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+	))
+	r.delegators = append(r.delegators, delegator)
+
+	err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: firstDistributionID, Timestamp: firstDistributionID},
+	})
+	requireT.NoError(err)
+
+	delegateAction(r, r.delegators[0], r.validators[0], 1_000_000)
+	waitAction(r, time.Second*8)
+
+	// Start ongoing distribution.
+	startOngoingDistributionAction(r, sdkmath.NewInt(1000))
+
+	// Attempt to update schedule while distribution is ongoing.
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	err = testApp.PSEKeeper.UpdateDistributionSchedule(r.ctx, authority, []types.ScheduledDistribution{
+		{ID: 2, Timestamp: uint64(r.ctx.BlockTime().Unix()) + 3600},
+	})
+	requireT.ErrorIs(err, types.ErrOngoingDistribution)
+
+	// Finish distribution and verify schedule update succeeds after.
+	finishDistributionAction(r)
+
+	err = testApp.PSEKeeper.UpdateDistributionSchedule(r.ctx, authority, []types.ScheduledDistribution{
+		{ID: 2, Timestamp: uint64(r.ctx.BlockTime().Unix()) + 3600},
+	})
+	requireT.NoError(err)
+}
+
+// TestEdgeCase_ScheduleUpdateWithPastIDsRejected verifies that UpdateDistributionSchedule
+// rejects schedules with IDs that have already been processed (ID < LastProcessedDistributionID + 1).
+func TestEdgeCase_ScheduleUpdateWithPastIDsRejected(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	r := &runEnv{
+		testApp:       testApp,
+		ctx:           ctx,
+		requireT:      requireT,
+		currentDistID: firstDistributionID,
+	}
+
+	// Add validators.
+	for range 3 {
+		validatorOperator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		validator, err := testApp.AddValidator(
+			ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil,
+		)
+		requireT.NoError(err)
+		r.validators = append(r.validators, sdk.MustValAddressFromBech32(validator.GetOperator()))
+	}
+
+	// Add delegator.
+	delegator, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(
+		ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+	))
+	r.delegators = append(r.delegators, delegator)
+
+	err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: firstDistributionID, Timestamp: firstDistributionID},
+	})
+	requireT.NoError(err)
+
+	delegateAction(r, r.delegators[0], r.validators[0], 1_000_000)
+	waitAction(r, time.Second*8)
+
+	// Run distribution ID=1.
+	endBlockerDistributeAction(r, sdkmath.NewInt(1000))
+	assertLastProcessedDistributionIDAction(r, 1)
+
+	// Schedule distribution ID=2, run it.
+	err = testApp.PSEKeeper.SaveDistributionSchedule(r.ctx, []types.ScheduledDistribution{
+		{ID: 2, Timestamp: uint64(r.ctx.BlockTime().Unix())},
+	})
+	requireT.NoError(err)
+	waitAction(r, time.Second*8)
+	endBlockerDistributeAction(r, sdkmath.NewInt(1000))
+	assertLastProcessedDistributionIDAction(r, 2)
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	// Reject: ID=1 (already processed).
+	err = testApp.PSEKeeper.UpdateDistributionSchedule(r.ctx, authority, []types.ScheduledDistribution{
+		{ID: 1, Timestamp: uint64(r.ctx.BlockTime().Unix()) + 3600},
+	})
+	requireT.ErrorIs(err, types.ErrInvalidInput)
+
+	// Reject: ID=2 (already processed).
+	err = testApp.PSEKeeper.UpdateDistributionSchedule(r.ctx, authority, []types.ScheduledDistribution{
+		{ID: 2, Timestamp: uint64(r.ctx.BlockTime().Unix()) + 3600},
+	})
+	requireT.ErrorIs(err, types.ErrInvalidInput)
+
+	// Accept: ID=3 (next valid ID).
+	err = testApp.PSEKeeper.UpdateDistributionSchedule(r.ctx, authority, []types.ScheduledDistribution{
+		{ID: 3, Timestamp: uint64(r.ctx.BlockTime().Unix()) + 3600},
+	})
+	requireT.NoError(err)
 }
 
 func TestDistribution_EndBlockFailure(t *testing.T) {
