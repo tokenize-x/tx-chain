@@ -840,6 +840,92 @@ func TestEdgeCase_DelegationChangeDuringPhase1(t *testing.T) {
 	assertScoreResetAction(r)
 }
 
+// TestEdgeCase_NewDelegatorDuringOngoingDistribution verifies that a new delegator
+// who stakes for the first time while a distribution is ongoing:
+//   - Gets entry created under nextID (not ongoingID) via hook Scenario 3
+//   - Has zero score for the ongoing distribution
+//   - Receives zero rewards from the current distribution
+//   - Does not affect existing delegators' rewards
+//
+// Test Flow: delegate (2 users) -> wait 8s -> start distribution -> new user delegates -> finish distribution
+func TestEdgeCase_NewDelegatorDuringOngoingDistribution(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	r := &runEnv{
+		testApp:       testApp,
+		ctx:           ctx,
+		requireT:      requireT,
+		currentDistID: firstDistributionID,
+	}
+
+	// Add validators.
+	for range 3 {
+		validatorOperator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		validator, err := testApp.AddValidator(
+			ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil,
+		)
+		requireT.NoError(err)
+		r.validators = append(r.validators, sdk.MustValAddressFromBech32(validator.GetOperator()))
+	}
+
+	// Add delegators (3: two existing + one new who will delegate mid-distribution).
+	for range 3 {
+		delegator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		r.delegators = append(r.delegators, delegator)
+	}
+
+	err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: firstDistributionID, Timestamp: firstDistributionID},
+	})
+	requireT.NoError(err)
+
+	// Only delegators[0] and delegators[1] delegate initially.
+	delegateAction(r, r.delegators[0], r.validators[0], 1_100_000)
+	delegateAction(r, r.delegators[1], r.validators[0], 900_000)
+	waitAction(r, time.Second*8)
+
+	// Start ongoing distribution.
+	startOngoingDistributionAction(r, sdkmath.NewInt(1000))
+
+	// delegators[2] delegates for the first time DURING ongoing distribution.
+	// Hook Scenario 3: no entry under ongoingID or nextID → create under nextID.
+	delegateAction(r, r.delegators[2], r.validators[0], 500_000)
+
+	// Verify: delegators[2] has NO entry under ongoingID=1.
+	assertEntryNotExistsUnderDistIDAction(r, r.currentDistID, r.delegators[2], r.validators[0])
+
+	// Verify: delegators[2] has entry under nextID=2.
+	nextID := r.currentDistID + 1
+	assertEntryExistsUnderDistIDAction(r, nextID, r.delegators[2], r.validators[0])
+
+	// Verify: delegators[2] has no score snapshot for the ongoing distribution.
+	_, err = testApp.PSEKeeper.GetDelegatorScore(r.ctx, r.currentDistID, r.delegators[2])
+	requireT.ErrorIs(err, collections.ErrNotFound, "new delegator should have no score for ongoing distribution")
+
+	// Finish distribution (Phase 1 + Phase 2 + cleanup).
+	finishDistributionAction(r)
+
+	// Verify: delegators[2] received zero rewards (staking balance = initial delegation only).
+	assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+		&r.delegators[0]: sdkmath.NewInt(1_100_366), // 1,100,000 + 366 reward
+		&r.delegators[1]: sdkmath.NewInt(900_299),   // 900,000 + 299 reward
+		&r.delegators[2]: sdkmath.NewInt(500_000),   // 500,000 only, no reward
+	})
+	assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2))
+	assertScoreResetAction(r)
+}
+
 func TestDistribution_EndBlockFailure(t *testing.T) {
 	requireT := require.New(t)
 
