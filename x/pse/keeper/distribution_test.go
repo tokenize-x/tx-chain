@@ -926,6 +926,115 @@ func TestEdgeCase_NewDelegatorDuringOngoingDistribution(t *testing.T) {
 	assertScoreResetAction(r)
 }
 
+// TestEdgeCase_ConsecutiveDistributions verifies that LastProcessedDistributionID
+// advances correctly across consecutive distributions (0 → 1 → 2), and that
+// entries are properly migrated between distribution IDs after each round.
+//
+// Test Flow: delegate -> wait -> distribute (ID=1) -> wait -> distribute (ID=2) -> verify state
+func TestEdgeCase_ConsecutiveDistributions(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	r := &runEnv{
+		testApp:       testApp,
+		ctx:           ctx,
+		requireT:      requireT,
+		currentDistID: firstDistributionID,
+	}
+
+	// Add validators.
+	for range 3 {
+		validatorOperator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		validator, err := testApp.AddValidator(
+			ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil,
+		)
+		requireT.NoError(err)
+		r.validators = append(r.validators, sdk.MustValAddressFromBech32(validator.GetOperator()))
+	}
+
+	// Add delegators.
+	for range 2 {
+		delegator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		r.delegators = append(r.delegators, delegator)
+	}
+
+	err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: firstDistributionID, Timestamp: firstDistributionID},
+	})
+	requireT.NoError(err)
+
+	// Before any distribution: LastProcessedDistributionID should not be set.
+	assertLastProcessedDistributionIDAction(r, 0)
+
+	// T=0s: Delegate.
+	delegateAction(r, r.delegators[0], r.validators[0], 1_100_000)
+	delegateAction(r, r.delegators[1], r.validators[0], 900_000)
+
+	// Verify entries exist under distID=1.
+	assertEntryExistsUnderDistIDAction(r, 1, r.delegators[0], r.validators[0])
+	assertEntryExistsUnderDistIDAction(r, 1, r.delegators[1], r.validators[0])
+
+	// T=8s: Accumulate score.
+	waitAction(r, time.Second*8)
+
+	// Distribution 1 (ID=1): run full distribution via EndBlocker path.
+	endBlockerDistributeAction(r, sdkmath.NewInt(1000))
+
+	// After distribution 1: LastProcessedDistributionID = 1.
+	assertLastProcessedDistributionIDAction(r, 1)
+	assertOngoingDistributionNotExistsAction(r)
+
+	// Verify rewards from distribution 1.
+	assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+		&r.delegators[0]: sdkmath.NewInt(1_100_366), // 1,100,000 + 366 reward
+		&r.delegators[1]: sdkmath.NewInt(900_299),   // 900,000 + 299 reward
+	})
+	assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2))
+	assertScoreResetAction(r)
+
+	// Entries should now exist under distID=2 (migrated by Phase 1).
+	assertEntryExistsUnderDistIDAction(r, 2, r.delegators[0], r.validators[0])
+	assertEntryExistsUnderDistIDAction(r, 2, r.delegators[1], r.validators[0])
+
+	// Schedule distribution 2.
+	err = testApp.PSEKeeper.SaveDistributionSchedule(r.ctx, []types.ScheduledDistribution{
+		{ID: 2, Timestamp: uint64(r.ctx.BlockTime().Unix())},
+	})
+	requireT.NoError(err)
+
+	// T=16s: Accumulate more score.
+	waitAction(r, time.Second*8)
+
+	// Distribution 2 (ID=2).
+	endBlockerDistributeAction(r, sdkmath.NewInt(1000))
+
+	// After distribution 2: LastProcessedDistributionID = 2.
+	assertLastProcessedDistributionIDAction(r, 2)
+	assertOngoingDistributionNotExistsAction(r)
+
+	// Verify rewards from distribution 2 (cumulative: initial + dist1 reward + dist2 reward).
+	assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+		&r.delegators[0]: sdkmath.NewInt(1_100_732), // 1,100,366 + 366
+		&r.delegators[1]: sdkmath.NewInt(900_598),   // 900,299 + 299
+	})
+	assertCommunityPoolBalanceAction(r, sdkmath.NewInt(4))
+	assertScoreResetAction(r)
+
+	// Entries should now exist under distID=3.
+	assertEntryExistsUnderDistIDAction(r, 3, r.delegators[0], r.validators[0])
+	assertEntryExistsUnderDistIDAction(r, 3, r.delegators[1], r.validators[0])
+}
+
 func TestDistribution_EndBlockFailure(t *testing.T) {
 	requireT := require.New(t)
 

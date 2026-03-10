@@ -510,6 +510,19 @@ func assertEntryNotExistsUnderDistIDAction(r *runEnv, distID uint64, delAddr sdk
 	r.requireT.ErrorIs(err, collections.ErrNotFound, "entry should NOT exist under distID %d", distID)
 }
 
+// assertLastProcessedDistributionIDAction verifies the LastProcessedDistributionID matches expected value.
+func assertLastProcessedDistributionIDAction(r *runEnv, expected uint64) {
+	lastProcessed, err := r.testApp.PSEKeeper.LastProcessedDistributionID.Get(r.ctx)
+	r.requireT.NoError(err)
+	r.requireT.Equal(expected, lastProcessed)
+}
+
+// assertOngoingDistributionNotExistsAction verifies no OngoingDistribution is set.
+func assertOngoingDistributionNotExistsAction(r *runEnv) {
+	_, err := r.testApp.PSEKeeper.OngoingDistribution.Get(r.ctx)
+	r.requireT.ErrorIs(err, collections.ErrNotFound, "OngoingDistribution should not exist")
+}
+
 func mintAndSendCoin(r *runEnv, recipient sdk.AccAddress, coins sdk.Coins) {
 	r.requireT.NoError(
 		r.testApp.BankKeeper.MintCoins(r.ctx, minttypes.ModuleName, coins),
