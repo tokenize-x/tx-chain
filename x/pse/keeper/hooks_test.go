@@ -445,6 +445,71 @@ func endBlockerDistributeAction(r *runEnv, amount sdkmath.Int) {
 	r.currentDistID++
 }
 
+// startOngoingDistributionAction sets up OngoingDistribution without running any phases.
+// This simulates the state after ProcessNextDistribution starts a distribution but before Phase 1 runs.
+func startOngoingDistributionAction(r *runEnv, amount sdkmath.Int) {
+	mintAndSendToPSECommunityClearingAccount(r, amount)
+	scheduledDistribution := types.ScheduledDistribution{
+		Timestamp: uint64(r.ctx.BlockTime().Unix()),
+		ID:        r.currentDistID,
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          amount,
+		}},
+	}
+	err := r.testApp.PSEKeeper.OngoingDistribution.Set(r.ctx, scheduledDistribution)
+	r.requireT.NoError(err)
+}
+
+// runPhase1BatchAction runs a single batch of Phase 1 score conversion. Returns true if Phase 1 is complete.
+func runPhase1BatchAction(r *runEnv) bool {
+	ongoing, err := r.testApp.PSEKeeper.OngoingDistribution.Get(r.ctx)
+	r.requireT.NoError(err)
+	done, err := r.testApp.PSEKeeper.ProcessPhase1ScoreConversion(r.ctx, ongoing)
+	r.requireT.NoError(err)
+	return done
+}
+
+// finishDistributionAction runs remaining Phase 1 + all Phase 2 + advances currentDistID.
+func finishDistributionAction(r *runEnv) {
+	ongoing, err := r.testApp.PSEKeeper.OngoingDistribution.Get(r.ctx)
+	r.requireT.NoError(err)
+
+	// Finish Phase 1.
+	for {
+		done, err := r.testApp.PSEKeeper.ProcessPhase1ScoreConversion(r.ctx, ongoing)
+		r.requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Run Phase 2.
+	bondDenom, err := r.testApp.StakingKeeper.BondDenom(r.ctx)
+	r.requireT.NoError(err)
+	for {
+		done, err := r.testApp.PSEKeeper.ProcessPhase2TokenDistribution(r.ctx, ongoing, bondDenom)
+		r.requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	r.currentDistID++
+}
+
+// assertEntryExistsUnderDistIDAction verifies a DelegationTimeEntry exists under the given distID.
+func assertEntryExistsUnderDistIDAction(r *runEnv, distID uint64, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
+	_, err := r.testApp.PSEKeeper.GetDelegationTimeEntry(r.ctx, distID, valAddr, delAddr)
+	r.requireT.NoError(err, "entry should exist under distID %d", distID)
+}
+
+// assertEntryNotExistsUnderDistIDAction verifies a DelegationTimeEntry does NOT exist under the given distID.
+func assertEntryNotExistsUnderDistIDAction(r *runEnv, distID uint64, delAddr sdk.AccAddress, valAddr sdk.ValAddress) {
+	_, err := r.testApp.PSEKeeper.GetDelegationTimeEntry(r.ctx, distID, valAddr, delAddr)
+	r.requireT.ErrorIs(err, collections.ErrNotFound, "entry should NOT exist under distID %d", distID)
+}
+
 func mintAndSendCoin(r *runEnv, recipient sdk.AccAddress, coins sdk.Coins) {
 	r.requireT.NoError(
 		r.testApp.BankKeeper.MintCoins(r.ctx, minttypes.ModuleName, coins),

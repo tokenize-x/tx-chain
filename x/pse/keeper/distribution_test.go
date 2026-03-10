@@ -732,6 +732,114 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 	}
 }
 
+// TestEdgeCase_DelegationChangeDuringPhase1 verifies that when a delegator changes
+// their delegation while Phase 1 (score conversion) is in progress, the hook correctly:
+//   - Splits the score at the distribution timestamp (ongoing score into ongoingID, post-dist score into nextID)
+//   - Removes the entry from ongoingID to prevent double-scoring by Phase 1 batch
+//   - Creates new entry under nextID with updated shares
+//
+// Test Flow: delegate -> wait 8s -> start distribution -> delegate again (before Phase 1 batch processing)
+func TestEdgeCase_DelegationChangeDuringPhase1(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	r := &runEnv{
+		testApp:       testApp,
+		ctx:           ctx,
+		requireT:      requireT,
+		currentDistID: firstDistributionID,
+	}
+
+	// Add validators.
+	for range 3 {
+		validatorOperator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		validator, err := testApp.AddValidator(
+			ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil,
+		)
+		requireT.NoError(err)
+		r.validators = append(r.validators, sdk.MustValAddressFromBech32(validator.GetOperator()))
+	}
+
+	// Add delegators.
+	for range 3 {
+		delegator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		r.delegators = append(r.delegators, delegator)
+	}
+
+	err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: firstDistributionID, Timestamp: firstDistributionID},
+	})
+	requireT.NoError(err)
+
+	// T=0s: Both delegators delegate.
+	delegateAction(r, r.delegators[0], r.validators[0], 1_100_000)
+	delegateAction(r, r.delegators[1], r.validators[0], 900_000)
+
+	// T=8s: Advance time for score accumulation.
+	waitAction(r, time.Second*8)
+
+	// Start ongoing distribution (sets OngoingDistribution with distTimestamp=now).
+	// Entries exist under ongoingID=1.
+	startOngoingDistributionAction(r, sdkmath.NewInt(1000))
+
+	// delegators[0] changes delegation BEFORE Phase 1 runs any batches.
+	// AfterDelegationModified hook should trigger with Scenario-1 (migrateOngoingEntry):
+	delegateAction(r, r.delegators[0], r.validators[0], 50_000)
+
+	// Verify: delegators[0] entry removed from ongoingID=1 (migrateOngoingEntry cleaned it up).
+	assertEntryNotExistsUnderDistIDAction(r, r.currentDistID, r.delegators[0], r.validators[0])
+
+	// Verify: delegators[0] entry exists under nextID=2 (hook created it with new shares).
+	nextID := r.currentDistID + 1
+	assertEntryExistsUnderDistIDAction(r, nextID, r.delegators[0], r.validators[0])
+	// Verify: delegators[0] entry removed from ongoingID
+	assertEntryNotExistsUnderDistIDAction(r, r.currentDistID, r.delegators[0], r.validators[0])
+
+	// Verify: delegators[0] has score snapshot for ongoingID=1 from migrateOngoingEntry.
+	score0, err := testApp.PSEKeeper.GetDelegatorScore(r.ctx, r.currentDistID, r.delegators[0])
+	requireT.NoError(err)
+	requireT.Equal(sdkmath.NewInt(1_100_000*8), score0) // 1,100,000 tokens × 8 seconds
+
+	// Verify: delegators[1] entry still under ongoingID=1 (no delegation change, no hook fired).
+	assertEntryExistsUnderDistIDAction(r, r.currentDistID, r.delegators[1], r.validators[0])
+
+	// Run Phase 1 to completion to process remaining entries.
+	for {
+		done := runPhase1BatchAction(r)
+		if done {
+			break
+		}
+	}
+
+	// Verify both delegators have scores for ongoingID=1.
+	score1, err := testApp.PSEKeeper.GetDelegatorScore(r.ctx, r.currentDistID, r.delegators[1])
+	requireT.NoError(err)
+	requireT.True(score1.IsPositive(), "delegators[1] should have score from Phase 1 batch")
+
+	// Finish distribution (Phase 2 + cleanup).
+	finishDistributionAction(r)
+
+	// Verify rewards were auto-delegated: initial delegation + PSE reward.
+	assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+		&r.delegators[0]: sdkmath.NewInt(1_150_366), // 1,100,000 + 50,000 + 366 reward
+		&r.delegators[1]: sdkmath.NewInt(900_299),   // 900,000 + 299 reward
+	})
+	assertCommunityPoolBalanceAction(r, sdkmath.NewInt(2))
+
+	// Verify cleanup completed: scores cleared, entries migrated to nextID.
+	assertScoreResetAction(r)
+}
+
 func TestDistribution_EndBlockFailure(t *testing.T) {
 	requireT := require.New(t)
 
