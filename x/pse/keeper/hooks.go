@@ -78,9 +78,6 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 	if err != nil {
 		return err
 	}
-	if isExcluded {
-		return nil
-	}
 
 	blockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 
@@ -91,7 +88,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 	if ongoingFound {
-		handled, err := h.migrateOngoingEntry(ctx, ongoing, nextID, delAddr, valAddr, blockTime)
+		handled, err := h.migrateOngoingEntry(ctx, ongoing, nextID, delAddr, valAddr, blockTime, isExcluded)
 		if err != nil {
 			return err
 		}
@@ -110,7 +107,7 @@ func (h Hooks) AfterDelegationModified(ctx context.Context, delAddr sdk.AccAddre
 		if err != nil {
 			return err
 		}
-		if err := h.k.addToScore(ctx, nextID, delAddr, score); err != nil {
+		if err := h.k.addScoreForAddress(ctx, nextID, delAddr, score, isExcluded); err != nil {
 			return err
 		}
 		return h.k.SetDelegationTimeEntry(ctx, nextID, valAddr, delAddr, types.DelegationTimeEntry{
@@ -140,9 +137,6 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 	if err != nil {
 		return err
 	}
-	if isExcluded {
-		return nil
-	}
 
 	blockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 
@@ -152,7 +146,7 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		return err
 	}
 	if ongoingFound {
-		if _, err := h.migrateOngoingEntry(ctx, ongoing, nextID, delAddr, valAddr, blockTime); err != nil {
+		if _, err := h.migrateOngoingEntry(ctx, ongoing, nextID, delAddr, valAddr, blockTime, isExcluded); err != nil {
 			return err
 		}
 	}
@@ -164,7 +158,7 @@ func (h Hooks) BeforeDelegationRemoved(ctx context.Context, delAddr sdk.AccAddre
 		if err != nil {
 			return err
 		}
-		if err := h.k.addToScore(ctx, nextID, delAddr, score); err != nil {
+		if err := h.k.addScoreForAddress(ctx, nextID, delAddr, score, isExcluded); err != nil {
 			return err
 		}
 		return h.k.RemoveDelegationTimeEntry(ctx, nextID, valAddr, delAddr)
@@ -268,6 +262,7 @@ func (h Hooks) migrateOngoingEntry(
 	delAddr sdk.AccAddress,
 	valAddr sdk.ValAddress,
 	blockTime int64,
+	isExcluded bool,
 ) (bool, error) {
 	ongoingID := ongoing.ID
 	ongoingEntry, err := h.k.GetDelegationTimeEntry(ctx, ongoingID, valAddr, delAddr)
@@ -285,7 +280,7 @@ func (h Hooks) migrateOngoingEntry(
 	if err != nil {
 		return false, err
 	}
-	if err := h.k.addToScore(ctx, ongoingID, delAddr, ongoingScore); err != nil {
+	if err := h.k.addScoreForAddress(ctx, ongoingID, delAddr, ongoingScore, isExcluded); err != nil {
 		return false, err
 	}
 
@@ -298,7 +293,7 @@ func (h Hooks) migrateOngoingEntry(
 	if err != nil {
 		return false, err
 	}
-	if err := h.k.addToScore(ctx, nextID, delAddr, nextScore); err != nil {
+	if err := h.k.addScoreForAddress(ctx, nextID, delAddr, nextScore, isExcluded); err != nil {
 		return false, err
 	}
 

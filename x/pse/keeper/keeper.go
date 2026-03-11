@@ -43,6 +43,7 @@ type Keeper struct {
 	DistributedAmount           collections.Map[uint64, sdkmath.Int]
 	DistributionDisabled        collections.Item[bool]
 	LastProcessedDistributionID collections.Item[uint64]
+	ExcludedAddressScore        collections.Map[sdk.AccAddress, sdkmath.Int]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -127,6 +128,13 @@ func NewKeeper(
 			types.LastProcessedDistributionIDKey,
 			"last_processed_distribution_id",
 			collections.Uint64Value,
+		),
+		ExcludedAddressScore: collections.NewMap(
+			sb,
+			types.ExcludedAddressScoreKey,
+			"excluded_address_score",
+			sdk.AccAddressKey,
+			sdk.IntValue,
 		),
 	}
 

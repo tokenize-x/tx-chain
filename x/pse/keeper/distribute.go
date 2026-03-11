@@ -73,14 +73,12 @@ func (k Keeper) ProcessPhase1ScoreConversion(ctx context.Context, ongoing types.
 			return false, err
 		}
 
-		if !isExcluded {
-			score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
-			if err != nil {
-				return false, err
-			}
-			if err := k.addToScore(ctx, ongoingID, item.delAddr, score); err != nil {
-				return false, err
-			}
+		score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
+		if err != nil {
+			return false, err
+		}
+		if err := k.addScoreForAddress(ctx, ongoingID, item.delAddr, score, isExcluded); err != nil {
+			return false, err
 		}
 
 		// Migrate entry to nextID with same shares, reset lastChanged to distribution timestamp.

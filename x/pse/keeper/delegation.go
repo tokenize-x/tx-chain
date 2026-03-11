@@ -85,6 +85,30 @@ func (k Keeper) addToScore(
 	return k.SetDelegatorScore(ctx, distributionID, delAddr, lastScore.Add(score))
 }
 
+// addToExcludedScore atomically adds a score value to an excluded address's dedicated score store.
+func (k Keeper) addToExcludedScore(ctx context.Context, delAddr sdk.AccAddress, score sdkmath.Int) error {
+	if score.IsZero() {
+		return nil
+	}
+	current, err := k.ExcludedAddressScore.Get(ctx, delAddr)
+	if errors.Is(err, collections.ErrNotFound) {
+		current = sdkmath.NewInt(0)
+	} else if err != nil {
+		return err
+	}
+	return k.ExcludedAddressScore.Set(ctx, delAddr, current.Add(score))
+}
+
+// addScoreForAddress routes score to the appropriate store based on exclusion status.
+func (k Keeper) addScoreForAddress(
+	ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int, isExcluded bool,
+) error {
+	if isExcluded {
+		return k.addToExcludedScore(ctx, delAddr, score)
+	}
+	return k.addToScore(ctx, distributionID, delAddr, score)
+}
+
 // CalculateDelegatorScore calculates the current total score for a delegator.
 // This includes both the accumulated score snapshot (from previous periods)
 // and the current period score calculated on-demand from active delegations.

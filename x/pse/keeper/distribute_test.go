@@ -274,7 +274,8 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 
 	distributionID := uint64(1)
 
-	// Step 1: Address accumulates score - delegate and wait for score to build up
+	// Step 1: Delegate 100 tokens at t=0, wait 10s, delegate 1 more to trigger score calc.
+	// Score snapshot = 100 * 10 = 1000.
 	msg := &stakingtypes.MsgDelegate{
 		DelegatorAddress: delAddr.String(),
 		ValidatorAddress: valAddr.String(),
@@ -283,10 +284,8 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msg)
 	requireT.NoError(err)
 
-	// Advance time to accumulate score
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(10 * time.Second))
 
-	// Trigger score calculation by making another delegation change
 	msg2 := &stakingtypes.MsgDelegate{
 		DelegatorAddress: delAddr.String(),
 		ValidatorAddress: valAddr.String(),
@@ -295,37 +294,42 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msg2)
 	requireT.NoError(err)
 
-	// Verify score accumulated (should be positive)
-	resp1, err := queryService.Score(ctx, &types.QueryScoreRequest{
-		Address: delAddr.String(),
-	})
+	// Verify score = 1000
+	scoreBeforeExclusion, err := pseKeeper.GetDelegatorScore(ctx, distributionID, delAddr)
 	requireT.NoError(err)
-	score1 := resp1.Score
-	requireT.True(score1.IsPositive(), "Score should be positive after delegation and time passing")
-	t.Logf("Score after 10 seconds: %s", score1.String())
+	requireT.Equal(sdkmath.NewInt(1000), scoreBeforeExclusion)
+	t.Logf("Score before exclusion: %s", scoreBeforeExclusion.String())
 
-	// Step 2: Address added to excluded_list
+	// Step 2: Add to exclusion list.
+	// AccountScoreSnapshot(1000) should move to ExcludedAddressScore(1000).
+	// DelegationTimeEntries should be preserved.
 	err = pseKeeper.UpdateExcludedAddresses(ctx, authority, []string{delAddr.String()}, nil)
 	requireT.NoError(err)
 
-	// Step 3: Verify exclusion impact - score snapshot cleared and DelegationTimeEntry removed
-	_, err = queryService.Score(ctx, &types.QueryScoreRequest{
-		Address: delAddr.String(),
-	})
+	// Verify: score query returns 0 (grpc filter for excluded).
+	// Advance time so currentPeriodScore would be non-zero without the filter.
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(2 * time.Second))
+	resp, err := queryService.Score(ctx, &types.QueryScoreRequest{Address: delAddr.String()})
 	requireT.NoError(err)
-	// Note: Query returns zero score when no snapshot exists, not an error
+	requireT.True(resp.Score.IsZero(), "Score query should return 0 for excluded address even after time passes")
 
-	// Verify delegation still exists
-	delegation, err := stakingKeeper.GetDelegation(ctx, delAddr, valAddr)
+	// Verify: AccountScoreSnapshot cleared
+	_, err = pseKeeper.GetDelegatorScore(ctx, distributionID, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound, "AccountScoreSnapshot should be cleared on exclusion")
+
+	// Verify: ExcludedAddressScore has the accumulated score
+	excludedScore, err := pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
 	requireT.NoError(err)
-	requireT.NotNil(delegation, "Delegation should still exist")
+	requireT.Equal(sdkmath.NewInt(1000), excludedScore, "ExcludedAddressScore should have the original score")
 
-	// Verify DelegationTimeEntry was removed
+	// Verify: DelegationTimeEntry still exists (NOT removed)
 	_, err = pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
-	requireT.ErrorIs(err, collections.ErrNotFound, "DelegationTimeEntry should be removed for excluded address")
+	requireT.NoError(err, "DelegationTimeEntry should be preserved for excluded address")
 
-	// Step 4: Make delegation change while excluded - should NOT accumulate score
-	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(5 * time.Second))
+	// Step 3: Wait 3s more (2s already passed in query check above), make delegation change while excluded.
+	// Score from entry: 101 * 5 = 505 -> added to ExcludedAddressScore.
+	// ExcludedAddressScore = 1000 + 505 = 1505.
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(3 * time.Second))
 	msg3 := &stakingtypes.MsgDelegate{
 		DelegatorAddress: delAddr.String(),
 		ValidatorAddress: valAddr.String(),
@@ -334,14 +338,17 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msg3)
 	requireT.NoError(err)
 
-	// Verify still no score
-	resp, err := queryService.Score(ctx, &types.QueryScoreRequest{
-		Address: delAddr.String(),
-	})
+	excludedScore, err = pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
 	requireT.NoError(err)
-	requireT.True(resp.Score.IsZero(), "Excluded address should still have zero score after delegation change")
+	requireT.Equal(sdkmath.NewInt(1505), excludedScore, "ExcludedAddressScore should accumulate during exclusion")
+	t.Logf("ExcludedAddressScore after delegation change: %s", excludedScore.String())
 
-	// Step 5: Run distribution while address is excluded - should receive nothing
+	// Score query still returns 0
+	resp, err = queryService.Score(ctx, &types.QueryScoreRequest{Address: delAddr.String()})
+	requireT.NoError(err)
+	requireT.True(resp.Score.IsZero(), "Excluded address score query should still return 0")
+
+	// Step 4: Run distribution while excluded — should receive nothing.
 	bondDenom, err := stakingKeeper.BondDenom(ctx)
 	requireT.NoError(err)
 	amount := sdkmath.NewInt(1_000)
@@ -381,24 +388,27 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		"Excluded address should receive no rewards",
 	)
 
-	// After distribution, entries migrated from distributionID to distributionID+1.
-	// Save a new schedule so hooks and UpdateExcludedAddresses can find it.
+	// After distribution, entries migrated from distributionID=1 to distributionID=2.
 	distributionID++
 	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
 		{Timestamp: distributionID, ID: distributionID},
 	})
 	requireT.NoError(err)
 
-	// Step 6: Verify excluded delegator can fully undelegate after distribution
+	// Verify entry migrated to new distID
+	_, err = pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
+	requireT.NoError(err, "Entry should be migrated to distID=2 after Phase 1")
+
+	// Step 5: Fully undelegate while excluded.
 	msgUndel := &stakingtypes.MsgUndelegate{
 		DelegatorAddress: delAddr.String(),
 		ValidatorAddress: valAddr.String(),
-		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, 102), // full amount (100 + 1 + 1 from earlier)
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, 102),
 	}
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Undelegate(ctx, msgUndel)
-	requireT.NoError(err, "Excluded delegator should be able to fully undelegate after distribution")
+	requireT.NoError(err, "Excluded delegator should be able to fully undelegate")
 
-	// Step 7: Re-delegate before re-inclusion (simulating an excluded address that still has delegation)
+	// Step 6: Re-delegate 50 tokens while still excluded.
 	requireT.NoError(testApp.BankKeeper.MintCoins(
 		ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(200))),
 	))
@@ -413,34 +423,41 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msgDelegate)
 	requireT.NoError(err)
 
-	// Step 8: Remove from exclude_list (re-include)
+	// Step 7: Wait 1s and remove from exclusion list (re-include).
+	// ExcludedAddressScore should be moved to AccountScoreSnapshot.
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(1 * time.Second))
+	excludedScoreBeforeReinclusion, err := pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
+	requireT.NoError(err)
+	t.Logf("ExcludedAddressScore before re-inclusion: %s", excludedScoreBeforeReinclusion.String())
+
 	err = pseKeeper.UpdateExcludedAddresses(ctx, authority, nil, []string{delAddr.String()})
 	requireT.NoError(err)
 
-	// Verify DelegationTimeEntry was recreated with current state
-	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
-	requireT.NoError(err, "DelegationTimeEntry should be recreated on re-inclusion")
-	requireT.Equal(ctx.BlockTime().Unix(), entry.LastChangedUnixSec, "Entry should have current block time")
+	// Verify: ExcludedAddressScore cleared
+	_, err = pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound, "ExcludedAddressScore should be cleared on re-inclusion")
 
-	// Step 9: Verify fresh score accumulation after re-inclusion (starts from 0)
-	// Score accumulates automatically after re-inclusion without requiring delegation
-	// because UpdateExcludedAddresses recreates DelegationTimeEntry with current state.
-	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(3 * time.Second))
-
-	// Query score directly - no delegation needed because DelegationTimeEntry exists
-	resp2, err := queryService.Score(ctx, &types.QueryScoreRequest{
-		Address: delAddr.String(),
-	})
+	// Verify: AccountScoreSnapshot restored with full accumulated score
+	restoredScore, err := pseKeeper.GetDelegatorScore(ctx, distributionID, delAddr)
 	requireT.NoError(err)
-	score2 := resp2.Score
-	requireT.True(score2.IsPositive(), "Score should be positive after re-inclusion")
-	requireT.True(score2.LT(score1), "New score should be less than original score (fresh start, only 3 seconds)")
-	t.Logf("Score after re-inclusion and 3 seconds: %s (original was %s)", score2.String(), score1.String())
+	requireT.Equal(excludedScoreBeforeReinclusion, restoredScore,
+		"AccountScoreSnapshot should contain full ExcludedAddressScore after re-inclusion")
 
-	// Verify the score is approximately correct for 3 seconds of accumulation
-	// Score = tokens * time, should be roughly 50 tokens * 3 seconds = 150
-	expectedMinScore := sdkmath.NewInt(50 * 3) // At least 50 tokens for 3 seconds
-	requireT.True(score2.GTE(expectedMinScore),
-		"Score should be at least %s (got %s) for fresh accumulation", expectedMinScore.String(), score2.String())
+	// Verify: DelegationTimeEntry exists
+	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
+	requireT.NoError(err, "DelegationTimeEntry should exist after re-inclusion")
+	t.Logf("Entry lastChanged after re-inclusion: %d, blockTime: %d", entry.LastChangedUnixSec, ctx.BlockTime().Unix())
+
+	// Step 8: Wait 3s and verify exact score = restored + currentPeriod.
+	// currentPeriod = 50 tokens × (blockTime - entry.LastChangedUnixSec).
+	// Entry lastChanged is from the delegate-50 at Step 6 (not updated by un-exclusion).
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(3 * time.Second))
+	currentPeriodDuration := ctx.BlockTime().Unix() - entry.LastChangedUnixSec
+	expectedTotal := restoredScore.Add(sdkmath.NewInt(50).MulRaw(currentPeriodDuration))
+	resp2, err := queryService.Score(ctx, &types.QueryScoreRequest{Address: delAddr.String()})
+	requireT.NoError(err)
+	requireT.Equal(expectedTotal, resp2.Score,
+		"exact score: restored(%s) + 50*%ds = %s", restoredScore, currentPeriodDuration, expectedTotal)
+	t.Logf("Total score after re-inclusion + 3s: %s (restored=%s + currentPeriod=50*%ds=%d)",
+		resp2.Score, restoredScore, currentPeriodDuration, 50*currentPeriodDuration)
 }

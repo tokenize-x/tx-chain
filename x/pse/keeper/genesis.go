@@ -61,7 +61,22 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		return err
 	}
 
-	return k.LastProcessedDistributionID.Set(ctx, genState.LastProcessedDistributionID)
+	if err := k.LastProcessedDistributionID.Set(ctx, genState.LastProcessedDistributionID); err != nil {
+		return err
+	}
+
+	// Populate excluded address scores from genesis state.
+	for _, entry := range genState.ExcludedAddressScores {
+		addr, err := k.addressCodec.StringToBytes(entry.Address)
+		if err != nil {
+			return err
+		}
+		if err := k.ExcludedAddressScore.Set(ctx, addr, entry.Score); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ExportGenesis returns the module's exported genesis.
@@ -133,6 +148,23 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	genesis.LastProcessedDistributionID, err = k.LastProcessedDistributionID.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Export excluded address scores
+	err = k.ExcludedAddressScore.Walk(ctx, nil,
+		func(addr sdk.AccAddress, score sdkmath.Int) (stop bool, err error) {
+			addrStr, err := k.addressCodec.BytesToString(addr)
+			if err != nil {
+				return false, err
+			}
+			genesis.ExcludedAddressScores = append(genesis.ExcludedAddressScores, types.ExcludedAddressScoreExport{
+				Address: addrStr,
+				Score:   score,
+			})
+			return false, nil
+		})
 	if err != nil {
 		return nil, err
 	}

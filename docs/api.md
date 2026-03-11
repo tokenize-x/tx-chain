@@ -284,6 +284,7 @@
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [AccountScore](#tx.pse.v1.AccountScore)
     - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
+    - [ExcludedAddressScoreExport](#tx.pse.v1.ExcludedAddressScoreExport)
     - [GenesisState](#tx.pse.v1.GenesisState)
   
 - [tx/pse/v1/params.proto](#tx/pse/v1/params.proto)
@@ -5948,6 +5949,22 @@ Any remainder from division is sent to the community pool.
 
 
 
+<a name="tx.pse.v1.ExcludedAddressScoreExport"></a>
+
+### ExcludedAddressScoreExport
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |    |
+| `score` | [string](#string) |  |    |
+
+
+
+
+
+
 <a name="tx.pse.v1.GenesisState"></a>
 
 ### GenesisState
@@ -5966,6 +5983,7 @@ GenesisState defines the module's genesis state.
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 | `distributions_disabled` | [bool](#bool) |  |    |
 | `last_processed_distribution_id` | [uint64](#uint64) |  |    |
+| `excluded_address_scores` | [ExcludedAddressScoreExport](#tx.pse.v1.ExcludedAddressScoreExport) | repeated |    |
 
 
 

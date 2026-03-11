@@ -6,8 +6,8 @@ import (
 
 	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/samber/lo"
 
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
@@ -55,46 +55,21 @@ func (k Keeper) UpdateExcludedAddresses(
 		return !found
 	})
 
-	// When addresses are removed from exclusion, recreate their DelegationTimeEntries with current state
-	// so they start accumulating score immediately without requiring a delegation change.
-	currentBlockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	distributionID, err := k.getNextDistributionID(ctx)
 	if err != nil {
 		return err
 	}
+
+	// When addresses are removed from exclusion, move their accumulated ExcludedAddressScore
+	// into AccountScoreSnapshot so they participate in future distributions with full earned score.
+	// DelegationTimeEntries already exist (hooks tracked them while excluded), so no recreation needed.
 	for _, addrStr := range addressesToRemove {
 		addr, err := k.addressCodec.StringToBytes(addrStr)
 		if err != nil {
 			return err
 		}
-
-		// Query all current delegations for this address
-		delAddrBech32, err := k.addressCodec.BytesToString(addr)
-		if err != nil {
+		if err := k.moveExcludedScoreToSnapshot(ctx, distributionID, addr); err != nil {
 			return err
-		}
-
-		delegationResponse, err := k.stakingKeeper.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
-			DelegatorAddr: delAddrBech32,
-		})
-		if err != nil {
-			return err
-		}
-
-		// Recreate DelegationTimeEntry for each active delegation
-		for _, delegation := range delegationResponse.DelegationResponses {
-			valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
-			if err != nil {
-				continue
-			}
-
-			// Set entry with current block time and current shares
-			if err := k.SetDelegationTimeEntry(ctx, distributionID, valAddr, addr, types.DelegationTimeEntry{
-				LastChangedUnixSec: currentBlockTime,
-				Shares:             delegation.Delegation.Shares,
-			}); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -109,8 +84,10 @@ func (k Keeper) UpdateExcludedAddresses(
 
 	params.ExcludedAddresses = append(params.ExcludedAddresses, toActuallyAdd...)
 
+	// When addresses are added to exclusion, move their AccountScoreSnapshot into ExcludedAddressScore.
+	// DelegationTimeEntries are kept (hooks will route scores to dedicated store).
 	for _, addrStr := range toActuallyAdd {
-		if err = k.removeExcludedAccountData(ctx, distributionID, addrStr); err != nil {
+		if err = k.moveSnapshotToExcludedScore(ctx, distributionID, addrStr); err != nil {
 			return err
 		}
 	}
@@ -118,36 +95,55 @@ func (k Keeper) UpdateExcludedAddresses(
 	return k.SetParams(ctx, params)
 }
 
-// removeExcludedAccountData clears AccountScoreSnapshot AND DelegationTimeEntries for newly excluded addresses.
-// Removing DelegationTimeEntries ensures they start completely fresh when re-included.
-// Entries will be recreated naturally when hooks fire after re-inclusion.
-func (k Keeper) removeExcludedAccountData(ctx context.Context, distributionID uint64, addrStr string) error {
+// moveExcludedScoreToSnapshot moves accumulated ExcludedAddressScore into AccountScoreSnapshot
+// when an address is removed from the exclusion list. This preserves all earned score.
+func (k Keeper) moveExcludedScoreToSnapshot(ctx context.Context, distributionID uint64, addr sdk.AccAddress) error {
+	excludedScore, err := k.ExcludedAddressScore.Get(ctx, addr)
+	if errors.Is(err, collections.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	if excludedScore.IsPositive() {
+		if err := k.addToScore(ctx, distributionID, addr, excludedScore); err != nil {
+			return err
+		}
+	}
+
+	return k.ExcludedAddressScore.Remove(ctx, addr)
+}
+
+// moveSnapshotToExcludedScore moves AccountScoreSnapshot into ExcludedAddressScore
+// when an address is added to the exclusion list. DelegationTimeEntries are kept intact.
+func (k Keeper) moveSnapshotToExcludedScore(ctx context.Context, distributionID uint64, addrStr string) error {
 	addr, err := k.addressCodec.StringToBytes(addrStr)
 	if err != nil {
 		return err
 	}
 
-	// Remove snapshot if it exists
-	_ = k.RemoveDelegatorScore(ctx, distributionID, addr)
-
-	// Remove all delegation time entries for this address
-	rng := collections.NewSuperPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](distributionID, addr)
-	iter, err := k.DelegationTimeEntries.Iterate(ctx, rng)
+	snapshotScore, err := k.GetDelegatorScore(ctx, distributionID, addr)
+	if errors.Is(err, collections.ErrNotFound) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	defer iter.Close()
 
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		if err != nil {
+	if snapshotScore.IsPositive() {
+		current, err := k.ExcludedAddressScore.Get(ctx, addr)
+		if errors.Is(err, collections.ErrNotFound) {
+			current = sdkmath.NewInt(0)
+		} else if err != nil {
 			return err
 		}
-		if err := k.DelegationTimeEntries.Remove(ctx, kv.Key); err != nil {
+		if err := k.ExcludedAddressScore.Set(ctx, addr, current.Add(snapshotScore)); err != nil {
 			return err
 		}
 	}
-	return nil
+
+	return k.RemoveDelegatorScore(ctx, distributionID, addr)
 }
 
 // UpdateClearingAccountMappings updates the recipient mappings in params via governance.

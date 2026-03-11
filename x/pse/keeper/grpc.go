@@ -3,6 +3,8 @@ package keeper
 import (
 	"context"
 
+	sdkmath "cosmossdk.io/math"
+
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
@@ -38,6 +40,15 @@ func (qs QueryService) Score(ctx context.Context, req *types.QueryScoreRequest) 
 	delAddr, err := qs.keeper.addressCodec.StringToBytes(req.Address)
 	if err != nil {
 		return nil, err
+	}
+
+	// Excluded addresses always report zero score externally.
+	isExcluded, err := qs.keeper.IsExcludedAddress(ctx, delAddr)
+	if err != nil {
+		return nil, err
+	}
+	if isExcluded {
+		return &types.QueryScoreResponse{Score: sdkmath.NewInt(0)}, nil
 	}
 
 	// Calculate current score

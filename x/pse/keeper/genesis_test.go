@@ -59,6 +59,16 @@ func TestGenesis(t *testing.T) {
 		},
 	}
 	genesisState.DistributionsDisabled = true
+	genesisState.ExcludedAddressScores = []types.ExcludedAddressScoreExport{
+		{
+			Address: addr1,
+			Score:   sdkmath.NewInt(5000),
+		},
+		{
+			Address: addr2,
+			Score:   sdkmath.NewInt(9999),
+		},
+	}
 
 	err := pseKeeper.InitGenesis(ctx, genesisState)
 	requireT.NoError(err)
@@ -76,6 +86,15 @@ func TestGenesis(t *testing.T) {
 	requireT.EqualExportedValues(&genesisState.Params, &got.Params)
 	requireT.EqualExportedValues(&genesisState.ScheduledDistributions, &got.ScheduledDistributions)
 	requireT.Equal(genesisState.DistributionsDisabled, got.DistributionsDisabled)
+
+	// Verify ExcludedAddressScores round-trip
+	requireT.Len(got.ExcludedAddressScores, 2)
+	excludedScoreMap := make(map[string]sdkmath.Int)
+	for _, entry := range got.ExcludedAddressScores {
+		excludedScoreMap[entry.Address] = entry.Score
+	}
+	requireT.Equal(sdkmath.NewInt(5000), excludedScoreMap[addr1])
+	requireT.Equal(sdkmath.NewInt(9999), excludedScoreMap[addr2])
 }
 
 // TestGenesis_EmptyState tests that default genesis state is valid and can be imported/exported.
@@ -120,6 +139,7 @@ func TestGenesis_EmptyState(t *testing.T) {
 	// so AccountScores and DelegationTimeEntries cannot be compared directly.
 	requireT.EqualExportedValues(defaultGenesis.ScheduledDistributions, exported.ScheduledDistributions)
 	requireT.EqualExportedValues(defaultGenesis.Params, exported.Params)
+	requireT.Empty(exported.ExcludedAddressScores, "empty genesis should have no excluded address scores")
 }
 
 // TestGenesis_InvalidState tests that invalid genesis state is rejected.

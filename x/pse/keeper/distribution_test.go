@@ -902,7 +902,7 @@ func TestEdgeCase_NewDelegatorDuringOngoingDistribution(t *testing.T) {
 	startOngoingDistributionAction(r, sdkmath.NewInt(1000))
 
 	// delegators[2] delegates for the first time DURING ongoing distribution.
-	// Hook Scenario 3: no entry under ongoingID or nextID → create under nextID.
+	// Hook Scenario 3: no entry under ongoingID or nextID -> create under nextID.
 	delegateAction(r, r.delegators[2], r.validators[0], 500_000)
 
 	// Verify: delegators[2] has NO entry under ongoingID=1.
@@ -930,7 +930,7 @@ func TestEdgeCase_NewDelegatorDuringOngoingDistribution(t *testing.T) {
 }
 
 // TestEdgeCase_ConsecutiveDistributions verifies that LastProcessedDistributionID
-// advances correctly across consecutive distributions (0 → 1 → 2), and that
+// advances correctly across consecutive distributions (0 -> 1 -> 2), and that
 // entries are properly migrated between distribution IDs after each round.
 //
 // Test Flow: delegate -> wait -> distribute (ID=1) -> wait -> distribute (ID=2) -> verify state
@@ -1408,4 +1408,139 @@ func TestDistribution_EndBlockFailure(t *testing.T) {
 		requireT.True(moduleBalance.Amount.IsPositive(),
 			"clearing account %s should have positive balance after distribution", mapping.ClearingAccount)
 	}
+}
+
+// TestEdgeCase_ExcludedAddressDuringPhase1 verifies that when an excluded address changes
+// delegation while Phase 1 (score conversion) is in progress, the migrateOngoingEntry hook:
+//   - Splits the score at the distribution timestamp (ongoing + post-dist portions)
+//   - Routes both score portions to ExcludedAddressScore (NOT AccountScoreSnapshot)
+//   - Removes the entry from ongoingID (prevents double-counting by Phase 1 batch)
+//   - Creates new entry under nextID with updated shares
+//   - Phase 1 batch does not produce any AccountScoreSnapshot for the excluded address
+//   - Phase 2 distributes nothing to the excluded address
+func TestEdgeCase_ExcludedAddressDuringPhase1(t *testing.T) {
+	requireT := require.New(t)
+
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	r := &runEnv{
+		testApp:       testApp,
+		ctx:           ctx,
+		requireT:      requireT,
+		currentDistID: firstDistributionID,
+	}
+
+	// Add validators.
+	for range 3 {
+		validatorOperator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, validatorOperator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		validator, err := testApp.AddValidator(
+			ctx, validatorOperator, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil,
+		)
+		requireT.NoError(err)
+		r.validators = append(r.validators, sdk.MustValAddressFromBech32(validator.GetOperator()))
+	}
+
+	// Add delegators: [0] = excluded, [1] = normal (for reward comparison).
+	for range 3 {
+		delegator, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(
+			ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+		))
+		r.delegators = append(r.delegators, delegator)
+	}
+
+	err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: firstDistributionID, Timestamp: firstDistributionID},
+	})
+	requireT.NoError(err)
+
+	// T=0s: Both delegators delegate.
+	delegateAction(r, r.delegators[0], r.validators[0], 1_100_000)
+	delegateAction(r, r.delegators[1], r.validators[0], 900_000)
+
+	// Exclude delegators[0] before any score accumulation (ExcludedAddressScore=0, entries kept).
+	err = testApp.PSEKeeper.UpdateExcludedAddresses(r.ctx, authority, []string{r.delegators[0].String()}, nil)
+	requireT.NoError(err)
+
+	// T=8s: Advance time for score accumulation.
+	waitAction(r, time.Second*8)
+
+	// Start ongoing distribution (sets OngoingDistribution with distTimestamp=now).
+	// Both delegators have entries under ongoingID=1.
+	startOngoingDistributionAction(r, sdkmath.NewInt(1000))
+	distTimestamp := r.ctx.BlockTime().Unix()
+
+	// Excluded delegators[0] changes delegation BEFORE Phase 1 runs any batches.
+	// migrateOngoingEntry should fire with isExcluded=true:
+	//   - ongoingScore = 1,100,000 × 8s = 8,800,000 -> ExcludedAddressScore
+	//   - nextScore = 1,100,000 × 0s = 0 (distTimestamp == blockTime) -> ExcludedAddressScore
+	//   - entry removed from ongoingID=1, new entry under nextID=2
+	delegateAction(r, r.delegators[0], r.validators[0], 50_000)
+
+	// Verify: delegators[0] entry removed from ongoingID=1.
+	assertEntryNotExistsUnderDistIDAction(r, r.currentDistID, r.delegators[0], r.validators[0])
+
+	// Verify: delegators[0] entry exists under nextID=2.
+	nextID := r.currentDistID + 1
+	assertEntryExistsUnderDistIDAction(r, nextID, r.delegators[0], r.validators[0])
+
+	// Verify: scores went to ExcludedAddressScore, NOT AccountScoreSnapshot.
+	excludedScore, err := testApp.PSEKeeper.ExcludedAddressScore.Get(r.ctx, r.delegators[0])
+	requireT.NoError(err)
+	// ongoingScore = 1,100,000 tokens × 8s = 8,800,000
+	// nextScore = 1,100,000 tokens × (blockTime - distTimestamp) = 0 (same time)
+	requireT.Equal(sdkmath.NewInt(1_100_000*8), excludedScore,
+		"migrateOngoingEntry should route scores to ExcludedAddressScore for excluded address")
+	_ = distTimestamp // used in comment above
+
+	// Verify: NO AccountScoreSnapshot for delegators[0] under ongoingID.
+	_, err = testApp.PSEKeeper.GetDelegatorScore(r.ctx, r.currentDistID, r.delegators[0])
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"excluded address should have no AccountScoreSnapshot entry")
+
+	// Verify: delegators[1] entry still under ongoingID=1 (no delegation change, no hook fired).
+	assertEntryExistsUnderDistIDAction(r, r.currentDistID, r.delegators[1], r.validators[0])
+
+	// Run Phase 1 to completion to process remaining entries.
+	for {
+		done := runPhase1BatchAction(r)
+		if done {
+			break
+		}
+	}
+
+	// Verify: delegators[1] has score from Phase 1 batch (normal address).
+	score1, err := testApp.PSEKeeper.GetDelegatorScore(r.ctx, r.currentDistID, r.delegators[1])
+	requireT.NoError(err)
+	requireT.True(score1.IsPositive(), "delegators[1] should have score from Phase 1 batch")
+
+	// Verify: delegators[0] STILL has no AccountScoreSnapshot after Phase 1 batch.
+	// (Entry was removed from ongoingID by migrateOngoingEntry, so Phase 1 batch can't process it.)
+	_, err = testApp.PSEKeeper.GetDelegatorScore(r.ctx, r.currentDistID, r.delegators[0])
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"excluded address should have no AccountScoreSnapshot even after Phase 1 completes")
+
+	// Verify: ExcludedAddressScore unchanged after Phase 1 (Phase 1 doesn't touch it again).
+	excludedScoreAfterPhase1, err := testApp.PSEKeeper.ExcludedAddressScore.Get(r.ctx, r.delegators[0])
+	requireT.NoError(err)
+	requireT.Equal(excludedScore, excludedScoreAfterPhase1,
+		"ExcludedAddressScore should not change during Phase 1 batch processing")
+
+	// Finish distribution (Phase 2 + cleanup).
+	finishDistributionAction(r)
+
+	// Verify: delegators[1] (normal) got rewards, delegators[0] (excluded) got nothing.
+	// delegators[1]: 900,000 original + reward share (genesis validator also has score).
+	assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
+		&r.delegators[0]: sdkmath.NewInt(1_150_000), // 1,100,000 + 50,000 delegation only, no PSE reward
+		&r.delegators[1]: sdkmath.NewInt(900_473),   // 900,000 + reward auto-delegated
+	})
 }
