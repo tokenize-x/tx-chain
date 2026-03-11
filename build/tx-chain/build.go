@@ -55,9 +55,9 @@ const (
 )
 
 // linuxLinkModeForImage returns the Linux link mode that matches the given Docker base image.
-// Alpine uses musl and static linking; all other images (Ubuntu, Debian Slim, …) use glibc and dynamic linking.
-func linuxLinkModeForImage(baseImage string) linuxLinkMode {
-	if baseImage == docker.AlpineImage {
+// Alpine uses musl and static linking; all other images (Debian Slim, …) use glibc and dynamic linking.
+func linuxLinkModeForImage(baseImage docker.ImageOS) linuxLinkMode {
+	if baseImage == docker.ImageOSAlpine {
 		return linuxLinkModeStaticMusl
 	}
 	return linuxLinkModeDynamicGlibc
@@ -111,14 +111,15 @@ func copyLocalBinary(src, dst string) error {
 	return nil
 }
 
-// BuildTXdInDocker builds txd in docker using the default Alpine base image.
+// BuildTXdInDocker builds txd in docker, using the base image from the context
+// (set via --override-os) and falling back to Alpine when the flag is absent.
 func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
-	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false, docker.AlpineImage)
+	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false, TXdImageOSFromContext(ctx))
 }
 
 // BuildTXdInDockerFor returns a CommandFunc that builds txd in docker using the given base image.
-// Use this when you need a specific OS, e.g. docker.UbuntuImage on Mac Apple Silicon.
-func BuildTXdInDockerFor(baseImage string) types.CommandFunc {
+// Use this when you need a specific OS, e.g. docker.ImageOSDebian on Mac Apple Silicon.
+func BuildTXdInDockerFor(baseImage docker.ImageOS) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false, baseImage)
 	}
@@ -143,7 +144,7 @@ func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
-		From:   docker.AlpineImage,
+		From:   docker.ImageOSAlpine.String(),
 		Binary: gaiaBinaryPath,
 	})
 	if err != nil {
@@ -179,9 +180,9 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
-		From:   docker.UbuntuImage,
+		From:   docker.ImageOSDebian.String(),
 		Binary: hermesBinaryPath,
-		Run:    "apt update && apt install curl jq -y",
+		Run:    "apt-get update && apt-get install -y --no-install-recommends curl jq && rm -rf /var/lib/apt/lists/*",
 	})
 	if err != nil {
 		return err
@@ -215,7 +216,7 @@ func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
-		From:   docker.AlpineImage,
+		From:   docker.ImageOSAlpine.String(),
 		Binary: osmosisBinaryPath,
 	})
 	if err != nil {
@@ -287,7 +288,7 @@ func buildTXdInDocker(
 	targetPlatform txcrusttools.TargetPlatform,
 	extraFlags []string,
 	release bool,
-	baseImage string,
+	baseImage docker.ImageOS,
 ) error {
 	ldFlags := make([]string, 0)
 	var cc string

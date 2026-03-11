@@ -24,24 +24,21 @@ type imageConfig struct {
 	Versions          []string
 	UseLocalBinary    bool
 	// BaseImage selects the Docker base OS and its linking strategy.
-	// Leave empty to get the default (docker.AlpineImage, musl/static).
-	//   docker.AlpineImage  — musl static linking. Smallest. Works on Linux/CI.
-	//   docker.UbuntuImage  — glibc dynamic linking. Works on Mac Apple Silicon Docker Desktop.
-	BaseImage string
+	// Zero value defaults to docker.ImageOSAlpine (musl/static).
+	//   docker.ImageOSAlpine     — musl static linking. Smallest. Works on Linux/CI.
+	//   docker.ImageOSDebian — glibc dynamic linking. Works on Mac Apple Silicon Docker Desktop.
+	BaseImage docker.ImageOS
 }
 
-// BuildTXdDockerImage builds the txd Docker image using the default Alpine base image.
+// BuildTXdDockerImage builds the txd Docker image, using the base image from the
+// context (set via --override-os) and falling back to Alpine when absent.
 func BuildTXdDockerImage(ctx context.Context, deps types.DepsFunc) error {
-	return BuildTXdDockerImageFor(docker.AlpineImage)(ctx, deps)
+	return BuildTXdDockerImageFor(TXdImageOSFromContext(ctx))(ctx, deps)
 }
-
-// BuildTXdDockerImageForUbuntu builds the txd Docker image using Ubuntu/glibc.
-// Use this on Mac Apple Silicon where Alpine's musl static linking causes SIGABRT.
-var BuildTXdDockerImageForUbuntu = BuildTXdDockerImageFor(docker.UbuntuImage)
 
 // BuildTXdDockerImageFor returns a CommandFunc that builds the txd Docker image using the
 // given base image. The Linux link mode (musl/static vs glibc/dynamic) is derived automatically.
-func BuildTXdDockerImageFor(baseImage string) types.CommandFunc {
+func BuildTXdDockerImageFor(baseImage docker.ImageOS) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		deps(BuildTXdInDockerFor(baseImage), ensureReleasedBinaries)
 
@@ -62,7 +59,7 @@ func BuildTXdDockerImageFor(baseImage string) types.CommandFunc {
 func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 	baseImage := cfg.BaseImage
 	if baseImage == "" {
-		baseImage = docker.AlpineImage
+		baseImage = docker.ImageOSAlpine
 	}
 
 	binaryName := filepath.Base(cfg.BinaryPath)
@@ -76,7 +73,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 	}
 
 	dockerfile, err := image.Execute(image.Data{
-		From:             baseImage,
+		From:             baseImage.String(),
 		TXdBinary:        cfg.BinaryPath,
 		CosmovisorBinary: cosmovisorBinaryPath,
 		IncludeWASMLib:   linuxLinkModeForImage(baseImage) == linuxLinkModeDynamicGlibc,
