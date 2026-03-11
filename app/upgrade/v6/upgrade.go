@@ -12,11 +12,12 @@ import (
 
 	"github.com/tokenize-x/tx-chain/v6/app/upgrade"
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
+	psetypes "github.com/tokenize-x/tx-chain/v6/x/pse/types"
 	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
 )
 
 // Name defines the upgrade name.
-const Name = "v6-params-patch"
+const Name = "v6"
 
 // New makes an upgrade handler for v6 upgrade.
 func New(
@@ -33,13 +34,11 @@ func New(
 		Name: Name,
 		StoreUpgrades: store.StoreUpgrades{
 			Added: []string{
-				// Has been added in prvious upgrade to v6.0.0
-				// psetypes.StoreKey,
+				psetypes.StoreKey,
 			},
 			Deleted: []string{
-				// Has been deleted in previous upgrade to v6.0.0
-				// "feeibc",
-				// "crisis",
+				"feeibc",
+				"crisis",
 			},
 		},
 		Upgrade: func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
@@ -48,47 +47,40 @@ func New(
 				return nil, err
 			}
 
-			// Has been added in prvious upgrade to v6.0.0
-			// if err := migrateDenomSymbol(ctx, bankKeeper); err != nil {
-			// 	return nil, err
-			// }
+			if err := migrateDenomSymbol(ctx, bankKeeper); err != nil {
+				return nil, err
+			}
 
 			if err := migrateMintParams(ctx, mintKeeper); err != nil {
 				return nil, err
 			}
 
-			// Has been deleted in previous upgrade to v6.0.0
-			// // Set minimum commission rate to 5% and update validators with lower rates
-			// if err := MigrateValidatorCommission(ctx, stakingKeeper); err != nil {
-			// 	return nil, err
-			// }
+			// Set minimum commission rate to 5% and update validators with lower rates
+			if err := MigrateValidatorCommission(ctx, stakingKeeper); err != nil {
+				return nil, err
+			}
 
-			// if err := mintForSoloAndBinance(ctx, bankKeeper, stakingKeeper); err != nil {
-			// 	return nil, err
-			// }
+			if err := mintForSoloAndBinance(ctx, bankKeeper, stakingKeeper); err != nil {
+				return nil, err
+			}
 
 			// Perform PSE initialization: create schedule, mint, and distribute tokens
-			// if err := InitPSEAllocationsAndSchedule(
-			// 	ctx,
-			// 	pseKeeper,
-			// 	bankKeeper,
-			// 	stakingkeeper.NewQuerier(stakingKeeper),
-			// ); err != nil {
-			// 	return nil, err
-			// }
+			if err := InitPSEAllocationsAndSchedule(
+				ctx,
+				pseKeeper,
+				bankKeeper,
+				stakingkeeper.NewQuerier(stakingKeeper),
+			); err != nil {
+				return nil, err
+			}
 
-			// if err := SnapshotPSEStaking(
-			// 	ctx,
-			// 	stakingkeeper.NewQuerier(stakingKeeper),
-			// 	pseKeeper,
-			// 	addressCodec,
-			// 	valAddressCodec,
-			// ); err != nil {
-			// 	return nil, err
-			// }
-
-			// Set PSE module params to testnet defaults
-			if err := TestnetV6Patch(ctx, pseKeeper); err != nil {
+			if err := SnapshotPSEStaking(
+				ctx,
+				stakingkeeper.NewQuerier(stakingKeeper),
+				pseKeeper,
+				addressCodec,
+				valAddressCodec,
+			); err != nil {
 				return nil, err
 			}
 

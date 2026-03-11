@@ -491,3 +491,12 @@ func validateFundAllocations(fundAllocations []InitialFundAllocation) error {
 
 	return nil
 }
+
+// TestnetV6Patch sets the PSE module params to testnet defaults.
+func TestnetV6Patch(ctx context.Context, pseKeeper pskeeper.Keeper) error {
+	params, err := DefaultParams(string(constant.ChainIDTest))
+	if err != nil {
+		return errorsmod.Wrapf(psetypes.ErrInvalidInput, "failed to get default PSE params: %v", err)
+	}
+	return pseKeeper.SetParams(ctx, params)
+}
