@@ -252,7 +252,7 @@ func TestGroupForAssetFTIssuance(t *testing.T) {
 	_, err = client.BroadcastTx(
 		ctx,
 		chain.ClientContext.WithFromAddress(proposer),
-		chain.TxFactory().WithGas(chain.GasLimitByMsgs(withdrawProposalMsg)),
+		chain.TxFactoryAuto(),
 		withdrawProposalMsg,
 	)
 	requireT.NoError(err)
