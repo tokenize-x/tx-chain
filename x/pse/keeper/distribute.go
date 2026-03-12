@@ -313,8 +313,11 @@ func (k Keeper) distributeToDelegator(
 		totalDelegationAmount = totalDelegationAmount.Add(delegation.Balance.Amount)
 	}
 
-	// Send earned tokens to delegator's wallet regardless of active delegations.
-	// Score was earned by staking during the scoring period, so the reward is always honored.
+	// Only distribute to users with active stakes. If not, it will be leftover.
+	if len(delegations) == 0 || totalDelegationAmount.IsZero() {
+		return sdkmath.NewInt(0), nil
+	}
+
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
 		types.ClearingAccountCommunity,
@@ -322,12 +325,6 @@ func (k Keeper) distributeToDelegator(
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
 		return sdkmath.NewInt(0), err
-	}
-
-	// Auto-delegate proportionally to active validators. If no active delegations
-	// (e.g., user undelegated during multi-block distribution), skip auto-delegation
-	if len(delegations) == 0 || totalDelegationAmount.IsZero() {
-		return amount, nil
 	}
 
 	for _, delegation := range delegations {
