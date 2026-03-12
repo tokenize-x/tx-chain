@@ -1199,6 +1199,11 @@ func New(
 			app.MintKeeper,
 			app.PSEKeeper,
 		),
+		appupgradev6fixdenommetadata.New(
+			app.ModuleManager,
+			app.configurator,
+			app.BankKeeper,
+		),
 	}
 
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
