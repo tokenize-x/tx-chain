@@ -1196,13 +1196,9 @@ func New(
 		appupgradev6paramspatch.New(
 			app.ModuleManager,
 			app.configurator,
+			app.BankKeeper,
 			app.MintKeeper,
 			app.PSEKeeper,
-		),
-		appupgradev6fixdenommetadata.New(
-			app.ModuleManager,
-			app.configurator,
-			app.BankKeeper,
 		),
 	}
 

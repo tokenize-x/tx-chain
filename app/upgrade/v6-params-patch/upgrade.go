@@ -10,6 +10,7 @@ import (
 
 	"github.com/tokenize-x/tx-chain/v6/app/upgrade"
 	pskeeper "github.com/tokenize-x/tx-chain/v6/x/pse/keeper"
+	wbankkeeper "github.com/tokenize-x/tx-chain/v6/x/wbank/keeper"
 )
 
 // Name defines the upgrade name.
@@ -19,6 +20,7 @@ const Name = "v6-params-patch"
 func New(
 	mm *module.Manager,
 	configurator module.Configurator,
+	bankKeeper wbankkeeper.BaseKeeperWrapper,
 	mintKeeper mintkeeper.Keeper,
 	pseKeeper pskeeper.Keeper,
 ) upgrade.Upgrade {
@@ -34,13 +36,18 @@ func New(
 				return nil, err
 			}
 
+			// Fix denom metadata
+			if err := MigrateDenomMetadata(ctx, bankKeeper); err != nil {
+				return nil, err
+			}
+
 			// Set mint module params to defaults
-			if err := migrateMintParams(ctx, mintKeeper); err != nil {
+			if err := MigrateMintParams(ctx, mintKeeper); err != nil {
 				return nil, err
 			}
 
 			// Set PSE module params to testnet defaults
-			if err := TestnetV6Patch(ctx, pseKeeper); err != nil {
+			if err := V6ParamsPatch(ctx, pseKeeper); err != nil {
 				return nil, err
 			}
 

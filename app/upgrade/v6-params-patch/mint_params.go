@@ -7,7 +7,7 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 )
 
-func migrateMintParams(ctx context.Context, keeper mintkeeper.Keeper) error {
+func MigrateMintParams(ctx context.Context, keeper mintkeeper.Keeper) error {
 	params, err := keeper.Params.Get(ctx)
 	if err != nil {
 		return err

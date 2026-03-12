@@ -1,4 +1,4 @@
-package v6fixdenommetadata
+package v6paramspatch
 
 import (
 	"context"
