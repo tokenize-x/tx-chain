@@ -391,7 +391,7 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 
 	// Run Phase 1 until done.
 	for {
-		done, err := r.testApp.PSEKeeper.ProcessPhase1ScoreConversion(r.ctx, scheduledDistribution)
+		done, err := r.testApp.PSEKeeper.ConsumeOngoingDelegationTimeEntry(r.ctx, scheduledDistribution)
 		r.requireT.NoError(err)
 		if done {
 			break
@@ -400,7 +400,7 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 
 	// Run Phase 2 until done.
 	for {
-		done, err := r.testApp.PSEKeeper.ProcessPhase2TokenDistribution(r.ctx, scheduledDistribution, bondDenom)
+		done, err := r.testApp.PSEKeeper.ProcessOngoingTokenDistribution(r.ctx, scheduledDistribution, bondDenom)
 		r.requireT.NoError(err)
 		if done {
 			break

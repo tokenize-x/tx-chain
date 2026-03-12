@@ -15,7 +15,7 @@ import (
 // defaultBatchSize is the number of entries processed per EndBlock during multi-block distribution.
 const defaultBatchSize = 100 // TODO: make configurable
 
-// ProcessPhase1ScoreConversion processes a batch of DelegationTimeEntries from the ongoing distribution (ongoingID),
+// ConsumeOngoingDelegationTimeEntry processes a batch of DelegationTimeEntries from the ongoing distribution (ongoingID),
 // converting each entry into a score snapshot and migrating it to nextID (ongoingID + 1).
 //
 // For each entry in the batch:
@@ -24,7 +24,7 @@ const defaultBatchSize = 100 // TODO: make configurable
 //  3. Remove entry from ongoingID
 //
 // Returns true when all ongoingID entries have been processed and TotalScore is computed.
-func (k Keeper) ProcessPhase1ScoreConversion(ctx context.Context, ongoing types.ScheduledDistribution) (bool, error) {
+func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing types.ScheduledDistribution) (bool, error) {
 	ongoingID := ongoing.ID
 	nextID := ongoing.ID + 1
 	distTimestamp := int64(ongoing.Timestamp)
@@ -123,7 +123,7 @@ func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) er
 	return k.TotalScore.Set(ctx, distributionID, totalScore)
 }
 
-// ProcessPhase2TokenDistribution distributes tokens to delegators in batches based on their computed scores.
+// ProcessOngoingTokenDistribution distributes tokens to delegators in batches based on their computed scores.
 // Uses TotalScore[ongoingID] for proportion calculation and iterates AccountScoreSnapshot[ongoingID].
 //
 // For each delegator in the batch:
@@ -134,7 +134,7 @@ func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) er
 //
 // When all delegators have been processed, sends leftover (rounding errors + undelegated users) to the community pool.
 // Returns true when distribution is complete and all state has been cleaned up.
-func (k Keeper) ProcessPhase2TokenDistribution(
+func (k Keeper) ProcessOngoingTokenDistribution(
 	ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string,
 ) (bool, error) {
 	ongoingID := ongoing.ID
@@ -152,7 +152,7 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 				return false, err
 			}
 		}
-		return true, k.cleanupDistribution(ctx, ongoingID)
+		return true, k.cleanupOngoingDistribution(ctx, ongoingID)
 	}
 
 	// Collect a batch of score snapshots.
@@ -196,7 +196,7 @@ func (k Keeper) ProcessPhase2TokenDistribution(
 				return false, err
 			}
 		}
-		return true, k.cleanupDistribution(ctx, ongoingID)
+		return true, k.cleanupOngoingDistribution(ctx, ongoingID)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -248,8 +248,8 @@ func (k Keeper) sendLeftoverToCommunityPool(ctx context.Context, amount sdkmath.
 	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), pseModuleAddress)
 }
 
-// cleanupDistribution removes all state associated with a completed distribution.
-func (k Keeper) cleanupDistribution(ctx context.Context, distributionID uint64) error {
+// cleanupOngoingDistribution removes all state associated with a completed distribution.
+func (k Keeper) cleanupOngoingDistribution(ctx context.Context, distributionID uint64) error {
 	if err := k.AccountScoreSnapshot.Clear(
 		ctx,
 		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](distributionID),

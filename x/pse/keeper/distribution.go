@@ -90,7 +90,7 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	// TotalScore absent -> Phase 1 (score conversion still in progress).
 	_, err := k.TotalScore.Get(ctx, ongoingID)
 	if errors.Is(err, collections.ErrNotFound) {
-		done, err := k.ProcessPhase1ScoreConversion(ctx, ongoing)
+		done, err := k.ConsumeOngoingDelegationTimeEntry(ctx, ongoing)
 		if err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	if err != nil {
 		return err
 	}
-	done, err := k.ProcessPhase2TokenDistribution(ctx, ongoing, bondDenom)
+	done, err := k.ProcessOngoingTokenDistribution(ctx, ongoing, bondDenom)
 	if err != nil {
 		return err
 	}
