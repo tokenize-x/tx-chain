@@ -15,8 +15,9 @@ import (
 // defaultBatchSize is the number of entries processed per EndBlock during multi-block distribution.
 const defaultBatchSize = 100 // TODO: make configurable
 
-// ConsumeOngoingDelegationTimeEntry processes a batch of DelegationTimeEntries from the ongoing distribution (ongoingID),
-// converting each entry into a score snapshot and migrating it to nextID (ongoingID + 1).
+// ConsumeOngoingDelegationTimeEntry processes a batch of DelegationTimeEntries
+// from the ongoing distribution (ongoingID), converting each entry into a score
+// snapshot and migrating it to nextID (ongoingID + 1).
 //
 // For each entry in the batch:
 //  1. Calculate score from lastChanged to distribution timestamp -> addToScore(ongoingID)
@@ -25,7 +26,9 @@ const defaultBatchSize = 100 // TODO: make configurable
 //  4. Remove entry from ongoingID
 //
 // Returns true when all ongoingID entries have been processed.
-func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing types.ScheduledDistribution) (bool, error) {
+func (k Keeper) ConsumeOngoingDelegationTimeEntry(
+	ctx context.Context, ongoing types.ScheduledDistribution,
+) (bool, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	ongoingID := ongoing.ID
 	nextID := ongoing.ID + 1
