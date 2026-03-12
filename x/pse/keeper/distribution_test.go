@@ -20,13 +20,43 @@ import (
 func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT := require.New(t)
 
-	testApp := simapp.New()
-	ctx := testApp.NewContext(false)
-	ctx = ctx.WithBlockTime(time.Now()) // Set proper block time
+	startTime := time.Now().Round(time.Second)
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
 	pseKeeper := testApp.PSEKeeper
 
 	// Get bond denom
 	bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Create a validator and delegator so community distribution has non-zero score.
+	valOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, valOp, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1000)))))
+	val, errVal := testApp.AddValidator(ctx, valOp, sdk.NewInt64Coin(bondDenom, 10), nil)
+	requireT.NoError(errVal)
+	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
+
+	del1, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, del1, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(10_000)))))
+
+	time1 := uint64(startTime.Add(1 * time.Hour).Unix())
+	time2 := uint64(startTime.Add(2 * time.Hour).Unix())
+
+	// Save initial schedule so hooks can find distribution ID.
+	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: 1, Timestamp: time1},
+	})
+	requireT.NoError(err)
+
+	// Delegate and advance time for score accumulation.
+	_, err = stakingkeeper.NewMsgServerImpl(testApp.StakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: del1.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 500),
+	})
+	requireT.NoError(err)
+	ctx, _, err = testApp.BeginNextBlockAtTime(ctx.BlockTime().Add(10 * time.Second))
 	requireT.NoError(err)
 
 	// Set up mappings and fund modules for all eligible accounts
@@ -53,9 +83,6 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 		err = testApp.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, clearingAccount, fundAmount)
 		requireT.NoError(err)
 	}
-
-	time1 := uint64(time.Now().Add(1 * time.Hour).Unix())
-	time2 := uint64(time.Now().Add(2 * time.Hour).Unix())
 
 	// Set up params with mappings
 	params, err := pseKeeper.GetParams(ctx)
@@ -617,17 +644,11 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 			},
 		},
 		{
-			name: "zero score via EndBlocker",
+			name: "zero score via EndBlocker triggers invariant violation",
 			actions: []func(*runEnv){
-				func(r *runEnv) { endBlockerDistributeAction(r, sdkmath.NewInt(1000)) },
 				func(r *runEnv) {
-					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
-						&r.delegators[0]: sdkmath.NewInt(0),
-						&r.delegators[1]: sdkmath.NewInt(0),
-					})
+					endBlockerDistributeExpectInvariantViolation(r, sdkmath.NewInt(1000))
 				},
-				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(1000)) },
-				func(r *runEnv) { assertScoreResetAction(r) },
 			},
 		},
 		{

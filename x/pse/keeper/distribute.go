@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -141,13 +142,18 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		return false, err
 	}
 
-	// No score or no amount: send everything to community pool and clean up.
-	if !totalScore.IsPositive() || totalPSEAmount.IsZero() {
-		if totalPSEAmount.IsPositive() {
-			if err := k.sendLeftoverToCommunityPool(ctx, totalPSEAmount, bondDenom); err != nil {
-				return false, err
-			}
-		}
+	// Invariant: positive amount with non-positive score indicates a scoring bug.
+	// Return error and disable PSE.
+	if totalPSEAmount.IsPositive() && !totalScore.IsPositive() {
+		return false, errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"positive PSE amount %s but non-positive total score %s for distribution %d",
+			totalPSEAmount, totalScore, ongoingID,
+		)
+	}
+
+	// No amount to distribute: clean up.
+	if !totalPSEAmount.IsPositive() {
 		return true, k.cleanupOngoingDistribution(ctx, ongoingID)
 	}
 

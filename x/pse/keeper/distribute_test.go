@@ -147,17 +147,11 @@ func TestKeeper_Distribute(t *testing.T) {
 			},
 		},
 		{
-			name: "zero score",
+			name: "zero score triggers invariant violation",
 			actions: []func(*runEnv){
-				func(r *runEnv) { distributeAction(r, sdkmath.NewInt(1000)) },
 				func(r *runEnv) {
-					assertDistributionAction(r, map[*sdk.AccAddress]sdkmath.Int{
-						&r.delegators[0]: sdkmath.NewInt(0),
-						&r.delegators[1]: sdkmath.NewInt(0),
-					})
+					distributeExpectInvariantViolation(r, sdkmath.NewInt(1000))
 				},
-				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(1000)) },
-				func(r *runEnv) { assertScoreResetAction(r) },
 			},
 		},
 		{

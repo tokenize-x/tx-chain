@@ -25,4 +25,7 @@ var (
 
 	// ErrOngoingDistribution is returned when a schedule update is attempted during an ongoing distribution.
 	ErrOngoingDistribution = sdkerrors.Register(ModuleName, 8, "distribution is currently in progress")
+
+	// ErrInvariantViolation is returned when an internal invariant is violated, disabling the module.
+	ErrInvariantViolation = sdkerrors.Register(ModuleName, 9, "invariant violation")
 )

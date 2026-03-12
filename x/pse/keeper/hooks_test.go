@@ -449,6 +449,59 @@ func endBlockerDistributeAction(r *runEnv, amount sdkmath.Int) {
 	r.currentDistID++
 }
 
+// distributeExpectInvariantViolation runs Phase 1 + Phase 2 and expects
+// ErrInvariantViolation from Phase 2 (e.g., zero score with positive pse amount).
+func distributeExpectInvariantViolation(r *runEnv, amount sdkmath.Int) {
+	mintAndSendToPSECommunityClearingAccount(r, amount)
+	bondDenom, err := r.testApp.StakingKeeper.BondDenom(r.ctx)
+	r.requireT.NoError(err)
+	scheduledDistribution := types.ScheduledDistribution{
+		Timestamp: uint64(r.ctx.BlockTime().Unix()),
+		ID:        r.currentDistID,
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          amount,
+		}},
+	}
+	err = r.testApp.PSEKeeper.OngoingDistribution.Set(r.ctx, scheduledDistribution)
+	r.requireT.NoError(err)
+
+	for {
+		done, err := r.testApp.PSEKeeper.ConsumeOngoingDelegationTimeEntry(r.ctx, scheduledDistribution)
+		r.requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	_, err = r.testApp.PSEKeeper.ProcessOngoingTokenDistribution(r.ctx, scheduledDistribution, bondDenom)
+	r.requireT.ErrorIs(err, types.ErrInvariantViolation)
+}
+
+// endBlockerDistributeExpectInvariantViolation runs distribution via
+// ProcessNextDistribution and expects ErrInvariantViolation.
+func endBlockerDistributeExpectInvariantViolation(r *runEnv, amount sdkmath.Int) {
+	mintAndSendToPSECommunityClearingAccount(r, amount)
+	scheduledDistribution := types.ScheduledDistribution{
+		Timestamp: uint64(r.ctx.BlockTime().Unix()),
+		ID:        r.currentDistID,
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          amount,
+		}},
+	}
+	err := r.testApp.PSEKeeper.AllocationSchedule.Set(r.ctx, scheduledDistribution.ID, scheduledDistribution)
+	r.requireT.NoError(err)
+
+	// First call starts the distribution (sets OngoingDistribution).
+	err = r.testApp.PSEKeeper.ProcessNextDistribution(r.ctx)
+	r.requireT.NoError(err)
+
+	// Second call: Phase 1 completes + Phase 2 hits invariant violation.
+	err = r.testApp.PSEKeeper.ProcessNextDistribution(r.ctx)
+	r.requireT.ErrorIs(err, types.ErrInvariantViolation)
+}
+
 func mintAndSendCoin(r *runEnv, recipient sdk.AccAddress, coins sdk.Coins) {
 	r.requireT.NoError(
 		r.testApp.BankKeeper.MintCoins(r.ctx, minttypes.ModuleName, coins),
