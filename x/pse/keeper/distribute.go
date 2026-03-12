@@ -20,14 +20,17 @@ const defaultBatchSize = 100 // TODO: make configurable
 //
 // For each entry in the batch:
 //  1. Calculate score from lastChanged to distribution timestamp -> addToScore(ongoingID)
-//  2. Create new entry under nextID with same shares, lastChanged = distTimestamp
-//  3. Remove entry from ongoingID
+//  2. Calculate gap score from distribution timestamp to current block time -> addToScore(nextID)
+//  3. Create new entry under nextID with same shares, lastChanged = current block time
+//  4. Remove entry from ongoingID
 //
 // Returns true when all ongoingID entries have been processed.
 func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing types.ScheduledDistribution) (bool, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	ongoingID := ongoing.ID
 	nextID := ongoing.ID + 1
 	distTimestamp := int64(ongoing.Timestamp)
+	blockTime := sdkCtx.BlockTime().Unix()
 
 	// Collect a batch of entries from ongoingID.
 	iter, err := k.DelegationTimeEntries.Iterate(
@@ -70,6 +73,7 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing t
 		}
 
 		if !isExcluded {
+			// Score for ongoingID: lastChanged -> distTimestamp.
 			score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
 			if err != nil {
 				return false, err
@@ -77,11 +81,24 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing t
 			if err := k.addToScore(ctx, ongoingID, item.delAddr, score); err != nil {
 				return false, err
 			}
+
+			// Score for nextID: distTimestamp -> blockTime (gap during Phase 1 processing).
+			// TODO: add dedicated integration test to verify gap score fairness across batches.
+			gapScore, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, types.DelegationTimeEntry{
+				LastChangedUnixSec: distTimestamp,
+				Shares:             item.entry.Shares,
+			}, blockTime)
+			if err != nil {
+				return false, err
+			}
+			if err := k.addToScore(ctx, nextID, item.delAddr, gapScore); err != nil {
+				return false, err
+			}
 		}
 
-		// Migrate entry to nextID with same shares, reset lastChanged to distribution timestamp.
+		// Migrate entry to nextID with same shares, lastChanged = current block time.
 		if err := k.SetDelegationTimeEntry(ctx, nextID, item.valAddr, item.delAddr, types.DelegationTimeEntry{
-			LastChangedUnixSec: distTimestamp,
+			LastChangedUnixSec: blockTime,
 			Shares:             item.entry.Shares,
 		}); err != nil {
 			return false, err
