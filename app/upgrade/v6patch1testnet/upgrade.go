@@ -1,4 +1,4 @@
-package v6paramspatch
+package v6patch1testnet
 
 import (
 	"context"
@@ -14,9 +14,9 @@ import (
 )
 
 // Name defines the upgrade name.
-const Name = "v6-params-patch"
+const Name = "v6patch1testnet"
 
-// New makes an upgrade handler for v6 params patch upgrade.
+// New makes an upgrade handler for v6patch1testnet upgrade for testnet only.
 func New(
 	mm *module.Manager,
 	configurator module.Configurator,

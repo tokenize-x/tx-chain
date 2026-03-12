@@ -1,4 +1,4 @@
-package v6paramspatch
+package v6patch1testnet
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 )
 
+// MigrateMintParams sets the mint module params to defaults.
 func MigrateMintParams(ctx context.Context, keeper mintkeeper.Keeper) error {
 	params, err := keeper.Params.Get(ctx)
 	if err != nil {

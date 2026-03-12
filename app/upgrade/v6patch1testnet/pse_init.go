@@ -1,4 +1,4 @@
-package v6paramspatch
+package v6patch1testnet
 
 import (
 	"context"
