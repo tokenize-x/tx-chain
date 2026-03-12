@@ -55,27 +55,23 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// If community allocation exists, start multi-block processing.
+	// Invariant: every distribution must have a positive community allocation
+	// (enforced at schedule creation, also checked here as safety net).
 	communityAmount := getCommunityAllocationAmount(scheduledDistribution)
-	if communityAmount.IsPositive() {
-		if err := k.OngoingDistribution.Set(ctx, scheduledDistribution); err != nil {
-			return err
-		}
-		sdkCtx.Logger().Info("started multi-block community distribution",
-			"distribution_id", scheduledDistribution.ID,
-			"timestamp", scheduledDistribution.Timestamp)
-		return nil
+	if !communityAmount.IsPositive() {
+		return errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"non-positive community allocation %s for distribution %d",
+			communityAmount, scheduledDistribution.ID,
+		)
 	}
 
-	// No community allocation — remove from schedule
-	if err := k.AllocationSchedule.Remove(ctx, scheduledDistribution.ID); err != nil {
+	if err := k.OngoingDistribution.Set(ctx, scheduledDistribution); err != nil {
 		return err
 	}
-
-	sdkCtx.Logger().Info("processed single-block distribution",
+	sdkCtx.Logger().Info("started multi-block community distribution",
 		"distribution_id", scheduledDistribution.ID,
 		"timestamp", scheduledDistribution.Timestamp)
-
 	return nil
 }
 

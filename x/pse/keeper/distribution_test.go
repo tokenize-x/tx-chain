@@ -216,15 +216,15 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 		requireT.NoError(err)
 	}
 
-	// Create and save distribution schedule
-	// Note: Community is excluded from this test since it has different distribution logic
-	// and is tested separately in other tests
+	// Create and save distribution schedule.
+	// Community allocation is required; non-community precision is the focus of this test.
 	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
 	schedule := []types.ScheduledDistribution{
 		{
 			ID:        1,
 			Timestamp: startTime,
 			Allocations: []types.ClearingAccountAllocation{
+				{ClearingAccount: types.ClearingAccountCommunity, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},
 				{ClearingAccount: types.ClearingAccountPartnership, Amount: allocationAmount},
@@ -237,7 +237,7 @@ func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
 	err = pseKeeper.SaveDistributionSchedule(ctx, schedule)
 	requireT.NoError(err)
 
-	// Process distribution
+	// First call processes non-community allocations and starts multi-block community distribution.
 	ctx = ctx.WithBlockTime(time.Unix(int64(startTime)+10, 0))
 	err = pseKeeper.ProcessNextDistribution(ctx)
 	requireT.NoError(err)
@@ -486,7 +486,7 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 }
 
 // TestDistribution_NonCommunityOnlySingleBlock tests that a distribution with
-// no community allocation completes in a single call to ProcessNextDistribution.
+// zero community allocation triggers an invariant violation.
 func TestDistribution_NonCommunityOnlySingleBlock(t *testing.T) {
 	requireT := require.New(t)
 
@@ -543,21 +543,9 @@ func TestDistribution_NonCommunityOnlySingleBlock(t *testing.T) {
 	})
 	requireT.NoError(err)
 
-	// Single call should complete everything
+	// Non-community allocations are processed, but zero community triggers invariant violation.
 	err = pseKeeper.ProcessNextDistribution(ctx)
-	requireT.NoError(err)
-
-	// No OngoingDistribution should be set (no community allocation)
-	_, err = pseKeeper.OngoingDistribution.Get(ctx)
-	requireT.ErrorIs(err, collections.ErrNotFound, "no OngoingDistribution for non-community-only distribution")
-
-	// Schedule entry should be removed
-	_, err = pseKeeper.AllocationSchedule.Get(ctx, 1)
-	requireT.ErrorIs(err, collections.ErrNotFound, "schedule should be removed after single-block distribution")
-
-	// Recipient should have received all non-community tokens
-	recipientBalance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(recipientAddr), bondDenom)
-	requireT.Equal(amount.MulRaw(5).String(), recipientBalance.Amount.String())
+	requireT.ErrorIs(err, types.ErrInvariantViolation)
 }
 
 // TestDistribution_EndBlockerWithScenarios mirrors TestKeeper_Distribute scenarios but routes
