@@ -2,9 +2,7 @@ package keeper
 
 import (
 	"context"
-	"errors"
 
-	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -82,29 +80,21 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 }
 
 // resumeOngoingDistribution continues a multi-block community distribution.
-// Phase is determined by TotalScore existence: absent -> Phase 1, present -> Phase 2.
+// Consumes DelegationTimeEntries in batches, then distributes tokens once all entries are consumed.
 func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.ScheduledDistribution) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	ongoingID := ongoing.ID
 
-	// TotalScore absent -> Phase 1 (score conversion still in progress).
-	_, err := k.TotalScore.Get(ctx, ongoingID)
-	if errors.Is(err, collections.ErrNotFound) {
-		done, err := k.ConsumeOngoingDelegationTimeEntry(ctx, ongoing)
-		if err != nil {
-			return err
-		}
-		if done {
-			sdkCtx.Logger().Info("phase 1 complete, TotalScore computed",
-				"distribution_id", ongoingID)
-		}
-		return nil
-	}
+	// Consume remaining DelegationTimeEntries for score conversion.
+	isConsumed, err := k.ConsumeOngoingDelegationTimeEntry(ctx, ongoing)
 	if err != nil {
 		return err
 	}
+	if !isConsumed {
+		return nil
+	}
 
-	// TotalScore present -> Phase 2 (token distribution).
+	// All entries consumed — distribute tokens.
 	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
 	if err != nil {
 		return err

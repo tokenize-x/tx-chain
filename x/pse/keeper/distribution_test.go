@@ -392,17 +392,16 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	requireT.Equal(nonCommunityAmount.MulRaw(5).String(), recipientBalance.Amount.String(),
 		"recipient should have received all 5 non-community allocations")
 
-	// Verify: TotalScore should NOT exist yet (Phase 1 hasn't run)
-	_, err = pseKeeper.TotalScore.Get(ctx, distributionID)
-	requireT.ErrorIs(err, collections.ErrNotFound)
-
-	// --- Call 2: Phase 1 (process score entries) ---
+	// --- Call 2: Consume all entries + distribute tokens ---
+	// Batch size (100) > delegator count (2), so all entries are consumed in one batch (isConsumed=true).
+	// Tokens distributed to all delegators in one batch.
 	err = pseKeeper.ProcessNextDistribution(ctx)
 	requireT.NoError(err)
 
-	// TotalScore still not set (entries processed but empty-batch call needed to compute it)
-	_, err = pseKeeper.TotalScore.Get(ctx, distributionID)
-	requireT.ErrorIs(err, collections.ErrNotFound)
+	// TotalScore is accumulated incrementally via addToScore.
+	totalScore, err := pseKeeper.TotalScore.Get(ctx, distributionID)
+	requireT.NoError(err)
+	requireT.True(totalScore.IsPositive(), "TotalScore should be positive")
 
 	// Verify entries migrated from distributionID to distributionID+1
 	hasEntries := false
@@ -415,28 +414,11 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	requireT.NoError(err)
 	requireT.True(hasEntries, "entries should be migrated to next distribution ID")
 
-	// --- Call 3: Phase 1 done (empty batch -> compute TotalScore) ---
-	err = pseKeeper.ProcessNextDistribution(ctx)
-	requireT.NoError(err)
-
-	// TotalScore should now exist
-	totalScore, err := pseKeeper.TotalScore.Get(ctx, distributionID)
-	requireT.NoError(err)
-	requireT.True(totalScore.IsPositive(), "TotalScore should be positive")
-
-	// OngoingDistribution should still exist
+	// OngoingDistribution should still exist (cleanup runs on next empty-batch call)
 	_, err = pseKeeper.OngoingDistribution.Get(ctx)
 	requireT.NoError(err)
 
-	// --- Call 4: Phase 2 (distribute tokens) ---
-	err = pseKeeper.ProcessNextDistribution(ctx)
-	requireT.NoError(err)
-
-	// OngoingDistribution should still exist (cleanup hasn't run yet)
-	_, err = pseKeeper.OngoingDistribution.Get(ctx)
-	requireT.NoError(err)
-
-	// --- Call 5: Phase 2 done (empty batch -> cleanup) ---
+	// --- Call 3: Cleanup (no entries, no snapshots -> cleanup) ---
 	err = pseKeeper.ProcessNextDistribution(ctx)
 	requireT.NoError(err)
 

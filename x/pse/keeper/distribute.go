@@ -23,7 +23,7 @@ const defaultBatchSize = 100 // TODO: make configurable
 //  2. Create new entry under nextID with same shares, lastChanged = distTimestamp
 //  3. Remove entry from ongoingID
 //
-// Returns true when all ongoingID entries have been processed and TotalScore is computed.
+// Returns true when all ongoingID entries have been processed.
 func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing types.ScheduledDistribution) (bool, error) {
 	ongoingID := ongoing.ID
 	nextID := ongoing.ID + 1
@@ -59,11 +59,7 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing t
 	}
 	iter.Close()
 
-	// Compute TotalScore from all accumulated snapshots.
 	if len(batch) == 0 {
-		if err := k.computeTotalScore(ctx, ongoingID); err != nil {
-			return false, err
-		}
 		return true, nil
 	}
 
@@ -97,30 +93,8 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntry(ctx context.Context, ongoing t
 		}
 	}
 
-	return false, nil
-}
-
-// computeTotalScore sums all AccountScoreSnapshot entries for a distribution and stores the result in TotalScore.
-func (k Keeper) computeTotalScore(ctx context.Context, distributionID uint64) error {
-	iter, err := k.AccountScoreSnapshot.Iterate(
-		ctx,
-		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](distributionID),
-	)
-	if err != nil {
-		return err
-	}
-	defer iter.Close()
-
-	totalScore := sdkmath.NewInt(0)
-	for ; iter.Valid(); iter.Next() {
-		kv, err := iter.KeyValue()
-		if err != nil {
-			return err
-		}
-		totalScore = totalScore.Add(kv.Value)
-	}
-
-	return k.TotalScore.Set(ctx, distributionID, totalScore)
+	// If batch was smaller than the limit, all entries have been consumed.
+	return len(batch) < defaultBatchSize, nil
 }
 
 // ProcessOngoingTokenDistribution distributes tokens to delegators in batches based on their computed scores.
@@ -141,7 +115,9 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	totalPSEAmount := getCommunityAllocationAmount(ongoing)
 
 	totalScore, err := k.TotalScore.Get(ctx, ongoingID)
-	if err != nil {
+	if errors.Is(err, collections.ErrNotFound) {
+		totalScore = sdkmath.NewInt(0)
+	} else if err != nil {
 		return false, err
 	}
 
