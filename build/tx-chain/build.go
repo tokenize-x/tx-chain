@@ -114,14 +114,20 @@ func copyLocalBinary(src, dst string) error {
 // BuildTXdInDocker builds txd in docker, using the base image from the context
 // (set via --override-os) and falling back to Alpine when the flag is absent.
 func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
-	return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false, TXdImageOSFromContext(ctx))
+	return buildTXdInDocker(
+		ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker,
+		[]string{goCoverFlag}, false, TXdImageOSFromContext(ctx),
+	)
 }
 
 // BuildTXdInDockerFor returns a CommandFunc that builds txd in docker using the given base image.
 // Use this when you need a specific OS, e.g. docker.ImageOSDebian on Mac Apple Silicon.
 func BuildTXdInDockerFor(baseImage docker.ImageOS) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
-		return buildTXdInDocker(ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker, []string{goCoverFlag}, false, baseImage)
+		return buildTXdInDocker(
+			ctx, deps, txcrusttools.TargetPlatformLinuxLocalArchInDocker,
+			[]string{goCoverFlag}, false, baseImage,
+		)
 	}
 }
 
@@ -282,6 +288,8 @@ func linuxMuslToolchainFor(targetPlatform txcrusttools.TargetPlatform) (linuxMus
 //
 // release=false uses linuxLinkModeForImage(baseImage) and enables a fast native-build path on Linux hosts.
 // release=true always uses linuxLinkModeStaticMusl + goreleaser-cross for portable, reproducible artifacts.
+//
+//nolint:funlen
 func buildTXdInDocker(
 	ctx context.Context,
 	deps types.DepsFunc,
@@ -290,11 +298,9 @@ func buildTXdInDocker(
 	release bool,
 	baseImage docker.ImageOS,
 ) error {
-	ldFlags := make([]string, 0)
+	ldFlags, envs, dockerVolumes := make([]string, 0), make([]string, 0), make([]string, 0)
 	var cc string
 	buildTags := defaultBuildTags
-	envs := make([]string, 0)
-	dockerVolumes := make([]string, 0)
 	switch targetPlatform.OS {
 	case txcrusttools.OSLinux:
 		mode := linuxLinkModeForImage(baseImage)
@@ -346,7 +352,7 @@ func buildTXdInDocker(
 				return err
 			}
 			wasmLibFilename := fmt.Sprintf("libwasmvm.%s.so", arch)
-			gccCrossCompiler := fmt.Sprintf("%s-linux-gnu-gcc", arch)
+			gccCrossCompiler := fmt.Sprintf("%s-linux-gnu-gcc", arch) //nolint:perfsprint
 			wasmLibHostPath := txcrusttools.Path(filepath.Join("lib", wasmLibFilename), targetPlatform)
 
 			if !release && runtime.GOOS == txcrusttools.OSLinux {
