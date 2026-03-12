@@ -1,4 +1,4 @@
-package v6fixdenommetadata_test
+package v6patch1_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
-	v6fixdenommetadata "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6_fix_denom_metadata"
+	v6patch1 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6patch1"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
 	"github.com/tokenize-x/tx-chain/v6/testutil/simapp"
 )
@@ -41,7 +41,7 @@ func TestMigrateDenomMetadata(t *testing.T) {
 	requireT.Equal("devcore", meta.DenomUnits[1].Denom)
 
 	// Run the fix
-	err := v6fixdenommetadata.MigrateDenomMetadata(ctx, testApp.BankKeeper)
+	err := v6patch1.MigrateDenomMetadata(ctx, testApp.BankKeeper)
 	requireT.NoError(err)
 
 	// Verify the fix

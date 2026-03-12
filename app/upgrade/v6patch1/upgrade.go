@@ -1,4 +1,4 @@
-package v6fixdenommetadata
+package v6patch1
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 )
 
 // Name defines the upgrade name.
-const Name = "v6_fix_denom_metadata"
+const Name = "v6patch1"
 
-// New makes an upgrade handler for v6_fix_denom_metadata upgrade.
+// New makes an upgrade handler for v6patch1 upgrade.
 func New(
 	mm *module.Manager,
 	configurator module.Configurator,
