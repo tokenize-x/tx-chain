@@ -3,6 +3,7 @@
 package modules
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -72,9 +74,10 @@ func TestFeeGrant(t *testing.T) {
 	latestBlock, err := chain.LatestBlockHeader(ctx)
 	requireT.NoError(err)
 
+	allowanceExpiration := latestBlock.Time.Add(10 * time.Second)
 	expiringAllowance, err := codectypes.NewAnyWithValue(&feegrant.BasicAllowance{
 		SpendLimit: nil, // empty means no limit
-		Expiration: lo.ToPtr(latestBlock.Time.Add(10 * time.Second)),
+		Expiration: lo.ToPtr(allowanceExpiration),
 	})
 	requireT.NoError(err)
 
@@ -98,8 +101,20 @@ func TestFeeGrant(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Len(allowancesRes.Allowances, 2)
 
-	// await next 5 blocks
-	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 10))
+	// await until chain time passes the allowance expiration
+	requireT.NoError(chain.AwaitState(ctx, func(ctx context.Context) error {
+		header, err := chain.LatestBlockHeader(ctx)
+		if err != nil {
+			return err
+		}
+		if !header.Time.After(allowanceExpiration) {
+			return errors.Errorf(
+				"chain time %s has not passed expiration %s yet",
+				header.Time, allowanceExpiration,
+			)
+		}
+		return nil
+	}))
 
 	pruneAllowancesMsg := &feegrant.MsgPruneAllowances{
 		Pruner: granter.String(),
