@@ -161,6 +161,7 @@ func (k Keeper) distributeNonCommunityAllocations(
 			continue
 		}
 
+		// Look up recipient addresses for this clearing account from governance-configured mappings.
 		var recipientAddrs []string
 		for _, mapping := range clearingAccountMappings {
 			if mapping.ClearingAccount == allocation.ClearingAccount {
@@ -169,6 +170,7 @@ func (k Keeper) distributeNonCommunityAllocations(
 			}
 		}
 
+		// Split allocation evenly among recipients; remainder goes to community pool.
 		numRecipients := sdkmath.NewInt(int64(len(recipientAddrs)))
 		if numRecipients.IsZero() {
 			return errorsmod.Wrapf(
@@ -180,6 +182,7 @@ func (k Keeper) distributeNonCommunityAllocations(
 		amountPerRecipient := allocation.Amount.Quo(numRecipients)
 		remainder := allocation.Amount.Mod(numRecipients)
 
+		// Send equal share to each recipient from the clearing account.
 		for _, recipientAddr := range recipientAddrs {
 			recipient := sdk.MustAccAddressFromBech32(recipientAddr)
 			coinsToSend := sdk.NewCoins(sdk.NewCoin(bondDenom, amountPerRecipient))
@@ -200,6 +203,7 @@ func (k Keeper) distributeNonCommunityAllocations(
 			}
 		}
 
+		// Send remainder to the community pool.
 		if !remainder.IsZero() {
 			clearingAccountAddr := k.accountKeeper.GetModuleAddress(allocation.ClearingAccount)
 			remainderCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, remainder))
