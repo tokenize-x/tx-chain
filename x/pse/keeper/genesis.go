@@ -46,13 +46,24 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
-	// Populate account scores from genesis state.
+	// Populate account scores from genesis state and reconstruct TotalScore.
+	totalScores := make(map[uint64]sdkmath.Int)
 	for _, accountScore := range genState.AccountScores {
 		addr, err := k.addressCodec.StringToBytes(accountScore.Address)
 		if err != nil {
 			return err
 		}
 		if err := k.SetDelegatorScore(ctx, accountScore.DistributionID, addr, accountScore.Score); err != nil {
+			return err
+		}
+		if existing, ok := totalScores[accountScore.DistributionID]; ok {
+			totalScores[accountScore.DistributionID] = existing.Add(accountScore.Score)
+		} else {
+			totalScores[accountScore.DistributionID] = accountScore.Score
+		}
+	}
+	for distID, total := range totalScores {
+		if err := k.TotalScore.Set(ctx, distID, total); err != nil {
 			return err
 		}
 	}
