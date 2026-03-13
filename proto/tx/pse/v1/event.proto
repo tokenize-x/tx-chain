@@ -58,4 +58,6 @@ message EventCommunityDistributed {
   ];
   // scheduled_at is the Unix timestamp when the distribution was scheduled to occur.
   uint64 scheduled_at = 5;
+  // distribution_id is the unique identifier of the distribution.
+  uint64 distribution_id = 6;
 }

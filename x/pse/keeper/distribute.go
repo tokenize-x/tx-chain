@@ -223,6 +223,7 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 			TotalPseScore:    totalScore,
 			Amount:           userAmount,
 			ScheduledAt:      ongoing.Timestamp,
+			DistributionId:   ongoingID,
 		}); err != nil {
 			sdkCtx.Logger().Error("failed to emit community distributed event", "error", err)
 		}

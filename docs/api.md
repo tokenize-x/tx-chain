@@ -5890,6 +5890,7 @@ Any remainder from division is sent to the community pool.
 | `total_pse_score` | [string](#string) |  |    |
 | `amount` | [string](#string) |  |    |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the distribution was scheduled to occur.`  |
+| `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique identifier of the distribution.`  |
 
 
 
