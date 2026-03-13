@@ -159,11 +159,6 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		)
 	}
 
-	// No amount to distribute: clean up.
-	if !totalPSEAmount.IsPositive() {
-		return true, k.cleanupOngoingDistribution(ctx, ongoingID)
-	}
-
 	// Collect a batch of score snapshots.
 	iter, err := k.AccountScoreSnapshot.Iterate(
 		ctx,
