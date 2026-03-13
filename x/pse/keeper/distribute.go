@@ -70,11 +70,18 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntry(
 		return true, nil
 	}
 
+	// Load excluded addresses once for the entire batch.
+	excludedMap, err := k.LoadExcludedAddressMap(ctx)
+	if err != nil {
+		return false, err
+	}
+
 	for _, item := range batch {
-		isExcluded, err := k.IsExcludedAddress(ctx, item.delAddr)
+		addrStr, err := k.addressCodec.BytesToString(item.delAddr)
 		if err != nil {
 			return false, err
 		}
+		isExcluded := excludedMap[addrStr]
 
 		if !isExcluded {
 			// Score for ongoingID: lastChanged -> distTimestamp.
