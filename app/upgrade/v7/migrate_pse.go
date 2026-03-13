@@ -1,4 +1,4 @@
-package v2
+package v7
 
 import (
 	"context"
@@ -9,17 +9,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	pskeeper "github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
-// MigrateStore migrates the PSE module state from v1 to v2.
+// migratePSEStore migrates the PSE module state.
 // - DelegationTimeEntries key: Pair[AccAddress, ValAddress] -> Triple[uint64, AccAddress, ValAddress].
 // - AccountScoreSnapshot key: AccAddress -> Pair[uint64, AccAddress].
-func MigrateStore(
-	ctx context.Context,
-	storeService sdkstore.KVStoreService,
-	cdc codec.BinaryCodec,
-) error {
+func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
+	storeService := pseKeeper.StoreService()
+	cdc := pseKeeper.Codec()
+
 	distributionID, err := getFirstDistributionID(ctx, storeService, cdc)
 	if err != nil {
 		return err

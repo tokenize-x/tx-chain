@@ -132,6 +132,16 @@ func NewKeeper(
 	return k
 }
 
+// StoreService returns the store service used by the keeper.
+func (k Keeper) StoreService() sdkstore.KVStoreService {
+	return k.storeService
+}
+
+// Codec returns the binary codec used by the keeper.
+func (k Keeper) Codec() codec.BinaryCodec {
+	return k.cdc
+}
+
 // GetClearingAccountBalances returns the current balances of all PSE clearing accounts in the bond denom.
 func (k Keeper) GetClearingAccountBalances(ctx context.Context) ([]types.ClearingAccountBalance, error) {
 	// Get bond denom from staking params
