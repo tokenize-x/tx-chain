@@ -198,7 +198,7 @@ func (k Keeper) LoadExcludedAddressMap(ctx context.Context) (map[string]bool, er
 	params, err := k.GetParams(ctx)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
-			return nil, nil
+			return map[string]bool{}, nil
 		}
 		return nil, err
 	}
