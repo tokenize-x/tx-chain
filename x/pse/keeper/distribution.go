@@ -82,7 +82,7 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	ongoingID := ongoing.ID
 
 	// Consume remaining DelegationTimeEntries for score conversion.
-	isConsumed, err := k.ConsumeOngoingDelegationTimeEntry(ctx, ongoing)
+	isConsumed, err := k.ConsumeOngoingDelegationTimeEntries(ctx, ongoing)
 	if err != nil {
 		return err
 	}

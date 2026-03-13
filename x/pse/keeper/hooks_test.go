@@ -391,7 +391,7 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 
 	// Run Phase 1 until done.
 	for {
-		done, err := r.testApp.PSEKeeper.ConsumeOngoingDelegationTimeEntry(r.ctx, scheduledDistribution)
+		done, err := r.testApp.PSEKeeper.ConsumeOngoingDelegationTimeEntries(r.ctx, scheduledDistribution)
 		r.requireT.NoError(err)
 		if done {
 			break
@@ -467,7 +467,7 @@ func distributeExpectInvariantViolation(r *runEnv, amount sdkmath.Int) {
 	r.requireT.NoError(err)
 
 	for {
-		done, err := r.testApp.PSEKeeper.ConsumeOngoingDelegationTimeEntry(r.ctx, scheduledDistribution)
+		done, err := r.testApp.PSEKeeper.ConsumeOngoingDelegationTimeEntries(r.ctx, scheduledDistribution)
 		r.requireT.NoError(err)
 		if done {
 			break

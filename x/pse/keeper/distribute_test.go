@@ -357,7 +357,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT.NoError(err)
 	balanceBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
 	for {
-		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntry(ctx, scheduledDistribution)
+		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
 		requireT.NoError(err)
 		if done {
 			break
