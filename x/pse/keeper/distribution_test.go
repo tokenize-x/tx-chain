@@ -125,16 +125,19 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 		requireT.NoError(err)
 	}
 
-	// Process first distribution
+	// Process first distribution by calling EndBlocker repeatedly until OngoingDistribution is cleared.
+	// Iterations are capped with "maxEndBlockerCalls" to catch infinite loops.
 	ctx = ctx.WithBlockTime(time.Unix(int64(time1)+10, 0))
 	ctx = ctx.WithBlockHeight(100)
-	for range 10 {
+	const maxEndBlockerCalls = 10
+	for i := range maxEndBlockerCalls {
 		err = pseKeeper.ProcessNextDistribution(ctx)
 		requireT.NoError(err)
 		_, oErr := pseKeeper.OngoingDistribution.Get(ctx)
 		if oErr != nil {
 			break
 		}
+		requireT.Less(i, maxEndBlockerCalls-1, "distribution did not complete within expected calls")
 	}
 
 	// Export genesis
