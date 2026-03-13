@@ -285,6 +285,7 @@
     - [AccountScore](#tx.pse.v1.AccountScore)
     - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
     - [GenesisState](#tx.pse.v1.GenesisState)
+    - [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry)
   
 - [tx/pse/v1/params.proto](#tx/pse/v1/params.proto)
     - [Params](#tx.pse.v1.Params)
@@ -5966,6 +5967,23 @@ GenesisState defines the module's genesis state.
 | `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 | `distributions_disabled` | [bool](#bool) |  |    |
+| `total_scores` | [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry) | repeated |    |
+
+
+
+
+
+
+<a name="tx.pse.v1.TotalScoreEntry"></a>
+
+### TotalScoreEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `distribution_id` | [uint64](#uint64) |  |    |
+| `total_score` | [string](#string) |  |    |
 
 
 

@@ -46,8 +46,7 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
-	// Populate account scores from genesis state and reconstruct TotalScore.
-	totalScores := make(map[uint64]sdkmath.Int)
+	// Populate account scores from genesis state.
 	for _, accountScore := range genState.AccountScores {
 		addr, err := k.addressCodec.StringToBytes(accountScore.Address)
 		if err != nil {
@@ -56,14 +55,11 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		if err := k.SetDelegatorScore(ctx, accountScore.DistributionID, addr, accountScore.Score); err != nil {
 			return err
 		}
-		if existing, ok := totalScores[accountScore.DistributionID]; ok {
-			totalScores[accountScore.DistributionID] = existing.Add(accountScore.Score)
-		} else {
-			totalScores[accountScore.DistributionID] = accountScore.Score
-		}
 	}
-	for distID, total := range totalScores {
-		if err := k.TotalScore.Set(ctx, distID, total); err != nil {
+
+	// Restore TotalScore from genesis state.
+	for _, ts := range genState.TotalScores {
+		if err := k.TotalScore.Set(ctx, ts.DistributionID, ts.TotalScore); err != nil {
 			return err
 		}
 	}
@@ -127,6 +123,19 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 				DistributionID: key.K1(),
 				Address:        addr,
 				Score:          value,
+			})
+			return false, nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	// Export TotalScore.
+	err = k.TotalScore.Walk(ctx, nil,
+		func(distID uint64, totalScore sdkmath.Int) (stop bool, err error) {
+			genesis.TotalScores = append(genesis.TotalScores, types.TotalScoreEntry{
+				DistributionID: distID,
+				TotalScore:     totalScore,
 			})
 			return false, nil
 		})
