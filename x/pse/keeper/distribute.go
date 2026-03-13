@@ -206,16 +206,14 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Distribute rewards to each delegator in the batch proportional to their score.
+	batchDistributed := sdkmath.NewInt(0)
 	for _, item := range batch {
 		userAmount := totalPSEAmount.Mul(item.score).Quo(totalScore)
 		distributedAmount, err := k.distributeToDelegator(ctx, item.delAddr, userAmount, bondDenom)
 		if err != nil {
 			return false, err
 		}
-
-		if err := k.addToDistributedAmount(ctx, ongoingID, distributedAmount); err != nil {
-			return false, err
-		}
+		batchDistributed = batchDistributed.Add(distributedAmount)
 
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
 			DelegatorAddress: item.delAddr.String(),
@@ -232,6 +230,10 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		if err := k.RemoveDelegatorScore(ctx, ongoingID, item.delAddr); err != nil {
 			return false, err
 		}
+	}
+
+	if err := k.addToDistributedAmount(ctx, ongoingID, batchDistributed); err != nil {
+		return false, err
 	}
 
 	return false, nil
