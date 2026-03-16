@@ -186,9 +186,9 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
-		From:   docker.ImageOSDebian.String(),
+		From:   docker.ImageOSUbuntu.String(),
 		Binary: hermesBinaryPath,
-		Run:    "apt-get update && apt-get install -y --no-install-recommends curl jq && rm -rf /var/lib/apt/lists/*",
+		Run:    "apt update && apt install curl jq -y",
 	})
 	if err != nil {
 		return err
