@@ -162,9 +162,14 @@ func TestMigratePSEStore(t *testing.T) {
 	requireT.Equal(uint64(0), lastID)
 
 	// Verify new schedule can be set starting from ID=1 (simulates post-upgrade governance).
+	allocation := func(amount int64) []types.ClearingAccountAllocation {
+		return []types.ClearingAccountAllocation{
+			{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(amount)},
+		}
+	}
 	newSchedule := []types.ScheduledDistribution{
-		{ID: 1, Timestamp: 100000, Allocations: []types.ClearingAccountAllocation{{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(1000)}}},
-		{ID: 2, Timestamp: 200000, Allocations: []types.ClearingAccountAllocation{{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(2000)}}},
+		{ID: 1, Timestamp: 100000, Allocations: allocation(1000)},
+		{ID: 2, Timestamp: 200000, Allocations: allocation(2000)},
 	}
 	for _, sd := range newSchedule {
 		requireT.NoError(pseKeeper.AllocationSchedule.Set(ctx, sd.ID, sd))
