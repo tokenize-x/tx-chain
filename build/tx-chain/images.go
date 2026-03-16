@@ -26,8 +26,7 @@ type imageConfig struct {
 	// BaseImage selects the Docker base OS and its linking strategy.
 	// Zero value defaults to docker.ImageOSAlpine (musl/static).
 	//   docker.ImageOSAlpine — musl static linking. Smallest. Works on Linux/CI.
-	//   docker.ImageOSDebian — glibc dynamic linking. Works on Mac Apple Silicon Docker Desktop.
-	//   docker.ImageOSUbuntu — glibc dynamic linking. Same as Debian for txd.
+	//   docker.ImageOSUbuntu — glibc dynamic linking. Works on Mac Apple Silicon Docker Desktop.
 	BaseImage docker.ImageOS
 }
 

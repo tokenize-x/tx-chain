@@ -14,11 +14,11 @@ type txdImageOSContextKey struct{}
 // RegisterTXdOSFlag is a build.FlagRegistrar that adds the --override-txd-os flag.
 // The value is resolved with precedence: CLI flag > $TXD_OS env var > default (alpine).
 //
-//	builder --override-txd-os debian integration-tests/xrpl
-//	TXD_OS=debian builder integration-tests/xrpl
+//	builder --override-txd-os ubuntu integration-tests/xrpl
+//	TXD_OS=ubuntu builder integration-tests/xrpl
 func RegisterTXdOSFlag(fs *pflag.FlagSet) func(context.Context) context.Context {
 	fs.String("override-txd-os", string(docker.ImageOSAlpine),
-		"Base OS image for the txd Docker build (alpine|debian|ubuntu) [$TXD_OS]")
+		"Base OS image for the txd Docker build (alpine|ubuntu) [$TXD_OS]")
 	return func(ctx context.Context) context.Context {
 		value := build.ResolveFlag(fs, "override-txd-os", "TXD_OS")
 		return context.WithValue(ctx, txdImageOSContextKey{}, docker.ImageOS(value))

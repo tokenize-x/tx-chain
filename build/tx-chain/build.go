@@ -55,7 +55,7 @@ const (
 )
 
 // linuxLinkModeForImage returns the Linux link mode that matches the given Docker base image.
-// Alpine uses musl and static linking; Debian and Ubuntu use glibc and dynamic linking.
+// Alpine uses musl and static linking; Ubuntu uses glibc and dynamic linking.
 func linuxLinkModeForImage(baseImage docker.ImageOS) linuxLinkMode {
 	if baseImage == docker.ImageOSAlpine {
 		return linuxLinkModeStaticMusl
@@ -121,7 +121,7 @@ func BuildTXdInDocker(ctx context.Context, deps types.DepsFunc) error {
 }
 
 // BuildTXdInDockerFor returns a CommandFunc that builds txd in docker using the given base image.
-// Use this when you need a specific OS, e.g. docker.ImageOSDebian on Mac Apple Silicon.
+// Use this when you need a specific OS, e.g. docker.ImageOSUbuntu on Mac Apple Silicon.
 func BuildTXdInDockerFor(baseImage docker.ImageOS) types.CommandFunc {
 	return func(ctx context.Context, deps types.DepsFunc) error {
 		return buildTXdInDocker(
@@ -188,7 +188,7 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
 		From:   docker.ImageOSUbuntu.String(),
 		Binary: hermesBinaryPath,
-		Run:    "apt update && apt install curl jq -y",
+		Run:    "apt-get update && apt-get install -y --no-install-recommends curl jq && rm -rf /var/lib/apt/lists/*",
 	})
 	if err != nil {
 		return err
@@ -342,7 +342,7 @@ func buildTXdInDocker(
 			}
 
 		case linuxLinkModeDynamicGlibc:
-			// Ubuntu/Debian Slim: dynamically linked binary via glibc cross-compiler + libwasmvm.*.so.
+			// Ubuntu: dynamically linked binary via glibc cross-compiler + libwasmvm.*.so.
 			if err := txcrusttools.Ensure(ctx, txchaintools.LibWASMGlibc, targetPlatform); err != nil {
 				return err
 			}
