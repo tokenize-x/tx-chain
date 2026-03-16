@@ -141,7 +141,6 @@ It should also be mentioned that this rule applies for all the messages inside `
 | `/cosmos.group.v1.MsgUpdateGroupPolicyAdmin`                           | 20000                          |
 | `/cosmos.group.v1.MsgUpdateGroupPolicyDecisionPolicy`                  | 17000                          |
 | `/cosmos.group.v1.MsgUpdateGroupPolicyMetadata`                        | 15000                          |
-| `/cosmos.group.v1.MsgWithdrawProposal`                                 | 22000                          |
 | `/cosmos.nft.v1beta1.MsgSend`                                          | 25000                          |
 | `/cosmos.slashing.v1beta1.MsgUnjail`                                   | 90000                          |
 | `/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation`                 | 75000                          |
@@ -237,6 +236,7 @@ and the formula for them is
 | `/cosmos.group.v1.MsgExec`                                             |
 | `/cosmos.group.v1.MsgSubmitProposal`                                   |
 | `/cosmos.group.v1.MsgVote`                                             |
+| `/cosmos.group.v1.MsgWithdrawProposal`                                 |
 | `/cosmos.mint.v1beta1.MsgUpdateParams`                                 |
 | `/cosmos.protocolpool.v1.MsgCancelContinuousFund`                      |
 | `/cosmos.protocolpool.v1.MsgCommunityPoolSpend`                        |

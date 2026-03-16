@@ -252,7 +252,7 @@ func TestGroupForAssetFTIssuance(t *testing.T) {
 	_, err = client.BroadcastTx(
 		ctx,
 		chain.ClientContext.WithFromAddress(proposer),
-		chain.TxFactory().WithGas(chain.GasLimitByMsgs(withdrawProposalMsg)),
+		chain.TxFactoryAuto(),
 		withdrawProposalMsg,
 	)
 	requireT.NoError(err)
@@ -503,6 +503,98 @@ func TestGroupAdministration(t *testing.T) {
 	requireT.Len(groupMembersResp.Members, len(groupMembersNew)-1)
 }
 
+// TestGroupProposalLifecycle covers group proposal withdraw and rejected flows in one test.
+func TestGroupProposalLifecycle(t *testing.T) {
+	t.Parallel()
+
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	requireT := require.New(t)
+	groupClient := group.NewQueryClient(chain.ClientContext)
+
+	admin := chain.GenAccount()
+	groupMembers := lo.Times(3, func(i int) sdk.AccAddress { return chain.GenAccount() })
+	proposer := groupMembers[0]
+	voters := groupMembers[1:] // 2 voters; with threshold 0.45 we need 2 YES to pass
+
+	chain.FundAccountWithOptions(ctx, t, admin, integration.BalancesOptions{
+		Messages: []sdk.Msg{&group.MsgCreateGroupWithPolicy{}},
+	})
+	accountsToFund := lo.Map(groupMembers, func(acc sdk.AccAddress, _ int) integration.FundedAccount {
+		return integration.FundedAccount{Address: acc, Amount: chain.NewCoin(sdkmath.NewInt(1_000_000))}
+	})
+	chain.Faucet.FundAccounts(ctx, t, accountsToFund...)
+
+	_, groupPolicy := createGroupWithPolicy(ctx, t, chain, admin, groupMembers)
+	groupPolicyAddr := sdk.MustAccAddressFromBech32(groupPolicy.Address)
+
+	sendAmount := sdkmath.NewInt(500_000)
+	chain.FundAccountWithOptions(ctx, t, groupPolicyAddr, integration.BalancesOptions{
+		Messages: []sdk.Msg{},
+		Amount:   sendAmount.MulRaw(2),
+	})
+
+	// Withdraw Scenario
+	// Submit proposal then withdraw; assert status WITHDRAWN.
+	receiver1 := chain.GenAccount()
+	submit1, err := group.NewMsgSubmitProposal(
+		groupPolicy.Address,
+		[]string{proposer.String()},
+		[]sdk.Msg{&bank.MsgSend{
+			FromAddress: groupPolicy.Address,
+			ToAddress:   receiver1.String(),
+			Amount:      []sdk.Coin{chain.NewCoin(sendAmount)},
+		}},
+		"",
+		group.Exec_EXEC_UNSPECIFIED,
+		"Lifecycle scenario 1: withdraw",
+		"Withdraw scenario",
+	)
+	requireT.NoError(err)
+	proposal1 := submitGroupProposal(ctx, t, chain, proposer, submit1)
+
+	_, err = client.BroadcastTx(
+		ctx,
+		chain.ClientContext.WithFromAddress(proposer),
+		chain.TxFactoryAuto(),
+		&group.MsgWithdrawProposal{ProposalId: proposal1.Id, Address: proposer.String()},
+	)
+	requireT.NoError(err)
+	info1, err := groupClient.Proposal(ctx, &group.QueryProposalRequest{ProposalId: proposal1.Id})
+	requireT.NoError(err)
+	requireT.Equal(group.PROPOSAL_STATUS_WITHDRAWN, info1.Proposal.Status)
+	t.Log("Scenario 1: Withdraw passed")
+
+	// Rejection Scenario
+	// Submit proposal; voters vote NO; assert status REJECTED.
+	receiver2 := chain.GenAccount()
+	submit2, err := group.NewMsgSubmitProposal(
+		groupPolicy.Address,
+		[]string{proposer.String()},
+		[]sdk.Msg{&bank.MsgSend{
+			FromAddress: groupPolicy.Address,
+			ToAddress:   receiver2.String(),
+			Amount:      []sdk.Coin{chain.NewCoin(sendAmount)},
+		}},
+		"",
+		group.Exec_EXEC_UNSPECIFIED,
+		"Lifecycle scenario 2: rejected",
+		"Rejected scenario",
+	)
+	requireT.NoError(err)
+	proposal2 := submitGroupProposal(ctx, t, chain, proposer, submit2)
+
+	voteGroupProposal(ctx, t, chain, proposal2.Id, voters, group.VOTE_OPTION_NO, group.Exec_EXEC_UNSPECIFIED, 0)
+
+	// Proposal status becomes REJECTED only after voting period ends.
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
+	time.Sleep(time.Minute + 2*time.Second)
+
+	info2, err := groupClient.Proposal(ctx, &group.QueryProposalRequest{ProposalId: proposal2.Id})
+	requireT.NoError(err)
+	requireT.Equal(group.PROPOSAL_STATUS_REJECTED, info2.Proposal.Status)
+	t.Log("Scenario 2: Rejected passed")
+}
+
 // createGroupWithPolicy simple helper function to creates group & group policy with hardcoded params & customizable
 // member list and admin.
 func createGroupWithPolicy(
@@ -603,4 +695,38 @@ func submitGroupProposal(
 	t.Logf("submitted group proposal, id:%d txHash:%s", createdProposal.Id, result.TxHash)
 
 	return createdProposal
+}
+
+// voteGroupProposal broadcasts MsgVote for each voter and asserts no error.
+// If voteGas is non-zero, that gas limit is used (avoids simulation); otherwise TxFactoryAuto() is used.
+func voteGroupProposal(
+	ctx context.Context,
+	t *testing.T,
+	chain integration.TXChain,
+	proposalID uint64,
+	voters []sdk.AccAddress,
+	option group.VoteOption,
+	exec group.Exec,
+	voteGas uint64,
+) {
+	requireT := require.New(t)
+	txf := chain.TxFactoryAuto()
+	if voteGas > 0 {
+		txf = chain.TxFactory().WithGas(voteGas)
+	}
+	for _, voter := range voters {
+		voteMsg := &group.MsgVote{
+			ProposalId: proposalID,
+			Voter:      voter.String(),
+			Option:     option,
+			Exec:       exec,
+		}
+		_, err := client.BroadcastTx(
+			ctx,
+			chain.ClientContext.WithFromAddress(voter),
+			txf,
+			voteMsg,
+		)
+		requireT.NoError(err)
+	}
 }
