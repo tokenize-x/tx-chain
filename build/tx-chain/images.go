@@ -49,7 +49,7 @@ func buildTXdDockerImage(ctx context.Context, cfg imageConfig) error {
 		}
 	}
 	dockerfile, err := image.Execute(image.Data{
-		From:             docker.AlpineImage,
+		From:             docker.ImageOSAlpine.String(),
 		TXdBinary:        cfg.BinaryPath,
 		CosmovisorBinary: cosmovisorBinaryPath,
 		Networks: []string{

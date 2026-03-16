@@ -116,7 +116,7 @@ func BuildGaiaDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
-		From:   docker.AlpineImage,
+		From:   docker.ImageOSAlpine.String(),
 		Binary: gaiaBinaryPath,
 	})
 	if err != nil {
@@ -152,9 +152,10 @@ func BuildHermesDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
-		From:   docker.UbuntuImage,
+		// Hermes requires glibc >= 2.38; Ubuntu 24.04 (glibc 2.39) satisfies this.
+		From:   docker.ImageOSUbuntu.String(),
 		Binary: hermesBinaryPath,
-		Run:    "apt update && apt install curl jq -y",
+		Run:    "apt-get update && apt-get install -y --no-install-recommends curl jq && rm -rf /var/lib/apt/lists/*",
 	})
 	if err != nil {
 		return err
@@ -188,7 +189,7 @@ func BuildOsmosisDockerImage(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	dockerfile, err := dockerbasic.Execute(dockerbasic.Data{
-		From:   docker.AlpineImage,
+		From:   docker.ImageOSAlpine.String(),
 		Binary: osmosisBinaryPath,
 	})
 	if err != nil {
