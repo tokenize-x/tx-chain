@@ -55,7 +55,7 @@ const (
 )
 
 // linuxLinkModeForImage returns the Linux link mode that matches the given Docker base image.
-// Alpine uses musl and static linking; all other images (Debian Slim, …) use glibc and dynamic linking.
+// Alpine uses musl and static linking; Debian and Ubuntu use glibc and dynamic linking.
 func linuxLinkModeForImage(baseImage docker.ImageOS) linuxLinkMode {
 	if baseImage == docker.ImageOSAlpine {
 		return linuxLinkModeStaticMusl

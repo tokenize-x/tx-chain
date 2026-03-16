@@ -18,7 +18,7 @@ type txdImageOSContextKey struct{}
 //	TXD_OS=debian builder integration-tests/xrpl
 func RegisterTXdOSFlag(fs *pflag.FlagSet) func(context.Context) context.Context {
 	fs.String("override-txd-os", string(docker.ImageOSAlpine),
-		"Base OS image for the txd Docker build (alpine|debian) [$TXD_OS]")
+		"Base OS image for the txd Docker build (alpine|debian|ubuntu) [$TXD_OS]")
 	return func(ctx context.Context) context.Context {
 		value := build.ResolveFlag(fs, "override-txd-os", "TXD_OS")
 		return context.WithValue(ctx, txdImageOSContextKey{}, docker.ImageOS(value))
