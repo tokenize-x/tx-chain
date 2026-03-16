@@ -86,3 +86,17 @@ func (qs QueryService) ClearingAccountBalances(
 		Balances: balances,
 	}, nil
 }
+
+// LastProcessedDistributionID returns the ID of the last completed distribution.
+func (qs QueryService) LastProcessedDistributionID(
+	ctx context.Context,
+	req *types.QueryLastProcessedDistributionIDRequest,
+) (*types.QueryLastProcessedDistributionIDResponse, error) {
+	lastID, err := qs.keeper.LastProcessedDistributionID.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &types.QueryLastProcessedDistributionIDResponse{
+		LastProcessedDistributionId: lastID,
+	}, nil
+}

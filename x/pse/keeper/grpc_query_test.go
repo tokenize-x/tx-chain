@@ -448,3 +448,29 @@ func TestQueryClearingAccountBalances(t *testing.T) {
 		requireT.True(balanceMap[types.ClearingAccountInvestors].IsZero())
 	})
 }
+
+func TestQueryLastProcessedDistributionID(t *testing.T) {
+	t.Run("default genesis value is zero", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		resp, err := queryService.LastProcessedDistributionID(ctx, &types.QueryLastProcessedDistributionIDRequest{})
+		requireT.NoError(err)
+		requireT.Equal(uint64(0), resp.LastProcessedDistributionId)
+	})
+
+	t.Run("returns updated value", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		requireT.NoError(testApp.PSEKeeper.LastProcessedDistributionID.Set(ctx, 5))
+
+		resp, err := queryService.LastProcessedDistributionID(ctx, &types.QueryLastProcessedDistributionIDRequest{})
+		requireT.NoError(err)
+		requireT.Equal(uint64(5), resp.LastProcessedDistributionId)
+	})
+}

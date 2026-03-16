@@ -294,6 +294,8 @@
     - [ClearingAccountBalance](#tx.pse.v1.ClearingAccountBalance)
     - [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest)
     - [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse)
+    - [QueryLastProcessedDistributionIDRequest](#tx.pse.v1.QueryLastProcessedDistributionIDRequest)
+    - [QueryLastProcessedDistributionIDResponse](#tx.pse.v1.QueryLastProcessedDistributionIDResponse)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
     - [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest)
@@ -6097,6 +6099,39 @@ QueryClearingAccountBalancesResponse defines the response type for querying clea
 
 
 
+<a name="tx.pse.v1.QueryLastProcessedDistributionIDRequest"></a>
+
+### QueryLastProcessedDistributionIDRequest
+
+```
+QueryLastProcessedDistributionIDRequest defines the request type for querying the last processed distribution ID.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryLastProcessedDistributionIDResponse"></a>
+
+### QueryLastProcessedDistributionIDResponse
+
+```
+QueryLastProcessedDistributionIDResponse defines the response type for querying the last processed distribution ID.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `last_processed_distribution_id` | [uint64](#uint64) |  |  `last_processed_distribution_id is the ID of the last completed distribution. Returns 0 if no distribution has been processed yet.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.QueryParamsRequest"></a>
 
 ### QueryParamsRequest
@@ -6223,6 +6258,7 @@ Query defines the gRPC querier service.
 | `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
 | `ScheduledDistributions` | [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest) | [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse) | `ScheduledDistributions queries all future scheduled distributions.` | GET|/tx/pse/v1/scheduled_distributions |
 | `ClearingAccountBalances` | [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest) | [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse) | `ClearingAccountBalances queries the current balances of all PSE clearing accounts.` | GET|/tx/pse/v1/clearing_account_balances |
+| `LastProcessedDistributionID` | [QueryLastProcessedDistributionIDRequest](#tx.pse.v1.QueryLastProcessedDistributionIDRequest) | [QueryLastProcessedDistributionIDResponse](#tx.pse.v1.QueryLastProcessedDistributionIDResponse) | `LastProcessedDistributionID queries the ID of the last completed distribution.` | GET|/tx/pse/v1/last_processed_distribution_id |
 
  <!-- end services -->
 
