@@ -5968,6 +5968,7 @@ GenesisState defines the module's genesis state.
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 | `distributions_disabled` | [bool](#bool) |  |    |
 | `total_scores` | [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry) | repeated |    |
+| `last_processed_distribution_id` | [uint64](#uint64) |  |    |
 
 
 
