@@ -133,6 +133,7 @@ import (
 	appupgrade "github.com/tokenize-x/tx-chain/v6/app/upgrade"
 	appupgradev6 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6"
 	appupgradev6patch1 "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6patch1"
+	appupgradev6patch1testnet "github.com/tokenize-x/tx-chain/v6/app/upgrade/v6patch1testnet"
 	"github.com/tokenize-x/tx-chain/v6/docs"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config"
 	"github.com/tokenize-x/tx-chain/v6/pkg/config/constant"
@@ -1208,6 +1209,13 @@ func New(
 			app.ModuleManager,
 			app.configurator,
 			app.BankKeeper,
+		),
+		appupgradev6patch1testnet.New(
+			app.ModuleManager,
+			app.configurator,
+			app.BankKeeper,
+			app.MintKeeper,
+			app.PSEKeeper,
 		),
 	}
 
