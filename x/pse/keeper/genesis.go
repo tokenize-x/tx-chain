@@ -28,36 +28,38 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
-	// Populate delegation time entries from genesis state
-	for _, delegationTimeEntryExported := range genState.DelegationTimeEntries {
-		valAddr, err := k.valAddressCodec.StringToBytes(delegationTimeEntryExported.ValidatorAddress)
+	// Populate delegation time entries from genesis state.
+	for _, entry := range genState.DelegationTimeEntries {
+		valAddr, err := k.valAddressCodec.StringToBytes(entry.ValidatorAddress)
 		if err != nil {
 			return err
 		}
-		delAddr, err := k.addressCodec.StringToBytes(delegationTimeEntryExported.DelegatorAddress)
+		delAddr, err := k.addressCodec.StringToBytes(entry.DelegatorAddress)
 		if err != nil {
 			return err
 		}
-		if err = k.SetDelegationTimeEntry(
-			ctx,
-			delegationTimeEntryExported.DistributionID,
-			valAddr,
-			delAddr,
-			types.DelegationTimeEntry{
-				Shares:             delegationTimeEntryExported.Shares,
-				LastChangedUnixSec: delegationTimeEntryExported.LastChangedUnixSec,
-			}); err != nil {
+		if err = k.SetDelegationTimeEntry(ctx, entry.DistributionID, valAddr, delAddr, types.DelegationTimeEntry{
+			Shares:             entry.Shares,
+			LastChangedUnixSec: entry.LastChangedUnixSec,
+		}); err != nil {
 			return err
 		}
 	}
 
-	// Populate account scores from genesis state
+	// Populate account scores from genesis state.
 	for _, accountScore := range genState.AccountScores {
 		addr, err := k.addressCodec.StringToBytes(accountScore.Address)
 		if err != nil {
 			return err
 		}
 		if err := k.SetDelegatorScore(ctx, accountScore.DistributionID, addr, accountScore.Score); err != nil {
+			return err
+		}
+	}
+
+	// Restore TotalScore from genesis state.
+	for _, ts := range genState.TotalScores {
+		if err := k.TotalScore.Set(ctx, ts.DistributionID, ts.TotalScore); err != nil {
 			return err
 		}
 	}
@@ -121,6 +123,19 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 				DistributionID: key.K1(),
 				Address:        addr,
 				Score:          value,
+			})
+			return false, nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	// Export TotalScore.
+	err = k.TotalScore.Walk(ctx, nil,
+		func(distID uint64, totalScore sdkmath.Int) (stop bool, err error) {
+			genesis.TotalScores = append(genesis.TotalScores, types.TotalScoreEntry{
+				DistributionID: distID,
+				TotalScore:     totalScore,
 			})
 			return false, nil
 		})

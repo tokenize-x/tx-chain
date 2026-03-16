@@ -36,6 +36,10 @@ func New(
 			Deleted: []string{},
 		},
 		Upgrade: func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			if err := migratePSEStore(ctx, pseKeeper); err != nil {
+				return nil, err
+			}
+
 			return mm.RunMigrations(ctx, configurator, vm)
 		},
 	}

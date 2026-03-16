@@ -33,6 +33,11 @@ message GenesisState {
   ];
 
   bool distributions_disabled = 5 [(gogoproto.moretags) = "yaml:\"distributions_disabled\""];
+
+  repeated TotalScoreEntry total_scores = 6 [
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"total_scores\""
+  ];
 }
 
 message DelegationTimeEntryExport {
@@ -58,6 +63,19 @@ message DelegationTimeEntryExport {
   uint64 distribution_id = 5 [
     (gogoproto.customname) = "DistributionID",
     (gogoproto.moretags) = "yaml:\"distribution_id\""
+  ];
+}
+
+message TotalScoreEntry {
+  uint64 distribution_id = 1 [
+    (gogoproto.customname) = "DistributionID",
+    (gogoproto.moretags) = "yaml:\"distribution_id\""
+  ];
+  string total_score = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (gogoproto.moretags) = "yaml:\"total_score\""
   ];
 }
 

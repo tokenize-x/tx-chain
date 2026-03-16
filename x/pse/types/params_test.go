@@ -364,7 +364,7 @@ func TestValidateAllocationSchedule(t *testing.T) {
 					Allocations: createAllModuleAllocations(sdkmath.NewInt(1000)),
 				},
 			},
-			expectErr: false, // TODO: this should be true or removed, bases on the decision on the id zero check.
+			expectErr: false, // TODO: this should be handled based on the decision on the id zero check.
 			errMsg:    "id cannot be zero",
 		},
 		{

@@ -62,7 +62,7 @@ func (k Keeper) UpdateExcludedAddresses(
 	if err != nil {
 		return err
 	}
-	distributionID := distribution.ID // TODO update to handle distribution ID properly.
+	distributionID := distribution.ID
 	for _, addrStr := range addressesToRemove {
 		addr, err := k.addressCodec.StringToBytes(addrStr)
 		if err != nil {
@@ -181,25 +181,31 @@ func (k Keeper) UpdateClearingAccountMappings(
 // IsExcludedAddress checks if the given address is in the excluded addresses list.
 // Returns false if params are not initialized (e.g., during genesis).
 func (k Keeper) IsExcludedAddress(ctx context.Context, addr sdk.AccAddress) (bool, error) {
-	params, err := k.GetParams(ctx)
+	excludedMap, err := k.LoadExcludedAddressMap(ctx)
 	if err != nil {
-		// During genesis, params might not be initialized yet - treat all as non-excluded
-		if errors.Is(err, collections.ErrNotFound) {
-			return false, nil
-		}
-		// For other errors, return the error
 		return false, err
 	}
-
 	addrStr, err := k.addressCodec.BytesToString(addr)
 	if err != nil {
 		return false, err
 	}
+	return excludedMap[addrStr], nil
+}
 
-	for _, excluded := range params.ExcludedAddresses {
-		if excluded == addrStr {
-			return true, nil
+// LoadExcludedAddressMap loads all excluded addresses into an in-memory map for efficient lookups.
+// Returns false if params are not initialized.
+func (k Keeper) LoadExcludedAddressMap(ctx context.Context) (map[string]bool, error) {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return map[string]bool{}, nil
 		}
+		return nil, err
 	}
-	return false, nil
+
+	excludedMap := make(map[string]bool, len(params.ExcludedAddresses))
+	for _, addr := range params.ExcludedAddresses {
+		excludedMap[addr] = true
+	}
+	return excludedMap, nil
 }
