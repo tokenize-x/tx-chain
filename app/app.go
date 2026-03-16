@@ -1216,6 +1216,7 @@ func New(
 			app.PSEKeeper,
 			app.AccountKeeper.AddressCodec(),
 			app.StakingKeeper.ValidatorAddressCodec(),
+			app.CustomParamsKeeper,
 		),
 	}
 

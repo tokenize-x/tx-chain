@@ -19,6 +19,7 @@ func TestKeeper_InitAndExportGenesis(t *testing.T) {
 	genState := types.GenesisState{
 		StakingParams: types.StakingParams{
 			MinSelfDelegation: sdkmath.OneInt(),
+			MaxVotingPower:    sdkmath.LegacyOneDec(),
 		},
 	}
 	keeper.InitGenesis(ctx, genState)
@@ -27,6 +28,7 @@ func TestKeeper_InitAndExportGenesis(t *testing.T) {
 	params, err := keeper.GetStakingParams(ctx)
 	requireT.NoError(err)
 	requireT.Equal(sdkmath.OneInt().String(), params.MinSelfDelegation.String())
+	requireT.Equal(sdkmath.LegacyOneDec().String(), params.MaxVotingPower.String())
 
 	exportedGetState := keeper.ExportGenesis(ctx)
 	requireT.Equal(genState, *exportedGetState)

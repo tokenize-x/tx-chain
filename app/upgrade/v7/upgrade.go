@@ -6,11 +6,14 @@ import (
 	addresscodec "cosmossdk.io/core/address"
 	store "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	"github.com/tokenize-x/tx-chain/v7/app/upgrade"
+	customparamskeeper "github.com/tokenize-x/tx-chain/v7/x/customparams/keeper"
+	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
 	pskeeper "github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
 	wbankkeeper "github.com/tokenize-x/tx-chain/v7/x/wbank/keeper"
 )
@@ -28,6 +31,7 @@ func New(
 	pseKeeper pskeeper.Keeper,
 	addressCodec addresscodec.Codec,
 	valAddressCodec addresscodec.Codec,
+	customParamsKeeper customparamskeeper.Keeper,
 ) upgrade.Upgrade {
 	return upgrade.Upgrade{
 		Name: Name,
@@ -40,7 +44,26 @@ func New(
 				return nil, err
 			}
 
+			if err := migrateCustomParams(ctx, customParamsKeeper); err != nil {
+				return nil, err
+			}
+
 			return mm.RunMigrations(ctx, configurator, vm)
 		},
 	}
+}
+
+// migrateCustomParams adds the MaxVotingPower field to existing StakingParams.
+func migrateCustomParams(ctx context.Context, cpk customparamskeeper.Keeper) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	params, err := cpk.GetStakingParams(sdkCtx)
+	if err != nil {
+		return err
+	}
+
+	// Set default MaxVotingPower (1.0 = unrestricted) for existing chains
+	params.MaxVotingPower = customparamstypes.DefaultMaxVotingPower
+
+	return cpk.SetStakingParams(sdkCtx, params)
 }

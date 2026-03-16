@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/pkg/errors"
 
 	"github.com/tokenize-x/tx-chain/v7/x/customparams/types"
 )
@@ -36,6 +37,9 @@ func (k Keeper) GetStakingParams(ctx sdk.Context) (types.StakingParams, error) {
 	if err != nil {
 		return types.StakingParams{}, err
 	}
+	if bz == nil {
+		return types.StakingParams{}, errors.New("staking params not found in store")
+	}
 	var params types.StakingParams
 	k.cdc.MustUnmarshal(bz, &params)
 	return params, nil
@@ -43,6 +47,9 @@ func (k Keeper) GetStakingParams(ctx sdk.Context) (types.StakingParams, error) {
 
 // SetStakingParams sets the module staking parameters to the param space.
 func (k Keeper) SetStakingParams(ctx sdk.Context, params types.StakingParams) error {
+	if err := params.ValidateBasic(); err != nil {
+		return err
+	}
 	bz, err := k.cdc.Marshal(&params)
 	if err != nil {
 		return err

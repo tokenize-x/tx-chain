@@ -4316,6 +4316,7 @@ StakingParams defines the set of additional staking params for the staking modul
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `min_self_delegation` | [string](#string) |  |  `min_self_delegation is the validators global self declared minimum for delegation.`  |
+| `max_voting_power` | [string](#string) |  |  `max_voting_power is the maximum percentage of total bonded tokens that any single validator can have. Expressed as a decimal fraction (e.g. "0.10" = 10%). A value of "1.00" (100%) means no cap is enforced.`  |
 
 
 
