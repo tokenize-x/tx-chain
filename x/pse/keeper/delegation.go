@@ -57,10 +57,7 @@ func (k Keeper) GetDelegatorScore(
 
 // SetDelegatorScore sets the score for a delegator.
 func (k Keeper) SetDelegatorScore(
-	ctx context.Context,
-	distributionID uint64,
-	delAddr sdk.AccAddress,
-	score sdkmath.Int,
+	ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int,
 ) error {
 	key := collections.Join(distributionID, delAddr)
 	return k.AccountScoreSnapshot.Set(ctx, key, score)
@@ -70,6 +67,34 @@ func (k Keeper) SetDelegatorScore(
 func (k Keeper) RemoveDelegatorScore(ctx context.Context, distributionID uint64, delAddr sdk.AccAddress) error {
 	key := collections.Join(distributionID, delAddr)
 	return k.AccountScoreSnapshot.Remove(ctx, key)
+}
+
+// addToScore atomically adds a score value to a delegator's score snapshot
+// and incrementally updates TotalScore for the same distribution.
+func (k Keeper) addToScore(
+	ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int,
+) error {
+	if score.IsZero() {
+		return nil
+	}
+	lastScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastScore = sdkmath.NewInt(0)
+	} else if err != nil {
+		return err
+	}
+	if err := k.SetDelegatorScore(ctx, distributionID, delAddr, lastScore.Add(score)); err != nil {
+		return err
+	}
+
+	// Accumulate TotalScore
+	currentTotal, err := k.TotalScore.Get(ctx, distributionID)
+	if errors.Is(err, collections.ErrNotFound) {
+		currentTotal = sdkmath.NewInt(0)
+	} else if err != nil {
+		return err
+	}
+	return k.TotalScore.Set(ctx, distributionID, currentTotal.Add(score))
 }
 
 // CalculateDelegatorScore calculates the current total score for a delegator.
@@ -82,7 +107,7 @@ func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddr
 	if err != nil {
 		return sdkmath.Int{}, err
 	}
-	distributionID := distribution.ID // TODO update to handle distribution ID properly.
+	distributionID := distribution.ID
 
 	// Start with the accumulated score from the snapshot (previous periods)
 	accumulatedScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)
