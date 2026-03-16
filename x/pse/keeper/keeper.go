@@ -37,7 +37,10 @@ type Keeper struct {
 		types.DelegationTimeEntry,
 	]
 	AccountScoreSnapshot collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
-	AllocationSchedule   collections.Map[uint64, types.ScheduledDistribution] // Map: id -> ScheduledDistribution
+	AllocationSchedule   collections.Map[uint64, types.ScheduledDistribution] // Map: ID -> ScheduledDistribution
+	TotalScore           collections.Map[uint64, sdkmath.Int]                 // Map: ID -> total accumulated score
+	OngoingDistribution  collections.Item[types.ScheduledDistribution]        // Currently processing distribution
+	DistributedAmount    collections.Map[uint64, sdkmath.Int]                 // Map: ID -> cumulative distributed amount
 	DistributionDisabled collections.Item[bool]
 }
 
@@ -92,6 +95,26 @@ func NewKeeper(
 			collections.Uint64Key,
 			codec.CollValue[types.ScheduledDistribution](cdc),
 		),
+		TotalScore: collections.NewMap(
+			sb,
+			types.TotalScoreKey,
+			"total_score",
+			collections.Uint64Key,
+			sdk.IntValue,
+		),
+		OngoingDistribution: collections.NewItem(
+			sb,
+			types.OngoingDistributionKey,
+			"ongoing_distribution",
+			codec.CollValue[types.ScheduledDistribution](cdc),
+		),
+		DistributedAmount: collections.NewMap(
+			sb,
+			types.DistributedAmountKey,
+			"distributed_amount",
+			collections.Uint64Key,
+			sdk.IntValue,
+		),
 		DistributionDisabled: collections.NewItem(
 			sb,
 			types.DistributionDisabledKey,
@@ -107,6 +130,16 @@ func NewKeeper(
 	k.Schema = schema
 
 	return k
+}
+
+// StoreService returns the store service used by the keeper.
+func (k Keeper) StoreService() sdkstore.KVStoreService {
+	return k.storeService
+}
+
+// Codec returns the binary codec used by the keeper.
+func (k Keeper) Codec() codec.BinaryCodec {
+	return k.cdc
 }
 
 // GetClearingAccountBalances returns the current balances of all PSE clearing accounts in the bond denom.

@@ -285,6 +285,7 @@
     - [AccountScore](#tx.pse.v1.AccountScore)
     - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
     - [GenesisState](#tx.pse.v1.GenesisState)
+    - [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry)
   
 - [tx/pse/v1/params.proto](#tx/pse/v1/params.proto)
     - [Params](#tx.pse.v1.Params)
@@ -5890,6 +5891,7 @@ Any remainder from division is sent to the community pool.
 | `total_pse_score` | [string](#string) |  |    |
 | `amount` | [string](#string) |  |    |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the distribution was scheduled to occur.`  |
+| `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique identifier of the distribution.`  |
 
 
 
@@ -5965,6 +5967,23 @@ GenesisState defines the module's genesis state.
 | `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 | `distributions_disabled` | [bool](#bool) |  |    |
+| `total_scores` | [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry) | repeated |    |
+
+
+
+
+
+
+<a name="tx.pse.v1.TotalScoreEntry"></a>
+
+### TotalScoreEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `distribution_id` | [uint64](#uint64) |  |    |
+| `total_score` | [string](#string) |  |    |
 
 
 
