@@ -341,7 +341,7 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 
 	// Save initial schedule for hooks to find the distribution ID
 	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
-		{ID: distributionID, Timestamp: distributionID},
+		{ID: distributionID, Timestamp: uint64(ctx.BlockTime().Unix())},
 	})
 	requireT.NoError(err)
 
@@ -373,8 +373,10 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	err = pseKeeper.SetParams(ctx, params)
 	requireT.NoError(err)
 
-	// Fund all clearing accounts
-	communityAmount := sdkmath.NewInt(1000)
+	// Fund all clearing accounts.
+	// Genesis delegators' scores accumulate under ID=1, same as test delegators.
+	// Community amount must be large enough to pay all parties including genesis scores.
+	communityAmount := sdkmath.NewInt(10_000_000)
 	nonCommunityAmount := sdkmath.NewInt(100)
 	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		amount := nonCommunityAmount
@@ -682,7 +684,7 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 				testApp:       testApp,
 				ctx:           ctx,
 				requireT:      requireT,
-				currentDistID: tempDistributionID,
+				currentDistID: firstDistributionID,
 			}
 
 			// add validators.
@@ -712,8 +714,8 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 
 			err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
 				{
-					Timestamp: tempDistributionID,
-					ID:        tempDistributionID,
+					Timestamp: uint64(ctx.BlockTime().Unix()),
+					ID:        firstDistributionID,
 				},
 			})
 			requireT.NoError(err)

@@ -60,7 +60,7 @@ func TestQueryScore_WithAccumulatedScore(t *testing.T) {
 	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 	queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
-	distributionID := uint64(0) // TODO review this
+	distributionID := firstDistributionID
 
 	// Generate delegator address
 	delAddr := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
@@ -140,7 +140,7 @@ func TestQueryScore_AccumulatedPlusCurrentPeriod(t *testing.T) {
 	testApp := simapp.New()
 	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 	queryService := keeper.NewQueryService(testApp.PSEKeeper)
-	distributionID := uint64(0) // TODO review this
+	distributionID := firstDistributionID
 
 	// Create validator
 	validatorOperator, _ := testApp.GenAccount(ctx)

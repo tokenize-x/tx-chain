@@ -130,15 +130,10 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 	allClearingAccounts := GetAllClearingAccounts()
 
 	for i, period := range schedule {
-		// TODO: this was uncommented to allow tests to pass.
-		// We should decide on one of the following options:
-		// - remove this check and start from id zero
-		// - change tests to pass with id starting from 1
-		// - add logic to handle delegation migrations when new scheduled distributions are added.
-		// Validate id is non-zero
-		// if period.ID == 0 {
-		// 	return errorsmod.Wrapf(ErrInvalidParam, "period %d: id cannot be zero", i)
-		// }
+		// Validate id is non-zero (ID 0 is reserved as the "no distribution completed" sentinel)
+		if period.ID == 0 {
+			return errorsmod.Wrapf(ErrInvalidParam, "period %d: id cannot be zero", i)
+		}
 
 		// Validate timestamp is not zero
 		if period.Timestamp == 0 {
