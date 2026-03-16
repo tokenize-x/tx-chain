@@ -36,6 +36,19 @@ func (k Keeper) getOngoingDistribution(ctx context.Context) (types.ScheduledDist
 	return ongoing, true, nil
 }
 
+// getActiveDistributionID returns the distribution ID where scores are currently stored.
+// If an ongoing distribution exists, returns its ID; otherwise delegates to getNextDistributionID.
+func (k Keeper) getActiveDistributionID(ctx context.Context) (uint64, error) {
+	ongoing, found, err := k.getOngoingDistribution(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if found {
+		return ongoing.ID, nil
+	}
+	return k.getNextDistributionID(ctx)
+}
+
 // getNextDistributionID returns the distribution ID that new entries should be written to.
 // If an ongoing distribution exists (ongoingID=N is being processed), returns N+1.
 // Otherwise returns LastProcessedDistributionID + 1.

@@ -255,6 +255,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	balancesBefore, scoresBefore, totalScore := getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// Excluded delegator should receive nothing
 	requireT.Equal(balancesBefore[excludedDelegator], balancesAfter[excludedDelegator],
@@ -300,6 +301,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// Re-included delegator should now receive rewards
 	reIncludedIncrease := balancesAfter[excludedDelegator].Sub(balancesBefore[excludedDelegator])
@@ -336,6 +338,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// All delegators (including re-included) should receive rewards
 	for _, delegator := range delegators {
