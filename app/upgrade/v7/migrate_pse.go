@@ -13,32 +13,42 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
+// The pre-migration key schema has no distribution ID; this migration adds one.
+// distributionID is the initial distribution ID assigned to all existing entries.
+// After this upgrade, a new governance proposal must set the schedule starting at ID 1.
+const distributionID uint64 = 1
+
 // migratePSEStore migrates the PSE module state.
 // - DelegationTimeEntries key: Pair[AccAddress, ValAddress] -> Triple[uint64, AccAddress, ValAddress].
 // - AccountScoreSnapshot key: AccAddress -> Pair[uint64, AccAddress].
+// - Clears the old AllocationSchedule (will be re-submitted via governance).
+// - Initializes LastProcessedDistributionID to 0 (no distributions completed yet).
 func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 	storeService := pseKeeper.StoreService()
 	cdc := pseKeeper.Codec()
-
-	distributionID, err := getFirstDistributionID(ctx, storeService, cdc)
-	if err != nil {
-		return err
-	}
 
 	if err := migrateDelegationTimeEntries(ctx, storeService, cdc, distributionID); err != nil {
 		return err
 	}
 
-	return migrateAccountScoreSnapshot(ctx, storeService, distributionID)
+	if err := migrateAccountScoreSnapshot(ctx, storeService, distributionID); err != nil {
+		return err
+	}
+
+	if err := clearAllocationSchedule(ctx, storeService, cdc); err != nil {
+		return err
+	}
+
+	return initLastProcessedDistributionID(ctx, pseKeeper)
 }
 
-// TODO: Currently assigns the first distribution ID to all entries. Implement proper mapping
-// of entries to correct distribution IDs based on timestamps when multiple distributions exist.
-func getFirstDistributionID(
+// clearAllocationSchedule removes all entries from the AllocationSchedule.
+// The schedule will be re-submitted via governance after the upgrade.
+func clearAllocationSchedule(
 	ctx context.Context,
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
-) (uint64, error) {
+) error {
 	sb := collections.NewSchemaBuilder(storeService)
 	schedule := collections.NewMap(
 		sb,
@@ -48,25 +58,16 @@ func getFirstDistributionID(
 		codec.CollValue[types.ScheduledDistribution](cdc),
 	)
 	if _, err := sb.Build(); err != nil {
-		return 0, err
+		return err
 	}
 
-	iter, err := schedule.Iterate(ctx, nil)
-	if err != nil {
-		return 0, err
-	}
-	defer iter.Close()
+	return schedule.Clear(ctx, nil)
+}
 
-	if !iter.Valid() {
-		return 0, nil
-	}
-
-	kv, err := iter.KeyValue()
-	if err != nil {
-		return 0, err
-	}
-
-	return kv.Value.ID, nil
+// initLastProcessedDistributionID sets LastProcessedDistributionID to 0,
+// indicating no distributions have been completed yet.
+func initLastProcessedDistributionID(ctx context.Context, pseKeeper pskeeper.Keeper) error {
+	return pseKeeper.LastProcessedDistributionID.Set(ctx, 0)
 }
 
 func migrateDelegationTimeEntries(
