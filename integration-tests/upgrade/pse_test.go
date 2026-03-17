@@ -124,6 +124,6 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.True(scoreRes.Score.GTE(p.preUpgradeScore),
 		"post-upgrade score (%s) should be >= pre-upgrade score (%s)", scoreRes.Score, p.preUpgradeScore)
 
-	t.Logf("PSE After: params preserved, LastProcessedDistributionID=0, schedule re-keyed (%d entries with IDs), score preserved (%s -> %s)",
+	t.Logf("PSE After: params OK, schedule re-keyed (%d entries), score (%s -> %s)",
 		len(schedRes.ScheduledDistributions), p.preUpgradeScore, scoreRes.Score)
 }
