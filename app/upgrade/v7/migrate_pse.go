@@ -15,13 +15,12 @@ import (
 
 // The pre-migration key schema has no distribution ID; this migration adds one.
 // distributionID is the initial distribution ID assigned to all existing entries.
-// After this upgrade, a new governance proposal must set the schedule starting at ID 1.
 const distributionID uint64 = 1
 
 // migratePSEStore migrates the PSE module state.
 // - DelegationTimeEntries key: Pair[AccAddress, ValAddress] -> Triple[uint64, AccAddress, ValAddress].
 // - AccountScoreSnapshot key: AccAddress -> Pair[uint64, AccAddress].
-// - Clears the old AllocationSchedule (will be re-submitted via governance).
+// - AllocationSchedule: re-keys from timestamp-based to sequential ID-based (starting from 1).
 // - Initializes LastProcessedDistributionID to 0 (no distributions completed yet).
 func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 	storeService := pseKeeper.StoreService()
@@ -35,16 +34,17 @@ func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 		return err
 	}
 
-	if err := clearAllocationSchedule(ctx, storeService, cdc); err != nil {
+	if err := migrateAllocationSchedule(ctx, storeService, cdc); err != nil {
 		return err
 	}
 
 	return initLastProcessedDistributionID(ctx, pseKeeper)
 }
 
-// clearAllocationSchedule removes all entries from the AllocationSchedule.
-// The schedule will be re-submitted via governance after the upgrade.
-func clearAllocationSchedule(
+// migrateAllocationSchedule re-keys the AllocationSchedule from timestamp-based keys to
+// sequential ID-based keys starting from 1.
+// This migration assigns sequential IDs preserving timestamp order.
+func migrateAllocationSchedule(
 	ctx context.Context,
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
@@ -61,7 +61,30 @@ func clearAllocationSchedule(
 		return err
 	}
 
-	return schedule.Clear(ctx, nil)
+	// Collect old timestamp-keyed entries (iterates in ascending timestamp order).
+	var entries []types.ScheduledDistribution
+	err := schedule.Walk(ctx, nil, func(_ uint64, dist types.ScheduledDistribution) (bool, error) {
+		entries = append(entries, dist)
+		return false, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Clear old timestamp-keyed entries.
+	if err := schedule.Clear(ctx, nil); err != nil {
+		return err
+	}
+
+	// Re-write with sequential IDs starting from 1, preserving original timestamps.
+	for i := range entries {
+		entries[i].ID = uint64(i + 1)
+		if err := schedule.Set(ctx, entries[i].ID, entries[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // initLastProcessedDistributionID sets LastProcessedDistributionID to 0,

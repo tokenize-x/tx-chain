@@ -101,7 +101,7 @@ func TestMigratePSEStore(t *testing.T) {
 	requireT.NoError(oldScoreMap.Set(ctx, delAddr2, score2))
 
 	// Old AllocationSchedule: keyed by timestamp, no ID field in v6.
-	// Migration must clear all entries so schedule can be re-submitted via governance.
+	// Migration re-keys entries with sequential IDs starting from 1.
 	oldScheduleSB := collections.NewSchemaBuilder(storeService)
 	oldScheduleMap := collections.NewMap(
 		oldScheduleSB,
@@ -113,11 +113,18 @@ func TestMigratePSEStore(t *testing.T) {
 	_, err = oldScheduleSB.Build()
 	requireT.NoError(err)
 
-	oldTimestamp := uint64(1700000000)
-	requireT.NoError(oldScheduleMap.Set(ctx, oldTimestamp, types.ScheduledDistribution{
-		Timestamp: oldTimestamp,
+	oldTimestamp1 := uint64(1700000000)
+	oldTimestamp2 := uint64(1700100000)
+	requireT.NoError(oldScheduleMap.Set(ctx, oldTimestamp1, types.ScheduledDistribution{
+		Timestamp: oldTimestamp1,
 		Allocations: []types.ClearingAccountAllocation{
 			{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(500)},
+		},
+	}))
+	requireT.NoError(oldScheduleMap.Set(ctx, oldTimestamp2, types.ScheduledDistribution{
+		Timestamp: oldTimestamp2,
+		Allocations: []types.ClearingAccountAllocation{
+			{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(1000)},
 		},
 	}))
 
@@ -152,38 +159,30 @@ func TestMigratePSEStore(t *testing.T) {
 	_, err = oldScoreMap.Get(ctx, delAddr1)
 	requireT.ErrorIs(err, collections.ErrNotFound)
 
-	// Verify AllocationSchedule was cleared.
-	_, err = pseKeeper.AllocationSchedule.Get(ctx, oldTimestamp)
+	// Verify AllocationSchedule was re-keyed with sequential IDs.
+	// Old timestamp-keyed entries should no longer exist.
+	_, err = pseKeeper.AllocationSchedule.Get(ctx, oldTimestamp1)
 	requireT.ErrorIs(err, collections.ErrNotFound)
+	_, err = pseKeeper.AllocationSchedule.Get(ctx, oldTimestamp2)
+	requireT.ErrorIs(err, collections.ErrNotFound)
+
+	// New ID-keyed entries should exist with correct IDs and original timestamps.
+	sched1, err := pseKeeper.AllocationSchedule.Get(ctx, 1)
+	requireT.NoError(err)
+	requireT.Equal(uint64(1), sched1.ID)
+	requireT.Equal(oldTimestamp1, sched1.Timestamp)
+	requireT.Equal(sdkmath.NewInt(500), sched1.Allocations[0].Amount)
+
+	sched2, err := pseKeeper.AllocationSchedule.Get(ctx, 2)
+	requireT.NoError(err)
+	requireT.Equal(uint64(2), sched2.ID)
+	requireT.Equal(oldTimestamp2, sched2.Timestamp)
+	requireT.Equal(sdkmath.NewInt(1000), sched2.Allocations[0].Amount)
 
 	// Verify LastProcessedDistributionID = 0.
 	lastID, err := pseKeeper.LastProcessedDistributionID.Get(ctx)
 	requireT.NoError(err)
 	requireT.Equal(uint64(0), lastID)
-
-	// Verify new schedule can be set starting from ID=1 (simulates post-upgrade governance).
-	allocation := func(amount int64) []types.ClearingAccountAllocation {
-		return []types.ClearingAccountAllocation{
-			{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(amount)},
-		}
-	}
-	newSchedule := []types.ScheduledDistribution{
-		{ID: 1, Timestamp: 100000, Allocations: allocation(1000)},
-		{ID: 2, Timestamp: 200000, Allocations: allocation(2000)},
-	}
-	for _, sd := range newSchedule {
-		requireT.NoError(pseKeeper.AllocationSchedule.Set(ctx, sd.ID, sd))
-	}
-
-	got, err := pseKeeper.AllocationSchedule.Get(ctx, 1)
-	requireT.NoError(err)
-	requireT.Equal(uint64(1), got.ID)
-	requireT.Equal(uint64(100000), got.Timestamp)
-
-	got, err = pseKeeper.AllocationSchedule.Get(ctx, 2)
-	requireT.NoError(err)
-	requireT.Equal(uint64(2), got.ID)
-	requireT.Equal(uint64(200000), got.Timestamp)
 }
 
 func TestMigratePSEStore_EmptyState(t *testing.T) {
