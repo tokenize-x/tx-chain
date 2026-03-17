@@ -30,7 +30,7 @@ func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 		return err
 	}
 
-	if err := migrateAccountScoreSnapshot(ctx, storeService, distributionID); err != nil {
+	if err := migrateAccountScoreSnapshots(ctx, storeService, distributionID); err != nil {
 		return err
 	}
 
@@ -159,7 +159,7 @@ func migrateDelegationTimeEntries(
 	return nil
 }
 
-func migrateAccountScoreSnapshot(
+func migrateAccountScoreSnapshots(
 	ctx context.Context,
 	storeService sdkstore.KVStoreService,
 	distributionID uint64,
