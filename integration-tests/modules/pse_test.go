@@ -208,6 +208,13 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	distributionStartTime := time.Now().Add(10 * time.Second).Add(*govParams.ExpeditedVotingPeriod)
 
+	// Query LastProcessedDistributionID to determine the starting ID for new schedule entries.
+	// On a fresh chain it's 0 (IDs start from 1), after v7 upgrade it's 1 (IDs start from 2).
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
+	lastIDRes, err := pseClient.LastProcessedDistributionID(ctx, &psetypes.QueryLastProcessedDistributionIDRequest{})
+	requireT.NoError(err)
+	startID := lastIDRes.LastProcessedDistributionId + 1
+
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
 		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
 		&psetypes.MsgUpdateMinDistributionGap{
@@ -217,9 +224,9 @@ func TestPSEDistribution(t *testing.T) {
 		&psetypes.MsgUpdateDistributionSchedule{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Schedule: []psetypes.ScheduledDistribution{
-				{ID: 1, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
-				{ID: 2, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
-				{ID: 3, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID + 1, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID + 2, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
 			},
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{
