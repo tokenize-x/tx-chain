@@ -28,6 +28,7 @@ func GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(CmdQueryScore())
 	cmd.AddCommand(CmdQueryScheduledDistributions())
 	cmd.AddCommand(CmdQueryClearingAccountBalances())
+	cmd.AddCommand(CmdQueryLastProcessedDistributionID())
 
 	return cmd
 }
@@ -159,6 +160,33 @@ $ %[1]s query %s clearing-account-balances
 
 			params := &types.QueryClearingAccountBalancesRequest{}
 			res, err := queryClient.ClearingAccountBalances(cmd.Context(), params)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// CmdQueryLastProcessedDistributionID implements a command to fetch the last processed distribution ID.
+func CmdQueryLastProcessedDistributionID() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "last-processed-distribution-id",
+		Short: "Query the last processed distribution ID",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.LastProcessedDistributionID(cmd.Context(), &types.QueryLastProcessedDistributionIDRequest{})
 			if err != nil {
 				return err
 			}

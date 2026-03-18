@@ -30,6 +30,11 @@ service Query {
   rpc ClearingAccountBalances(QueryClearingAccountBalancesRequest) returns (QueryClearingAccountBalancesResponse) {
     option (google.api.http).get = "/tx/pse/v1/clearing_account_balances";
   }
+
+  // LastProcessedDistributionID queries the ID of the last completed distribution.
+  rpc LastProcessedDistributionID(QueryLastProcessedDistributionIDRequest) returns (QueryLastProcessedDistributionIDResponse) {
+    option (google.api.http).get = "/tx/pse/v1/last_processed_distribution_id";
+  }
 }
 
 // QueryParamsRequest defines the request type for querying moduleparameters.
@@ -105,4 +110,14 @@ message QueryClearingAccountBalancesResponse {
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"balances\""
   ];
+}
+
+// QueryLastProcessedDistributionIDRequest defines the request type for querying the last processed distribution ID.
+message QueryLastProcessedDistributionIDRequest {}
+
+// QueryLastProcessedDistributionIDResponse defines the response type for querying the last processed distribution ID.
+message QueryLastProcessedDistributionIDResponse {
+  // last_processed_distribution_id is the ID of the last completed distribution.
+  // Returns 0 if no distribution has been processed yet.
+  uint64 last_processed_distribution_id = 1;
 }

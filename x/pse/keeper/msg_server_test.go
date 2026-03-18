@@ -300,6 +300,59 @@ func TestMsgUpdateAllocationSchedule(t *testing.T) {
 	}
 }
 
+func TestMsgUpdateAllocationSchedule_IDGapAfterProcessed(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	msgServer := keeper.NewMsgServer(pseKeeper)
+
+	// Simulate that distribution ID=1 has been processed.
+	requireT.NoError(pseKeeper.LastProcessedDistributionID.Set(ctx, 1))
+
+	allAllocations := make([]types.ClearingAccountAllocation, 0)
+	for _, ca := range types.GetAllClearingAccounts() {
+		allAllocations = append(allAllocations, types.ClearingAccountAllocation{
+			ClearingAccount: ca,
+			Amount:          sdkmath.NewInt(1000),
+		})
+	}
+
+	// Schedule starting at ID=2 (lastProcessed+1) should succeed.
+	resp, err := msgServer.UpdateDistributionSchedule(ctx, &types.MsgUpdateDistributionSchedule{
+		Authority: authority,
+		Schedule: []types.ScheduledDistribution{
+			{ID: 2, Timestamp: 1700000000, Allocations: allAllocations},
+			{ID: 3, Timestamp: 1700100000, Allocations: allAllocations},
+		},
+	})
+	requireT.NoError(err)
+	requireT.NotNil(resp)
+
+	// Schedule starting at ID=5 (gap from lastProcessed=1) should fail.
+	_, err = msgServer.UpdateDistributionSchedule(ctx, &types.MsgUpdateDistributionSchedule{
+		Authority: authority,
+		Schedule: []types.ScheduledDistribution{
+			{ID: 5, Timestamp: 1700000000, Allocations: allAllocations},
+		},
+	})
+	requireT.Error(err)
+	requireT.Contains(err.Error(), "first schedule ID 5 must be 2")
+
+	// Schedule starting at ID=1 (already processed) should fail.
+	_, err = msgServer.UpdateDistributionSchedule(ctx, &types.MsgUpdateDistributionSchedule{
+		Authority: authority,
+		Schedule: []types.ScheduledDistribution{
+			{ID: 1, Timestamp: 1700000000, Allocations: allAllocations},
+		},
+	})
+	requireT.Error(err)
+	requireT.Contains(err.Error(), "first schedule ID 1 must be 2")
+}
+
 func TestMsgUpdateMinDistributionGap(t *testing.T) {
 	requireT := require.New(t)
 

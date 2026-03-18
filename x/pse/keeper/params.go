@@ -58,11 +58,10 @@ func (k Keeper) UpdateExcludedAddresses(
 	// When addresses are removed from exclusion, recreate their DelegationTimeEntries with current state
 	// so they start accumulating score immediately without requiring a delegation change.
 	currentBlockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
-	distribution, _, err := k.PeekNextAllocationSchedule(ctx) // TODO revise this logic for distribution id
+	distributionID, err := k.getActiveDistributionID(ctx)
 	if err != nil {
 		return err
 	}
-	distributionID := distribution.ID
 	for _, addrStr := range addressesToRemove {
 		addr, err := k.addressCodec.StringToBytes(addrStr)
 		if err != nil {

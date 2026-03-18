@@ -208,6 +208,13 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	distributionStartTime := time.Now().Add(10 * time.Second).Add(*govParams.ExpeditedVotingPeriod)
 
+	// Query LastProcessedDistributionID to determine the starting ID for new schedule entries.
+	// On a fresh chain it's 0 (IDs start from 1), after v7 upgrade it's 1 (IDs start from 2).
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
+	lastIDRes, err := pseClient.LastProcessedDistributionID(ctx, &psetypes.QueryLastProcessedDistributionIDRequest{})
+	requireT.NoError(err)
+	startID := lastIDRes.LastProcessedDistributionId + 1
+
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
 		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
 		&psetypes.MsgUpdateMinDistributionGap{
@@ -217,9 +224,9 @@ func TestPSEDistribution(t *testing.T) {
 		&psetypes.MsgUpdateDistributionSchedule{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Schedule: []psetypes.ScheduledDistribution{
-				{ID: 0, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
-				{ID: 1, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
-				{ID: 2, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID + 1, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID + 2, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
 			},
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{
@@ -255,6 +262,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	balancesBefore, scoresBefore, totalScore := getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// Excluded delegator should receive nothing
 	requireT.Equal(balancesBefore[excludedDelegator], balancesAfter[excludedDelegator],
@@ -300,6 +308,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// Re-included delegator should now receive rewards
 	reIncludedIncrease := balancesAfter[excludedDelegator].Sub(balancesBefore[excludedDelegator])
@@ -336,6 +345,7 @@ func TestPSEDistribution(t *testing.T) {
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// All delegators (including re-included) should receive rewards
 	for _, delegator := range delegators {
@@ -874,16 +884,30 @@ func getScheduledDistribution(
 	return pseResponse.ScheduledDistributions, nil
 }
 
-func awaitScheduleCount(ctx context.Context, t *testing.T, chain integration.TXChain, expectedCount int) {
+func awaitScheduleCount(ctx context.Context, t *testing.T, chain integration.TXChain, expectedUnprocessedCount int) {
 	t.Helper()
 	requireT := require.New(t)
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	err := chain.AwaitState(ctx, func(ctx context.Context) error {
 		dist, err := getScheduledDistribution(ctx, chain)
 		if err != nil {
 			return err
 		}
-		if len(dist) != expectedCount {
-			return fmt.Errorf("expected %d scheduled distributions, got %d", expectedCount, len(dist))
+		lastIDRes, err := pseClient.LastProcessedDistributionID(
+			ctx, &psetypes.QueryLastProcessedDistributionIDRequest{},
+		)
+		if err != nil {
+			return err
+		}
+		unprocessedCount := 0
+		for _, sd := range dist {
+			if sd.ID > lastIDRes.LastProcessedDistributionId {
+				unprocessedCount++
+			}
+		}
+		if unprocessedCount != expectedUnprocessedCount {
+			return fmt.Errorf("expected %d unprocessed scheduled distributions, got %d",
+				expectedUnprocessedCount, unprocessedCount)
 		}
 		return nil
 	}, integration.WithAwaitStateTimeout(10*time.Second))

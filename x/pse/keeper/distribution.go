@@ -2,7 +2,9 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -106,23 +108,32 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	return nil
 }
 
-// PeekNextAllocationSchedule returns the earliest scheduled distribution and whether it should be processed.
+// PeekNextAllocationSchedule returns the next unprocessed scheduled distribution
+// and whether it should be processed now.
 func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.ScheduledDistribution, bool, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// Get iterator for the allocation schedule (sorted by id ascending)
-	iter, err := k.AllocationSchedule.Iterate(ctx, nil)
+	lastProcessed, err := k.LastProcessedDistributionID.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastProcessed = 0
+	} else if err != nil {
+		return types.ScheduledDistribution{}, false, err
+	}
+
+	// Start iterating from lastProcessed+1 to skip already-processed entries.
+	nextID := lastProcessed + 1
+	rng := new(collections.Range[uint64]).StartInclusive(nextID)
+	iter, err := k.AllocationSchedule.Iterate(ctx, rng)
 	if err != nil {
 		return types.ScheduledDistribution{}, false, err
 	}
 	defer iter.Close()
 
-	// Return early if schedule is empty
+	// Return if no unprocessed entries remain.
 	if !iter.Valid() {
 		return types.ScheduledDistribution{}, false, nil
 	}
 
-	// Extract the earliest scheduled distribution (sorted by id ascending)
 	kv, err := iter.KeyValue()
 	if err != nil {
 		return types.ScheduledDistribution{}, false, err
@@ -130,9 +141,7 @@ func (k Keeper) PeekNextAllocationSchedule(ctx context.Context) (types.Scheduled
 
 	scheduledDist := kv.Value
 
-	// Check if distribution time has arrived
-	// Since IDs are sequential and timestamps are monotonically increasing,
-	// the first item by ID is also the earliest by time.
+	// Check if distribution time has arrived.
 	shouldProcess := scheduledDist.Timestamp <= uint64(sdkCtx.BlockTime().Unix())
 
 	return scheduledDist, shouldProcess, nil
@@ -239,10 +248,9 @@ func (k Keeper) SaveDistributionSchedule(ctx context.Context, schedule []types.S
 	return nil
 }
 
-// GetDistributionSchedule returns the complete allocation schedule as a sorted list.
+// GetDistributionSchedule returns the complete allocation schedule as a sorted list,
+// including both processed and unprocessed entries (processed entries are kept for visibility).
 // The schedule is sorted by id in ascending order.
-// Returns an empty slice if no allocations are scheduled.
-// Note: Past schedule allocations removed after processing, so this only contains future schedule allocations.
 func (k Keeper) GetDistributionSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {
 	var schedule []types.ScheduledDistribution
 
@@ -260,14 +268,42 @@ func (k Keeper) GetDistributionSchedule(ctx context.Context) ([]types.ScheduledD
 		schedule = append(schedule, kv.Value)
 	}
 
-	// Note: Collections map iterates in ascending order of keys (IDs),
-	// so the schedule is already sorted. No need to sort again.
 	return schedule, nil
 }
 
-// UpdateDistributionSchedule updates the entire distribution schedule via governance.
-// This clears all existing distributions and replaces them with the new schedule.
-// The new schedule is validated for consistency with existing clearing account mappings.
+// GetUnprocessedDistributionSchedule returns only unprocessed scheduled distributions
+// (ID > LastProcessedDistributionID), sorted by id in ascending order.
+func (k Keeper) GetUnprocessedDistributionSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {
+	lastProcessed, err := k.LastProcessedDistributionID.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastProcessed = 0
+	} else if err != nil {
+		return nil, err
+	}
+
+	var schedule []types.ScheduledDistribution
+	rng := new(collections.Range[uint64]).StartExclusive(lastProcessed)
+
+	iter, err := k.AllocationSchedule.Iterate(ctx, rng)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			return nil, err
+		}
+		schedule = append(schedule, kv.Value)
+	}
+
+	return schedule, nil
+}
+
+// UpdateDistributionSchedule updates the distribution schedule via governance.
+// This clears only unprocessed entries (ID > LastProcessedDistributionID) and replaces
+// them with the new schedule. Processed entries are preserved for visibility.
 func (k Keeper) UpdateDistributionSchedule(
 	ctx context.Context,
 	authority string,
@@ -290,6 +326,26 @@ func (k Keeper) UpdateDistributionSchedule(
 		)
 	}
 
+	lastProcessed, err := k.LastProcessedDistributionID.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastProcessed = 0
+	} else if err != nil {
+		return err
+	}
+
+	// Validate that the first schedule ID is exactly LastProcessedDistributionID + 1.
+	// Gaps are not allowed because hooks write delegation time entries under lastProcessed + 1.
+	if len(newSchedule) > 0 {
+		nextID := lastProcessed + 1
+		if newSchedule[0].ID != nextID {
+			return errorsmod.Wrapf(
+				types.ErrInvalidInput,
+				"first schedule ID %d must be %d (LastProcessedDistributionID + 1)",
+				newSchedule[0].ID, nextID,
+			)
+		}
+	}
+
 	// Validate minimum gap between distributions
 	params, err := k.GetParams(ctx)
 	if err != nil {
@@ -299,9 +355,11 @@ func (k Keeper) UpdateDistributionSchedule(
 		return err
 	}
 
-	// Clear all existing schedule entries
-	if err := k.AllocationSchedule.Clear(ctx, nil); err != nil {
-		return errorsmod.Wrap(err, "failed to clear existing allocation schedule")
+	// Clear only unprocessed entries (ID > LastProcessedDistributionID).
+	// Processed entries are kept in state for visibility/auditability.
+	rng := new(collections.Range[uint64]).StartExclusive(lastProcessed)
+	if err := k.AllocationSchedule.Clear(ctx, rng); err != nil {
+		return errorsmod.Wrap(err, "failed to clear unprocessed allocation schedule entries")
 	}
 
 	// Save the new schedule
@@ -319,8 +377,8 @@ func (k Keeper) UpdateMinDistributionGap(
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
-	// Validate new gap against existing schedule
-	schedule, err := k.GetDistributionSchedule(ctx)
+	// Validate new gap against unprocessed schedule entries only.
+	schedule, err := k.GetUnprocessedDistributionSchedule(ctx)
 	if err != nil {
 		return err
 	}
