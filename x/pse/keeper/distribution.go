@@ -333,13 +333,14 @@ func (k Keeper) UpdateDistributionSchedule(
 		return err
 	}
 
-	// Validate that the first schedule ID is not in the past.
+	// Validate that the first schedule ID is exactly LastProcessedDistributionID + 1.
+	// Gaps are not allowed because hooks write delegation time entries under lastProcessed + 1.
 	if len(newSchedule) > 0 {
 		nextID := lastProcessed + 1
-		if newSchedule[0].ID < nextID {
+		if newSchedule[0].ID != nextID {
 			return errorsmod.Wrapf(
 				types.ErrInvalidInput,
-				"first schedule ID %d must be >= %d (LastProcessedDistributionID + 1)",
+				"first schedule ID %d must be %d (LastProcessedDistributionID + 1)",
 				newSchedule[0].ID, nextID,
 			)
 		}
