@@ -441,6 +441,16 @@ func endBlockerDistributeAction(r *runEnv, amount sdkmath.Int) {
 	_, err = r.testApp.PSEKeeper.OngoingDistribution.Get(r.ctx)
 	r.requireT.ErrorIs(err, collections.ErrNotFound, "OngoingDistribution should be removed after distribution")
 
+	// Verify processed schedule entry is preserved in state for visibility.
+	preserved, err := r.testApp.PSEKeeper.AllocationSchedule.Get(r.ctx, r.currentDistID)
+	r.requireT.NoError(err, "processed schedule entry should be kept in state")
+	r.requireT.Equal(r.currentDistID, preserved.ID)
+
+	// Verify LastProcessedDistributionID is updated.
+	lastProcessed, err := r.testApp.PSEKeeper.LastProcessedDistributionID.Get(r.ctx)
+	r.requireT.NoError(err)
+	r.requireT.Equal(r.currentDistID, lastProcessed)
+
 	// Advance to next distribution ID (Phase 1 migrated entries to currentDistID+1).
 	r.currentDistID++
 }

@@ -52,8 +52,8 @@ func (qs QueryService) Score(ctx context.Context, req *types.QueryScoreRequest) 
 }
 
 // ScheduledDistributions returns all future allocation schedules.
-// Past scheduled distributions are automatically removed after processing,
-// so all scheduled distributions in storage are future scheduled distributions.
+// Returns all scheduled distributions including processed ones.
+// Processed entries have ID <= LastProcessedDistributionID.
 func (qs QueryService) ScheduledDistributions(
 	ctx context.Context, req *types.QueryScheduledDistributionsRequest,
 ) (*types.QueryScheduledDistributionsResponse, error) {

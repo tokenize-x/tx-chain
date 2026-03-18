@@ -3,14 +3,12 @@
 package upgrade
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
-	"time"
 
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
@@ -23,7 +21,6 @@ type pseMigrationTest struct {
 	preUpgradeParams       psetypes.Params
 	validatorDelegatorAddr string
 	preUpgradeScore        sdkmath.Int
-	preUpgradeTimestamps   []uint64
 }
 
 func (p *pseMigrationTest) Before(t *testing.T) {
@@ -56,39 +53,8 @@ func (p *pseMigrationTest) Before(t *testing.T) {
 	p.preUpgradeScore = scoreRes.Score
 	requireT.True(p.preUpgradeScore.GT(sdkmath.ZeroInt()), "genesis validator should have non-zero PSE score")
 
-	// Submit a distribution schedule via governance so migration has entries to re-key.
-	allocationAmount := sdkmath.NewInt(1_000_000)
-	allocations := make([]psetypes.ClearingAccountAllocation, 0)
-	for _, clearingAccount := range psetypes.GetAllClearingAccounts() {
-		allocations = append(allocations, psetypes.ClearingAccountAllocation{
-			ClearingAccount: clearingAccount,
-			Amount:          allocationAmount,
-		})
-	}
-
-	// Use timestamps far in the future so they won't trigger before upgrade.
-	ts1 := uint64(time.Now().Add(24 * time.Hour).Unix())
-	ts2 := uint64(time.Now().Add(48 * time.Hour).Unix())
-	p.preUpgradeTimestamps = []uint64{ts1, ts2}
-
-	chain.Governance.ExpeditedProposalFromMsgAndVote(
-		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
-		&psetypes.MsgUpdateDistributionSchedule{
-			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-			Schedule: []psetypes.ScheduledDistribution{
-				{Timestamp: ts1, Allocations: allocations},
-				{Timestamp: ts2, Allocations: allocations},
-			},
-		},
-	)
-
-	// Verify schedule was set on v6 chain.
-	schedRes, err := pseClient.ScheduledDistributions(ctx, &psetypes.QueryScheduledDistributionsRequest{})
-	requireT.NoError(err)
-	requireT.Len(schedRes.ScheduledDistributions, 2, "v6 schedule should have 2 entries")
-
-	t.Logf("PSE Before: params captured, validator delegator=%s score=%s, schedule set with %d entries",
-		p.validatorDelegatorAddr, p.preUpgradeScore, len(schedRes.ScheduledDistributions))
+	t.Logf("PSE Before: params captured, validator delegator=%s score=%s",
+		p.validatorDelegatorAddr, p.preUpgradeScore)
 }
 
 func (p *pseMigrationTest) After(t *testing.T) {
@@ -102,21 +68,36 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Equal(p.preUpgradeParams, paramsRes.Params)
 
-	// LastProcessedDistributionID should be initialized to 0 by migration.
+	// LastProcessedDistributionID should be set to 1 by migration
+	// (first distribution already processed by single-block logic).
 	lastIDRes, err := pseClient.LastProcessedDistributionID(ctx, &psetypes.QueryLastProcessedDistributionIDRequest{})
 	requireT.NoError(err)
-	requireT.Equal(uint64(0), lastIDRes.LastProcessedDistributionId)
+	requireT.Equal(uint64(1), lastIDRes.LastProcessedDistributionId)
 
-	// AllocationSchedule should be re-keyed with sequential IDs by migration.
+	// AllocationSchedule should be replaced with the full mainnet schedule from embedded JSON.
 	schedRes, err := pseClient.ScheduledDistributions(ctx, &psetypes.QueryScheduledDistributionsRequest{})
 	requireT.NoError(err)
-	requireT.Len(schedRes.ScheduledDistributions, len(p.preUpgradeTimestamps),
-		"migrated schedule should have same number of entries as pre-upgrade")
+
+	// Load expected schedule from the embedded JSON to verify count and content.
+	expectedCount := loadMainnetScheduleCount(t)
+	requireT.Len(schedRes.ScheduledDistributions, expectedCount,
+		"migrated schedule should match embedded mainnet schedule count")
+
+	// Verify sequential IDs.
 	for i, sd := range schedRes.ScheduledDistributions {
 		requireT.Equal(uint64(i+1), sd.ID, "schedule entry %d should have sequential ID", i)
-		requireT.Equal(p.preUpgradeTimestamps[i], sd.Timestamp,
-			"schedule entry %d should preserve original timestamp", i)
+		requireT.Len(sd.Allocations, 6, "schedule entry %d should have 6 clearing accounts", i)
 	}
+
+	// First entry (ID=1) should be the already-processed distribution.
+	requireT.Equal(uint64(1775476800), schedRes.ScheduledDistributions[0].Timestamp)
+	// Second entry (ID=2) is the first multi-block distribution.
+	requireT.Equal(uint64(1778068800), schedRes.ScheduledDistributions[1].Timestamp)
+	// Last entry (ID=84) boundary check.
+	last := schedRes.ScheduledDistributions[len(schedRes.ScheduledDistributions)-1]
+	requireT.Equal(uint64(expectedCount), last.ID)
+	requireT.Equal(uint64(1993723200), last.Timestamp)
+	requireT.Len(last.Allocations, 6)
 
 	// Validator's score should be preserved (and grown since time has passed).
 	scoreRes, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{Address: p.validatorDelegatorAddr})
@@ -124,6 +105,21 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.True(scoreRes.Score.GTE(p.preUpgradeScore),
 		"post-upgrade score (%s) should be >= pre-upgrade score (%s)", scoreRes.Score, p.preUpgradeScore)
 
-	t.Logf("PSE After: params OK, schedule re-keyed (%d entries), score (%s -> %s)",
+	t.Logf("PSE After: params OK, schedule loaded (%d entries), lastProcessedID=1, score (%s -> %s)",
 		len(schedRes.ScheduledDistributions), p.preUpgradeScore, scoreRes.Score)
+}
+
+// loadMainnetScheduleCount reads the embedded mainnet schedule JSON and returns the number of entries.
+func loadMainnetScheduleCount(t *testing.T) int {
+	t.Helper()
+
+	data, err := os.ReadFile("../../app/upgrade/v7/scheduled-distributions-mainnet.json")
+	require.NoError(t, err)
+
+	var schedule struct {
+		ScheduledDistributions []json.RawMessage `json:"scheduled_distributions"` //nolint:tagliatelle
+	}
+	require.NoError(t, json.Unmarshal(data, &schedule))
+
+	return len(schedule.ScheduledDistributions)
 }

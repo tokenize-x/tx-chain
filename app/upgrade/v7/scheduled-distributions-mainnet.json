@@ -1,0 +1,2441 @@
+{
+  "scheduled_distributions": [
+    {
+      "timestamp": "1775476800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1778068800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1780747200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1783339200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1786017600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1788696000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1791288000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1793966400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1796558400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1799236800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1801915200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1804334400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1807012800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1809604800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1812283200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1814875200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1817553600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1820232000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1822824000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1825502400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1828094400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1830772800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1833451200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1835956800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1838635200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1841227200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1843905600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1846497600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1849176000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1851854400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1854446400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1857124800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1859716800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1862395200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1865073600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1867492800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1870171200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1872763200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1875441600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1878033600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1880712000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1883390400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1885982400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1888660800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1891252800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1893931200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1896609600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1899028800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1901707200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1904299200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1906977600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1909569600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1912248000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1914926400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1917518400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1920196800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1922788800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1925467200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1928145600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1930564800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1933243200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1935835200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1938513600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1941105600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1943784000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1946462400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1949054400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1951732800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1954324800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1957003200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1959681600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1962187200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1964865600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1967457600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1970136000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1972728000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1975406400",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1978084800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1980676800",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1983355200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1985947200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1988625600",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1991304000",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    },
+    {
+      "timestamp": "1993723200",
+      "allocations": [
+        {
+          "clearing_account": "pse_community",
+          "amount": "476190476190476"
+        },
+        {
+          "clearing_account": "pse_foundation",
+          "amount": "357142857142857"
+        },
+        {
+          "clearing_account": "pse_alliance",
+          "amount": "238095238095238"
+        },
+        {
+          "clearing_account": "pse_partnership",
+          "amount": "35714285714285"
+        },
+        {
+          "clearing_account": "pse_investors",
+          "amount": "59523809523809"
+        },
+        {
+          "clearing_account": "pse_team",
+          "amount": "23809523809523"
+        }
+      ]
+    }
+  ],
+  "disable_distributions": false
+}

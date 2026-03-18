@@ -1,6 +1,7 @@
 package v7
 
 import (
+	"encoding/json"
 	"testing"
 
 	"cosmossdk.io/collections"
@@ -100,44 +101,17 @@ func TestMigratePSEStore(t *testing.T) {
 	requireT.NoError(oldScoreMap.Set(ctx, delAddr1, score1))
 	requireT.NoError(oldScoreMap.Set(ctx, delAddr2, score2))
 
-	// Old AllocationSchedule: keyed by timestamp, no ID field in v6.
-	// Migration re-keys entries with sequential IDs starting from 1.
-	oldScheduleSB := collections.NewSchemaBuilder(storeService)
-	oldScheduleMap := collections.NewMap(
-		oldScheduleSB,
-		types.AllocationScheduleKey,
-		"allocation_schedule",
-		collections.Uint64Key,
-		codec.CollValue[types.ScheduledDistribution](cdc),
-	)
-	_, err = oldScheduleSB.Build()
-	requireT.NoError(err)
-
-	oldTimestamp1 := uint64(1700000000)
-	oldTimestamp2 := uint64(1700100000)
-	requireT.NoError(oldScheduleMap.Set(ctx, oldTimestamp1, types.ScheduledDistribution{
-		Timestamp: oldTimestamp1,
-		Allocations: []types.ClearingAccountAllocation{
-			{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(500)},
-		},
-	}))
-	requireT.NoError(oldScheduleMap.Set(ctx, oldTimestamp2, types.ScheduledDistribution{
-		Timestamp: oldTimestamp2,
-		Allocations: []types.ClearingAccountAllocation{
-			{ClearingAccount: "pse_clearing_1", Amount: sdkmath.NewInt(1000)},
-		},
-	}))
-
 	// Run migration.
 	requireT.NoError(migratePSEStore(ctx, pseKeeper))
 
-	// Verify new format DelegationTimeEntries (re-keyed under distributionID=1).
-	got1, err := pseKeeper.DelegationTimeEntries.Get(ctx, collections.Join3(uint64(1), delAddr1, valAddr1))
+	// Verify DelegationTimeEntries are re-keyed under firstMultiBlockDistributionID (2).
+	distID := firstMultiBlockDistributionID
+	got1, err := pseKeeper.DelegationTimeEntries.Get(ctx, collections.Join3(distID, delAddr1, valAddr1))
 	requireT.NoError(err)
 	requireT.True(entry1.Shares.Equal(got1.Shares))
 	requireT.Equal(entry1.LastChangedUnixSec, got1.LastChangedUnixSec)
 
-	got2, err := pseKeeper.DelegationTimeEntries.Get(ctx, collections.Join3(uint64(1), delAddr2, valAddr2))
+	got2, err := pseKeeper.DelegationTimeEntries.Get(ctx, collections.Join3(distID, delAddr2, valAddr2))
 	requireT.NoError(err)
 	requireT.True(entry2.Shares.Equal(got2.Shares))
 	requireT.Equal(entry2.LastChangedUnixSec, got2.LastChangedUnixSec)
@@ -146,12 +120,12 @@ func TestMigratePSEStore(t *testing.T) {
 	_, err = oldDelegMap.Get(ctx, collections.Join(delAddr1, valAddr1))
 	requireT.ErrorIs(err, collections.ErrNotFound)
 
-	// Verify new-format AccountScoreSnapshot (re-keyed under distributionID=1).
-	gotScore1, err := pseKeeper.AccountScoreSnapshot.Get(ctx, collections.Join(uint64(1), delAddr1))
+	// Verify AccountScoreSnapshot re-keyed under firstMultiBlockDistributionID (2).
+	gotScore1, err := pseKeeper.AccountScoreSnapshot.Get(ctx, collections.Join(firstMultiBlockDistributionID, delAddr1))
 	requireT.NoError(err)
 	requireT.True(score1.Equal(gotScore1))
 
-	gotScore2, err := pseKeeper.AccountScoreSnapshot.Get(ctx, collections.Join(uint64(1), delAddr2))
+	gotScore2, err := pseKeeper.AccountScoreSnapshot.Get(ctx, collections.Join(firstMultiBlockDistributionID, delAddr2))
 	requireT.NoError(err)
 	requireT.True(score2.Equal(gotScore2))
 
@@ -159,41 +133,70 @@ func TestMigratePSEStore(t *testing.T) {
 	_, err = oldScoreMap.Get(ctx, delAddr1)
 	requireT.ErrorIs(err, collections.ErrNotFound)
 
-	// Verify AllocationSchedule was re-keyed with sequential IDs.
-	// Old timestamp-keyed entries should no longer exist.
-	_, err = pseKeeper.AllocationSchedule.Get(ctx, oldTimestamp1)
-	requireT.ErrorIs(err, collections.ErrNotFound)
-	_, err = pseKeeper.AllocationSchedule.Get(ctx, oldTimestamp2)
-	requireT.ErrorIs(err, collections.ErrNotFound)
+	// Verify AllocationSchedule was replaced with full mainnet schedule from embedded JSON.
+	var scheduleData scheduledDistributionsJSON
+	requireT.NoError(json.Unmarshal(mainnetScheduleJSON, &scheduleData))
+	totalEntries := len(scheduleData.ScheduledDistributions)
+	requireT.Positive(totalEntries)
 
-	// New ID-keyed entries should exist with correct IDs and original timestamps.
+	// First entry should have ID=1 with the first mainnet timestamp.
 	sched1, err := pseKeeper.AllocationSchedule.Get(ctx, 1)
 	requireT.NoError(err)
 	requireT.Equal(uint64(1), sched1.ID)
-	requireT.Equal(oldTimestamp1, sched1.Timestamp)
-	requireT.Equal(sdkmath.NewInt(500), sched1.Allocations[0].Amount)
+	requireT.Equal(uint64(1775476800), sched1.Timestamp)
+	requireT.Len(sched1.Allocations, 6)
 
+	// Second entry should have ID=2 (first multi-block distribution).
 	sched2, err := pseKeeper.AllocationSchedule.Get(ctx, 2)
 	requireT.NoError(err)
 	requireT.Equal(uint64(2), sched2.ID)
-	requireT.Equal(oldTimestamp2, sched2.Timestamp)
-	requireT.Equal(sdkmath.NewInt(1000), sched2.Allocations[0].Amount)
+	requireT.Equal(uint64(1778068800), sched2.Timestamp)
 
-	// Verify LastProcessedDistributionID = 0.
+	// Last entry should have ID = totalEntries.
+	schedLast, err := pseKeeper.AllocationSchedule.Get(ctx, uint64(totalEntries))
+	requireT.NoError(err)
+	requireT.Equal(uint64(totalEntries), schedLast.ID)
+
+	// Verify LastProcessedDistributionID = 1 (first distribution already processed).
 	lastID, err := pseKeeper.LastProcessedDistributionID.Get(ctx)
 	requireT.NoError(err)
-	requireT.Equal(uint64(0), lastID)
+	requireT.Equal(uint64(1), lastID)
 }
 
-func TestMigratePSEStore_EmptyState(t *testing.T) {
+func TestMigratePSEStore_NoDelegationsOrScores(t *testing.T) {
 	requireT := require.New(t)
 	ctx, pseKeeper := setup(t)
 
-	// Migrate with no existing data — should succeed without errors.
+	// Migrate with no pre-existing delegation/score data — should succeed.
 	requireT.NoError(migratePSEStore(ctx, pseKeeper))
 
-	// Verify LastProcessedDistributionID is set to 0.
+	// Verify LastProcessedDistributionID is set to 1.
 	lastID, err := pseKeeper.LastProcessedDistributionID.Get(ctx)
 	requireT.NoError(err)
-	requireT.Equal(uint64(0), lastID)
+	requireT.Equal(uint64(1), lastID)
+
+	// Verify mainnet schedule was fully loaded from embedded JSON.
+	var scheduleData scheduledDistributionsJSON
+	requireT.NoError(json.Unmarshal(mainnetScheduleJSON, &scheduleData))
+	expectedCount := len(scheduleData.ScheduledDistributions)
+
+	// Count entries in store.
+	var actualCount int
+	iter, err := pseKeeper.AllocationSchedule.Iterate(ctx, nil)
+	requireT.NoError(err)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		actualCount++
+	}
+	requireT.Equal(expectedCount, actualCount, "all mainnet schedule entries should be loaded")
+
+	// Verify first and second entries have correct timestamps.
+	sched1, err := pseKeeper.AllocationSchedule.Get(ctx, 1)
+	requireT.NoError(err)
+	requireT.Equal(uint64(1775476800), sched1.Timestamp)
+	requireT.Len(sched1.Allocations, 6)
+
+	sched2, err := pseKeeper.AllocationSchedule.Get(ctx, 2)
+	requireT.NoError(err)
+	requireT.Equal(uint64(1778068800), sched2.Timestamp)
 }

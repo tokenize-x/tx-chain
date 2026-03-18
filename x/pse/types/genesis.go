@@ -27,8 +27,14 @@ func (m *GenesisState) Validate() error {
 		return errorsmod.Wrapf(err, "invalid allocation schedule")
 	}
 
-	// Validate minimum gap between distributions using the param from genesis state
-	if err := ValidateDistributionGap(m.ScheduledDistributions, m.Params.MinDistributionGapSeconds); err != nil {
+	// Validate minimum gap between unprocessed distributions only.
+	var unprocessed []ScheduledDistribution
+	for _, sd := range m.ScheduledDistributions {
+		if sd.ID > m.LastProcessedDistributionID {
+			unprocessed = append(unprocessed, sd)
+		}
+	}
+	if err := ValidateDistributionGap(unprocessed, m.Params.MinDistributionGapSeconds); err != nil {
 		return errorsmod.Wrapf(err, "invalid distribution gap")
 	}
 
