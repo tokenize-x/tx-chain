@@ -12,7 +12,30 @@ concurrency:
 
 # TODO(v7): Remove unnecessary steps needed for private repository access.
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs: ${{ steps.filter.outputs.docs }}
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            docs:
+              - '**/*.md'
+              - 'docs/**'
+              - '.github/**'
+            code:
+              - '**/*.go'
+              - 'go.mod'
+              - 'x/**'
+              - 'integration-tests/**'
   ci:
+    needs: detect-changes
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -153,6 +176,8 @@ jobs:
           key: ${{ runner.os }}-cache-smart-contracts-${{ hashFiles('**/*.rs', '**/Cargo.toml', '**/Cargo.lock') }}
         if: ${{ matrix.wasm-cache }}
       - name: Run ${{ matrix.ci_step }}
+        # Run when manually dispatched, when code changed, or when docs changed (docs-only runs run lint)
+        if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.code == 'true' || (matrix.ci_step == 'lint' && needs.detect-changes.outputs.docs == 'true') }}
         run: ${{ matrix.command }}
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
