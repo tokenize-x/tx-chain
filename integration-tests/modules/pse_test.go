@@ -877,16 +877,30 @@ func getScheduledDistribution(
 	return pseResponse.ScheduledDistributions, nil
 }
 
-func awaitScheduleCount(ctx context.Context, t *testing.T, chain integration.TXChain, expectedCount int) {
+func awaitScheduleCount(ctx context.Context, t *testing.T, chain integration.TXChain, expectedUnprocessedCount int) {
 	t.Helper()
 	requireT := require.New(t)
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	err := chain.AwaitState(ctx, func(ctx context.Context) error {
 		dist, err := getScheduledDistribution(ctx, chain)
 		if err != nil {
 			return err
 		}
-		if len(dist) != expectedCount {
-			return fmt.Errorf("expected %d scheduled distributions, got %d", expectedCount, len(dist))
+		lastIDRes, err := pseClient.LastProcessedDistributionID(
+			ctx, &psetypes.QueryLastProcessedDistributionIDRequest{},
+		)
+		if err != nil {
+			return err
+		}
+		unprocessedCount := 0
+		for _, sd := range dist {
+			if sd.ID > lastIDRes.LastProcessedDistributionId {
+				unprocessedCount++
+			}
+		}
+		if unprocessedCount != expectedUnprocessedCount {
+			return fmt.Errorf("expected %d unprocessed scheduled distributions, got %d",
+				expectedUnprocessedCount, unprocessedCount)
 		}
 		return nil
 	}, integration.WithAwaitStateTimeout(10*time.Second))
