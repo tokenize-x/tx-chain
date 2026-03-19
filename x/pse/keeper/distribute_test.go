@@ -530,3 +530,206 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT.Equal(distributionID, lastProcessed2,
 		"LastProcessedDistributionID must advance to distributionID=%d after Distribution 2", distributionID)
 }
+
+// TestDistribution_FairnessBonus verifies that distribution adds a fairness bonus score to
+// AccountScoreSnapshot[nextID] proportional to the distributed amount and elapsed time since
+// the distribution started.
+// formula: bonusScore = distributedAmount * (blockTime - StartedAt)
+func TestDistribution_FairnessBonus(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	now := time.Now().Round(time.Second)
+	ctx := testApp.NewContext(false).WithBlockTime(now)
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Create validator and delegator.
+	valOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, valOp, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+	val, err := testApp.AddValidator(ctx, valOp, sdk.NewInt64Coin(bondDenom, 10), nil)
+	requireT.NoError(err)
+	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
+
+	delAddr, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delAddr, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+
+	distributionID := firstDistributionID
+
+	// Delegate and accumulate score over 10 seconds.
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 500),
+	})
+	requireT.NoError(err)
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(10 * time.Second))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 1),
+	})
+	requireT.NoError(err)
+
+	// Save schedule so hooks can find distribution ID.
+	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: distributionID, Timestamp: uint64(ctx.BlockTime().Unix())},
+	})
+	requireT.NoError(err)
+
+	// Fund community clearing account with large amount to prevent integer division to zero.
+	communityAmount := sdkmath.NewInt(10_000_000)
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
+
+	// D = simulated elapsed seconds since distribution started.
+	const D = int64(7)
+	blockTime := ctx.BlockTime().Unix()
+
+	// distTimestamp == blockTime so Phase 1 gap score = shares * (blockTime - distTimestamp) = 0.
+	// StartedAt is D seconds before blockTime so processingElapsedSec = D.
+	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(blockTime),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          communityAmount,
+		}},
+		StartedAt: blockTime - D,
+	}
+	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, scheduledDistribution))
+
+	// Phase 1: convert DelegationTimeEntries to score snapshots.
+	for {
+		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Capture TotalScore and delegator score before Phase 2 (cleanup removes these).
+	totalScore, err := pseKeeper.TotalScore.Get(ctx, distributionID)
+	requireT.NoError(err)
+	requireT.True(totalScore.IsPositive(), "TotalScore must be positive after Phase 1")
+
+	delegatorScore, err := pseKeeper.GetDelegatorScore(ctx, distributionID, delAddr)
+	requireT.NoError(err)
+	requireT.True(delegatorScore.IsPositive(), "delegator score must be positive after Phase 1")
+
+	// expectedUserAmount = communityAmount * delegatorScore / totalScore (same formula as Phase 2).
+	expectedUserAmount := communityAmount.Mul(delegatorScore).Quo(totalScore)
+	requireT.True(expectedUserAmount.IsPositive(),
+		"expectedUserAmount must be positive (increase communityAmount if this fails); "+
+			"delegatorScore=%s totalScore=%s", delegatorScore, totalScore)
+	expectedBonus := expectedUserAmount.MulRaw(D)
+
+	// Phase 2: distribute tokens and add fairness bonus to nextID snapshot.
+	for {
+		done, err := pseKeeper.ProcessOngoingTokenDistribution(ctx, scheduledDistribution, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// AccountScoreSnapshot[nextID][delAddr] must equal the fairness bonus.
+	// Gap score = 0 (distTimestamp == blockTime), hook score from auto-delegate = 0.
+	// Only the added fairness bonus contributes in next ID score.
+	nextID := distributionID + 1
+	bonusScore, err := pseKeeper.GetDelegatorScore(ctx, nextID, delAddr)
+	requireT.NoError(err)
+	requireT.Equal(expectedBonus.String(), bonusScore.String(),
+		"fairness bonus in AccountScoreSnapshot[nextID] must equal distributedAmount * processingElapsedSec")
+
+	t.Logf("distributedAmount=%s D=%d bonusScore=%s", expectedUserAmount, D, bonusScore)
+}
+
+// TestDistribution_FairnessBonus_SkippedWhenStartedAtZero verifies that no fairness bonus
+// is added when StartedAt is zero. This preserves backward compatibility for distributions
+// that predate the StartedAt field.
+func TestDistribution_FairnessBonus_SkippedWhenStartedAtZero(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false).WithBlockTime(time.Now().Round(time.Second))
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	valOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, valOp, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+	val, err := testApp.AddValidator(ctx, valOp, sdk.NewInt64Coin(bondDenom, 10), nil)
+	requireT.NoError(err)
+	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
+
+	delAddr, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delAddr, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+
+	distributionID := firstDistributionID
+
+	// Delegate and accumulate score.
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 500),
+	})
+	requireT.NoError(err)
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(10 * time.Second))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 1),
+	})
+	requireT.NoError(err)
+
+	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: distributionID, Timestamp: uint64(ctx.BlockTime().Unix())},
+	})
+	requireT.NoError(err)
+
+	communityAmount := sdkmath.NewInt(10_000_000)
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
+
+	// StartedAt = 0: fairness bonus must be skipped (backward-compatible default).
+	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(ctx.BlockTime().Unix()), // distTimestamp == blockTime -> gap score = 0
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          communityAmount,
+		}},
+		StartedAt: 0,
+	}
+	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, scheduledDistribution))
+
+	for {
+		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+	for {
+		done, err := pseKeeper.ProcessOngoingTokenDistribution(ctx, scheduledDistribution, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// No bonus -> no AccountScoreSnapshot entry at nextID for this delegator.
+	// Gap score = 0 (distTimestamp == blockTime), hook score from auto-delegate = 0.
+	nextID := distributionID + 1
+	_, err = pseKeeper.GetDelegatorScore(ctx, nextID, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"no fairness bonus must be added when StartedAt is zero")
+}

@@ -5833,6 +5833,7 @@ Each distribution is identified by a unique, sequential id.
 | `timestamp` | [uint64](#uint64) |  |  `timestamp is when this allocation should occur (Unix timestamp in seconds).`  |
 | `allocations` | [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation) | repeated |  `allocations is the list of amounts to allocate from each clearing account at this time.`  |
 | `id` | [uint64](#uint64) |  |  `id is the unique, sequential identifier for this distribution. Used as the storage key in the AllocationSchedule map.`  |
+| `started_at` | [int64](#int64) |  |  `started_at is the Unix timestamp (seconds) of the block in which this distribution began processing. Set when the ScheduledDistribution transitions to OngoingDistribution.`  |
 
 
 

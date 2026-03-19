@@ -203,6 +203,11 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	nextID := ongoingID + 1
+	blockTime := sdkCtx.BlockTime().Unix()
+	// processingElapsedSec is the time elapsed since distribution began. Used for the fairness bonus below.
+	// If StartedAt is not set (zero), bonus is skipped to stay backward-compatible.
+	processingElapsedSec := blockTime - ongoing.StartedAt
 
 	// Distribute rewards to each delegator in the batch proportional to their score.
 	batchDistributed := sdkmath.NewInt(0)
@@ -213,6 +218,14 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 			return false, err
 		}
 		batchDistributed = batchDistributed.Add(distributedAmount)
+
+		// Fairness bonus: compensates delegators processed in later batches.
+		if distributedAmount.IsPositive() && ongoing.StartedAt > 0 && processingElapsedSec > 0 {
+			bonusScore := distributedAmount.MulRaw(processingElapsedSec)
+			if err := k.addToScore(ctx, nextID, item.delAddr, bonusScore); err != nil {
+				return false, err
+			}
+		}
 
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
 			DelegatorAddress: item.delAddr.String(),

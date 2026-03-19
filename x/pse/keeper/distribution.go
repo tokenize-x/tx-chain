@@ -68,6 +68,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 		)
 	}
 
+	scheduledDistribution.StartedAt = sdkCtx.BlockTime().Unix()
 	if err := k.OngoingDistribution.Set(ctx, scheduledDistribution); err != nil {
 		return err
 	}
