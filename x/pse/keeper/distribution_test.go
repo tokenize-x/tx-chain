@@ -812,8 +812,8 @@ func TestDistribution_EndBlockFailure(t *testing.T) {
 				continue
 			}
 			moduleAddr := testApp.AccountKeeper.GetModuleAddress(mapping.ClearingAccount)
-			requireT.True(bankKeeper.GetBalance(ctx, moduleAddr, bondDenom).Amount.IsPositive(),
-				"clearing account %s should still hold funds", mapping.ClearingAccount)
+			requireT.True(bankKeeper.GetBalance(ctx, moduleAddr, bondDenom).Amount.Equal(allocationAmount),
+				"clearing account %s should still hold initial allocation", mapping.ClearingAccount)
 		}
 	})
 
