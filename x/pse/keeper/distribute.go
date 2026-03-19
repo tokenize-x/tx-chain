@@ -186,20 +186,10 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	}
 	iter.Close()
 
-	// Only triggered when all distributions of this round are completed.
+	// Only triggered when all delegators have been processed.
 	// Send leftover to community pool and clean up.
 	if len(batch) == 0 {
-		distributedSoFar, err := k.getDistributedAmount(ctx, ongoingID)
-		if err != nil {
-			return false, err
-		}
-		leftover := totalPSEAmount.Sub(distributedSoFar)
-		if leftover.IsPositive() {
-			if err := k.sendLeftoverToCommunityPool(ctx, leftover, bondDenom); err != nil {
-				return false, err
-			}
-		}
-		return true, k.cleanupOngoingDistribution(ctx, ongoingID)
+		return true, k.finalizeCommunityDistribution(ctx, ongoingID, totalPSEAmount, bondDenom)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -249,6 +239,24 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	}
 
 	return false, nil
+}
+
+// finalizeCommunityDistribution sends the undistributed leftover to the community pool and cleans up state.
+// Called when all AccountScoreSnapshot entries for the ongoing distribution have been processed.
+func (k Keeper) finalizeCommunityDistribution(
+	ctx context.Context, distributionID uint64, totalPSEAmount sdkmath.Int, bondDenom string,
+) error {
+	distributedSoFar, err := k.getDistributedAmount(ctx, distributionID)
+	if err != nil {
+		return err
+	}
+	leftover := totalPSEAmount.Sub(distributedSoFar)
+	if leftover.IsPositive() {
+		if err := k.sendLeftoverToCommunityPool(ctx, leftover, bondDenom); err != nil {
+			return err
+		}
+	}
+	return k.cleanupOngoingDistribution(ctx, distributionID)
 }
 
 // getCommunityAllocationAmount extracts the community clearing account allocation from a distribution.

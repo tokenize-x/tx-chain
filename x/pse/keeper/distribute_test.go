@@ -448,8 +448,10 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	scoreAfterReinclusion := resp2.Score
 	requireT.True(scoreAfterReinclusion.IsPositive(), "Score should be positive after re-inclusion")
 	// Restored excluded score + fresh accumulation (50 tokens * 3s = 150)
-	requireT.True(scoreAfterReinclusion.GT(scoreBeforeExclusion), "Score after re-inclusion should exceed original (restored + new accumulation)")
-	t.Logf("Score after re-inclusion and 3 seconds: %s (original was %s)", scoreAfterReinclusion.String(), scoreBeforeExclusion.String())
+	requireT.True(scoreAfterReinclusion.GT(scoreBeforeExclusion),
+		"Score after re-inclusion should exceed original (restored + new accumulation)")
+	t.Logf("Score after re-inclusion and 3 seconds: %s (original was %s)",
+		scoreAfterReinclusion.String(), scoreBeforeExclusion.String())
 
 	// Verify fresh accumulation component: at least 50 tokens * 3 seconds = 150 beyond the restored score.
 	expectedMinScore := scoreBeforeExclusion.Add(sdkmath.NewInt(50 * 3))
@@ -582,9 +584,12 @@ func TestDistribution_FairnessBonus(t *testing.T) {
 
 	// Fund community clearing account with large amount to prevent integer division to zero.
 	communityAmount := sdkmath.NewInt(10_000_000)
+	communityCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))
 	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
-	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
-	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, communityCoins))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), communityCoins,
+	))
 
 	// D = simulated elapsed seconds since distribution started.
 	const D = int64(7)
@@ -695,9 +700,12 @@ func TestDistribution_FairnessBonus_SkippedWhenStartedAtZero(t *testing.T) {
 	requireT.NoError(err)
 
 	communityAmount := sdkmath.NewInt(10_000_000)
+	communityCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))
 	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
-	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
-	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))))
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, communityCoins))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), communityCoins,
+	))
 
 	// StartedAt = 0: fairness bonus must be skipped (backward-compatible default).
 	scheduledDistribution := types.ScheduledDistribution{

@@ -247,13 +247,17 @@ func TestExcludedAddress_ScoreLifecycle(t *testing.T) {
 
 	// Create validator.
 	validatorOp, _ := testApp.GenAccount(ctx)
-	requireT.NoError(testApp.FundAccount(ctx, validatorOp, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000)))))
+	requireT.NoError(testApp.FundAccount(
+		ctx, validatorOp, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1000))),
+	))
 	validator, err := testApp.AddValidator(ctx, validatorOp, sdk.NewInt64Coin(sdk.DefaultBondDenom, 10), nil)
 	requireT.NoError(err)
 
 	// Create delegator with plenty of tokens.
 	delegator, _ := testApp.GenAccount(ctx)
-	requireT.NoError(testApp.FundAccount(ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(10000)))))
+	requireT.NoError(testApp.FundAccount(
+		ctx, delegator, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(10000))),
+	))
 
 	stakingMsgSrv := stakingkeeper.NewMsgServerImpl(testApp.StakingKeeper)
 	delegate := func(amount int64) {
