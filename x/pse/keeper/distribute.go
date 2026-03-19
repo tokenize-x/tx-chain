@@ -83,28 +83,27 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 		}
 		isExcluded := excludedMap[addrStr]
 
-		if !isExcluded {
-			// Score for ongoingID: lastChanged -> distTimestamp.
-			score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
-			if err != nil {
-				return false, err
-			}
-			if err := k.addToScore(ctx, ongoingID, item.delAddr, score); err != nil {
-				return false, err
-			}
+		// Score for ongoingID: lastChanged -> distTimestamp.
+		// Excluded addresses route to ExcludedAddressScore instead of AccountScoreSnapshot+TotalScore.
+		score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
+		if err != nil {
+			return false, err
+		}
+		if err := k.addScoreForAddress(ctx, ongoingID, item.delAddr, score, isExcluded); err != nil {
+			return false, err
+		}
 
-			// Score for nextID: distTimestamp -> blockTime (gap during Phase 1 processing).
-			// TODO: add dedicated integration test to verify gap score fairness across batches.
-			gapScore, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, types.DelegationTimeEntry{
-				LastChangedUnixSec: distTimestamp,
-				Shares:             item.entry.Shares,
-			}, blockTime)
-			if err != nil {
-				return false, err
-			}
-			if err := k.addToScore(ctx, nextID, item.delAddr, gapScore); err != nil {
-				return false, err
-			}
+		// Score for nextID: distTimestamp -> blockTime (gap during Phase 1 processing).
+		// TODO: add dedicated integration test to verify gap score fairness across batches.
+		gapScore, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, types.DelegationTimeEntry{
+			LastChangedUnixSec: distTimestamp,
+			Shares:             item.entry.Shares,
+		}, blockTime)
+		if err != nil {
+			return false, err
+		}
+		if err := k.addScoreForAddress(ctx, nextID, item.delAddr, gapScore, isExcluded); err != nil {
+			return false, err
 		}
 
 		// Migrate entry to nextID with same shares, lastChanged = current block time.

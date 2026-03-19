@@ -284,6 +284,7 @@
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [AccountScore](#tx.pse.v1.AccountScore)
     - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
+    - [ExcludedAddressScoreEntry](#tx.pse.v1.ExcludedAddressScoreEntry)
     - [GenesisState](#tx.pse.v1.GenesisState)
     - [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry)
   
@@ -5952,6 +5953,26 @@ Any remainder from division is sent to the community pool.
 
 
 
+<a name="tx.pse.v1.ExcludedAddressScoreEntry"></a>
+
+### ExcludedAddressScoreEntry
+
+```
+ExcludedAddressScoreEntry holds the accumulated score for a single excluded address.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |    |
+| `score` | [string](#string) |  |    |
+
+
+
+
+
+
 <a name="tx.pse.v1.GenesisState"></a>
 
 ### GenesisState
@@ -5971,6 +5992,7 @@ GenesisState defines the module's genesis state.
 | `distributions_disabled` | [bool](#bool) |  |    |
 | `total_scores` | [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry) | repeated |    |
 | `last_processed_distribution_id` | [uint64](#uint64) |  |    |
+| `excluded_address_scores` | [ExcludedAddressScoreEntry](#tx.pse.v1.ExcludedAddressScoreEntry) | repeated |  `excluded_address_scores stores the accumulated score for each excluded address. Score is invisible in queries and unused in distributions, but preserved for restoration on re-inclusion.`  |
 
 
 
