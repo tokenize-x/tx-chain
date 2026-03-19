@@ -403,6 +403,11 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 		}
 	}
 
+	// Verify LastProcessedDistributionID is updated.
+	lastProcessed, err := r.testApp.PSEKeeper.LastProcessedDistributionID.Get(r.ctx)
+	r.requireT.NoError(err)
+	r.requireT.Equal(r.currentDistID, lastProcessed)
+
 	// Advance to next distribution ID (Phase 1 migrated entries to currentDistID+1).
 	r.currentDistID++
 }
