@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -157,12 +158,24 @@ func (k Keeper) moveSnapshotToExcludedScore(ctx context.Context, distributionID 
 	}
 	currentTotal, err := k.TotalScore.Get(ctx, distributionID)
 	if errors.Is(err, collections.ErrNotFound) {
-		return nil
+		return errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"TotalScore not found for distribution %d but delegator score %s exists",
+			distributionID, score,
+		)
 	}
 	if err != nil {
 		return err
 	}
-	return k.TotalScore.Set(ctx, distributionID, currentTotal.Sub(score))
+	newTotal := currentTotal.Sub(score)
+	if newTotal.IsNegative() {
+		return errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"TotalScore underflow: removing score %s from total %s for distribution %d",
+			score, currentTotal, distributionID,
+		)
+	}
+	return k.TotalScore.Set(ctx, distributionID, newTotal)
 }
 
 // CalculateDelegatorScore calculates the current total score for a delegator.

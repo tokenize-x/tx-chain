@@ -218,6 +218,7 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		batchDistributed = batchDistributed.Add(distributedAmount)
 
 		// Fairness bonus: compensates delegators processed in later batches.
+		// addToScore is safe here: AccountScoreSnapshot[ongoingID] only contains non-excluded addresses.
 		if distributedAmount.IsPositive() && ongoing.StartedAt > 0 && processingElapsedSec > 0 {
 			bonusScore := distributedAmount.MulRaw(processingElapsedSec)
 			if err := k.addToScore(ctx, nextID, item.delAddr, bonusScore); err != nil {
