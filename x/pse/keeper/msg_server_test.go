@@ -515,3 +515,47 @@ func TestMsgUpdateMinDistributionGap(t *testing.T) {
 		requireT.Equal(uint64(0), params.MinDistributionGapSeconds)
 	})
 }
+
+func TestMsgUpdateDistributionBatchSize(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	msgServer := keeper.NewMsgServer(testApp.PSEKeeper)
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	invalidAuthority := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+
+	t.Run("valid - update batch size", func(t *testing.T) {
+		resp, err := msgServer.UpdateDistributionBatchSize(ctx, &types.MsgUpdateDistributionBatchSize{
+			Authority:             authority,
+			DistributionBatchSize: 50,
+		})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+
+		params, err := testApp.PSEKeeper.GetParams(ctx)
+		requireT.NoError(err)
+		requireT.Equal(uint64(50), params.DistributionBatchSize)
+	})
+
+	t.Run("invalid - zero batch size", func(t *testing.T) {
+		resp, err := msgServer.UpdateDistributionBatchSize(ctx, &types.MsgUpdateDistributionBatchSize{
+			Authority:             authority,
+			DistributionBatchSize: 0,
+		})
+		requireT.Error(err)
+		requireT.Nil(resp)
+		requireT.Contains(err.Error(), "distribution_batch_size must be greater than 0")
+	})
+
+	t.Run("invalid - wrong authority", func(t *testing.T) {
+		resp, err := msgServer.UpdateDistributionBatchSize(ctx, &types.MsgUpdateDistributionBatchSize{
+			Authority:             invalidAuthority,
+			DistributionBatchSize: 50,
+		})
+		requireT.Error(err)
+		requireT.Nil(resp)
+		requireT.Contains(err.Error(), "invalid authority")
+	})
+}

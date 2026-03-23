@@ -53,6 +53,7 @@ func DefaultParams() Params {
 		ExcludedAddresses:         []string{},
 		ClearingAccountMappings:   []ClearingAccountMapping{},
 		MinDistributionGapSeconds: uint64(24 * 60 * 60), // 1 day
+		DistributionBatchSize:     100,
 	}
 }
 

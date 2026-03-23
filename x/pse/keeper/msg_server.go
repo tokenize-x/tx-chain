@@ -85,6 +85,22 @@ func (ms MsgServer) UpdateMinDistributionGap(
 	return &types.EmptyResponse{}, nil
 }
 
+// UpdateDistributionBatchSize is a governance operation that updates the distribution batch size.
+func (ms MsgServer) UpdateDistributionBatchSize(
+	goCtx context.Context,
+	req *types.MsgUpdateDistributionBatchSize,
+) (*types.EmptyResponse, error) {
+	err := ms.keeper.UpdateDistributionBatchSize(
+		goCtx,
+		req.Authority,
+		req.DistributionBatchSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &types.EmptyResponse{}, nil
+}
+
 // DisableDistributions is a governance operation that disables distributions.
 func (ms MsgServer) DisableDistributions(
 	goCtx context.Context,

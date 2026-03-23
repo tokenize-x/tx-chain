@@ -411,6 +411,27 @@ func (k Keeper) UpdateMinDistributionGap(
 	return k.SetParams(ctx, params)
 }
 
+// UpdateDistributionBatchSize updates the number of entries processed per EndBlock
+// during multi-block community distribution via governance.
+func (k Keeper) UpdateDistributionBatchSize(
+	ctx context.Context,
+	authority string,
+	batchSize uint64,
+) error {
+	if k.authority != authority {
+		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
+	}
+	if batchSize == 0 {
+		return errorsmod.Wrap(types.ErrInvalidInput, "distribution_batch_size must be greater than 0")
+	}
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return err
+	}
+	params.DistributionBatchSize = batchSize
+	return k.SetParams(ctx, params)
+}
+
 // DisableDistributions is a governance operation that disables distributions.
 func (k Keeper) DisableDistributions(ctx context.Context, authority string) error {
 	// Check authority

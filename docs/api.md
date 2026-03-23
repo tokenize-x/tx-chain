@@ -313,6 +313,7 @@
     - [EmptyResponse](#tx.pse.v1.EmptyResponse)
     - [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions)
     - [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings)
+    - [MsgUpdateDistributionBatchSize](#tx.pse.v1.MsgUpdateDistributionBatchSize)
     - [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule)
     - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
     - [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap)
@@ -6047,6 +6048,7 @@ Params store gov manageable parameters.
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
 | `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
 | `min_distribution_gap_seconds` | [uint64](#uint64) |  |  `min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions.`  |
+| `distribution_batch_size` | [uint64](#uint64) |  |  `distribution_batch_size is the number of delegation entries processed per EndBlock during multi-block community distribution.`  |
 
 
 
@@ -6374,6 +6376,27 @@ Community clearing account uses score-based distribution and should not have rec
 
 
 
+<a name="tx.pse.v1.MsgUpdateDistributionBatchSize"></a>
+
+### MsgUpdateDistributionBatchSize
+
+```
+MsgUpdateDistributionBatchSize is a governance operation to update the number of
+delegation entries processed per EndBlock during multi-block community distribution.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  `authority is the address authorized to update the batch size (governance module address).`  |
+| `distribution_batch_size` | [uint64](#uint64) |  |  `distribution_batch_size is the number of entries to process per EndBlock. Must be greater than 0.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.MsgUpdateDistributionSchedule"></a>
 
 ### MsgUpdateDistributionSchedule
@@ -6457,6 +6480,7 @@ Msg defines the Msg service.
 | `UpdateDistributionSchedule` | [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionSchedule is a governance operation to update the distribution schedule.` |  |
 | `DisableDistributions` | [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `DisableDistributions is a governance operation to disable distributions.` |  |
 | `UpdateMinDistributionGap` | [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateMinDistributionGap is a governance operation to update the minimum gap between distributions.` |  |
+| `UpdateDistributionBatchSize` | [MsgUpdateDistributionBatchSize](#tx.pse.v1.MsgUpdateDistributionBatchSize) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionBatchSize is a governance operation to update the multi-block batch size.` |  |
 
  <!-- end services -->
 

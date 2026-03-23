@@ -13,9 +13,6 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
-// defaultBatchSize is the number of entries processed per EndBlock during multi-block distribution.
-const defaultBatchSize = 100 // TODO: make configurable
-
 // ConsumeOngoingDelegationTimeEntries processes a batch of DelegationTimeEntries
 // from the ongoing distribution (ongoingID), converting each entry into a score
 // snapshot and migrating it to nextID (ongoingID + 1).
@@ -30,6 +27,12 @@ const defaultBatchSize = 100 // TODO: make configurable
 func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 	ctx context.Context, ongoing types.ScheduledDistribution,
 ) (bool, error) {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+	batchSize := batchSizeFromParams(params)
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	ongoingID := ongoing.ID
 	nextID := ongoing.ID + 1
@@ -51,8 +54,8 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 		entry   types.DelegationTimeEntry
 	}
 
-	batch := make([]entryKV, 0, defaultBatchSize)
-	for ; iter.Valid() && len(batch) < defaultBatchSize; iter.Next() {
+	batch := make([]entryKV, 0, batchSize)
+	for ; iter.Valid() && len(batch) < batchSize; iter.Next() {
 		kv, err := iter.KeyValue()
 		if err != nil {
 			iter.Close()
@@ -121,7 +124,7 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 	}
 
 	// If batch was smaller than the limit, all entries have been consumed.
-	return len(batch) < defaultBatchSize, nil
+	return len(batch) < batchSize, nil
 }
 
 // ProcessOngoingTokenDistribution distributes tokens to delegators in batches based on their computed scores.
@@ -138,6 +141,12 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 func (k Keeper) ProcessOngoingTokenDistribution(
 	ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string,
 ) (bool, error) {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+	batchSize := batchSizeFromParams(params)
+
 	ongoingID := ongoing.ID
 	totalPSEAmount := getCommunityAllocationAmount(ongoing)
 
@@ -172,8 +181,8 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		score   sdkmath.Int
 	}
 
-	batch := make([]scoreEntry, 0, defaultBatchSize)
-	for ; iter.Valid() && len(batch) < defaultBatchSize; iter.Next() {
+	batch := make([]scoreEntry, 0, batchSize)
+	for ; iter.Valid() && len(batch) < batchSize; iter.Next() {
 		kv, err := iter.KeyValue()
 		if err != nil {
 			iter.Close()
@@ -374,4 +383,13 @@ func (k Keeper) distributeToDelegator(
 		}
 	}
 	return amount, nil
+}
+
+// batchSizeFromParams returns the configured batch size, falling back to the default
+// when unset.
+func batchSizeFromParams(params types.Params) int {
+	if params.DistributionBatchSize == 0 {
+		return int(types.DefaultParams().DistributionBatchSize)
+	}
+	return int(params.DistributionBatchSize)
 }

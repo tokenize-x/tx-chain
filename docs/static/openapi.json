@@ -16832,6 +16832,11 @@
           "type": "string",
           "format": "uint64",
           "description": "min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions."
+        },
+        "distribution_batch_size": {
+          "type": "string",
+          "format": "uint64",
+          "description": "distribution_batch_size is the number of delegation entries processed per EndBlock\nduring multi-block community distribution."
         }
       },
       "description": "Params store gov manageable parameters."

@@ -74,10 +74,14 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	tmClient := cmtservice.NewServiceClient(chain.ClientContext)
 
-	// Params should be preserved across the upgrade.
+	// Params should be preserved across the upgrade, except for fields newly initialized by v7.
 	paramsRes, err := pseClient.Params(ctx, &psetypes.QueryParamsRequest{})
 	requireT.NoError(err)
-	requireT.Equal(p.preUpgradeParams, paramsRes.Params)
+	expectedParams := p.preUpgradeParams
+	expectedParams.DistributionBatchSize = psetypes.DefaultParams().DistributionBatchSize
+	requireT.Equal(expectedParams, paramsRes.Params)
+	requireT.Equal(psetypes.DefaultParams().DistributionBatchSize, paramsRes.Params.DistributionBatchSize,
+		"distribution_batch_size must be initialized to default by v7 upgrade")
 
 	// LastProcessedDistributionID should be set to 1 by migration
 	// (first distribution already processed by single-block logic).
