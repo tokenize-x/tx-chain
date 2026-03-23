@@ -97,7 +97,6 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 		}
 
 		// Score for nextID: distTimestamp -> blockTime (gap during Phase 1 processing).
-		// TODO: add dedicated integration test to verify gap score fairness across batches.
 		gapScore, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, types.DelegationTimeEntry{
 			LastChangedUnixSec: distTimestamp,
 			Shares:             item.entry.Shares,
