@@ -40,6 +40,8 @@ func New(
 				return nil, err
 			}
 
+			pseKeeper.InitCommunityBuffer(ctx)
+
 			return mm.RunMigrations(ctx, configurator, vm)
 		},
 	}
