@@ -63,7 +63,11 @@ func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 		return err
 	}
 
-	return initLastProcessedDistributionID(ctx, pseKeeper)
+	if err := initLastProcessedDistributionID(ctx, pseKeeper); err != nil {
+		return err
+	}
+
+	return initCommunityBuffer(ctx, pseKeeper)
 }
 
 // migrateAllocationSchedule clears the existing timestamp-keyed AllocationSchedule
@@ -135,6 +139,12 @@ func migrateAllocationSchedule(
 // indicating the first distribution is already processed before this upgrade.
 func initLastProcessedDistributionID(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 	return pseKeeper.LastProcessedDistributionID.Set(ctx, lastProcessedID)
+}
+
+// initCommunityBuffer ensures the community buffer module account exists in state.
+func initCommunityBuffer(ctx context.Context, pseKeeper pskeeper.Keeper) error {
+	pseKeeper.InitCommunityBuffer(ctx)
+	return nil
 }
 
 func migrateDelegationTimeEntries(

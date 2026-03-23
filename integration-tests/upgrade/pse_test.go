@@ -10,6 +10,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
@@ -135,6 +136,13 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.True(diff.LTE(maxDeviation),
 		"score growth %s deviates from expected %s by %s (>10%%)",
 		actualGrowth, expectedGrowth, diff)
+
+	// pse_community_buffer must exist in state after the v7 migration (initCommunityBuffer ran).
+	authClient := authtypes.NewQueryClient(chain.ClientContext)
+	bufferAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityBuffer).String()
+	accRes, err := authClient.Account(ctx, &authtypes.QueryAccountRequest{Address: bufferAddr})
+	requireT.NoError(err, "pse_community_buffer account must exist in state after upgrade")
+	requireT.NotNil(accRes.Account, "pse_community_buffer account response must not be nil")
 
 	t.Logf("PSE After: schedule=%d entries, lastProcessedID=1, score %s -> %s (growth=%s, expected~%s, elapsed=%ds)",
 		len(schedRes.ScheduledDistributions), p.preUpgradeScore, scoreRes.Score,

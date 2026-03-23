@@ -351,7 +351,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 			Amount:          amount,
 		}},
 	}
-	err = pseKeeper.OngoingDistribution.Set(ctx, scheduledDistribution)
+	err = pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom)
 	requireT.NoError(err)
 	balanceBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
 	for {
@@ -480,7 +480,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 			Amount:          amount2,
 		}},
 	}
-	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, scheduledDist2))
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDist2, bondDenom))
 
 	// Capture delegation before Distribution 2.
 	delDelegBefore2 := sdkmath.NewInt(0)
@@ -606,7 +606,7 @@ func TestDistribution_FairnessBonus(t *testing.T) {
 		}},
 		StartedAt: blockTime - D,
 	}
-	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, scheduledDistribution))
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom))
 
 	// Phase 1: convert DelegationTimeEntries to score snapshots.
 	for {
@@ -717,7 +717,7 @@ func TestDistribution_FairnessBonus_SkippedWhenStartedAtZero(t *testing.T) {
 		}},
 		StartedAt: 0,
 	}
-	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, scheduledDistribution))
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom))
 
 	for {
 		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
@@ -740,4 +740,120 @@ func TestDistribution_FairnessBonus_SkippedWhenStartedAtZero(t *testing.T) {
 	_, err = pseKeeper.GetDelegatorScore(ctx, nextID, delAddr)
 	requireT.ErrorIs(err, collections.ErrNotFound,
 		"no fairness bonus must be added when StartedAt is zero")
+}
+
+// TestCommunityBuffer_AccountInitialized verifies that InitCommunityBuffer creates the
+// pse_community_buffer module account in state.
+func TestCommunityBuffer_AccountInitialized(t *testing.T) {
+	requireT := require.New(t)
+	startTime := time.Now()
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	testApp.PSEKeeper.InitCommunityBuffer(ctx)
+
+	acc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunityBuffer)
+	requireT.NotNil(acc, "pse_community_buffer module account must exist after InitCommunityBuffer")
+	requireT.Equal(types.ClearingAccountCommunityBuffer, acc.GetName())
+}
+
+// TestCommunityBuffer_FundIsolation is the core safety test for per-distribution buffer.
+// Verifies that only the current round's funds are at risk during distribution.
+// The remaining pse_community balance (future rounds) must never be touched.
+// Scenario:
+//   - pse_community holds 3x communityAmount
+//   - BeginCommunityDistribution moves exactly 1x into pse_community_buffer
+//   - After full distribution: buffer is drained to zero, pse_community still holds 2x
+func TestCommunityBuffer_FundIsolation(t *testing.T) {
+	requireT := require.New(t)
+	startTime := time.Now()
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Set up a validator and delegator.
+	validatorOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, validatorOp,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000_000))),
+	))
+	validator, err := testApp.AddValidator(ctx, validatorOp, sdk.NewInt64Coin(bondDenom, 500_000), nil)
+	requireT.NoError(err)
+
+	delegator, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delegator,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(500_000))),
+	))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delegator.String(),
+		ValidatorAddress: validator.OperatorAddress,
+		Amount:           sdk.NewInt64Coin(bondDenom, 400_000),
+	})
+	requireT.NoError(err)
+
+	// Mint 3x communityAmount into pse_community to simulate a multi-round treasury.
+	communityAmount := sdkmath.NewInt(10_000_000)
+	treasuryTotal := communityAmount.MulRaw(3)
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, treasuryTotal)),
+	))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, treasuryTotal)),
+	))
+
+	communityAddr := testApp.AccountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
+	bufferAddr := testApp.AccountKeeper.GetModuleAddress(types.ClearingAccountCommunityBuffer)
+
+	// Sanity: full treasury in pse_community, buffer empty before distribution starts.
+	requireT.Equal(treasuryTotal, testApp.BankKeeper.GetBalance(ctx, communityAddr, bondDenom).Amount)
+	requireT.True(testApp.BankKeeper.GetBalance(ctx, bufferAddr, bondDenom).Amount.IsZero())
+
+	// Start distribution — only 1× moves from pse_community into the buffer.
+	// Timestamp is set 10 seconds after the delegation so score = shares * 10 > 0.
+	const distributionID = uint64(1)
+	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(startTime.Add(10 * time.Second).Unix()),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          communityAmount,
+		}},
+	}
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom))
+
+	remaining := treasuryTotal.Sub(communityAmount)
+	requireT.Equal(remaining, testApp.BankKeeper.GetBalance(ctx, communityAddr, bondDenom).Amount,
+		"pse_community must retain funds for future rounds — only this round's amount must leave")
+	requireT.Equal(communityAmount, testApp.BankKeeper.GetBalance(ctx, bufferAddr, bondDenom).Amount,
+		"pse_community_buffer must hold exactly this round's funds")
+
+	// Run Phase 1.
+	for {
+		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Run Phase 2 to completion.
+	for {
+		done, err := pseKeeper.ProcessOngoingTokenDistribution(ctx, scheduledDistribution, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// After full distribution: buffer is drained, pse_community is untouched.
+	requireT.True(testApp.BankKeeper.GetBalance(ctx, bufferAddr, bondDenom).Amount.IsZero(),
+		"pse_community_buffer must be fully drained after distribution completes")
+	requireT.Equal(remaining, testApp.BankKeeper.GetBalance(ctx, communityAddr, bondDenom).Amount,
+		"pse_community must still hold future rounds' funds untouched after distribution")
 }

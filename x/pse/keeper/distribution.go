@@ -69,13 +69,28 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 	}
 
 	scheduledDistribution.StartedAt = sdkCtx.BlockTime().Unix()
-	if err := k.OngoingDistribution.Set(ctx, scheduledDistribution); err != nil {
+	if err := k.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom); err != nil {
 		return err
 	}
 	sdkCtx.Logger().Info("started multi-block community distribution",
 		"distribution_id", scheduledDistribution.ID,
 		"timestamp", scheduledDistribution.Timestamp)
 	return nil
+}
+
+// BeginCommunityDistribution stores the ongoing distribution and moves its community allocation
+// from pse_community into the short-lived buffer account.
+func (k Keeper) BeginCommunityDistribution(
+	ctx context.Context, dist types.ScheduledDistribution, bondDenom string,
+) error {
+	if err := k.OngoingDistribution.Set(ctx, dist); err != nil {
+		return err
+	}
+	communityAmount := getCommunityAllocationAmount(dist)
+	communityCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))
+	return k.bankKeeper.SendCoinsFromModuleToModule(
+		ctx, types.ClearingAccountCommunity, types.ClearingAccountCommunityBuffer, communityCoins,
+	)
 }
 
 // resumeOngoingDistribution continues a multi-block community distribution.

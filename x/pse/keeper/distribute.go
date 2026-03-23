@@ -269,10 +269,10 @@ func getCommunityAllocationAmount(dist types.ScheduledDistribution) sdkmath.Int 
 	return sdkmath.NewInt(0)
 }
 
-// sendLeftoverToCommunityPool sends remaining undistributed tokens to the community pool.
+// sendLeftoverToCommunityPool sends remaining undistributed tokens from the buffer to the community pool.
 func (k Keeper) sendLeftoverToCommunityPool(ctx context.Context, amount sdkmath.Int, bondDenom string) error {
-	pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
-	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), pseModuleAddress)
+	bufferAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunityBuffer)
+	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), bufferAddress)
 }
 
 // cleanupOngoingDistribution removes all state associated with a completed distribution.
@@ -347,7 +347,7 @@ func (k Keeper) distributeToDelegator(
 
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
-		types.ClearingAccountCommunity,
+		types.ClearingAccountCommunityBuffer,
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
