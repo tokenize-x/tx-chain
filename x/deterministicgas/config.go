@@ -239,6 +239,7 @@ func DefaultConfig() Config {
 			&psetypes.MsgUpdateDistributionSchedule{},
 			&psetypes.MsgDisableDistributions{},
 			&psetypes.MsgUpdateMinDistributionGap{},
+			&psetypes.MsgUpdateDistributionBatchSize{},
 
 			// distribution
 			&distributiontypes.MsgUpdateParams{},       // This is non-deterministic because all the gov proposals are non-deterministic anyway
