@@ -64,7 +64,11 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 		}
 	}
 
-	return k.DistributionDisabled.Set(ctx, genState.DistributionsDisabled)
+	if err := k.DistributionDisabled.Set(ctx, genState.DistributionsDisabled); err != nil {
+		return err
+	}
+
+	return k.LastProcessedDistributionID.Set(ctx, genState.LastProcessedDistributionID)
 }
 
 // ExportGenesis returns the module's exported genesis.
@@ -144,6 +148,11 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	}
 
 	genesis.DistributionsDisabled, err = k.DistributionDisabled.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	genesis.LastProcessedDistributionID, err = k.LastProcessedDistributionID.Get(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -38,6 +38,11 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"total_scores\""
   ];
+
+  uint64 last_processed_distribution_id = 7 [
+    (gogoproto.customname) = "LastProcessedDistributionID",
+    (gogoproto.moretags) = "yaml:\"last_processed_distribution_id\""
+  ];
 }
 
 message DelegationTimeEntryExport {

@@ -9654,6 +9654,29 @@
         ]
       }
     },
+    "/tx/pse/v1/last_processed_distribution_id": {
+      "get": {
+        "operationId": "GithubComTokenizeXTxChainV7XPseTypesLastProcessedDistributionID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tx.pse.v1.QueryLastProcessedDistributionIDResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "summary": "LastProcessedDistributionID queries the ID of the last completed distribution.",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/tx/pse/v1/params": {
       "get": {
         "operationId": "GithubComTokenizeXTxChainV7XPseTypesParams",
@@ -16826,6 +16849,17 @@
         }
       },
       "description": "QueryClearingAccountBalancesResponse defines the response type for querying clearing account balances."
+    },
+    "tx.pse.v1.QueryLastProcessedDistributionIDResponse": {
+      "type": "object",
+      "properties": {
+        "last_processed_distribution_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "last_processed_distribution_id is the ID of the last completed distribution.\nReturns 0 if no distribution has been processed yet."
+        }
+      },
+      "description": "QueryLastProcessedDistributionIDResponse defines the response type for querying the last processed distribution ID."
     },
     "tx.pse.v1.QueryParamsResponse": {
       "type": "object",

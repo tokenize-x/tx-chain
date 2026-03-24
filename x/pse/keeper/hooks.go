@@ -36,10 +36,22 @@ func (k Keeper) getOngoingDistribution(ctx context.Context) (types.ScheduledDist
 	return ongoing, true, nil
 }
 
-// getNextDistributionID returns the next distribution ID that new entries should be written to.
+// getActiveDistributionID returns the distribution ID where scores are currently stored.
+// If an ongoing distribution exists, returns its ID; otherwise delegates to getNextDistributionID.
+func (k Keeper) getActiveDistributionID(ctx context.Context) (uint64, error) {
+	ongoing, found, err := k.getOngoingDistribution(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if found {
+		return ongoing.ID, nil
+	}
+	return k.getNextDistributionID(ctx)
+}
+
+// getNextDistributionID returns the distribution ID that new entries should be written to.
 // If an ongoing distribution exists (ongoingID=N is being processed), returns N+1.
-// Otherwise returns the next scheduled distribution's ID (zero-value ID when no schedule exists).
-// TODO: handle empty distribution schedule — currently returns 0 when no schedule exists.
+// Otherwise returns LastProcessedDistributionID + 1.
 func (k Keeper) getNextDistributionID(ctx context.Context) (uint64, error) {
 	ongoing, found, err := k.getOngoingDistribution(ctx)
 	if err != nil {
@@ -49,11 +61,14 @@ func (k Keeper) getNextDistributionID(ctx context.Context) (uint64, error) {
 		return ongoing.ID + 1, nil
 	}
 
-	distribution, _, err := k.PeekNextAllocationSchedule(ctx)
+	lastProcessed, err := k.LastProcessedDistributionID.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		return 1, nil
+	}
 	if err != nil {
 		return 0, err
 	}
-	return distribution.ID, nil
+	return lastProcessed + 1, nil
 }
 
 // AfterDelegationModified implements the staking hooks interface.

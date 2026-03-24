@@ -145,9 +145,10 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	requireT.NoError(err)
 
 	// Verify export contains:
-	// - 1 allocation in schedule (time2 only, since time1 was processed and removed)
-	requireT.Len(genesisState.ScheduledDistributions, 1, "should have 1 remaining allocation (time2)")
-	requireT.Equal(time2, genesisState.ScheduledDistributions[0].Timestamp)
+	// - 2 allocations in schedule (both time1 and time2, since processed entries are kept in store)
+	requireT.Len(genesisState.ScheduledDistributions, 2, "should have 2 allocations (processed + unprocessed)")
+	requireT.Equal(time1, genesisState.ScheduledDistributions[0].Timestamp)
+	requireT.Equal(time2, genesisState.ScheduledDistributions[1].Timestamp)
 	// Verify the remaining allocation has all 6 clearing accounts
 	requireT.Len(
 		genesisState.ScheduledDistributions[0].Allocations, 6,
@@ -164,11 +165,18 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	err = pseKeeper2.InitGenesis(ctx2, *genesisState)
 	requireT.NoError(err)
 
-	// Verify allocation schedule only contains time2 since time1 was already processed
+	// Verify allocation schedule contains both entries.
 	allocationSchedule2, err := pseKeeper2.GetDistributionSchedule(ctx2)
 	requireT.NoError(err)
-	requireT.Len(allocationSchedule2, 1, "should have 1 remaining allocation (time2)")
-	requireT.Equal(time2, allocationSchedule2[0].Timestamp)
+	requireT.Len(allocationSchedule2, 2, "should have 2 allocations (processed + unprocessed)")
+	requireT.Equal(time1, allocationSchedule2[0].Timestamp)
+	requireT.Equal(time2, allocationSchedule2[1].Timestamp)
+
+	// Verify unprocessed schedule only contains time2.
+	unprocessedSchedule, err := pseKeeper2.GetUnprocessedDistributionSchedule(ctx2)
+	requireT.NoError(err)
+	requireT.Len(unprocessedSchedule, 1, "should have 1 unprocessed allocation (time2)")
+	requireT.Equal(time2, unprocessedSchedule[0].Timestamp)
 }
 
 func TestDistribution_PrecisionWithMultipleRecipients(t *testing.T) {
@@ -341,7 +349,7 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 
 	// Save initial schedule for hooks to find the distribution ID
 	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
-		{ID: distributionID, Timestamp: distributionID},
+		{ID: distributionID, Timestamp: uint64(ctx.BlockTime().Unix())},
 	})
 	requireT.NoError(err)
 
@@ -373,8 +381,10 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	err = pseKeeper.SetParams(ctx, params)
 	requireT.NoError(err)
 
-	// Fund all clearing accounts
-	communityAmount := sdkmath.NewInt(1000)
+	// Fund all clearing accounts.
+	// Genesis delegators' scores accumulate under ID=1, same as test delegators.
+	// Community amount must be large enough to pay all parties including genesis scores.
+	communityAmount := sdkmath.NewInt(10_000_000)
 	nonCommunityAmount := sdkmath.NewInt(100)
 	for _, clearingAccount := range types.GetAllClearingAccounts() {
 		amount := nonCommunityAmount
@@ -456,9 +466,10 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	_, err = pseKeeper.OngoingDistribution.Get(ctx)
 	requireT.ErrorIs(err, collections.ErrNotFound, "OngoingDistribution should be removed after cleanup")
 
-	// Schedule entry should be removed
-	_, err = pseKeeper.AllocationSchedule.Get(ctx, distributionID)
-	requireT.ErrorIs(err, collections.ErrNotFound, "schedule entry should be removed after cleanup")
+	// Schedule entry should be kept for visibility.
+	schedEntry, err := pseKeeper.AllocationSchedule.Get(ctx, distributionID)
+	requireT.NoError(err, "schedule entry should be kept after processing for visibility")
+	requireT.Equal(distributionID, schedEntry.ID)
 
 	// TotalScore should be cleaned up
 	_, err = pseKeeper.TotalScore.Get(ctx, distributionID)
@@ -682,7 +693,7 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 				testApp:       testApp,
 				ctx:           ctx,
 				requireT:      requireT,
-				currentDistID: tempDistributionID,
+				currentDistID: firstDistributionID,
 			}
 
 			// add validators.
@@ -712,8 +723,8 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 
 			err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
 				{
-					Timestamp: tempDistributionID,
-					ID:        tempDistributionID,
+					Timestamp: uint64(ctx.BlockTime().Unix()),
+					ID:        firstDistributionID,
 				},
 			})
 			requireT.NoError(err)

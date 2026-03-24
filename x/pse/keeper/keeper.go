@@ -36,12 +36,13 @@ type Keeper struct {
 		collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress],
 		types.DelegationTimeEntry,
 	]
-	AccountScoreSnapshot collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
-	AllocationSchedule   collections.Map[uint64, types.ScheduledDistribution] // Map: ID -> ScheduledDistribution
-	TotalScore           collections.Map[uint64, sdkmath.Int]                 // Map: ID -> total accumulated score
-	OngoingDistribution  collections.Item[types.ScheduledDistribution]        // Currently processing distribution
-	DistributedAmount    collections.Map[uint64, sdkmath.Int]                 // Map: ID -> cumulative distributed amount
-	DistributionDisabled collections.Item[bool]
+	AccountScoreSnapshot        collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
+	AllocationSchedule          collections.Map[uint64, types.ScheduledDistribution] // Map: ID -> ScheduledDistribution
+	TotalScore                  collections.Map[uint64, sdkmath.Int]                 // Map: ID -> total accumulated score
+	OngoingDistribution         collections.Item[types.ScheduledDistribution]        // Currently processing distribution
+	DistributedAmount           collections.Map[uint64, sdkmath.Int]                 // ID -> distributed amount
+	DistributionDisabled        collections.Item[bool]
+	LastProcessedDistributionID collections.Item[uint64]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -120,6 +121,12 @@ func NewKeeper(
 			types.DistributionDisabledKey,
 			"distribution_disabled",
 			codec.BoolValue,
+		),
+		LastProcessedDistributionID: collections.NewItem(
+			sb,
+			types.LastProcessedDistributionIDKey,
+			"last_processed_distribution_id",
+			collections.Uint64Value,
 		),
 	}
 

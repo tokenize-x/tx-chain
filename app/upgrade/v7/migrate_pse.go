@@ -2,6 +2,9 @@ package v7
 
 import (
 	"context"
+	_ "embed"
+	"encoding/json"
+	"fmt"
 
 	"cosmossdk.io/collections"
 	sdkstore "cosmossdk.io/core/store"
@@ -13,32 +16,64 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
-// migratePSEStore migrates the PSE module state.
+//go:embed scheduled-distributions-mainnet.json
+var mainnetScheduleJSON []byte
+
+// firstMultiBlockDistributionID is the ID of the first distribution that will be
+// processed using multi-block logic.
+// The first entry (ID=1) will be processed by single-block PSE logic.
+const firstMultiBlockDistributionID uint64 = 2
+
+// lastProcessedID is the ID of the distribution already processed before the upgrade.
+const lastProcessedID uint64 = 1
+
+// scheduledDistributionsJSON is the JSON structure for the embedded schedule file.
+type scheduledDistributionsJSON struct {
+	ScheduledDistributions []scheduledDistributionJSON `json:"scheduled_distributions"` //nolint:tagliatelle
+}
+
+type scheduledDistributionJSON struct {
+	Timestamp   string           `json:"timestamp"`
+	Allocations []allocationJSON `json:"allocations"`
+}
+
+type allocationJSON struct {
+	ClearingAccount string `json:"clearing_account"` //nolint:tagliatelle
+	Amount          string `json:"amount"`
+}
+
+// migratePSEStore migrates the PSE module state for multi-block distribution support.
+// - Replaces AllocationSchedule with full mainnet schedule.
 // - DelegationTimeEntries key: Pair[AccAddress, ValAddress] -> Triple[uint64, AccAddress, ValAddress].
 // - AccountScoreSnapshot key: AccAddress -> Pair[uint64, AccAddress].
+// - Sets LastProcessedDistributionID to 1.
 func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 	storeService := pseKeeper.StoreService()
 	cdc := pseKeeper.Codec()
 
-	distributionID, err := getFirstDistributionID(ctx, storeService, cdc)
-	if err != nil {
+	if err := migrateDelegationTimeEntries(ctx, storeService, cdc, firstMultiBlockDistributionID); err != nil {
 		return err
 	}
 
-	if err := migrateDelegationTimeEntries(ctx, storeService, cdc, distributionID); err != nil {
+	if err := migrateAccountScoreSnapshots(ctx, storeService, firstMultiBlockDistributionID); err != nil {
 		return err
 	}
 
-	return migrateAccountScoreSnapshot(ctx, storeService, distributionID)
+	if err := migrateAllocationSchedule(ctx, storeService, cdc); err != nil {
+		return err
+	}
+
+	return initLastProcessedDistributionID(ctx, pseKeeper)
 }
 
-// TODO: Currently assigns the first distribution ID to all entries. Implement proper mapping
-// of entries to correct distribution IDs based on timestamps when multiple distributions exist.
-func getFirstDistributionID(
+// migrateAllocationSchedule clears the existing timestamp-keyed AllocationSchedule
+// and re-initializes it from the embedded mainnet schedule JSON with sequential
+// ID-based keys starting from 1.
+func migrateAllocationSchedule(
 	ctx context.Context,
 	storeService sdkstore.KVStoreService,
 	cdc codec.BinaryCodec,
-) (uint64, error) {
+) error {
 	sb := collections.NewSchemaBuilder(storeService)
 	schedule := collections.NewMap(
 		sb,
@@ -48,25 +83,58 @@ func getFirstDistributionID(
 		codec.CollValue[types.ScheduledDistribution](cdc),
 	)
 	if _, err := sb.Build(); err != nil {
-		return 0, err
+		return err
 	}
 
-	iter, err := schedule.Iterate(ctx, nil)
-	if err != nil {
-		return 0, err
-	}
-	defer iter.Close()
-
-	if !iter.Valid() {
-		return 0, nil
+	// Clear old entries.
+	if err := schedule.Clear(ctx, nil); err != nil {
+		return err
 	}
 
-	kv, err := iter.KeyValue()
-	if err != nil {
-		return 0, err
+	// Parse the embedded mainnet schedule JSON.
+	var scheduleData scheduledDistributionsJSON
+	if err := json.Unmarshal(mainnetScheduleJSON, &scheduleData); err != nil {
+		return fmt.Errorf("failed to parse mainnet schedule JSON: %w", err)
 	}
 
-	return kv.Value.ID, nil
+	// Write all entries with sequential IDs starting from 1.
+	for i, entry := range scheduleData.ScheduledDistributions {
+		id := uint64(i + 1)
+
+		timestamp, ok := sdkmath.NewIntFromString(entry.Timestamp)
+		if !ok {
+			return fmt.Errorf("invalid timestamp %q at index %d", entry.Timestamp, i)
+		}
+
+		var allocations []types.ClearingAccountAllocation
+		for _, alloc := range entry.Allocations {
+			amount, ok := sdkmath.NewIntFromString(alloc.Amount)
+			if !ok {
+				return fmt.Errorf("invalid amount %q for %s at index %d", alloc.Amount, alloc.ClearingAccount, i)
+			}
+			allocations = append(allocations, types.ClearingAccountAllocation{
+				ClearingAccount: alloc.ClearingAccount,
+				Amount:          amount,
+			})
+		}
+
+		dist := types.ScheduledDistribution{
+			ID:          id,
+			Timestamp:   timestamp.Uint64(),
+			Allocations: allocations,
+		}
+		if err := schedule.Set(ctx, id, dist); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// initLastProcessedDistributionID sets LastProcessedDistributionID to 1,
+// indicating the first distribution is already processed before this upgrade.
+func initLastProcessedDistributionID(ctx context.Context, pseKeeper pskeeper.Keeper) error {
+	return pseKeeper.LastProcessedDistributionID.Set(ctx, lastProcessedID)
 }
 
 func migrateDelegationTimeEntries(
@@ -135,7 +203,7 @@ func migrateDelegationTimeEntries(
 	return nil
 }
 
-func migrateAccountScoreSnapshot(
+func migrateAccountScoreSnapshots(
 	ctx context.Context,
 	storeService sdkstore.KVStoreService,
 	distributionID uint64,

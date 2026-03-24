@@ -102,12 +102,11 @@ func (k Keeper) addToScore(
 // and the current period score calculated on-demand from active delegations.
 // Formula: total_score = accumulated_score + current_period_score.
 func (k Keeper) CalculateDelegatorScore(ctx context.Context, delAddr sdk.AccAddress) (sdkmath.Int, error) {
-	// Find current distribution ID
-	distribution, _, err := k.PeekNextAllocationSchedule(ctx)
+	// Find the distribution ID where current scores are stored.
+	distributionID, err := k.getActiveDistributionID(ctx)
 	if err != nil {
 		return sdkmath.Int{}, err
 	}
-	distributionID := distribution.ID
 
 	// Start with the accumulated score from the snapshot (previous periods)
 	accumulatedScore, err := k.GetDelegatorScore(ctx, distributionID, delAddr)
