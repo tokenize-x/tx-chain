@@ -407,6 +407,52 @@ func TestMsgUpdateAllocationSchedule_RejectedDuringOngoingDistribution(t *testin
 	requireT.NotNil(resp)
 }
 
+func TestMsgUpdateExcludedAddresses_RejectedDuringOngoingDistribution(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	msgServer := keeper.NewMsgServer(pseKeeper)
+
+	// Simulate an ongoing multi-block distribution.
+	ongoing := types.ScheduledDistribution{
+		ID:        1,
+		Timestamp: 1700000000,
+		Allocations: []types.ClearingAccountAllocation{
+			{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(500)},
+		},
+	}
+	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, ongoing))
+
+	// Both add and remove must be rejected while distribution is in progress.
+	_, err := msgServer.UpdateExcludedAddresses(ctx, &types.MsgUpdateExcludedAddresses{
+		Authority:         authority,
+		AddressesToAdd:    []string{"devcore1qg5eatgu0rp5s8u8n3lcg640qdqaq90mnt6ycc"},
+		AddressesToRemove: []string{},
+	})
+	requireT.ErrorIs(err, types.ErrOngoingDistribution)
+
+	_, err = msgServer.UpdateExcludedAddresses(ctx, &types.MsgUpdateExcludedAddresses{
+		Authority:         authority,
+		AddressesToAdd:    []string{},
+		AddressesToRemove: []string{"devcore1qg5eatgu0rp5s8u8n3lcg640qdqaq90mnt6ycc"},
+	})
+	requireT.ErrorIs(err, types.ErrOngoingDistribution)
+
+	// Clear ongoing distribution — update must now succeed.
+	requireT.NoError(pseKeeper.OngoingDistribution.Remove(ctx))
+
+	resp, err := msgServer.UpdateExcludedAddresses(ctx, &types.MsgUpdateExcludedAddresses{
+		Authority:      authority,
+		AddressesToAdd: []string{},
+	})
+	requireT.NoError(err)
+	requireT.NotNil(resp)
+}
+
 func TestMsgUpdateMinDistributionGap(t *testing.T) {
 	requireT := require.New(t)
 

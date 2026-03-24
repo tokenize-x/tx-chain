@@ -40,6 +40,18 @@ func (k Keeper) UpdateExcludedAddresses(
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
+	// Reject if a multi-block distribution is in progress.
+	ongoing, ongoingFound, err := k.getOngoingDistribution(ctx)
+	if err != nil {
+		return err
+	}
+	if ongoingFound {
+		return errorsmod.Wrapf(
+			types.ErrOngoingDistribution,
+			"cannot update excluded addresses while distribution %d is in progress", ongoing.ID,
+		)
+	}
+
 	// Get current params
 	params, err := k.GetParams(ctx)
 	if err != nil {
