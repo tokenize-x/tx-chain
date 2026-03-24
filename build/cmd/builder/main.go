@@ -2,8 +2,8 @@ package main
 
 import (
 	selfBuild "github.com/tokenize-x/tx-chain/build"
-	txchain "github.com/tokenize-x/tx-chain/build/tx-chain"
 	selfTools "github.com/tokenize-x/tx-chain/build/tools"
+	txchain "github.com/tokenize-x/tx-chain/build/tx-chain"
 	"github.com/tokenize-x/tx-crust/build"
 	"github.com/tokenize-x/tx-crust/build/tools"
 )
