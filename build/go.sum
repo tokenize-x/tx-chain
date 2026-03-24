@@ -1652,10 +1652,10 @@ github.com/tidwall/btree v1.7.0/go.mod h1:twD9XRA5jj9VUQGELzDO4HPQTNJsoWWfYEL+EU
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/tokenize-x/tx-chain/v7 v7.0.0-20260217111039-9296d325fd38 h1:IrSrZgpUqsVX4dHl9+Ixe1nbB1jMlAazk5/LrP08Hk0=
 github.com/tokenize-x/tx-chain/v7 v7.0.0-20260217111039-9296d325fd38/go.mod h1:KSjXVCX8WKHK1gWTE2s6+xh2x9W7XpN69xNuwAAAPFw=
-github.com/tokenize-x/tx-crust v0.0.0-20260316133736-f81f2ef37f96 h1:DkY9eOd4xHQBZppkLBwE6kiJKx0WkcNFms8FzlsyFyI=
-github.com/tokenize-x/tx-crust v0.0.0-20260316133736-f81f2ef37f96/go.mod h1:bnIWfIPSdiRnv19dioLlZVqJp/xngLjQWjZ9qBr+0Hs=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260316133736-f81f2ef37f96 h1:v5fjut6F0R++JIpiLgfHnORKf6tbIELy01Y/nYcS7XQ=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260316133736-f81f2ef37f96/go.mod h1:LJuHXCcsW3yiR0m1LI9DYfWfXYoxlNZAZ040uYXCEYE=
+github.com/tokenize-x/tx-crust v0.0.0-20260324133824-bc5b1acb5e4e h1:sXOBuGtyL56ZYqdrL+FG72cXPZMbc2pswdmK0iNtO+I=
+github.com/tokenize-x/tx-crust v0.0.0-20260324133824-bc5b1acb5e4e/go.mod h1:bnIWfIPSdiRnv19dioLlZVqJp/xngLjQWjZ9qBr+0Hs=
+github.com/tokenize-x/tx-crust/znet v0.0.0-20260324133824-bc5b1acb5e4e h1:4h4grHzuDy1wKFK/O62ZKTKxXcRAn/K6lTXFnJkAN88=
+github.com/tokenize-x/tx-crust/znet v0.0.0-20260324133824-bc5b1acb5e4e/go.mod h1:LJuHXCcsW3yiR0m1LI9DYfWfXYoxlNZAZ040uYXCEYE=
 github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033 h1:1++kosP83GjVa85RkTBxkzI3qNKPWp0uIRn4UiFQuPY=
 github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033/go.mod h1:tnc0L7WkOv6kah53Wl17fcG8G2MCPGotP1v2ezB/a/g=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
