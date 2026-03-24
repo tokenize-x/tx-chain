@@ -60,7 +60,7 @@ func TestQueryScore_WithAccumulatedScore(t *testing.T) {
 	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 	queryService := keeper.NewQueryService(testApp.PSEKeeper)
 
-	distributionID := uint64(0) // TODO review this
+	distributionID := firstDistributionID
 
 	// Generate delegator address
 	delAddr := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
@@ -140,7 +140,7 @@ func TestQueryScore_AccumulatedPlusCurrentPeriod(t *testing.T) {
 	testApp := simapp.New()
 	ctx := testApp.NewContext(false).WithBlockTime(time.Now())
 	queryService := keeper.NewQueryService(testApp.PSEKeeper)
-	distributionID := uint64(0) // TODO review this
+	distributionID := firstDistributionID
 
 	// Create validator
 	validatorOperator, _ := testApp.GenAccount(ctx)
@@ -446,5 +446,31 @@ func TestQueryClearingAccountBalances(t *testing.T) {
 		requireT.True(balanceMap[types.ClearingAccountAlliance].IsZero())
 		requireT.True(balanceMap[types.ClearingAccountPartnership].IsZero())
 		requireT.True(balanceMap[types.ClearingAccountInvestors].IsZero())
+	})
+}
+
+func TestQueryLastProcessedDistributionID(t *testing.T) {
+	t.Run("default genesis value is zero", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		resp, err := queryService.LastProcessedDistributionID(ctx, &types.QueryLastProcessedDistributionIDRequest{})
+		requireT.NoError(err)
+		requireT.Equal(uint64(0), resp.LastProcessedDistributionId)
+	})
+
+	t.Run("returns updated value", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		requireT.NoError(testApp.PSEKeeper.LastProcessedDistributionID.Set(ctx, 5))
+
+		resp, err := queryService.LastProcessedDistributionID(ctx, &types.QueryLastProcessedDistributionIDRequest{})
+		requireT.NoError(err)
+		requireT.Equal(uint64(5), resp.LastProcessedDistributionId)
 	})
 }

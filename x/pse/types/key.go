@@ -12,12 +12,13 @@ const (
 
 // KVStore keys.
 var (
-	ParamsKey               = collections.NewPrefix(0)
-	StakingTimeKey          = collections.NewPrefix(1)
-	AccountScoreKey         = collections.NewPrefix(2)
-	AllocationScheduleKey   = collections.NewPrefix(3) // Map: ID -> ScheduledDistribution
-	DistributionDisabledKey = collections.NewPrefix(4)
-	TotalScoreKey           = collections.NewPrefix(5) // Map: ID -> total accumulated score
-	OngoingDistributionKey  = collections.NewPrefix(6) // Item: currently processing ScheduledDistribution
-	DistributedAmountKey    = collections.NewPrefix(7) // Map: ID -> cumulative distributed amount
+	ParamsKey                      = collections.NewPrefix(0)
+	StakingTimeKey                 = collections.NewPrefix(1)
+	AccountScoreKey                = collections.NewPrefix(2)
+	AllocationScheduleKey          = collections.NewPrefix(3) // Map: ID -> ScheduledDistribution
+	DistributionDisabledKey        = collections.NewPrefix(4)
+	TotalScoreKey                  = collections.NewPrefix(5) // Map: ID -> total accumulated score
+	OngoingDistributionKey         = collections.NewPrefix(6) // Item: currently processing ScheduledDistribution
+	DistributedAmountKey           = collections.NewPrefix(7) // Map: ID -> cumulative distributed amount
+	LastProcessedDistributionIDKey = collections.NewPrefix(8) // Item: ID of last completed distribution
 )

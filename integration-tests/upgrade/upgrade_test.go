@@ -51,7 +51,9 @@ func TestUpgrade(t *testing.T) {
 }
 
 func upgradeV6ToV7(t *testing.T) {
-	tests := []upgradeTest{}
+	tests := []upgradeTest{
+		&pseMigrationTest{},
+	}
 
 	for _, test := range tests {
 		test.Before(t)

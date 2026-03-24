@@ -194,7 +194,7 @@ func TestKeeper_Distribute(t *testing.T) {
 				testApp:       testApp,
 				ctx:           ctx,
 				requireT:      requireT,
-				currentDistID: tempDistributionID,
+				currentDistID: firstDistributionID,
 			}
 
 			// add validators.
@@ -224,9 +224,8 @@ func TestKeeper_Distribute(t *testing.T) {
 
 			err = testApp.PSEKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
 				{
-					// TODO revise this logic for distribution id
-					Timestamp: tempDistributionID,
-					ID:        tempDistributionID,
+					Timestamp: uint64(ctx.BlockTime().Unix()),
+					ID:        firstDistributionID,
 				},
 			})
 			requireT.NoError(err)
@@ -266,8 +265,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		ctx, delAddr, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000))),
 	))
 
-	// TODO depending on the decision on the id zero check, this should be updated.
-	distributionID := uint64(0)
+	distributionID := firstDistributionID
 
 	// Step 1: Address accumulates score - delegate and wait for score to build up
 	msg := &stakingtypes.MsgDelegate{
@@ -380,7 +378,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	// Save a new schedule so hooks and UpdateExcludedAddresses can find it.
 	distributionID++
 	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
-		{Timestamp: distributionID, ID: distributionID},
+		{Timestamp: uint64(ctx.BlockTime().Unix()), ID: distributionID},
 	})
 	requireT.NoError(err)
 
