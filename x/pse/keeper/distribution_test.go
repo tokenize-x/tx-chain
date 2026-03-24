@@ -737,103 +737,158 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 	}
 }
 
+// TestDistribution_EndBlockFailure covers EndBlock when ProcessNextDistribution does not complete
+// successfully: returned transfer error (team unfunded) or panic (invalid recipient via Params.Set).
 func TestDistribution_EndBlockFailure(t *testing.T) {
-	requireT := require.New(t)
+	t.Run("transfer_error", func(t *testing.T) {
+		requireT := require.New(t)
 
-	testApp := simapp.New()
-	ctx, _, err := testApp.BeginNextBlock()
-	requireT.NoError(err)
-	pseKeeper := testApp.PSEKeeper
-	bankKeeper := testApp.BankKeeper
+		testApp := simapp.New()
+		ctx, _, err := testApp.BeginNextBlock()
+		requireT.NoError(err)
+		pseKeeper := testApp.PSEKeeper
+		bankKeeper := testApp.BankKeeper
 
-	// Get bond denom
-	bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
-	requireT.NoError(err)
+		bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
+		requireT.NoError(err)
 
-	// Create multiple recipient addresses
-	addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
-	recipients := []string{addr1, addr2, addr3, addr4}
+		addr1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+		addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+		addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+		addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+		recipients := []string{addr1, addr2, addr3, addr4}
 
-	// Set up mappings with multiple recipients
-	mappings := []types.ClearingAccountMapping{
-		{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
-		{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr2}},
-		{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr3}},
-		{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr4}},
-		{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr4}},
-	}
-
-	params, err := pseKeeper.GetParams(ctx)
-	requireT.NoError(err)
-	params.ClearingAccountMappings = mappings
-	err = pseKeeper.SetParams(ctx, params)
-	requireT.NoError(err)
-
-	// Use amount that doesn't divide evenly by 3
-	allocationAmount := sdkmath.NewInt(1000) // 1000 / 3 = 333 remainder 1
-
-	// Fund the clearing accounts
-	for _, clearingAccount := range types.GetAllClearingAccounts() {
-		// we skip team clearing account, so it will lead to not enough funds error in end block.
-		if clearingAccount == types.ClearingAccountTeam {
-			continue
+		mappings := []types.ClearingAccountMapping{
+			{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{addr1}},
+			{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr2}},
+			{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr3}},
+			{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr4}},
+			{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr4}},
 		}
-		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocationAmount))
-		err = bankKeeper.MintCoins(ctx, types.ModuleName, coins)
-		requireT.NoError(err)
-		err = bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, clearingAccount, coins)
-		requireT.NoError(err)
-	}
 
-	// Create and save distribution schedule
-	// Note: Community is excluded from this test since it has different distribution logic
-	// and is tested separately in other tests
-	startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
-	schedule := []types.ScheduledDistribution{
-		{
-			ID:        1,
-			Timestamp: startTime,
-			Allocations: []types.ClearingAccountAllocation{
-				{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
-				{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},
-				{ClearingAccount: types.ClearingAccountPartnership, Amount: allocationAmount},
-				{ClearingAccount: types.ClearingAccountInvestors, Amount: allocationAmount},
-				{ClearingAccount: types.ClearingAccountTeam, Amount: allocationAmount},
+		params, err := pseKeeper.GetParams(ctx)
+		requireT.NoError(err)
+		params.ClearingAccountMappings = mappings
+		requireT.NoError(pseKeeper.SetParams(ctx, params))
+
+		allocationAmount := sdkmath.NewInt(1000) // 1000 / 3 = 333 remainder 1
+
+		for _, clearingAccount := range types.GetAllClearingAccounts() {
+			if clearingAccount == types.ClearingAccountTeam {
+				continue
+			}
+			coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocationAmount))
+			requireT.NoError(bankKeeper.MintCoins(ctx, types.ModuleName, coins))
+			requireT.NoError(bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, clearingAccount, coins))
+		}
+
+		startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
+		schedule := []types.ScheduledDistribution{
+			{
+				ID:        1,
+				Timestamp: startTime,
+				Allocations: []types.ClearingAccountAllocation{
+					{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountPartnership, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountInvestors, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountTeam, Amount: allocationAmount},
+				},
 			},
-		},
-	}
-
-	// Save distribution schedule
-	err = pseKeeper.SaveDistributionSchedule(ctx, schedule)
-	requireT.NoError(err)
-	// Process distribution
-	err = testApp.FinalizeBlock()
-	requireT.NoError(err)
-
-	// Verify disabled distributions is set to true
-	disabled, err := pseKeeper.DistributionDisabled.Get(ctx)
-	requireT.NoError(err)
-	requireT.True(disabled, "disabled distributions should be set to true")
-
-	// all recipients should have zero balance because the distribution failed.
-	for _, recipient := range recipients {
-		recipientBalance := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(recipient), bondDenom)
-		requireT.True(recipientBalance.Amount.IsZero(),
-			"recipient %s should have zero balance because the distribution failed", recipient)
-	}
-
-	// Verify clearing accounts balances are unchanged
-	for _, mapping := range mappings {
-		// we did not fund team clearing account, so it should have zero balance.
-		if mapping.ClearingAccount == types.ClearingAccountTeam {
-			continue
 		}
-		moduleAddr := testApp.AccountKeeper.GetModuleAddress(mapping.ClearingAccount)
-		moduleBalance := bankKeeper.GetBalance(ctx, moduleAddr, bondDenom)
-		requireT.True(moduleBalance.Amount.IsPositive(),
-			"clearing account %s should have positive balance after distribution", mapping.ClearingAccount)
-	}
+		requireT.NoError(pseKeeper.SaveDistributionSchedule(ctx, schedule))
+		requireT.NoError(testApp.FinalizeBlock())
+
+		disabled, err := pseKeeper.DistributionDisabled.Get(ctx)
+		requireT.NoError(err)
+		requireT.True(disabled, "disabled distributions should be set to true")
+
+		for _, recipient := range recipients {
+			bal := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(recipient), bondDenom)
+			requireT.True(bal.Amount.IsZero(), "recipient %s should have zero balance", recipient)
+		}
+		for _, mapping := range mappings {
+			if mapping.ClearingAccount == types.ClearingAccountTeam {
+				continue
+			}
+			moduleAddr := testApp.AccountKeeper.GetModuleAddress(mapping.ClearingAccount)
+			requireT.True(bankKeeper.GetBalance(ctx, moduleAddr, bondDenom).Amount.Equal(allocationAmount),
+				"clearing account %s should still hold initial allocation", mapping.ClearingAccount)
+		}
+	})
+
+	t.Run("panic_invalid_recipient", func(t *testing.T) {
+		requireT := require.New(t)
+
+		testApp := simapp.New()
+		ctx, _, err := testApp.BeginNextBlock()
+		requireT.NoError(err)
+		pseKeeper := testApp.PSEKeeper
+		bankKeeper := testApp.BankKeeper
+
+		bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
+		requireT.NoError(err)
+
+		addr2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+		addr3 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+		addr4 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+		recipients := []string{addr2, addr3, addr4}
+
+		// Foundation first in schedule -> MustAccAddressFromBech32 panics. Params.Set skips ValidateBasic.
+		invalidMappings := []types.ClearingAccountMapping{
+			{ClearingAccount: types.ClearingAccountFoundation, RecipientAddresses: []string{"not-a-valid-bech32-address"}},
+			{ClearingAccount: types.ClearingAccountAlliance, RecipientAddresses: []string{addr2}},
+			{ClearingAccount: types.ClearingAccountPartnership, RecipientAddresses: []string{addr3}},
+			{ClearingAccount: types.ClearingAccountInvestors, RecipientAddresses: []string{addr4}},
+			{ClearingAccount: types.ClearingAccountTeam, RecipientAddresses: []string{addr4}},
+		}
+		params, err := pseKeeper.GetParams(ctx)
+		requireT.NoError(err)
+		params.ClearingAccountMappings = invalidMappings
+		requireT.NoError(pseKeeper.Params.Set(ctx, params))
+
+		allocationAmount := sdkmath.NewInt(1000)
+		for _, clearingAccount := range types.GetAllClearingAccounts() {
+			if clearingAccount == types.ClearingAccountTeam {
+				continue
+			}
+			coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocationAmount))
+			requireT.NoError(bankKeeper.MintCoins(ctx, types.ModuleName, coins))
+			requireT.NoError(bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, clearingAccount, coins))
+		}
+
+		startTime := uint64(time.Now().Add(-1 * time.Hour).Unix())
+		schedule := []types.ScheduledDistribution{
+			{
+				ID:        1,
+				Timestamp: startTime,
+				Allocations: []types.ClearingAccountAllocation{
+					{ClearingAccount: types.ClearingAccountFoundation, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountAlliance, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountPartnership, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountInvestors, Amount: allocationAmount},
+					{ClearingAccount: types.ClearingAccountTeam, Amount: allocationAmount},
+				},
+			},
+		}
+		requireT.NoError(pseKeeper.SaveDistributionSchedule(ctx, schedule))
+		requireT.NoError(testApp.FinalizeBlock())
+
+		disabled, err := pseKeeper.DistributionDisabled.Get(ctx)
+		requireT.NoError(err)
+		requireT.True(disabled)
+
+		for _, recipient := range recipients {
+			bal := bankKeeper.GetBalance(ctx, sdk.MustAccAddressFromBech32(recipient), bondDenom)
+			requireT.True(bal.Amount.IsZero(), "recipient %s should have received no funds", recipient)
+		}
+		for _, mapping := range invalidMappings {
+			if mapping.ClearingAccount == types.ClearingAccountTeam {
+				continue
+			}
+			mod := testApp.AccountKeeper.GetModuleAddress(mapping.ClearingAccount)
+			requireT.True(bankKeeper.GetBalance(ctx, mod, bondDenom).Amount.Equal(allocationAmount),
+				"clearing account %s unchanged after panic", mapping.ClearingAccount)
+		}
+	})
 }
