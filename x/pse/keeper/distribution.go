@@ -79,7 +79,7 @@ func (k Keeper) ProcessNextDistribution(ctx context.Context) error {
 }
 
 // BeginCommunityDistribution stores the ongoing distribution and moves its community allocation
-// from pse_community into the short-lived buffer account.
+// from pse_community into the short-lived intermediary account.
 func (k Keeper) BeginCommunityDistribution(
 	ctx context.Context, dist types.ScheduledDistribution, bondDenom string,
 ) error {
@@ -89,7 +89,7 @@ func (k Keeper) BeginCommunityDistribution(
 	communityAmount := getCommunityAllocationAmount(dist)
 	communityCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))
 	return k.bankKeeper.SendCoinsFromModuleToModule(
-		ctx, types.ClearingAccountCommunity, types.ClearingAccountCommunityBuffer, communityCoins,
+		ctx, types.ClearingAccountCommunity, types.ClearingAccountCommunityIntermediary, communityCoins,
 	)
 }
 

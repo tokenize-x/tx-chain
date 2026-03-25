@@ -9,8 +9,6 @@ import (
 const (
 	// ClearingAccountCommunity is the community clearing account name.
 	ClearingAccountCommunity = "pse_community"
-	// ClearingAccountCommunityBuffer is a short-lived buffer account used during community distribution.
-	ClearingAccountCommunityBuffer = "pse_community_buffer"
 	// ClearingAccountFoundation is the foundation clearing account name.
 	ClearingAccountFoundation = "pse_foundation"
 	// ClearingAccountAlliance is the alliance clearing account name.
@@ -23,9 +21,12 @@ const (
 	ClearingAccountTeam = "pse_team"
 )
 
+// ClearingAccountCommunityIntermediary is a short-lived intermediary account used during community distribution.
+const ClearingAccountCommunityIntermediary = "pse_community_intermediary"
+
 // GetAllModuleAccounts returns all PSE module accounts that must be registered in maccPerms.
 func GetAllModuleAccounts() []string {
-	return append(GetAllClearingAccounts(), ClearingAccountCommunityBuffer)
+	return append(GetAllClearingAccounts(), ClearingAccountCommunityIntermediary)
 }
 
 // GetAllClearingAccounts returns all PSE clearing accounts.

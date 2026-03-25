@@ -381,7 +381,7 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 		}},
 	}
 
-	// BeginCommunityDistribution sets OngoingDistribution and moves funds to the buffer.
+	// BeginCommunityDistribution sets OngoingDistribution and moves funds to the intermediary.
 	err = r.testApp.PSEKeeper.BeginCommunityDistribution(r.ctx, scheduledDistribution, bondDenom)
 	r.requireT.NoError(err)
 

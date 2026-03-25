@@ -191,7 +191,7 @@ func (k Keeper) GetClearingAccountBalances(ctx context.Context) ([]types.Clearin
 	return balances, nil
 }
 
-// InitCommunityBuffer ensures the community buffer module account exists in state.
-func (k Keeper) InitCommunityBuffer(ctx context.Context) {
-	k.accountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunityBuffer)
+// InitCommunityIntermediary ensures the community intermediary module account exists in state.
+func (k Keeper) InitCommunityIntermediary(ctx context.Context) {
+	k.accountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunityIntermediary)
 }

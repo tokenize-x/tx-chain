@@ -82,7 +82,7 @@ func (k Keeper) UpdateExcludedAddresses(
 		}
 
 		// Move ExcludedAddressScore back into AccountScoreSnapshot+TotalScore.
-		if err := k.moveExcludedScoreToSnapshot(ctx, distributionID, addr); err != nil {
+		if err := k.moveExcludedScoreToMain(ctx, distributionID, addr); err != nil {
 			return err
 		}
 
@@ -141,7 +141,7 @@ func (k Keeper) removeExcludedAccountData(ctx context.Context, distributionID ui
 	}
 
 	// Move snapshot to ExcludedAddressScore (preserves score for re-inclusion)
-	if err := k.moveSnapshotToExcludedScore(ctx, distributionID, addr); err != nil {
+	if err := k.moveMainScoreToExcluded(ctx, distributionID, addr); err != nil {
 		return err
 	}
 

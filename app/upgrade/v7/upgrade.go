@@ -41,7 +41,7 @@ func New(
 				return nil, err
 			}
 
-			pseKeeper.InitCommunityBuffer(ctx)
+			pseKeeper.InitCommunityIntermediary(ctx)
 
 			params, err := pseKeeper.GetParams(ctx)
 			if err != nil {

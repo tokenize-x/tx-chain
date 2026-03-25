@@ -18,8 +18,8 @@ import (
 // snapshot and migrating it to nextID (ongoingID + 1).
 //
 // For each entry in the batch:
-//  1. Calculate score from lastChanged to distribution timestamp -> addToScore(ongoingID)
-//  2. Calculate gap score from distribution timestamp to current block time -> addToScore(nextID)
+//  1. Calculate score from lastChanged to distribution timestamp -> addToMainScore(ongoingID)
+//  2. Calculate gap score from distribution timestamp to current block time -> addToMainScore(nextID)
 //  3. Create new entry under nextID with same shares, lastChanged = current block time
 //  4. Remove entry from ongoingID
 //
@@ -218,10 +218,10 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		batchDistributed = batchDistributed.Add(distributedAmount)
 
 		// Fairness bonus: compensates delegators processed in later batches.
-		// addToScore is safe here: AccountScoreSnapshot[ongoingID] only contains non-excluded addresses.
+		// addToMainScore is safe here: AccountScoreSnapshot[ongoingID] only contains non-excluded addresses.
 		if distributedAmount.IsPositive() && ongoing.StartedAt > 0 && processingElapsedSec > 0 {
 			bonusScore := distributedAmount.MulRaw(processingElapsedSec)
-			if err := k.addToScore(ctx, nextID, item.delAddr, bonusScore); err != nil {
+			if err := k.addToMainScore(ctx, nextID, item.delAddr, bonusScore); err != nil {
 				return false, err
 			}
 		}
@@ -278,10 +278,10 @@ func getCommunityAllocationAmount(dist types.ScheduledDistribution) sdkmath.Int 
 	return sdkmath.NewInt(0)
 }
 
-// sendLeftoverToCommunityPool sends remaining undistributed tokens from the buffer to the community pool.
+// sendLeftoverToCommunityPool sends remaining undistributed tokens from the intermediary account to the community pool.
 func (k Keeper) sendLeftoverToCommunityPool(ctx context.Context, amount sdkmath.Int, bondDenom string) error {
-	bufferAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunityBuffer)
-	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), bufferAddress)
+	intermediaryAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunityIntermediary)
+	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), intermediaryAddress)
 }
 
 // cleanupOngoingDistribution removes all state associated with a completed distribution.
@@ -359,7 +359,7 @@ func (k Keeper) distributeToDelegator(
 
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
-		types.ClearingAccountCommunityBuffer,
+		types.ClearingAccountCommunityIntermediary,
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {

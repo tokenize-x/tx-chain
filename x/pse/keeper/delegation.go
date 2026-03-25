@@ -71,7 +71,7 @@ func (k Keeper) RemoveDelegatorScore(ctx context.Context, distributionID uint64,
 }
 
 // addToExcludedScore atomically adds a score value to an excluded address's accumulated score.
-// Unlike addToScore, this does NOT update TotalScore - excluded addresses don't participate in distribution.
+// Unlike addToMainScore, this does NOT update TotalScore - excluded addresses don't participate in distribution.
 func (k Keeper) addToExcludedScore(ctx context.Context, addr sdk.AccAddress, score sdkmath.Int) error {
 	if score.IsZero() {
 		return nil
@@ -93,12 +93,12 @@ func (k Keeper) addScoreForAddress(
 	if isExcluded {
 		return k.addToExcludedScore(ctx, addr, score)
 	}
-	return k.addToScore(ctx, distributionID, addr, score)
+	return k.addToMainScore(ctx, distributionID, addr, score)
 }
 
-// addToScore atomically adds a score value to a delegator's score snapshot
+// addToMainScore atomically adds a score value to a delegator's score snapshot
 // and incrementally updates TotalScore for the same distribution.
-func (k Keeper) addToScore(
+func (k Keeper) addToMainScore(
 	ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int,
 ) error {
 	if score.IsZero() {
@@ -124,9 +124,9 @@ func (k Keeper) addToScore(
 	return k.TotalScore.Set(ctx, distributionID, currentTotal.Add(score))
 }
 
-// moveExcludedScoreToSnapshot moves accumulated ExcludedAddressScore back into AccountScoreSnapshot+TotalScore.
+// moveExcludedScoreToMain moves accumulated ExcludedAddressScore back into AccountScoreSnapshot+TotalScore.
 // Called when an address is re-included (removed from the exclusion list).
-func (k Keeper) moveExcludedScoreToSnapshot(ctx context.Context, distributionID uint64, addr sdk.AccAddress) error {
+func (k Keeper) moveExcludedScoreToMain(ctx context.Context, distributionID uint64, addr sdk.AccAddress) error {
 	score, err := k.ExcludedAddressScore.Get(ctx, addr)
 	if errors.Is(err, collections.ErrNotFound) {
 		return nil
@@ -134,15 +134,15 @@ func (k Keeper) moveExcludedScoreToSnapshot(ctx context.Context, distributionID 
 	if err != nil {
 		return err
 	}
-	if err := k.addToScore(ctx, distributionID, addr, score); err != nil {
+	if err := k.addToMainScore(ctx, distributionID, addr, score); err != nil {
 		return err
 	}
 	return k.ExcludedAddressScore.Remove(ctx, addr)
 }
 
-// moveSnapshotToExcludedScore moves AccountScoreSnapshot into ExcludedAddressScore and subtracts from TotalScore.
+// moveMainScoreToExcluded moves AccountScoreSnapshot into ExcludedAddressScore and subtracts from TotalScore.
 // Called when an address is newly added to the exclusion list.
-func (k Keeper) moveSnapshotToExcludedScore(ctx context.Context, distributionID uint64, addr sdk.AccAddress) error {
+func (k Keeper) moveMainScoreToExcluded(ctx context.Context, distributionID uint64, addr sdk.AccAddress) error {
 	score, err := k.GetDelegatorScore(ctx, distributionID, addr)
 	if errors.Is(err, collections.ErrNotFound) {
 		return nil

@@ -85,10 +85,10 @@ Community distributions are processed over multiple blocks to avoid gas spikes. 
 
 **Phase 2 — Token Distribution** (`ProcessOngoingTokenDistribution`):
 
-1. Funds for this distribution are held in `pse_community_buffer` (see `BeginCommunityDistribution`).
-2. For each delegator in the batch: compute proportional amount, send from `pse_community_buffer`, auto-delegate to their validators.
+1. Funds for this distribution are held in `pse_community_intermediary` (see `BeginCommunityDistribution`).
+2. For each delegator in the batch: compute proportional amount, send from `pse_community_intermediary`, auto-delegate to their validators.
 3. **Fairness bonus**: delegators processed in later batches receive a bonus score (`distributed_amount × elapsed_seconds_since_start`) credited to the next distribution, compensating for the batch-ordering bias.
-4. When all delegators are processed, any leftover in `pse_community_buffer` is sent to the community pool.
+4. When all delegators are processed, any leftover in `pse_community_intermediary` is sent to the community pool.
 
 Both phases use `DistributionBatchSize` (configurable param, default 100) to limit per-block work.
 

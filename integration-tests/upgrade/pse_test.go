@@ -141,12 +141,12 @@ func (p *pseMigrationTest) After(t *testing.T) {
 		"score growth %s deviates from expected %s by %s (>10%%)",
 		actualGrowth, expectedGrowth, diff)
 
-	// pse_community_buffer must exist in state after the v7 migration (initCommunityBuffer ran).
+	// pse_community_intermediary must exist in state after the v7 migration.
 	authClient := authtypes.NewQueryClient(chain.ClientContext)
-	bufferAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityBuffer).String()
-	accRes, err := authClient.Account(ctx, &authtypes.QueryAccountRequest{Address: bufferAddr})
-	requireT.NoError(err, "pse_community_buffer account must exist in state after upgrade")
-	requireT.NotNil(accRes.Account, "pse_community_buffer account response must not be nil")
+	intermediaryAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityIntermediary).String()
+	accRes, err := authClient.Account(ctx, &authtypes.QueryAccountRequest{Address: intermediaryAddr})
+	requireT.NoError(err, "pse_community_intermediary account must exist in state after upgrade")
+	requireT.NotNil(accRes.Account, "pse_community_intermediary account response must not be nil")
 
 	t.Logf("PSE After: schedule=%d entries, lastProcessedID=1, score %s -> %s (growth=%s, expected~%s, elapsed=%ds)",
 		len(schedRes.ScheduledDistributions), p.preUpgradeScore, scoreRes.Score,

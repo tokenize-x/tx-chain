@@ -438,7 +438,7 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	err = pseKeeper.ProcessNextDistribution(ctx)
 	requireT.NoError(err)
 
-	// TotalScore is accumulated incrementally via addToScore.
+	// TotalScore is accumulated incrementally via addToMainScore.
 	totalScore, err := pseKeeper.TotalScore.Get(ctx, distributionID)
 	requireT.NoError(err)
 	requireT.True(totalScore.IsPositive(), "TotalScore should be positive")
