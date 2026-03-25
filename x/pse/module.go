@@ -136,7 +136,7 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 // EndBlock returns the end blocker for the module. It returns no validator
 // updates.
-func (am AppModule) EndBlock(c context.Context) error {
+func (am AppModule) EndBlock(c context.Context) (err error) {
 	// Process periodic distributions
 	disabled, err := am.keeper.DistributionDisabled.Get(c)
 	if err != nil {
@@ -148,6 +148,15 @@ func (am AppModule) EndBlock(c context.Context) error {
 		return nil
 	}
 	cacheCtx, writeCache := ctx.CacheContext()
+	defer func() {
+		if r := recover(); r != nil {
+			ctx.Logger().Error(
+				"failed to process next distribution (panic), disabling all future distributions",
+				"panic", r,
+			)
+			err = am.keeper.DistributionDisabled.Set(c, true)
+		}
+	}()
 	err = am.keeper.ProcessNextDistribution(cacheCtx) //nolint:contextcheck // this is correct context passing
 	if err != nil {
 		ctx.Logger().Error("failed to process next distribution, disabling all future distributions", "error", err)
