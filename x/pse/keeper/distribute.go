@@ -295,6 +295,9 @@ func (k Keeper) cleanupOngoingDistribution(ctx context.Context, distributionID u
 	if err := k.TotalScore.Remove(ctx, distributionID); err != nil {
 		return err
 	}
+	if err := k.ExcludedAddressScore.Clear(ctx, nil); err != nil {
+		return err
+	}
 	if err := k.DistributedAmount.Remove(ctx, distributionID); err != nil {
 		return err
 	}

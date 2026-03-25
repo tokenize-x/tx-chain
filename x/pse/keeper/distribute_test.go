@@ -374,6 +374,18 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		"Excluded address should receive no rewards",
 	)
 
+	// ExcludedAddressScore must be purged after distribution cleanup.
+	_, err = pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"ExcludedAddressScore must be purged after distribution — each period is isolated")
+
+	// DelegationTimeEntry must survive cleanup — migrated to nextID with reset timestamp.
+	nextID := distributionID + 1
+	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, nextID, valAddr, delAddr)
+	requireT.NoError(err, "DelegationTimeEntry must be migrated to nextID after distribution")
+	requireT.Equal(ctx.BlockTime().Unix(), entry.LastChangedUnixSec,
+		"Migrated entry must have reset timestamp")
+
 	// After distribution, entries migrated from distributionID to distributionID+1.
 	// Save a new schedule so hooks and UpdateExcludedAddresses can find it.
 	distributionID++
@@ -391,7 +403,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Undelegate(ctx, msgUndel)
 	requireT.NoError(err, "Excluded delegator should be able to fully undelegate after distribution")
 
-	// Step 7: Re-delegate before re-inclusion (simulating an excluded address that still has delegation)
+	// Step 7: Re-delegate while still excluded and accumulate excluded score in the new period.
 	requireT.NoError(testApp.BankKeeper.MintCoins(
 		ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(200))),
 	))
@@ -406,21 +418,38 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msgDelegate)
 	requireT.NoError(err)
 
+	// Advance time and trigger another delegation change to accumulate excluded score in the new period.
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(5 * time.Second))
+	msgDelegate2 := &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, 1),
+	}
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msgDelegate2)
+	requireT.NoError(err)
+
+	// Verify fresh excluded score accumulated in the new period.
+	currentPeriodExcludedScore, err := pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
+	requireT.NoError(err)
+	// 50 tokens * 5 seconds = 250.
+	requireT.Equal(sdkmath.NewInt(250), currentPeriodExcludedScore,
+		"Excluded score must be fresh for new period, not carried over from Distribution 1")
+
 	// Step 8: Remove from exclude_list (re-include)
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(1 * time.Second))
 	err = pseKeeper.UpdateExcludedAddresses(ctx, authority, nil, []string{delAddr.String()})
 	requireT.NoError(err)
 
 	// Verify DelegationTimeEntry was recreated with current state
-	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
+	entry, err = pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	requireT.NoError(err, "DelegationTimeEntry should be recreated on re-inclusion")
 	requireT.Equal(ctx.BlockTime().Unix(), entry.LastChangedUnixSec, "Entry should have current block time")
 
-	// Verify restored score is stored under the current active distID (distributionID=2),
+	// Verify restored score is the fresh score from the current period only.
 	restoredSnapshot, err := pseKeeper.GetDelegatorScore(ctx, distributionID, delAddr)
 	requireT.NoError(err)
-	requireT.True(restoredSnapshot.IsPositive(),
-		"restored score must be in AccountScoreSnapshot at active distID after re-inclusion")
+	requireT.Equal(currentPeriodExcludedScore, restoredSnapshot,
+		"restored score must equal fresh excluded score from current period only")
 
 	_, err = pseKeeper.GetDelegatorScore(ctx, firstDistributionID, delAddr)
 	requireT.ErrorIs(err, collections.ErrNotFound,
@@ -447,16 +476,11 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	requireT.NoError(err)
 	scoreAfterReinclusion := resp2.Score
 	requireT.True(scoreAfterReinclusion.IsPositive(), "Score should be positive after re-inclusion")
-	// Restored excluded score + fresh accumulation (50 tokens * 3s = 150)
-	requireT.True(scoreAfterReinclusion.GT(scoreBeforeExclusion),
-		"Score after re-inclusion should exceed original (restored + new accumulation)")
-	t.Logf("Score after re-inclusion and 3 seconds: %s (original was %s)",
-		scoreAfterReinclusion.String(), scoreBeforeExclusion.String())
-
-	// Verify fresh accumulation component: at least 50 tokens * 3 seconds = 150 beyond the restored score.
-	expectedMinScore := scoreBeforeExclusion.Add(sdkmath.NewInt(50 * 3))
-	requireT.True(scoreAfterReinclusion.GTE(expectedMinScore),
-		"Score should be at least %s (got %s)", expectedMinScore.String(), scoreAfterReinclusion.String())
+	// currentPeriodExcludedScore (250) + fresh accumulation (51 tokens * 3s = 153) = 403
+	requireT.True(scoreAfterReinclusion.GT(currentPeriodExcludedScore),
+		"Score after re-inclusion should exceed restored score (restored + new accumulation)")
+	t.Logf("Score after re-inclusion and 3 seconds: %s (restored was %s)",
+		scoreAfterReinclusion.String(), currentPeriodExcludedScore.String())
 
 	// Step 10: Run Distribution 2 and verify the re-included delegator receives proportional rewards.
 	t.Log("=== Distribution 2: re-included delegator receives rewards ===")
