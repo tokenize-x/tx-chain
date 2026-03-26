@@ -381,8 +381,8 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 		}},
 	}
 
-	// Set OngoingDistribution to simulate EndBlocker starting multi-block processing.
-	err = r.testApp.PSEKeeper.OngoingDistribution.Set(r.ctx, scheduledDistribution)
+	// BeginCommunityDistribution sets OngoingDistribution and moves funds to the intermediary.
+	err = r.testApp.PSEKeeper.BeginCommunityDistribution(r.ctx, scheduledDistribution, bondDenom)
 	r.requireT.NoError(err)
 
 	// Run Phase 1 until done.
@@ -402,6 +402,11 @@ func distributeAction(r *runEnv, amount sdkmath.Int) {
 			break
 		}
 	}
+
+	// Verify LastProcessedDistributionID is updated.
+	lastProcessed, err := r.testApp.PSEKeeper.LastProcessedDistributionID.Get(r.ctx)
+	r.requireT.NoError(err)
+	r.requireT.Equal(r.currentDistID, lastProcessed)
 
 	// Advance to next distribution ID (Phase 1 migrated entries to currentDistID+1).
 	r.currentDistID++

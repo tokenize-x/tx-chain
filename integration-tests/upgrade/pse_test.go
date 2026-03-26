@@ -10,6 +10,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
@@ -73,10 +74,14 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	pseClient := psetypes.NewQueryClient(chain.ClientContext)
 	tmClient := cmtservice.NewServiceClient(chain.ClientContext)
 
-	// Params should be preserved across the upgrade.
+	// Params should be preserved across the upgrade, except for fields newly initialized by v7.
 	paramsRes, err := pseClient.Params(ctx, &psetypes.QueryParamsRequest{})
 	requireT.NoError(err)
-	requireT.Equal(p.preUpgradeParams, paramsRes.Params)
+	expectedParams := p.preUpgradeParams
+	expectedParams.DistributionBatchSize = psetypes.DefaultParams().DistributionBatchSize
+	requireT.Equal(expectedParams, paramsRes.Params)
+	requireT.Equal(psetypes.DefaultParams().DistributionBatchSize, paramsRes.Params.DistributionBatchSize,
+		"distribution_batch_size must be initialized to default by v7 upgrade")
 
 	// LastProcessedDistributionID should be set to 1 by migration
 	// (first distribution already processed by single-block logic).
@@ -135,6 +140,13 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.True(diff.LTE(maxDeviation),
 		"score growth %s deviates from expected %s by %s (>10%%)",
 		actualGrowth, expectedGrowth, diff)
+
+	// pse_community_intermediary must exist in state after the v7 migration.
+	authClient := authtypes.NewQueryClient(chain.ClientContext)
+	intermediaryAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityIntermediary).String()
+	accRes, err := authClient.Account(ctx, &authtypes.QueryAccountRequest{Address: intermediaryAddr})
+	requireT.NoError(err, "pse_community_intermediary account must exist in state after upgrade")
+	requireT.NotNil(accRes.Account, "pse_community_intermediary account response must not be nil")
 
 	t.Logf("PSE After: schedule=%d entries, lastProcessedID=1, score %s -> %s (growth=%s, expected~%s, elapsed=%ds)",
 		len(schedRes.ScheduledDistributions), p.preUpgradeScore, scoreRes.Score,

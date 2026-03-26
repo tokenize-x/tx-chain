@@ -353,6 +353,106 @@ func TestMsgUpdateAllocationSchedule_IDGapAfterProcessed(t *testing.T) {
 	requireT.Contains(err.Error(), "first schedule ID 1 must be 2")
 }
 
+// TestMsgUpdateAllocationSchedule_RejectedDuringOngoingDistribution verifies that
+// UpdateDistributionSchedule returns ErrOngoingDistribution when a multi-block
+// community distribution is currently in progress.
+func TestMsgUpdateAllocationSchedule_RejectedDuringOngoingDistribution(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	msgServer := keeper.NewMsgServer(pseKeeper)
+
+	allAllocations := make([]types.ClearingAccountAllocation, 0)
+	for _, ca := range types.GetAllClearingAccounts() {
+		allAllocations = append(allAllocations, types.ClearingAccountAllocation{
+			ClearingAccount: ca,
+			Amount:          sdkmath.NewInt(1000),
+		})
+	}
+
+	validSchedule := []types.ScheduledDistribution{
+		{ID: 1, Timestamp: 1700000000, Allocations: allAllocations},
+	}
+
+	// Simulate an ongoing multi-block distribution for ID=1.
+	ongoing := types.ScheduledDistribution{
+		ID:        1,
+		Timestamp: 1700000000,
+		Allocations: []types.ClearingAccountAllocation{
+			{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(500)},
+		},
+	}
+	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, ongoing))
+
+	// Update must be rejected while distribution is in progress.
+	_, err := msgServer.UpdateDistributionSchedule(ctx, &types.MsgUpdateDistributionSchedule{
+		Authority: authority,
+		Schedule:  validSchedule,
+	})
+	requireT.Error(err)
+	requireT.ErrorIs(err, types.ErrOngoingDistribution)
+
+	// Clear ongoing distribution — update must now succeed.
+	requireT.NoError(pseKeeper.OngoingDistribution.Remove(ctx))
+
+	resp, err := msgServer.UpdateDistributionSchedule(ctx, &types.MsgUpdateDistributionSchedule{
+		Authority: authority,
+		Schedule:  validSchedule,
+	})
+	requireT.NoError(err)
+	requireT.NotNil(resp)
+}
+
+func TestMsgUpdateExcludedAddresses_RejectedDuringOngoingDistribution(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	pseKeeper := testApp.PSEKeeper
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	msgServer := keeper.NewMsgServer(pseKeeper)
+
+	// Simulate an ongoing multi-block distribution.
+	ongoing := types.ScheduledDistribution{
+		ID:        1,
+		Timestamp: 1700000000,
+		Allocations: []types.ClearingAccountAllocation{
+			{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(500)},
+		},
+	}
+	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, ongoing))
+
+	// Both add and remove must be rejected while distribution is in progress.
+	_, err := msgServer.UpdateExcludedAddresses(ctx, &types.MsgUpdateExcludedAddresses{
+		Authority:         authority,
+		AddressesToAdd:    []string{"devcore1qg5eatgu0rp5s8u8n3lcg640qdqaq90mnt6ycc"},
+		AddressesToRemove: []string{},
+	})
+	requireT.ErrorIs(err, types.ErrOngoingDistribution)
+
+	_, err = msgServer.UpdateExcludedAddresses(ctx, &types.MsgUpdateExcludedAddresses{
+		Authority:         authority,
+		AddressesToAdd:    []string{},
+		AddressesToRemove: []string{"devcore1qg5eatgu0rp5s8u8n3lcg640qdqaq90mnt6ycc"},
+	})
+	requireT.ErrorIs(err, types.ErrOngoingDistribution)
+
+	// Clear ongoing distribution — update must now succeed.
+	requireT.NoError(pseKeeper.OngoingDistribution.Remove(ctx))
+
+	resp, err := msgServer.UpdateExcludedAddresses(ctx, &types.MsgUpdateExcludedAddresses{
+		Authority:      authority,
+		AddressesToAdd: []string{},
+	})
+	requireT.NoError(err)
+	requireT.NotNil(resp)
+}
+
 func TestMsgUpdateMinDistributionGap(t *testing.T) {
 	requireT := require.New(t)
 
@@ -459,5 +559,49 @@ func TestMsgUpdateMinDistributionGap(t *testing.T) {
 		params, err := testApp.PSEKeeper.GetParams(ctx)
 		requireT.NoError(err)
 		requireT.Equal(uint64(0), params.MinDistributionGapSeconds)
+	})
+}
+
+func TestMsgUpdateDistributionBatchSize(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false)
+	msgServer := keeper.NewMsgServer(testApp.PSEKeeper)
+
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	invalidAuthority := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+
+	t.Run("valid - update batch size", func(t *testing.T) {
+		resp, err := msgServer.UpdateDistributionBatchSize(ctx, &types.MsgUpdateDistributionBatchSize{
+			Authority:             authority,
+			DistributionBatchSize: 50,
+		})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+
+		params, err := testApp.PSEKeeper.GetParams(ctx)
+		requireT.NoError(err)
+		requireT.Equal(uint64(50), params.DistributionBatchSize)
+	})
+
+	t.Run("invalid - zero batch size", func(t *testing.T) {
+		resp, err := msgServer.UpdateDistributionBatchSize(ctx, &types.MsgUpdateDistributionBatchSize{
+			Authority:             authority,
+			DistributionBatchSize: 0,
+		})
+		requireT.Error(err)
+		requireT.Nil(resp)
+		requireT.Contains(err.Error(), "distribution_batch_size must be greater than 0")
+	})
+
+	t.Run("invalid - wrong authority", func(t *testing.T) {
+		resp, err := msgServer.UpdateDistributionBatchSize(ctx, &types.MsgUpdateDistributionBatchSize{
+			Authority:             invalidAuthority,
+			DistributionBatchSize: 50,
+		})
+		requireT.Error(err)
+		requireT.Nil(resp)
+		requireT.Contains(err.Error(), "invalid authority")
 	})
 }

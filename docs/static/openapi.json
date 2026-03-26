@@ -16832,6 +16832,11 @@
           "type": "string",
           "format": "uint64",
           "description": "min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions."
+        },
+        "distribution_batch_size": {
+          "type": "string",
+          "format": "uint64",
+          "description": "distribution_batch_size is the number of delegation entries processed per EndBlock\nduring multi-block community distribution."
         }
       },
       "description": "Params store gov manageable parameters."
@@ -16918,6 +16923,11 @@
           "type": "string",
           "format": "uint64",
           "description": "id is the unique, sequential identifier for this distribution.\nUsed as the storage key in the AllocationSchedule map."
+        },
+        "started_at": {
+          "type": "string",
+          "format": "int64",
+          "description": "started_at is the Unix timestamp (seconds) of the block in which this distribution began processing.\nSet when the ScheduledDistribution transitions to OngoingDistribution."
         }
       },
       "description": "ScheduledDistribution defines a single allocation event at a specific timestamp.\nMultiple clearing accounts can allocate tokens at the same time.\nEach distribution is identified by a unique, sequential id."

@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -259,6 +260,7 @@ func TestPSEDistribution(t *testing.T) {
 	t.Logf("Distribution 1 at height: %d", height)
 
 	awaitScheduleCount(ctx, t, chain, 2)
+	requireT.NoError(assertCommunityIntermediaryDrained(ctx, chain, chain.ChainSettings.Denom))
 
 	balancesBefore, scoresBefore, totalScore := getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
@@ -305,6 +307,7 @@ func TestPSEDistribution(t *testing.T) {
 	t.Logf("Distribution 2 at height: %d", height)
 
 	awaitScheduleCount(ctx, t, chain, 1)
+	requireT.NoError(assertCommunityIntermediaryDrained(ctx, chain, chain.ChainSettings.Denom))
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
@@ -342,6 +345,7 @@ func TestPSEDistribution(t *testing.T) {
 	t.Logf("Distribution 3 at height: %d", height)
 
 	awaitScheduleCount(ctx, t, chain, 0)
+	requireT.NoError(assertCommunityIntermediaryDrained(ctx, chain, chain.ChainSettings.Denom))
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
@@ -912,6 +916,24 @@ func awaitScheduleCount(ctx context.Context, t *testing.T, chain integration.TXC
 		return nil
 	}, integration.WithAwaitStateTimeout(10*time.Second))
 	requireT.NoError(err)
+}
+
+// assertCommunityIntermediaryDrained verifies that pse_community_intermediary has zero balance,
+// confirming that the intermediary was fully drained after a community distribution completes.
+func assertCommunityIntermediaryDrained(ctx context.Context, chain integration.TXChain, denom string) error {
+	bankClient := banktypes.NewQueryClient(chain.ClientContext)
+	intermediaryAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityIntermediary).String()
+	resp, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: intermediaryAddr,
+		Denom:   denom,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to query pse_community_intermediary balance: %w", err)
+	}
+	if !resp.Balance.IsZero() {
+		return fmt.Errorf("pse_community_intermediary must be zero after distribution, got %s", resp.Balance)
+	}
+	return nil
 }
 
 func removeAttributeFromEvent(events []tmtypes.Event, key string) []tmtypes.Event {

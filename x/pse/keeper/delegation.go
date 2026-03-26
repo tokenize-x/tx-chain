@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -69,9 +70,35 @@ func (k Keeper) RemoveDelegatorScore(ctx context.Context, distributionID uint64,
 	return k.AccountScoreSnapshot.Remove(ctx, key)
 }
 
-// addToScore atomically adds a score value to a delegator's score snapshot
+// addToExcludedScore atomically adds a score value to an excluded address's accumulated score.
+// Unlike addToMainScore, this does NOT update TotalScore - excluded addresses don't participate in distribution.
+func (k Keeper) addToExcludedScore(ctx context.Context, addr sdk.AccAddress, score sdkmath.Int) error {
+	if score.IsZero() {
+		return nil
+	}
+	current, err := k.ExcludedAddressScore.Get(ctx, addr)
+	if errors.Is(err, collections.ErrNotFound) {
+		current = sdkmath.NewInt(0)
+	} else if err != nil {
+		return err
+	}
+	return k.ExcludedAddressScore.Set(ctx, addr, current.Add(score))
+}
+
+// addScoreForAddress routes a score to either AccountScoreSnapshot (not excluded) or ExcludedAddressScore (excluded).
+// For non-excluded addresses it also updates TotalScore; for excluded addresses it does not.
+func (k Keeper) addScoreForAddress(
+	ctx context.Context, distributionID uint64, addr sdk.AccAddress, score sdkmath.Int, isExcluded bool,
+) error {
+	if isExcluded {
+		return k.addToExcludedScore(ctx, addr, score)
+	}
+	return k.addToMainScore(ctx, distributionID, addr, score)
+}
+
+// addToMainScore atomically adds a score value to a delegator's score snapshot
 // and incrementally updates TotalScore for the same distribution.
-func (k Keeper) addToScore(
+func (k Keeper) addToMainScore(
 	ctx context.Context, distributionID uint64, delAddr sdk.AccAddress, score sdkmath.Int,
 ) error {
 	if score.IsZero() {
@@ -95,6 +122,60 @@ func (k Keeper) addToScore(
 		return err
 	}
 	return k.TotalScore.Set(ctx, distributionID, currentTotal.Add(score))
+}
+
+// moveExcludedScoreToMain moves accumulated ExcludedAddressScore back into AccountScoreSnapshot+TotalScore.
+// Called when an address is re-included (removed from the exclusion list).
+func (k Keeper) moveExcludedScoreToMain(ctx context.Context, distributionID uint64, addr sdk.AccAddress) error {
+	score, err := k.ExcludedAddressScore.Get(ctx, addr)
+	if errors.Is(err, collections.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if err := k.addToMainScore(ctx, distributionID, addr, score); err != nil {
+		return err
+	}
+	return k.ExcludedAddressScore.Remove(ctx, addr)
+}
+
+// moveMainScoreToExcluded moves AccountScoreSnapshot into ExcludedAddressScore and subtracts from TotalScore.
+// Called when an address is newly added to the exclusion list.
+func (k Keeper) moveMainScoreToExcluded(ctx context.Context, distributionID uint64, addr sdk.AccAddress) error {
+	score, err := k.GetDelegatorScore(ctx, distributionID, addr)
+	if errors.Is(err, collections.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if err := k.addToExcludedScore(ctx, addr, score); err != nil {
+		return err
+	}
+	if err := k.RemoveDelegatorScore(ctx, distributionID, addr); err != nil {
+		return err
+	}
+	currentTotal, err := k.TotalScore.Get(ctx, distributionID)
+	if errors.Is(err, collections.ErrNotFound) {
+		return errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"TotalScore not found for distribution %d but delegator score %s exists",
+			distributionID, score,
+		)
+	}
+	if err != nil {
+		return err
+	}
+	newTotal := currentTotal.Sub(score)
+	if newTotal.IsNegative() {
+		return errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"TotalScore underflow: removing score %s from total %s for distribution %d",
+			score, currentTotal, distributionID,
+		)
+	}
+	return k.TotalScore.Set(ctx, distributionID, newTotal)
 }
 
 // CalculateDelegatorScore calculates the current total score for a delegator.

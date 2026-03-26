@@ -13,16 +13,13 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
-// defaultBatchSize is the number of entries processed per EndBlock during multi-block distribution.
-const defaultBatchSize = 100 // TODO: make configurable
-
 // ConsumeOngoingDelegationTimeEntries processes a batch of DelegationTimeEntries
 // from the ongoing distribution (ongoingID), converting each entry into a score
 // snapshot and migrating it to nextID (ongoingID + 1).
 //
 // For each entry in the batch:
-//  1. Calculate score from lastChanged to distribution timestamp -> addToScore(ongoingID)
-//  2. Calculate gap score from distribution timestamp to current block time -> addToScore(nextID)
+//  1. Calculate score from lastChanged to distribution timestamp -> addToMainScore(ongoingID)
+//  2. Calculate gap score from distribution timestamp to current block time -> addToMainScore(nextID)
 //  3. Create new entry under nextID with same shares, lastChanged = current block time
 //  4. Remove entry from ongoingID
 //
@@ -30,6 +27,12 @@ const defaultBatchSize = 100 // TODO: make configurable
 func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 	ctx context.Context, ongoing types.ScheduledDistribution,
 ) (bool, error) {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+	batchSize := batchSizeFromParams(params)
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	ongoingID := ongoing.ID
 	nextID := ongoing.ID + 1
@@ -51,8 +54,8 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 		entry   types.DelegationTimeEntry
 	}
 
-	batch := make([]entryKV, 0, defaultBatchSize)
-	for ; iter.Valid() && len(batch) < defaultBatchSize; iter.Next() {
+	batch := make([]entryKV, 0, batchSize)
+	for ; iter.Valid() && len(batch) < batchSize; iter.Next() {
 		kv, err := iter.KeyValue()
 		if err != nil {
 			iter.Close()
@@ -83,28 +86,26 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 		}
 		isExcluded := excludedMap[addrStr]
 
-		if !isExcluded {
-			// Score for ongoingID: lastChanged -> distTimestamp.
-			score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
-			if err != nil {
-				return false, err
-			}
-			if err := k.addToScore(ctx, ongoingID, item.delAddr, score); err != nil {
-				return false, err
-			}
+		// Score for ongoingID: lastChanged -> distTimestamp.
+		// Excluded addresses route to ExcludedAddressScore instead of AccountScoreSnapshot+TotalScore.
+		score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
+		if err != nil {
+			return false, err
+		}
+		if err := k.addScoreForAddress(ctx, ongoingID, item.delAddr, score, isExcluded); err != nil {
+			return false, err
+		}
 
-			// Score for nextID: distTimestamp -> blockTime (gap during Phase 1 processing).
-			// TODO: add dedicated integration test to verify gap score fairness across batches.
-			gapScore, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, types.DelegationTimeEntry{
-				LastChangedUnixSec: distTimestamp,
-				Shares:             item.entry.Shares,
-			}, blockTime)
-			if err != nil {
-				return false, err
-			}
-			if err := k.addToScore(ctx, nextID, item.delAddr, gapScore); err != nil {
-				return false, err
-			}
+		// Score for nextID: distTimestamp -> blockTime (gap during Phase 1 processing).
+		gapScore, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, types.DelegationTimeEntry{
+			LastChangedUnixSec: distTimestamp,
+			Shares:             item.entry.Shares,
+		}, blockTime)
+		if err != nil {
+			return false, err
+		}
+		if err := k.addScoreForAddress(ctx, nextID, item.delAddr, gapScore, isExcluded); err != nil {
+			return false, err
 		}
 
 		// Migrate entry to nextID with same shares, lastChanged = current block time.
@@ -122,7 +123,7 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 	}
 
 	// If batch was smaller than the limit, all entries have been consumed.
-	return len(batch) < defaultBatchSize, nil
+	return len(batch) < batchSize, nil
 }
 
 // ProcessOngoingTokenDistribution distributes tokens to delegators in batches based on their computed scores.
@@ -139,6 +140,12 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 func (k Keeper) ProcessOngoingTokenDistribution(
 	ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string,
 ) (bool, error) {
+	params, err := k.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+	batchSize := batchSizeFromParams(params)
+
 	ongoingID := ongoing.ID
 	totalPSEAmount := getCommunityAllocationAmount(ongoing)
 
@@ -173,8 +180,8 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		score   sdkmath.Int
 	}
 
-	batch := make([]scoreEntry, 0, defaultBatchSize)
-	for ; iter.Valid() && len(batch) < defaultBatchSize; iter.Next() {
+	batch := make([]scoreEntry, 0, batchSize)
+	for ; iter.Valid() && len(batch) < batchSize; iter.Next() {
 		kv, err := iter.KeyValue()
 		if err != nil {
 			iter.Close()
@@ -187,23 +194,18 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	}
 	iter.Close()
 
-	// Only triggered when all distributions of this round are completed.
+	// Only triggered when all delegators have been processed.
 	// Send leftover to community pool and clean up.
 	if len(batch) == 0 {
-		distributedSoFar, err := k.getDistributedAmount(ctx, ongoingID)
-		if err != nil {
-			return false, err
-		}
-		leftover := totalPSEAmount.Sub(distributedSoFar)
-		if leftover.IsPositive() {
-			if err := k.sendLeftoverToCommunityPool(ctx, leftover, bondDenom); err != nil {
-				return false, err
-			}
-		}
-		return true, k.cleanupOngoingDistribution(ctx, ongoingID)
+		return true, k.finalizeCommunityDistribution(ctx, ongoingID, totalPSEAmount, bondDenom)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	nextID := ongoingID + 1
+	blockTime := sdkCtx.BlockTime().Unix()
+	// processingElapsedSec is the time elapsed since distribution began. Used for the fairness bonus below.
+	// If StartedAt is not set (zero), bonus is skipped to stay backward-compatible.
+	processingElapsedSec := blockTime - ongoing.StartedAt
 
 	// Distribute rewards to each delegator in the batch proportional to their score.
 	batchDistributed := sdkmath.NewInt(0)
@@ -214,6 +216,15 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 			return false, err
 		}
 		batchDistributed = batchDistributed.Add(distributedAmount)
+
+		// Fairness bonus: compensates delegators processed in later batches.
+		// addToMainScore is safe here: AccountScoreSnapshot[ongoingID] only contains non-excluded addresses.
+		if distributedAmount.IsPositive() && ongoing.StartedAt > 0 && processingElapsedSec > 0 {
+			bonusScore := distributedAmount.MulRaw(processingElapsedSec)
+			if err := k.addToMainScore(ctx, nextID, item.delAddr, bonusScore); err != nil {
+				return false, err
+			}
+		}
 
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributed{
 			DelegatorAddress: item.delAddr.String(),
@@ -239,6 +250,24 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	return false, nil
 }
 
+// finalizeCommunityDistribution sends the undistributed leftover to the community pool and cleans up state.
+// Called when all AccountScoreSnapshot entries for the ongoing distribution have been processed.
+func (k Keeper) finalizeCommunityDistribution(
+	ctx context.Context, distributionID uint64, totalPSEAmount sdkmath.Int, bondDenom string,
+) error {
+	distributedSoFar, err := k.getDistributedAmount(ctx, distributionID)
+	if err != nil {
+		return err
+	}
+	leftover := totalPSEAmount.Sub(distributedSoFar)
+	if leftover.IsPositive() {
+		if err := k.sendLeftoverToCommunityPool(ctx, leftover, bondDenom); err != nil {
+			return err
+		}
+	}
+	return k.cleanupOngoingDistribution(ctx, distributionID)
+}
+
 // getCommunityAllocationAmount extracts the community clearing account allocation from a distribution.
 func getCommunityAllocationAmount(dist types.ScheduledDistribution) sdkmath.Int {
 	for _, alloc := range dist.Allocations {
@@ -249,10 +278,10 @@ func getCommunityAllocationAmount(dist types.ScheduledDistribution) sdkmath.Int 
 	return sdkmath.NewInt(0)
 }
 
-// sendLeftoverToCommunityPool sends remaining undistributed tokens to the community pool.
+// sendLeftoverToCommunityPool sends remaining undistributed tokens from the intermediary account to the community pool.
 func (k Keeper) sendLeftoverToCommunityPool(ctx context.Context, amount sdkmath.Int, bondDenom string) error {
-	pseModuleAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
-	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), pseModuleAddress)
+	intermediaryAddress := k.accountKeeper.GetModuleAddress(types.ClearingAccountCommunityIntermediary)
+	return k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(sdk.NewCoin(bondDenom, amount)), intermediaryAddress)
 }
 
 // cleanupOngoingDistribution removes all state associated with a completed distribution.
@@ -264,6 +293,9 @@ func (k Keeper) cleanupOngoingDistribution(ctx context.Context, distributionID u
 		return err
 	}
 	if err := k.TotalScore.Remove(ctx, distributionID); err != nil {
+		return err
+	}
+	if err := k.ExcludedAddressScore.Clear(ctx, nil); err != nil {
 		return err
 	}
 	if err := k.DistributedAmount.Remove(ctx, distributionID); err != nil {
@@ -327,7 +359,7 @@ func (k Keeper) distributeToDelegator(
 
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
-		types.ClearingAccountCommunity,
+		types.ClearingAccountCommunityIntermediary,
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
@@ -354,4 +386,13 @@ func (k Keeper) distributeToDelegator(
 		}
 	}
 	return amount, nil
+}
+
+// batchSizeFromParams returns the configured batch size, falling back to the default
+// when unset.
+func batchSizeFromParams(params types.Params) int {
+	if params.DistributionBatchSize == 0 {
+		return int(types.DefaultParams().DistributionBatchSize)
+	}
+	return int(params.DistributionBatchSize)
 }

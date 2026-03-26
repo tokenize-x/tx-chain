@@ -21,4 +21,5 @@ var (
 	OngoingDistributionKey         = collections.NewPrefix(6) // Item: currently processing ScheduledDistribution
 	DistributedAmountKey           = collections.NewPrefix(7) // Map: ID -> cumulative distributed amount
 	LastProcessedDistributionIDKey = collections.NewPrefix(8) // Item: ID of last completed distribution
+	ExcludedAddressScoreKey        = collections.NewPrefix(9) // Map: AccAddr -> accumulated score while excluded
 )

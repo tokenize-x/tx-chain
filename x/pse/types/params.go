@@ -21,6 +21,14 @@ const (
 	ClearingAccountTeam = "pse_team"
 )
 
+// ClearingAccountCommunityIntermediary is a short-lived intermediary account used during community distribution.
+const ClearingAccountCommunityIntermediary = "pse_community_intermediary"
+
+// GetAllModuleAccounts returns all PSE module accounts that must be registered in maccPerms.
+func GetAllModuleAccounts() []string {
+	return append(GetAllClearingAccounts(), ClearingAccountCommunityIntermediary)
+}
+
 // GetAllClearingAccounts returns all PSE clearing accounts.
 func GetAllClearingAccounts() []string {
 	return []string{
@@ -46,6 +54,7 @@ func DefaultParams() Params {
 		ExcludedAddresses:         []string{},
 		ClearingAccountMappings:   []ClearingAccountMapping{},
 		MinDistributionGapSeconds: uint64(24 * 60 * 60), // 1 day
+		DistributionBatchSize:     100,
 	}
 }
 

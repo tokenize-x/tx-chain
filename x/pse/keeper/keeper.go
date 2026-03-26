@@ -43,6 +43,7 @@ type Keeper struct {
 	DistributedAmount           collections.Map[uint64, sdkmath.Int]                 // ID -> distributed amount
 	DistributionDisabled        collections.Item[bool]
 	LastProcessedDistributionID collections.Item[uint64]
+	ExcludedAddressScore        collections.Map[sdk.AccAddress, sdkmath.Int]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -128,6 +129,13 @@ func NewKeeper(
 			"last_processed_distribution_id",
 			collections.Uint64Value,
 		),
+		ExcludedAddressScore: collections.NewMap(
+			sb,
+			types.ExcludedAddressScoreKey,
+			"excluded_address_score",
+			sdk.AccAddressKey,
+			sdk.IntValue,
+		),
 	}
 
 	schema, err := sb.Build()
@@ -181,4 +189,9 @@ func (k Keeper) GetClearingAccountBalances(ctx context.Context) ([]types.Clearin
 	}
 
 	return balances, nil
+}
+
+// InitCommunityIntermediary ensures the community intermediary module account exists in state.
+func (k Keeper) InitCommunityIntermediary(ctx context.Context) {
+	k.accountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunityIntermediary)
 }

@@ -40,6 +40,18 @@ func (k Keeper) UpdateExcludedAddresses(
 		return errorsmod.Wrapf(types.ErrInvalidAuthority, "expected %s, got %s", k.authority, authority)
 	}
 
+	// Reject if a multi-block distribution is in progress.
+	ongoing, ongoingFound, err := k.getOngoingDistribution(ctx)
+	if err != nil {
+		return err
+	}
+	if ongoingFound {
+		return errorsmod.Wrapf(
+			types.ErrOngoingDistribution,
+			"cannot update excluded addresses while distribution %d is in progress", ongoing.ID,
+		)
+	}
+
 	// Get current params
 	params, err := k.GetParams(ctx)
 	if err != nil {
@@ -55,40 +67,41 @@ func (k Keeper) UpdateExcludedAddresses(
 		return !found
 	})
 
-	// When addresses are removed from exclusion, recreate their DelegationTimeEntries with current state
-	// so they start accumulating score immediately without requiring a delegation change.
 	currentBlockTime := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	distributionID, err := k.getActiveDistributionID(ctx)
 	if err != nil {
 		return err
 	}
+
+	// When addresses are removed from exclusion, restore their accumulated excluded score to the
+	// active snapshot and recreate DelegationTimeEntries so score accumulates from now.
 	for _, addrStr := range addressesToRemove {
 		addr, err := k.addressCodec.StringToBytes(addrStr)
 		if err != nil {
 			return err
 		}
 
-		// Query all current delegations for this address
+		// Move ExcludedAddressScore back into AccountScoreSnapshot+TotalScore.
+		if err := k.moveExcludedScoreToMain(ctx, distributionID, addr); err != nil {
+			return err
+		}
+
+		// Recreate DelegationTimeEntries with current state so score starts accumulating from now.
 		delAddrBech32, err := k.addressCodec.BytesToString(addr)
 		if err != nil {
 			return err
 		}
-
 		delegationResponse, err := k.stakingKeeper.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
 			DelegatorAddr: delAddrBech32,
 		})
 		if err != nil {
 			return err
 		}
-
-		// Recreate DelegationTimeEntry for each active delegation
 		for _, delegation := range delegationResponse.DelegationResponses {
 			valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 			if err != nil {
 				continue
 			}
-
-			// Set entry with current block time and current shares
 			if err := k.SetDelegationTimeEntry(ctx, distributionID, valAddr, addr, types.DelegationTimeEntry{
 				LastChangedUnixSec: currentBlockTime,
 				Shares:             delegation.Delegation.Shares,
@@ -127,8 +140,10 @@ func (k Keeper) removeExcludedAccountData(ctx context.Context, distributionID ui
 		return err
 	}
 
-	// Remove snapshot if it exists
-	_ = k.RemoveDelegatorScore(ctx, distributionID, addr)
+	// Move snapshot to ExcludedAddressScore (preserves score for re-inclusion)
+	if err := k.moveMainScoreToExcluded(ctx, distributionID, addr); err != nil {
+		return err
+	}
 
 	// Remove all delegation time entries for this address
 	rng := collections.NewSuperPrefixedTripleRange[uint64, sdk.AccAddress, sdk.ValAddress](distributionID, addr)

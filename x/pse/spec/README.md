@@ -72,25 +72,29 @@ The PSE module integrates with the staking module through hooks that trigger on 
 - **AfterDelegationModified**: Updates the score when delegations are created or modified
 - **BeforeDelegationRemoved**: Finalizes the score calculation when a delegation is completely removed
 
-### Distribution Process for Community
+### Distribution Process for Community (Multi-Block)
 
-When a Community distribution is scheduled:
+Community distributions are processed over multiple blocks to avoid gas spikes. The distribution is split into two phases, each consuming a configurable batch of entries per block:
 
-1. **Score Finalization**: The module iterates through all active delegations and calculates any uncalculated scores (time since last change up to current block)
-2. **Total Score Calculation**: Sums all delegator scores to get the total score
-3. **Proportional Distribution**: Each delegator receives tokens proportional to their score:
+**Phase 1 — Score Conversion** (`ConsumeOngoingDelegationTimeEntries`):
 
-   ```text
-   Delegator_Amount = (Delegator_Score / Total_Score) × Distribution_Amount
-   ```
+1. For each `DelegationTimeEntry` under the ongoing distribution ID: calculate score from last-changed to distribution timestamp and write it to `AccountScoreSnapshot`.
+2. Calculate "gap score" (distribution timestamp to current block time) and write it to the next distribution's snapshot.
+3. Migrate the entry to the next distribution ID; remove from current.
+4. Repeats each block until all entries are consumed.
 
-4. **Auto-Delegation**: Distributed tokens are automatically delegated to the delegator's validators in the same proportion as their existing delegations
-5. **Leftover Handling**: Any leftover from rounding errors or delegators with no active delegations is sent to the community pool
-6. **Score Reset**: All scores are reset to zero for the next 1-month distribution period
+**Phase 2 — Token Distribution** (`ProcessOngoingTokenDistribution`):
+
+1. Funds for this distribution are held in `pse_community_intermediary` (see `BeginCommunityDistribution`).
+2. For each delegator in the batch: compute proportional amount, send from `pse_community_intermediary`, auto-delegate to their validators.
+3. **Fairness bonus**: delegators processed in later batches receive a bonus score (`distributed_amount × elapsed_seconds_since_start`) credited to the next distribution, compensating for the batch-ordering bias.
+4. When all delegators are processed, any leftover in `pse_community_intermediary` is sent to the community pool.
+
+Both phases use `DistributionBatchSize` (configurable param, default 100) to limit per-block work.
 
 ### Excluded Addresses
 
-The module maintains a list of excluded addresses that are not eligible to receive Community distributions. This list can be updated via governance and is useful for excluding exchange addresses or other entities that should not participate in the score-based distribution.
+The module maintains a list of excluded addresses that are not eligible to receive Community distributions. While excluded, an address continues to accumulate score internally (stored in `ExcludedAddressScore`). If later re-included, the accumulated score is restored to the active snapshot so no score is lost. This list can be updated via governance.
 
 ## Non-Community Distribution - Direct Transfers
 
@@ -124,9 +128,14 @@ ClearingAccountMapping {
 State managed by the PSE module:
 
 - **Params**: `0x00 | -> Params`
-- **DelegationTimeEntries**: `0x01 | delegator_address | validator_address -> DelegationTimeEntry`
-- **AccountScoreSnapshot**: `0x02 | delegator_address -> Int`
+- **DelegationTimeEntries**: `0x01 | distribution_id (uint64) | delegator_address | validator_address -> DelegationTimeEntry`
+- **AccountScoreSnapshot**: `0x02 | distribution_id (uint64) | delegator_address -> Int`
 - **AllocationSchedule**: `0x03 | id (uint64) -> ScheduledDistribution`
+- **TotalScore**: `0x04 | distribution_id (uint64) -> Int`
+- **OngoingDistribution**: `0x05 | -> ScheduledDistribution` — set when a multi-block distribution is in progress
+- **LastProcessedDistributionID**: `0x06 | -> uint64` — ID of the most recently completed distribution
+- **ExcludedAddressScore**: `0x07 | delegator_address -> Int` — internal score for currently excluded addresses
+- **DistributedAmount**: `0x08 | distribution_id (uint64) -> Int` — cumulative amount distributed so far (Phase 2)
 
 ### Params
 
@@ -135,6 +144,7 @@ Module parameters containing:
 - `ExcludedAddresses`: List of addresses excluded from Community distributions
 - `ClearingAccountMappings`: Recipient address mappings for non-Community clearing accounts
 - `MinDistributionGapSeconds`: Minimum time gap (in seconds) between consecutive scheduled distributions (default: 86400 = 1 day)
+- `DistributionBatchSize`: Number of entries processed per block during multi-block distribution (default: 100)
 
 ### DelegationTimeEntry
 
@@ -196,6 +206,21 @@ Handles module parameter storage and updates, including the excluded addresses l
 Provides utility methods for querying module state, such as retrieving current balances of all clearing accounts. These helpers support both CLI queries and programmatic access to module data for monitoring and auditing purposes.
 
 ## Messages
+
+### MsgUpdateDistributionBatchSize
+
+Governance-only message to update the number of entries processed per block during multi-block distribution.
+
+```protobuf
+message MsgUpdateDistributionBatchSize {
+  string authority = 1;             // Must be governance module address
+  uint64 distribution_batch_size = 2; // Must be > 0
+}
+```
+
+**Authorization**: Only governance (`gov` module)
+
+---
 
 ### MsgUpdateExcludedAddresses
 
@@ -388,6 +413,8 @@ The PSE module parameters can be queried but are primarily managed through gover
 |---------------------------|-------------------------------|------------------------------------------------------------|
 | ExcludedAddresses         | []string                      | Addresses excluded from Community score-based distribution |
 | ClearingAccountMappings   | []ClearingAccountMapping      | Recipient address mappings for non-Community accounts      |
+| MinDistributionGapSeconds | uint64                        | Minimum seconds between consecutive distributions (default: 86400) |
+| DistributionBatchSize     | uint64                        | Entries processed per block during multi-block distribution (default: 100) |
 
 ### ExcludedAddresses
 

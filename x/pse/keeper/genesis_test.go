@@ -58,6 +58,9 @@ func TestGenesis(t *testing.T) {
 			Score:   sdkmath.NewInt(5678),
 		},
 	}
+	genesisState.ExcludedAddressScores = []types.ExcludedAddressScoreEntry{
+		{Address: addr1, Score: sdkmath.NewInt(9999)},
+	}
 	genesisState.DistributionsDisabled = true
 
 	err := pseKeeper.InitGenesis(ctx, genesisState)
@@ -184,6 +187,25 @@ func TestGenesis_InvalidState(t *testing.T) {
 				gs.Params.ExcludedAddresses = []string{addr, addr}
 			},
 			expectError: "duplicate address",
+		},
+		{
+			name: "excluded_address_score_empty_address",
+			modifyGenesis: func(gs *types.GenesisState) {
+				gs.ExcludedAddressScores = []types.ExcludedAddressScoreEntry{
+					{Address: "", Score: sdkmath.NewInt(100)},
+				}
+			},
+			expectError: "excluded address cannot be empty",
+		},
+		{
+			name: "excluded_address_score_negative",
+			modifyGenesis: func(gs *types.GenesisState) {
+				addr := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()).String()
+				gs.ExcludedAddressScores = []types.ExcludedAddressScoreEntry{
+					{Address: addr, Score: sdkmath.NewInt(-1)},
+				}
+			},
+			expectError: "excluded address score cannot be negative",
 		},
 	}
 

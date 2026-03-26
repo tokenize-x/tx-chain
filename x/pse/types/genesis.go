@@ -11,6 +11,7 @@ func DefaultGenesisState() *GenesisState {
 		ScheduledDistributions: []ScheduledDistribution{},
 		DelegationTimeEntries:  []DelegationTimeEntryExport{},
 		AccountScores:          []AccountScore{},
+		ExcludedAddressScores:  []ExcludedAddressScoreEntry{},
 		DistributionsDisabled:  false,
 	}
 }
@@ -67,6 +68,19 @@ func (m *GenesisState) Validate() error {
 		}
 		if accountScore.Score.IsNegative() {
 			return errorsmod.Wrapf(ErrInvalidInput, "score cannot be negative")
+		}
+	}
+
+	// Validate excluded address scores
+	for _, entry := range m.ExcludedAddressScores {
+		if entry.Address == "" {
+			return errorsmod.Wrapf(ErrInvalidInput, "excluded address cannot be empty")
+		}
+		if entry.Score.IsNil() {
+			return errorsmod.Wrapf(ErrInvalidInput, "excluded address score cannot be nil")
+		}
+		if entry.Score.IsNegative() {
+			return errorsmod.Wrapf(ErrInvalidInput, "excluded address score cannot be negative")
 		}
 	}
 

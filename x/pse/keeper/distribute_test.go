@@ -293,9 +293,9 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		Address: delAddr.String(),
 	})
 	requireT.NoError(err)
-	score1 := resp1.Score
-	requireT.True(score1.IsPositive(), "Score should be positive after delegation and time passing")
-	t.Logf("Score after 10 seconds: %s", score1.String())
+	scoreBeforeExclusion := resp1.Score
+	requireT.True(scoreBeforeExclusion.IsPositive(), "Score should be positive after delegation and time passing")
+	t.Logf("Score after 10 seconds: %s", scoreBeforeExclusion.String())
 
 	// Step 2: Address added to excluded_list
 	err = pseKeeper.UpdateExcludedAddresses(ctx, authority, []string{delAddr.String()}, nil)
@@ -351,7 +351,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 			Amount:          amount,
 		}},
 	}
-	err = pseKeeper.OngoingDistribution.Set(ctx, scheduledDistribution)
+	err = pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom)
 	requireT.NoError(err)
 	balanceBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom)
 	for {
@@ -374,6 +374,18 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		"Excluded address should receive no rewards",
 	)
 
+	// ExcludedAddressScore must be purged after distribution cleanup.
+	_, err = pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"ExcludedAddressScore must be purged after distribution — each period is isolated")
+
+	// DelegationTimeEntry must survive cleanup — migrated to nextID with reset timestamp.
+	nextID := distributionID + 1
+	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, nextID, valAddr, delAddr)
+	requireT.NoError(err, "DelegationTimeEntry must be migrated to nextID after distribution")
+	requireT.Equal(ctx.BlockTime().Unix(), entry.LastChangedUnixSec,
+		"Migrated entry must have reset timestamp")
+
 	// After distribution, entries migrated from distributionID to distributionID+1.
 	// Save a new schedule so hooks and UpdateExcludedAddresses can find it.
 	distributionID++
@@ -391,7 +403,7 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Undelegate(ctx, msgUndel)
 	requireT.NoError(err, "Excluded delegator should be able to fully undelegate after distribution")
 
-	// Step 7: Re-delegate before re-inclusion (simulating an excluded address that still has delegation)
+	// Step 7: Re-delegate while still excluded and accumulate excluded score in the new period.
 	requireT.NoError(testApp.BankKeeper.MintCoins(
 		ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(200))),
 	))
@@ -406,19 +418,55 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msgDelegate)
 	requireT.NoError(err)
 
+	// Advance time and trigger another delegation change to accumulate excluded score in the new period.
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(5 * time.Second))
+	msgDelegate2 := &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(sdk.DefaultBondDenom, 1),
+	}
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, msgDelegate2)
+	requireT.NoError(err)
+
+	// Verify fresh excluded score accumulated in the new period.
+	currentPeriodExcludedScore, err := pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
+	requireT.NoError(err)
+	// 50 tokens * 5 seconds = 250.
+	requireT.Equal(sdkmath.NewInt(250), currentPeriodExcludedScore,
+		"Excluded score must be fresh for new period, not carried over from Distribution 1")
+
 	// Step 8: Remove from exclude_list (re-include)
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(1 * time.Second))
 	err = pseKeeper.UpdateExcludedAddresses(ctx, authority, nil, []string{delAddr.String()})
 	requireT.NoError(err)
 
 	// Verify DelegationTimeEntry was recreated with current state
-	entry, err := pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
+	entry, err = pseKeeper.GetDelegationTimeEntry(ctx, distributionID, valAddr, delAddr)
 	requireT.NoError(err, "DelegationTimeEntry should be recreated on re-inclusion")
 	requireT.Equal(ctx.BlockTime().Unix(), entry.LastChangedUnixSec, "Entry should have current block time")
 
-	// Step 9: Verify fresh score accumulation after re-inclusion (starts from 0)
-	// Score accumulates automatically after re-inclusion without requiring delegation
-	// because UpdateExcludedAddresses recreates DelegationTimeEntry with current state.
+	// Verify restored score is the fresh score from the current period only.
+	restoredSnapshot, err := pseKeeper.GetDelegatorScore(ctx, distributionID, delAddr)
+	requireT.NoError(err)
+	requireT.Equal(currentPeriodExcludedScore, restoredSnapshot,
+		"restored score must equal fresh excluded score from current period only")
+
+	_, err = pseKeeper.GetDelegatorScore(ctx, firstDistributionID, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"score must not exist at the already-processed distID=1 after re-inclusion")
+
+	// ExcludedAddressScore must be fully cleared after re-inclusion.
+	_, err = pseKeeper.ExcludedAddressScore.Get(ctx, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"ExcludedAddressScore must be cleared after re-inclusion")
+
+	// TotalScore[distributionID] must include the restored score.
+	totalScoreAtReinclusion, err := pseKeeper.TotalScore.Get(ctx, distributionID)
+	requireT.NoError(err)
+	requireT.Equal(restoredSnapshot, totalScoreAtReinclusion,
+		"TotalScore must equal the restored excluded score after re-inclusion")
+
+	// Step 9: Score after re-inclusion = restored excluded score + new accumulation.
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(3 * time.Second))
 
 	// Query score directly - no delegation needed because DelegationTimeEntry exists
@@ -426,14 +474,410 @@ func Test_ExcludedAddress_FullLifecycle(t *testing.T) {
 		Address: delAddr.String(),
 	})
 	requireT.NoError(err)
-	score2 := resp2.Score
-	requireT.True(score2.IsPositive(), "Score should be positive after re-inclusion")
-	requireT.True(score2.LT(score1), "New score should be less than original score (fresh start, only 3 seconds)")
-	t.Logf("Score after re-inclusion and 3 seconds: %s (original was %s)", score2.String(), score1.String())
+	scoreAfterReinclusion := resp2.Score
+	requireT.True(scoreAfterReinclusion.IsPositive(), "Score should be positive after re-inclusion")
+	// currentPeriodExcludedScore (250) + fresh accumulation (51 tokens * 3s = 153) = 403
+	requireT.True(scoreAfterReinclusion.GT(currentPeriodExcludedScore),
+		"Score after re-inclusion should exceed restored score (restored + new accumulation)")
+	t.Logf("Score after re-inclusion and 3 seconds: %s (restored was %s)",
+		scoreAfterReinclusion.String(), currentPeriodExcludedScore.String())
 
-	// Verify the score is approximately correct for 3 seconds of accumulation
-	// Score = tokens * time, should be roughly 50 tokens * 3 seconds = 150
-	expectedMinScore := sdkmath.NewInt(50 * 3) // At least 50 tokens for 3 seconds
-	requireT.True(score2.GTE(expectedMinScore),
-		"Score should be at least %s (got %s) for fresh accumulation", expectedMinScore.String(), score2.String())
+	// Step 10: Run Distribution 2 and verify the re-included delegator receives proportional rewards.
+	t.Log("=== Distribution 2: re-included delegator receives rewards ===")
+
+	// Use a large enough amount so that delegator's share won't be downed to zero
+	// due to genesis/simapp delegators huge shares.
+	amount2 := sdkmath.NewInt(10_000_000)
+	macc2 := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(
+		ctx, minttypes.ModuleName, sdk.NewCoins(sdk.NewCoin(bondDenom, amount2)),
+	))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc2.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, amount2)),
+	))
+
+	scheduledDist2 := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(ctx.BlockTime().Unix()),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          amount2,
+		}},
+	}
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDist2, bondDenom))
+
+	// Capture delegation before Distribution 2.
+	delDelegBefore2 := sdkmath.NewInt(0)
+	{
+		q := stakingkeeper.NewQuerier(stakingKeeper)
+		resp, err2 := q.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+			DelegatorAddr: delAddr.String(),
+		})
+		requireT.NoError(err2)
+		for _, d := range resp.DelegationResponses {
+			delDelegBefore2 = delDelegBefore2.Add(d.Balance.Amount)
+		}
+	}
+
+	for {
+		done, err2 := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDist2)
+		requireT.NoError(err2)
+		if done {
+			break
+		}
+	}
+	for {
+		done, err2 := pseKeeper.ProcessOngoingTokenDistribution(ctx, scheduledDist2, bondDenom)
+		requireT.NoError(err2)
+		if done {
+			break
+		}
+	}
+
+	// Re-included delegator must receive auto-staked rewards in Distribution 2.
+	delDelegAfter2 := sdkmath.NewInt(0)
+	{
+		q := stakingkeeper.NewQuerier(stakingKeeper)
+		resp, err2 := q.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+			DelegatorAddr: delAddr.String(),
+		})
+		requireT.NoError(err2)
+		for _, d := range resp.DelegationResponses {
+			delDelegAfter2 = delDelegAfter2.Add(d.Balance.Amount)
+		}
+	}
+	requireT.True(delDelegAfter2.GT(delDelegBefore2),
+		"re-included delegator must receive auto-staked rewards in Distribution 2 (got %s, had %s)",
+		delDelegAfter2.String(), delDelegBefore2.String())
+
+	// LastProcessedDistributionID advances to distributionID after Distribution 2 completes.
+	lastProcessed2, err := pseKeeper.LastProcessedDistributionID.Get(ctx)
+	requireT.NoError(err)
+	requireT.Equal(distributionID, lastProcessed2,
+		"LastProcessedDistributionID must advance to distributionID=%d after Distribution 2", distributionID)
+}
+
+// TestDistribution_FairnessBonus verifies that distribution adds a fairness bonus score to
+// AccountScoreSnapshot[nextID] proportional to the distributed amount and elapsed time since
+// the distribution started.
+// formula: bonusScore = distributedAmount * (blockTime - StartedAt)
+func TestDistribution_FairnessBonus(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	now := time.Now().Round(time.Second)
+	ctx := testApp.NewContext(false).WithBlockTime(now)
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Create validator and delegator.
+	valOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, valOp, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+	val, err := testApp.AddValidator(ctx, valOp, sdk.NewInt64Coin(bondDenom, 10), nil)
+	requireT.NoError(err)
+	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
+
+	delAddr, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delAddr, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+
+	distributionID := firstDistributionID
+
+	// Delegate and accumulate score over 10 seconds.
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 500),
+	})
+	requireT.NoError(err)
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(10 * time.Second))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 1),
+	})
+	requireT.NoError(err)
+
+	// Save schedule so hooks can find distribution ID.
+	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: distributionID, Timestamp: uint64(ctx.BlockTime().Unix())},
+	})
+	requireT.NoError(err)
+
+	// Fund community clearing account with large amount to prevent integer division to zero.
+	communityAmount := sdkmath.NewInt(10_000_000)
+	communityCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, communityCoins))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), communityCoins,
+	))
+
+	// D = simulated elapsed seconds since distribution started.
+	const D = int64(7)
+	blockTime := ctx.BlockTime().Unix()
+
+	// distTimestamp == blockTime so Phase 1 gap score = shares * (blockTime - distTimestamp) = 0.
+	// StartedAt is D seconds before blockTime so processingElapsedSec = D.
+	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(blockTime),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          communityAmount,
+		}},
+		StartedAt: blockTime - D,
+	}
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom))
+
+	// Phase 1: convert DelegationTimeEntries to score snapshots.
+	for {
+		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Capture TotalScore and delegator score before Phase 2 (cleanup removes these).
+	totalScore, err := pseKeeper.TotalScore.Get(ctx, distributionID)
+	requireT.NoError(err)
+	requireT.True(totalScore.IsPositive(), "TotalScore must be positive after Phase 1")
+
+	delegatorScore, err := pseKeeper.GetDelegatorScore(ctx, distributionID, delAddr)
+	requireT.NoError(err)
+	requireT.True(delegatorScore.IsPositive(), "delegator score must be positive after Phase 1")
+
+	// expectedUserAmount = communityAmount * delegatorScore / totalScore (same formula as Phase 2).
+	expectedUserAmount := communityAmount.Mul(delegatorScore).Quo(totalScore)
+	requireT.True(expectedUserAmount.IsPositive(),
+		"expectedUserAmount must be positive (increase communityAmount if this fails); "+
+			"delegatorScore=%s totalScore=%s", delegatorScore, totalScore)
+	expectedBonus := expectedUserAmount.MulRaw(D)
+
+	// Phase 2: distribute tokens and add fairness bonus to nextID snapshot.
+	for {
+		done, err := pseKeeper.ProcessOngoingTokenDistribution(ctx, scheduledDistribution, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// AccountScoreSnapshot[nextID][delAddr] must equal the fairness bonus.
+	// Gap score = 0 (distTimestamp == blockTime), hook score from auto-delegate = 0.
+	// Only the added fairness bonus contributes in next ID score.
+	nextID := distributionID + 1
+	bonusScore, err := pseKeeper.GetDelegatorScore(ctx, nextID, delAddr)
+	requireT.NoError(err)
+	requireT.Equal(expectedBonus.String(), bonusScore.String(),
+		"fairness bonus in AccountScoreSnapshot[nextID] must equal distributedAmount * processingElapsedSec")
+
+	t.Logf("distributedAmount=%s D=%d bonusScore=%s", expectedUserAmount, D, bonusScore)
+}
+
+// TestDistribution_FairnessBonus_SkippedWhenStartedAtZero verifies that no fairness bonus
+// is added when StartedAt is zero. This preserves backward compatibility for distributions
+// that predate the StartedAt field.
+func TestDistribution_FairnessBonus_SkippedWhenStartedAtZero(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false).WithBlockTime(time.Now().Round(time.Second))
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	valOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, valOp, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+	val, err := testApp.AddValidator(ctx, valOp, sdk.NewInt64Coin(bondDenom, 10), nil)
+	requireT.NoError(err)
+	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
+
+	delAddr, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delAddr, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+
+	distributionID := firstDistributionID
+
+	// Delegate and accumulate score.
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 500),
+	})
+	requireT.NoError(err)
+	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(10 * time.Second))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 1),
+	})
+	requireT.NoError(err)
+
+	err = pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{
+		{ID: distributionID, Timestamp: uint64(ctx.BlockTime().Unix())},
+	})
+	requireT.NoError(err)
+
+	communityAmount := sdkmath.NewInt(10_000_000)
+	communityCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, communityAmount))
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, communityCoins))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), communityCoins,
+	))
+
+	// StartedAt = 0: fairness bonus must be skipped (backward-compatible default).
+	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(ctx.BlockTime().Unix()), // distTimestamp == blockTime -> gap score = 0
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          communityAmount,
+		}},
+		StartedAt: 0,
+	}
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom))
+
+	for {
+		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+	for {
+		done, err := pseKeeper.ProcessOngoingTokenDistribution(ctx, scheduledDistribution, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// No bonus -> no AccountScoreSnapshot entry at nextID for this delegator.
+	// Gap score = 0 (distTimestamp == blockTime), hook score from auto-delegate = 0.
+	nextID := distributionID + 1
+	_, err = pseKeeper.GetDelegatorScore(ctx, nextID, delAddr)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"no fairness bonus must be added when StartedAt is zero")
+}
+
+// TestCommunityIntermediary_AccountInitialized verifies that InitCommunityIntermediary creates the
+// pse_community_intermediary module account in state.
+func TestCommunityIntermediary_AccountInitialized(t *testing.T) {
+	requireT := require.New(t)
+	startTime := time.Now()
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	testApp.PSEKeeper.InitCommunityIntermediary(ctx)
+
+	acc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunityIntermediary)
+	requireT.NotNil(acc, "pse_community_intermediary module account must exist after InitCommunityIntermediary")
+	requireT.Equal(types.ClearingAccountCommunityIntermediary, acc.GetName())
+}
+
+// TestCommunityIntermediary_FundIsolation is the core safety test for per-distribution intermediary.
+// Verifies that only the current round's funds are at risk during distribution.
+// The remaining pse_community balance (future rounds) must never be touched.
+// Scenario:
+//   - pse_community holds 3x communityAmount
+//   - BeginCommunityDistribution moves exactly 1x into pse_community_intermediary
+//   - After full distribution: intermediary is drained to zero, pse_community still holds 2x
+func TestCommunityIntermediary_FundIsolation(t *testing.T) {
+	requireT := require.New(t)
+	startTime := time.Now()
+	testApp := simapp.New(simapp.WithStartTime(startTime))
+	ctx, _, err := testApp.BeginNextBlockAtTime(startTime)
+	requireT.NoError(err)
+
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Set up a validator and delegator.
+	validatorOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, validatorOp,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000_000))),
+	))
+	validator, err := testApp.AddValidator(ctx, validatorOp, sdk.NewInt64Coin(bondDenom, 500_000), nil)
+	requireT.NoError(err)
+
+	delegator, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delegator,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(500_000))),
+	))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delegator.String(),
+		ValidatorAddress: validator.OperatorAddress,
+		Amount:           sdk.NewInt64Coin(bondDenom, 400_000),
+	})
+	requireT.NoError(err)
+
+	// Mint 3x communityAmount into pse_community to simulate a multi-round treasury.
+	communityAmount := sdkmath.NewInt(10_000_000)
+	treasuryTotal := communityAmount.MulRaw(3)
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, treasuryTotal)),
+	))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, treasuryTotal)),
+	))
+
+	communityAddr := testApp.AccountKeeper.GetModuleAddress(types.ClearingAccountCommunity)
+	intermediaryAddr := testApp.AccountKeeper.GetModuleAddress(types.ClearingAccountCommunityIntermediary)
+
+	// Sanity: full treasury in pse_community, intermediary empty before distribution starts.
+	requireT.Equal(treasuryTotal, testApp.BankKeeper.GetBalance(ctx, communityAddr, bondDenom).Amount)
+	requireT.True(testApp.BankKeeper.GetBalance(ctx, intermediaryAddr, bondDenom).Amount.IsZero())
+
+	// Start distribution — only 1× moves from pse_community into the intermediary.
+	// Timestamp is set 10 seconds after the delegation so score = shares * 10 > 0.
+	const distributionID = uint64(1)
+	scheduledDistribution := types.ScheduledDistribution{
+		ID:        distributionID,
+		Timestamp: uint64(startTime.Add(10 * time.Second).Unix()),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          communityAmount,
+		}},
+	}
+	requireT.NoError(pseKeeper.BeginCommunityDistribution(ctx, scheduledDistribution, bondDenom))
+
+	remaining := treasuryTotal.Sub(communityAmount)
+	requireT.Equal(remaining, testApp.BankKeeper.GetBalance(ctx, communityAddr, bondDenom).Amount,
+		"pse_community must retain funds for future rounds — only this round's amount must leave")
+	requireT.Equal(communityAmount, testApp.BankKeeper.GetBalance(ctx, intermediaryAddr, bondDenom).Amount,
+		"pse_community_intermediary must hold exactly this round's funds")
+
+	// Run Phase 1.
+	for {
+		done, err := pseKeeper.ConsumeOngoingDelegationTimeEntries(ctx, scheduledDistribution)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// Run Phase 2 to completion.
+	for {
+		done, err := pseKeeper.ProcessOngoingTokenDistribution(ctx, scheduledDistribution, bondDenom)
+		requireT.NoError(err)
+		if done {
+			break
+		}
+	}
+
+	// After full distribution: intermediary is drained, pse_community is untouched.
+	requireT.True(testApp.BankKeeper.GetBalance(ctx, intermediaryAddr, bondDenom).Amount.IsZero(),
+		"pse_community_intermediary must be fully drained after distribution completes")
+	requireT.Equal(remaining, testApp.BankKeeper.GetBalance(ctx, communityAddr, bondDenom).Amount,
+		"pse_community must still hold future rounds' funds untouched after distribution")
 }

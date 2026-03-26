@@ -56,4 +56,8 @@ message ScheduledDistribution {
     (gogoproto.customname) = "ID",
     (gogoproto.moretags) = "yaml:\"id\""
   ];
+
+  // started_at is the Unix timestamp (seconds) of the block in which this distribution began processing.
+  // Set when the ScheduledDistribution transitions to OngoingDistribution.
+  int64 started_at = 4 [(gogoproto.moretags) = "yaml:\"started_at\""];
 }

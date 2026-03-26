@@ -304,6 +304,7 @@ and the formula for them is
 | `/ibc.lightclients.wasm.v1.MsgStoreCode`                               |
 | `/tx.pse.v1.MsgDisableDistributions`                                   |
 | `/tx.pse.v1.MsgUpdateClearingAccountMappings`                          |
+| `/tx.pse.v1.MsgUpdateDistributionBatchSize`                            |
 | `/tx.pse.v1.MsgUpdateDistributionSchedule`                             |
 | `/tx.pse.v1.MsgUpdateExcludedAddresses`                                |
 | `/tx.pse.v1.MsgUpdateMinDistributionGap`                               |

@@ -12,6 +12,7 @@ import (
 
 	"github.com/tokenize-x/tx-chain/v7/app/upgrade"
 	pskeeper "github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
+	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
 	wbankkeeper "github.com/tokenize-x/tx-chain/v7/x/wbank/keeper"
 )
 
@@ -37,6 +38,17 @@ func New(
 		},
 		Upgrade: func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			if err := migratePSEStore(ctx, pseKeeper); err != nil {
+				return nil, err
+			}
+
+			pseKeeper.InitCommunityIntermediary(ctx)
+
+			params, err := pseKeeper.GetParams(ctx)
+			if err != nil {
+				return nil, err
+			}
+			params.DistributionBatchSize = psetypes.DefaultParams().DistributionBatchSize
+			if err := pseKeeper.SetParams(ctx, params); err != nil {
 				return nil, err
 			}
 

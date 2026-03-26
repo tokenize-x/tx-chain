@@ -126,7 +126,7 @@ func TestDistribution_GenesisRebuild(t *testing.T) {
 	}
 
 	// Process distribution by calling EndBlocker until OngoingDistribution is cleared.
-	// Test entries fit in a single batch (< defaultBatchSize), so exactly 3 calls are needed
+	// Test entries fit in a single batch (< DistributionBatchSize), so exactly 3 calls are needed
 	ctx = ctx.WithBlockTime(time.Unix(int64(time1)+10, 0))
 	ctx = ctx.WithBlockHeight(100)
 	const maxEndBlockerCalls = 3 // consume, distribute, cleanup
@@ -438,7 +438,7 @@ func TestDistribution_MultiBlockEndBlockerRouting(t *testing.T) {
 	err = pseKeeper.ProcessNextDistribution(ctx)
 	requireT.NoError(err)
 
-	// TotalScore is accumulated incrementally via addToScore.
+	// TotalScore is accumulated incrementally via addToMainScore.
 	totalScore, err := pseKeeper.TotalScore.Get(ctx, distributionID)
 	requireT.NoError(err)
 	requireT.True(totalScore.IsPositive(), "TotalScore should be positive")

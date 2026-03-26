@@ -284,6 +284,7 @@
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [AccountScore](#tx.pse.v1.AccountScore)
     - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
+    - [ExcludedAddressScoreEntry](#tx.pse.v1.ExcludedAddressScoreEntry)
     - [GenesisState](#tx.pse.v1.GenesisState)
     - [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry)
   
@@ -312,6 +313,7 @@
     - [EmptyResponse](#tx.pse.v1.EmptyResponse)
     - [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions)
     - [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings)
+    - [MsgUpdateDistributionBatchSize](#tx.pse.v1.MsgUpdateDistributionBatchSize)
     - [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule)
     - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
     - [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap)
@@ -5832,6 +5834,7 @@ Each distribution is identified by a unique, sequential id.
 | `timestamp` | [uint64](#uint64) |  |  `timestamp is when this allocation should occur (Unix timestamp in seconds).`  |
 | `allocations` | [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation) | repeated |  `allocations is the list of amounts to allocate from each clearing account at this time.`  |
 | `id` | [uint64](#uint64) |  |  `id is the unique, sequential identifier for this distribution. Used as the storage key in the AllocationSchedule map.`  |
+| `started_at` | [int64](#int64) |  |  `started_at is the Unix timestamp (seconds) of the block in which this distribution began processing. Set when the ScheduledDistribution transitions to OngoingDistribution.`  |
 
 
 
@@ -5952,6 +5955,26 @@ Any remainder from division is sent to the community pool.
 
 
 
+<a name="tx.pse.v1.ExcludedAddressScoreEntry"></a>
+
+### ExcludedAddressScoreEntry
+
+```
+ExcludedAddressScoreEntry holds the accumulated score for a single excluded address.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |    |
+| `score` | [string](#string) |  |    |
+
+
+
+
+
+
 <a name="tx.pse.v1.GenesisState"></a>
 
 ### GenesisState
@@ -5971,6 +5994,7 @@ GenesisState defines the module's genesis state.
 | `distributions_disabled` | [bool](#bool) |  |    |
 | `total_scores` | [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry) | repeated |    |
 | `last_processed_distribution_id` | [uint64](#uint64) |  |    |
+| `excluded_address_scores` | [ExcludedAddressScoreEntry](#tx.pse.v1.ExcludedAddressScoreEntry) | repeated |  `excluded_address_scores stores the accumulated score for each excluded address. Score is invisible in queries and unused in distributions, but preserved for restoration on re-inclusion.`  |
 
 
 
@@ -6024,6 +6048,7 @@ Params store gov manageable parameters.
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
 | `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
 | `min_distribution_gap_seconds` | [uint64](#uint64) |  |  `min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions.`  |
+| `distribution_batch_size` | [uint64](#uint64) |  |  `distribution_batch_size is the number of delegation entries processed per EndBlock during multi-block community distribution.`  |
 
 
 
@@ -6351,6 +6376,27 @@ Community clearing account uses score-based distribution and should not have rec
 
 
 
+<a name="tx.pse.v1.MsgUpdateDistributionBatchSize"></a>
+
+### MsgUpdateDistributionBatchSize
+
+```
+MsgUpdateDistributionBatchSize is a governance operation to update the number of
+delegation entries processed per EndBlock during multi-block community distribution.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  `authority is the address authorized to update the batch size (governance module address).`  |
+| `distribution_batch_size` | [uint64](#uint64) |  |  `distribution_batch_size is the number of entries to process per EndBlock. Must be greater than 0.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.MsgUpdateDistributionSchedule"></a>
 
 ### MsgUpdateDistributionSchedule
@@ -6434,6 +6480,7 @@ Msg defines the Msg service.
 | `UpdateDistributionSchedule` | [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionSchedule is a governance operation to update the distribution schedule.` |  |
 | `DisableDistributions` | [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `DisableDistributions is a governance operation to disable distributions.` |  |
 | `UpdateMinDistributionGap` | [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateMinDistributionGap is a governance operation to update the minimum gap between distributions.` |  |
+| `UpdateDistributionBatchSize` | [MsgUpdateDistributionBatchSize](#tx.pse.v1.MsgUpdateDistributionBatchSize) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionBatchSize is a governance operation to update the multi-block batch size.` |  |
 
  <!-- end services -->
 
