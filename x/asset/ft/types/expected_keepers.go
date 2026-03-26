@@ -37,6 +37,7 @@ type BankKeeper interface {
 		amt sdk.Coins,
 	) error
 	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
+	SpendableCoin(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	LockedCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 	HasSupply(ctx context.Context, denom string) bool
 }

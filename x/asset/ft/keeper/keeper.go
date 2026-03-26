@@ -1014,11 +1014,10 @@ func (k Keeper) validateCoinSpendable(
 		)
 	}
 
-	// Spendable = balance - dexLocked - bankLocked - frozen (additive when freezing enabled)
-	balance := k.bankKeeper.GetBalance(ctx, addr, def.Denom)
+	// Spendable = spendableBalance (bank balance - bank Locked) - dexLocked - frozen (additive when freezing enabled)
+	spendableBalance := k.bankKeeper.SpendableCoin(ctx, addr, def.Denom)
 	dexLockedAmt := k.GetDEXLockedBalance(ctx, addr, def.Denom).Amount
-	bankLockedAmt := k.bankKeeper.LockedCoins(ctx, addr).AmountOf(def.Denom)
-	availableAmt := balance.Amount.Sub(dexLockedAmt).Sub(bankLockedAmt)
+	availableAmt := spendableBalance.Amount.Sub(dexLockedAmt)
 
 	if def.IsFeatureEnabled(types.Feature_freezing) && !def.HasAdminPrivileges(addr) {
 		frozenBalance, err := k.GetFrozenBalance(ctx, addr, def.Denom)
