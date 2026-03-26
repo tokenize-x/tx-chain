@@ -212,8 +212,8 @@ func getMaccPerms() map[string][]string {
 		psetypes.ModuleName: {authtypes.Minter},
 	}
 
-	// Add PSE module accounts
-	for _, name := range psetypes.GetAllClearingAccounts() {
+	// Add PSE module accounts (clearing accounts + intermediary).
+	for _, name := range psetypes.GetAllModuleAccounts() {
 		perms[name] = nil
 	}
 

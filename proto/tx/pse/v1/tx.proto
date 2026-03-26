@@ -27,6 +27,9 @@ service Msg {
 
   // UpdateMinDistributionGap is a governance operation to update the minimum gap between distributions.
   rpc UpdateMinDistributionGap(MsgUpdateMinDistributionGap) returns (EmptyResponse);
+
+  // UpdateDistributionBatchSize is a governance operation to update the multi-block batch size.
+  rpc UpdateDistributionBatchSize(MsgUpdateDistributionBatchSize) returns (EmptyResponse);
 }
 
 message MsgDisableDistributions {
@@ -106,6 +109,22 @@ message MsgUpdateMinDistributionGap {
   // min_distribution_gap_seconds is the minimum time gap (in seconds) between consecutive distributions.
   uint64 min_distribution_gap_seconds = 2 [
     (gogoproto.moretags) = "yaml:\"min_distribution_gap_seconds\""
+  ];
+}
+
+// MsgUpdateDistributionBatchSize is a governance operation to update the number of
+// delegation entries processed per EndBlock during multi-block community distribution.
+message MsgUpdateDistributionBatchSize {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "pse/MsgUpdateDistributionBatchSize";
+
+  // authority is the address authorized to update the batch size (governance module address).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // distribution_batch_size is the number of entries to process per EndBlock.
+  // Must be greater than 0.
+  uint64 distribution_batch_size = 2 [
+    (gogoproto.moretags) = "yaml:\"distribution_batch_size\""
   ];
 }
 

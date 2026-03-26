@@ -32,10 +32,18 @@ type Keeper struct {
 	// collections
 	Schema                collections.Schema
 	Params                collections.Item[types.Params]
-	DelegationTimeEntries collections.Map[collections.Pair[sdk.AccAddress, sdk.ValAddress], types.DelegationTimeEntry]
-	AccountScoreSnapshot  collections.Map[sdk.AccAddress, sdkmath.Int]
-	AllocationSchedule    collections.Map[uint64, types.ScheduledDistribution] // Map: id -> ScheduledDistribution
-	DistributionDisabled  collections.Item[bool]
+	DelegationTimeEntries collections.Map[
+		collections.Triple[uint64, sdk.AccAddress, sdk.ValAddress],
+		types.DelegationTimeEntry,
+	]
+	AccountScoreSnapshot        collections.Map[collections.Pair[uint64, sdk.AccAddress], sdkmath.Int]
+	AllocationSchedule          collections.Map[uint64, types.ScheduledDistribution] // Map: ID -> ScheduledDistribution
+	TotalScore                  collections.Map[uint64, sdkmath.Int]                 // Map: ID -> total accumulated score
+	OngoingDistribution         collections.Item[types.ScheduledDistribution]        // Currently processing distribution
+	DistributedAmount           collections.Map[uint64, sdkmath.Int]                 // ID -> distributed amount
+	DistributionDisabled        collections.Item[bool]
+	LastProcessedDistributionID collections.Item[uint64]
+	ExcludedAddressScore        collections.Map[sdk.AccAddress, sdkmath.Int]
 }
 
 // NewKeeper returns a new keeper object providing storage options required by the module.
@@ -72,14 +80,14 @@ func NewKeeper(
 			sb,
 			types.StakingTimeKey,
 			"delegation_time_entries",
-			collections.PairKeyCodec(sdk.AccAddressKey, sdk.ValAddressKey),
+			collections.TripleKeyCodec(collections.Uint64Key, sdk.AccAddressKey, sdk.ValAddressKey),
 			codec.CollValue[types.DelegationTimeEntry](cdc),
 		),
 		AccountScoreSnapshot: collections.NewMap(
 			sb,
 			types.AccountScoreKey,
 			"account_score",
-			sdk.AccAddressKey,
+			collections.PairKeyCodec(collections.Uint64Key, sdk.AccAddressKey),
 			sdk.IntValue,
 		),
 		AllocationSchedule: collections.NewMap(
@@ -89,11 +97,44 @@ func NewKeeper(
 			collections.Uint64Key,
 			codec.CollValue[types.ScheduledDistribution](cdc),
 		),
+		TotalScore: collections.NewMap(
+			sb,
+			types.TotalScoreKey,
+			"total_score",
+			collections.Uint64Key,
+			sdk.IntValue,
+		),
+		OngoingDistribution: collections.NewItem(
+			sb,
+			types.OngoingDistributionKey,
+			"ongoing_distribution",
+			codec.CollValue[types.ScheduledDistribution](cdc),
+		),
+		DistributedAmount: collections.NewMap(
+			sb,
+			types.DistributedAmountKey,
+			"distributed_amount",
+			collections.Uint64Key,
+			sdk.IntValue,
+		),
 		DistributionDisabled: collections.NewItem(
 			sb,
 			types.DistributionDisabledKey,
 			"distribution_disabled",
 			codec.BoolValue,
+		),
+		LastProcessedDistributionID: collections.NewItem(
+			sb,
+			types.LastProcessedDistributionIDKey,
+			"last_processed_distribution_id",
+			collections.Uint64Value,
+		),
+		ExcludedAddressScore: collections.NewMap(
+			sb,
+			types.ExcludedAddressScoreKey,
+			"excluded_address_score",
+			sdk.AccAddressKey,
+			sdk.IntValue,
 		),
 	}
 
@@ -104,6 +145,16 @@ func NewKeeper(
 	k.Schema = schema
 
 	return k
+}
+
+// StoreService returns the store service used by the keeper.
+func (k Keeper) StoreService() sdkstore.KVStoreService {
+	return k.storeService
+}
+
+// Codec returns the binary codec used by the keeper.
+func (k Keeper) Codec() codec.BinaryCodec {
+	return k.cdc
 }
 
 // GetClearingAccountBalances returns the current balances of all PSE clearing accounts in the bond denom.
@@ -138,4 +189,9 @@ func (k Keeper) GetClearingAccountBalances(ctx context.Context) ([]types.Clearin
 	}
 
 	return balances, nil
+}
+
+// InitCommunityIntermediary ensures the community intermediary module account exists in state.
+func (k Keeper) InitCommunityIntermediary(ctx context.Context) {
+	k.accountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunityIntermediary)
 }

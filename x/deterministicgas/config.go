@@ -156,7 +156,6 @@ func DefaultConfig() Config {
 		MsgToMsgURL(&group.MsgUpdateGroupPolicyAdmin{}):          constantGasFunc(20_000),
 		MsgToMsgURL(&group.MsgUpdateGroupPolicyDecisionPolicy{}): constantGasFunc(17_000),
 		MsgToMsgURL(&group.MsgUpdateGroupPolicyMetadata{}):       constantGasFunc(15_000),
-		MsgToMsgURL(&group.MsgWithdrawProposal{}):                constantGasFunc(22_000),
 		MsgToMsgURL(&group.MsgLeaveGroup{}):                      constantGasFunc(17_500),
 
 		// nft
@@ -240,6 +239,7 @@ func DefaultConfig() Config {
 			&psetypes.MsgUpdateDistributionSchedule{},
 			&psetypes.MsgDisableDistributions{},
 			&psetypes.MsgUpdateMinDistributionGap{},
+			&psetypes.MsgUpdateDistributionBatchSize{},
 
 			// distribution
 			&distributiontypes.MsgUpdateParams{},       // This is non-deterministic because all the gov proposals are non-deterministic anyway
@@ -266,6 +266,7 @@ func DefaultConfig() Config {
 			// For MsgSubmitProposal we have access to the list of messages but estimation depends on Exec attribute
 			// value that is why we decided to make it non-deterministic to simple logic and consistent with other 2.
 			&group.MsgSubmitProposal{},
+			&group.MsgWithdrawProposal{},
 			&group.MsgVote{},
 			&group.MsgExec{},
 

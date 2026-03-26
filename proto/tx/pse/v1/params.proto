@@ -28,4 +28,10 @@ message Params {
   uint64 min_distribution_gap_seconds = 3 [
     (gogoproto.moretags) = "yaml:\"min_distribution_gap_seconds\""
   ];
+
+  // distribution_batch_size is the number of delegation entries processed per EndBlock
+  // during multi-block community distribution.
+  uint64 distribution_batch_size = 4 [
+    (gogoproto.moretags) = "yaml:\"distribution_batch_size\""
+  ];
 }

@@ -21,6 +21,14 @@ const (
 	ClearingAccountTeam = "pse_team"
 )
 
+// ClearingAccountCommunityIntermediary is a short-lived intermediary account used during community distribution.
+const ClearingAccountCommunityIntermediary = "pse_community_intermediary"
+
+// GetAllModuleAccounts returns all PSE module accounts that must be registered in maccPerms.
+func GetAllModuleAccounts() []string {
+	return append(GetAllClearingAccounts(), ClearingAccountCommunityIntermediary)
+}
+
 // GetAllClearingAccounts returns all PSE clearing accounts.
 func GetAllClearingAccounts() []string {
 	return []string{
@@ -46,6 +54,7 @@ func DefaultParams() Params {
 		ExcludedAddresses:         []string{},
 		ClearingAccountMappings:   []ClearingAccountMapping{},
 		MinDistributionGapSeconds: uint64(24 * 60 * 60), // 1 day
+		DistributionBatchSize:     100,
 	}
 }
 
@@ -130,7 +139,7 @@ func ValidateDistributionSchedule(schedule []ScheduledDistribution) error {
 	allClearingAccounts := GetAllClearingAccounts()
 
 	for i, period := range schedule {
-		// Validate id is non-zero
+		// Validate id is non-zero (ID 0 is reserved as the "no distribution completed" sentinel)
 		if period.ID == 0 {
 			return errorsmod.Wrapf(ErrInvalidParam, "period %d: id cannot be zero", i)
 		}

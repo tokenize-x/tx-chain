@@ -73,22 +73,22 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 	// and MsgRecvPacket.
 	txRelayer := txChain.GenAccount()
 	gaiaRelayer := gaiaChain.GenAccount()
-	fundRelayers(t, ctx, txChain, gaiaChain, txRelayer, gaiaRelayer)
+	fundRelayers(ctx, t, txChain, gaiaChain, txRelayer, gaiaRelayer)
 
 	// IBC v2 client setup (replaces legacy connection + channel handshake)
 	// Each chain creates a Tendermint light client that tracks the other chain's consensus.
 	// Then we register the counterparty: this tells IBC Core how to route packets between
 	// this client and the other chain's client (Merkle path to the provable store).
-	txClientID := createTendermintClient(t, ctx, txChain.Chain, gaiaChain, txRelayer)
-	gaiaClientID := createTendermintClient(t, ctx, gaiaChain, txChain.Chain, gaiaRelayer)
-	registerCounterparty(t, ctx, txChain.Chain, txRelayer, txClientID, gaiaClientID)
-	registerCounterparty(t, ctx, gaiaChain, gaiaRelayer, gaiaClientID, txClientID)
+	txClientID := createTendermintClient(ctx, t, txChain.Chain, gaiaChain, txRelayer)
+	gaiaClientID := createTendermintClient(ctx, t, gaiaChain, txChain.Chain, gaiaRelayer)
+	registerCounterparty(ctx, t, txChain.Chain, txRelayer, txClientID, gaiaClientID)
+	registerCounterparty(ctx, t, gaiaChain, gaiaRelayer, gaiaClientID, txClientID)
 
 	// Sender and recipient; fund sender
 	sender := txChain.GenAccount()
 	recipient := gaiaChain.GenAccount()
 	amount := txChain.NewCoin(sdkmath.NewInt(transferAmount))
-	fundSenderForTransfer(t, ctx, txChain, sender)
+	fundSenderForTransfer(ctx, t, txChain, sender)
 
 	// Build and send v2 packet
 	// V2 uses MsgSendPacket with source client ID (not channel). The payload is a wrapped
@@ -110,23 +110,23 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 		sendMsg,
 	)
 	require.NoError(t, err)
-	require.Greater(t, txResp.Height, int64(0), "tx height must be set for proof query")
+	require.Positive(t, txResp.Height, "tx height must be set for proof query")
 	t.Logf("v2 transfer sent, tx hash: %s", txResp.TxHash)
 
 	// Obtain packet commitment proof
 	// The commitment was written at txResp.Height. We query that height with Prove=true to get
 	// a merkle proof. The destination chain will verify this proof against its light client's
 	// consensus state at proofHeight (height+1 per ibc-go convention).
-	sequence := nextSequenceSend(t, ctx, txChain.Chain, txClientID) - 1
-	proofBz, proofHeight := packetCommitmentProof(t, ctx, txChain.Chain, txClientID, sequence, txResp.Height)
+	sequence := nextSequenceSend(ctx, t, txChain.Chain, txClientID) - 1
+	proofBz, proofHeight := packetCommitmentProof(ctx, t, txChain.Chain, txClientID, sequence, txResp.Height)
 
 	// Sync light client on Gaia and relay packet
 	// Gaia's client must have a consensus state at proofHeight before it can verify the proof.
 	// We wait until the source chain has committed that block, then submit a header update
 	// so the client stores the root at proofHeight. Then MsgRecvPacket verifies the proof
 	// against that root and executes the transfer.
-	waitForHeight(t, ctx, txChain.Chain, int64(proofHeight.GetRevisionHeight()))
-	updateTendermintClient(t, ctx, gaiaChain, txChain.Chain, gaiaRelayer, gaiaClientID, proofHeight)
+	waitForHeight(ctx, t, txChain.Chain, int64(proofHeight.GetRevisionHeight()))
+	updateTendermintClient(ctx, t, gaiaChain, txChain.Chain, gaiaRelayer, gaiaClientID, proofHeight)
 
 	packet := channeltypesv2.Packet{
 		Sequence:          sequence,
@@ -161,7 +161,10 @@ func TestIBCV2TransferTxToGaia(t *testing.T) {
 }
 
 // fundRelayers credits both relayer accounts so they can pay for client creation and packet relay.
-func fundRelayers(t *testing.T, ctx context.Context, txChain integration.TXChain, gaiaChain integration.Chain, txRelayer, gaiaRelayer sdk.AccAddress) {
+func fundRelayers(
+	ctx context.Context, t *testing.T, txChain integration.TXChain, gaiaChain integration.Chain,
+	txRelayer, gaiaRelayer sdk.AccAddress,
+) {
 	t.Helper()
 	txChain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
 		Address: txRelayer,
@@ -174,7 +177,7 @@ func fundRelayers(t *testing.T, ctx context.Context, txChain integration.TXChain
 }
 
 // fundSenderForTransfer funds the sender and registers MsgTransfer for gas estimation.
-func fundSenderForTransfer(t *testing.T, ctx context.Context, txChain integration.TXChain, sender sdk.AccAddress) {
+func fundSenderForTransfer(ctx context.Context, t *testing.T, txChain integration.TXChain, sender sdk.AccAddress) {
 	t.Helper()
 	txChain.FundAccountWithOptions(ctx, t, sender, integration.BalancesOptions{
 		Messages: []sdk.Msg{&ibctransfertypes.MsgTransfer{}},
@@ -217,20 +220,21 @@ func expectedIBCDenoms(baseDenom, sourceClientID, destClientID string) []string 
 // It uses the counterparty's latest header and staking params (unbonding/trusting period).
 // Returns the new client ID (e.g. "07-tendermint-1").
 func createTendermintClient(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	chain integration.Chain,
 	counterparty integration.Chain,
 	signer sdk.AccAddress,
 ) string {
 	t.Helper()
 
-	before := listClientIDs(t, ctx, chain)
+	before := listClientIDs(ctx, t, chain)
 	header, err := counterparty.LatestBlockHeader(ctx)
 	require.NoError(t, err)
 
 	// Trusting period must be less than unbonding period so the client can detect misbehaviour.
-	stakingResp, err := stakingtypes.NewQueryClient(counterparty.ClientContext).Params(ctx, &stakingtypes.QueryParamsRequest{})
+	stakingClient := stakingtypes.NewQueryClient(counterparty.ClientContext)
+	stakingResp, err := stakingClient.Params(ctx, &stakingtypes.QueryParamsRequest{})
 	require.NoError(t, err)
 	unbonding := stakingResp.Params.UnbondingTime
 	trusting := unbonding / 2
@@ -258,7 +262,7 @@ func createTendermintClient(
 	_, err = chain.BroadcastTxWithSigner(ctx, chain.TxFactory().WithGas(createClientGasLimit), signer, msg)
 	require.NoError(t, err)
 
-	after := listClientIDs(t, ctx, chain)
+	after := listClientIDs(ctx, t, chain)
 	clientID := findNewClientID(before, after)
 	require.NotEmpty(t, clientID, "client id not found after creation")
 	return clientID
@@ -268,8 +272,8 @@ func createTendermintClient(
 // This creates the association needed for IBC Core to route and verify packets. The Merkle
 // path tells the verifier where the provable store lives (Cosmos SDK: "ibc" store).
 func registerCounterparty(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	chain integration.Chain,
 	signer sdk.AccAddress,
 	clientID, counterpartyClientID string,
@@ -286,7 +290,7 @@ func registerCounterparty(
 }
 
 // listClientIDs returns all IBC client IDs on the chain (e.g. 07-tendermint-0, 07-tendermint-1).
-func listClientIDs(t *testing.T, ctx context.Context, chain integration.Chain) []string {
+func listClientIDs(ctx context.Context, t *testing.T, chain integration.Chain) []string {
 	t.Helper()
 	res, err := clienttypes.NewQueryClient(chain.ClientContext).ClientStates(ctx, &clienttypes.QueryClientStatesRequest{
 		Pagination: &query.PageRequest{Limit: query.PaginationMaxLimit},
@@ -317,8 +321,8 @@ func findNewClientID(before, after []string) string {
 // on clientChain to targetHeight. The client can then verify merkle proofs against the
 // consensus state at that height (used before relaying a packet).
 func updateTendermintClient(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	clientChain integration.Chain, // chain that stores the client state
 	counterpartyChain integration.Chain, // chain we fetch the header from
 	signer sdk.AccAddress,
@@ -327,7 +331,8 @@ func updateTendermintClient(
 ) {
 	t.Helper()
 
-	csRes, err := clienttypes.NewQueryClient(clientChain.ClientContext).ClientState(ctx, &clienttypes.QueryClientStateRequest{ClientId: clientID})
+	csClient := clienttypes.NewQueryClient(clientChain.ClientContext)
+	csRes, err := csClient.ClientState(ctx, &clienttypes.QueryClientStateRequest{ClientId: clientID})
 	require.NoError(t, err)
 	var clientState ibctmtypes.ClientState
 	require.Equal(t, "/ibc.lightclients.tendermint.v1.ClientState", csRes.ClientState.TypeUrl)
@@ -341,7 +346,7 @@ func updateTendermintClient(
 	commitRes, err := counterpartyChain.ClientContext.RPCClient().Commit(ctx, &height)
 	require.NoError(t, err)
 	require.NotNil(t, commitRes.SignedHeader)
-	signedHeaderProto := commitRes.SignedHeader.ToProto()
+	signedHeaderProto := commitRes.ToProto()
 
 	valsRes, err := counterpartyChain.ClientContext.RPCClient().Validators(ctx, &height, nil, nil)
 	require.NoError(t, err)
@@ -361,7 +366,7 @@ func updateTendermintClient(
 		TrustedValidators: trustedValSetProto,
 	}
 	// Tendermint header must match the validator set we fetched.
-	require.True(t, bytes.Equal(header.SignedHeader.Header.ValidatorsHash, valSet.Hash()), "validator hash mismatch")
+	require.True(t, bytes.Equal(header.Header.ValidatorsHash, valSet.Hash()), "validator hash mismatch")
 
 	anyHeader, err := codectypes.NewAnyWithValue(header)
 	require.NoError(t, err)
@@ -378,7 +383,7 @@ func updateTendermintClient(
 
 // nextSequenceSend returns the next sequence number to be used for sending on the given client.
 // After a send, the used sequence is nextSequenceSend - 1.
-func nextSequenceSend(t *testing.T, ctx context.Context, chain integration.Chain, clientID string) uint64 {
+func nextSequenceSend(ctx context.Context, t *testing.T, chain integration.Chain, clientID string) uint64 {
 	t.Helper()
 	res, err := channeltypesv2.NewQueryClient(chain.ClientContext).NextSequenceSend(
 		ctx, channeltypesv2.NewQueryNextSequenceSendRequest(clientID),
@@ -392,8 +397,8 @@ func nextSequenceSend(t *testing.T, ctx context.Context, chain integration.Chain
 // The destination chain verifies the proof against its light client's consensus state at
 // proofHeight. ibc-go expects proofHeight = commitmentBlockHeight + 1.
 func packetCommitmentProof(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	chain integration.Chain,
 	clientID string,
 	sequence uint64,
@@ -418,7 +423,7 @@ func packetCommitmentProof(
 	// IBC verifier expects proofHeight to be the height of the block that contains the commitment.
 	// Query at commitmentBlockHeight returns state at end of that block; reporting height+1 matches ibc-go.
 	revision := clienttypes.ParseChainID(chain.ChainSettings.ChainID)
-	proofHeight = clienttypes.NewHeight(uint64(revision), uint64(commitmentBlockHeight+1))
+	proofHeight = clienttypes.NewHeight(revision, uint64(commitmentBlockHeight+1))
 	return proofBz, proofHeight
 }
 
@@ -447,7 +452,10 @@ func buildTransferPayload(t *testing.T, msg *ibctransfertypes.MsgTransfer) chann
 
 // awaitIBCDenom waits until addr has an IBC denom balance equal to amount, then returns that denom.
 // It asserts the denom is one of expectedDenoms (v2 can mint with source or dest client ID in the path).
-func awaitIBCDenom(ctx context.Context, t *testing.T, chain integration.Chain, addr sdk.AccAddress, amount sdkmath.Int, expectedDenoms []string) string {
+func awaitIBCDenom(
+	ctx context.Context, t *testing.T, chain integration.Chain, addr sdk.AccAddress,
+	amount sdkmath.Int, expectedDenoms []string,
+) string {
 	t.Helper()
 
 	var denom string
@@ -475,7 +483,7 @@ func awaitIBCDenom(ctx context.Context, t *testing.T, chain integration.Chain, a
 
 // waitForHeight blocks until the chain's latest block height is at least targetHeight.
 // Used to ensure the commitment block is committed before we update the light client.
-func waitForHeight(t *testing.T, ctx context.Context, chain integration.Chain, targetHeight int64) {
+func waitForHeight(ctx context.Context, t *testing.T, chain integration.Chain, targetHeight int64) {
 	t.Helper()
 	require.NoError(t, chain.AwaitState(ctx, func(checkCtx context.Context) error {
 		status, err := chain.ClientContext.RPCClient().Status(checkCtx)

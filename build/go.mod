@@ -32,9 +32,9 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
-	github.com/tokenize-x/tx-chain/v7 v7.0.0-20260212090447-388e1cf45a9c
-	github.com/tokenize-x/tx-crust v0.0.0-20260217094652-0b8a52c0d45c
-	github.com/tokenize-x/tx-crust/znet v0.0.0-20260217094652-0b8a52c0d45c
+	github.com/tokenize-x/tx-chain/v7 v7.0.0-20260217111039-9296d325fd38
+	github.com/tokenize-x/tx-crust v0.0.0-20260223095532-73eae35f9722
+	github.com/tokenize-x/tx-crust/znet v0.0.0-20260223095532-73eae35f9722
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 

@@ -11,6 +11,7 @@ func DefaultGenesisState() *GenesisState {
 		ScheduledDistributions: []ScheduledDistribution{},
 		DelegationTimeEntries:  []DelegationTimeEntryExport{},
 		AccountScores:          []AccountScore{},
+		ExcludedAddressScores:  []ExcludedAddressScoreEntry{},
 		DistributionsDisabled:  false,
 	}
 }
@@ -22,13 +23,19 @@ func (m *GenesisState) Validate() error {
 		return err
 	}
 
-	// Validate allocation schedule (includes all 6 clearing accounts validation)
-	if err := ValidateDistributionSchedule(m.ScheduledDistributions); err != nil {
+	// Validate only unprocessed entries for ordering and gap constraints.
+	var unprocessed []ScheduledDistribution
+	for _, sd := range m.ScheduledDistributions {
+		if sd.ID > m.LastProcessedDistributionID {
+			unprocessed = append(unprocessed, sd)
+		}
+	}
+
+	if err := ValidateDistributionSchedule(unprocessed); err != nil {
 		return errorsmod.Wrapf(err, "invalid allocation schedule")
 	}
 
-	// Validate minimum gap between distributions using the param from genesis state
-	if err := ValidateDistributionGap(m.ScheduledDistributions, m.Params.MinDistributionGapSeconds); err != nil {
+	if err := ValidateDistributionGap(unprocessed, m.Params.MinDistributionGapSeconds); err != nil {
 		return errorsmod.Wrapf(err, "invalid distribution gap")
 	}
 
@@ -61,6 +68,19 @@ func (m *GenesisState) Validate() error {
 		}
 		if accountScore.Score.IsNegative() {
 			return errorsmod.Wrapf(ErrInvalidInput, "score cannot be negative")
+		}
+	}
+
+	// Validate excluded address scores
+	for _, entry := range m.ExcludedAddressScores {
+		if entry.Address == "" {
+			return errorsmod.Wrapf(ErrInvalidInput, "excluded address cannot be empty")
+		}
+		if entry.Score.IsNil() {
+			return errorsmod.Wrapf(ErrInvalidInput, "excluded address score cannot be nil")
+		}
+		if entry.Score.IsNegative() {
+			return errorsmod.Wrapf(ErrInvalidInput, "excluded address score cannot be negative")
 		}
 	}
 

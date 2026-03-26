@@ -33,10 +33,15 @@ type GenesisState struct {
 	// Stored as a list for genesis import/export, but will be stored as a map in state.
 	// Must be sorted by timestamp in ascending order.
 	// Completed allocations are removed from the map after processing.
-	ScheduledDistributions []ScheduledDistribution     `protobuf:"bytes,2,rep,name=scheduled_distributions,json=scheduledDistributions,proto3" json:"scheduled_distributions" yaml:"scheduled_distributions"`
-	DelegationTimeEntries  []DelegationTimeEntryExport `protobuf:"bytes,3,rep,name=delegation_time_entries,json=delegationTimeEntries,proto3" json:"delegation_time_entries" yaml:"delegation_time_entries"`
-	AccountScores          []AccountScore              `protobuf:"bytes,4,rep,name=account_scores,json=accountScores,proto3" json:"account_scores" yaml:"account_scores"`
-	DistributionsDisabled  bool                        `protobuf:"varint,5,opt,name=distributions_disabled,json=distributionsDisabled,proto3" json:"distributions_disabled,omitempty" yaml:"distributions_disabled"`
+	ScheduledDistributions      []ScheduledDistribution     `protobuf:"bytes,2,rep,name=scheduled_distributions,json=scheduledDistributions,proto3" json:"scheduled_distributions" yaml:"scheduled_distributions"`
+	DelegationTimeEntries       []DelegationTimeEntryExport `protobuf:"bytes,3,rep,name=delegation_time_entries,json=delegationTimeEntries,proto3" json:"delegation_time_entries" yaml:"delegation_time_entries"`
+	AccountScores               []AccountScore              `protobuf:"bytes,4,rep,name=account_scores,json=accountScores,proto3" json:"account_scores" yaml:"account_scores"`
+	DistributionsDisabled       bool                        `protobuf:"varint,5,opt,name=distributions_disabled,json=distributionsDisabled,proto3" json:"distributions_disabled,omitempty" yaml:"distributions_disabled"`
+	TotalScores                 []TotalScoreEntry           `protobuf:"bytes,6,rep,name=total_scores,json=totalScores,proto3" json:"total_scores" yaml:"total_scores"`
+	LastProcessedDistributionID uint64                      `protobuf:"varint,7,opt,name=last_processed_distribution_id,json=lastProcessedDistributionId,proto3" json:"last_processed_distribution_id,omitempty" yaml:"last_processed_distribution_id"`
+	// excluded_address_scores stores the accumulated score for each excluded address.
+	// Score is invisible in queries and unused in distributions, but preserved for restoration on re-inclusion.
+	ExcludedAddressScores []ExcludedAddressScoreEntry `protobuf:"bytes,8,rep,name=excluded_address_scores,json=excludedAddressScores,proto3" json:"excluded_address_scores" yaml:"excluded_address_scores"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -107,18 +112,86 @@ func (m *GenesisState) GetDistributionsDisabled() bool {
 	return false
 }
 
+func (m *GenesisState) GetTotalScores() []TotalScoreEntry {
+	if m != nil {
+		return m.TotalScores
+	}
+	return nil
+}
+
+func (m *GenesisState) GetLastProcessedDistributionID() uint64 {
+	if m != nil {
+		return m.LastProcessedDistributionID
+	}
+	return 0
+}
+
+func (m *GenesisState) GetExcludedAddressScores() []ExcludedAddressScoreEntry {
+	if m != nil {
+		return m.ExcludedAddressScores
+	}
+	return nil
+}
+
+// ExcludedAddressScoreEntry holds the accumulated score for a single excluded address.
+type ExcludedAddressScoreEntry struct {
+	Address string                `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty" yaml:"address"`
+	Score   cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=score,proto3,customtype=cosmossdk.io/math.Int" json:"score" yaml:"score"`
+}
+
+func (m *ExcludedAddressScoreEntry) Reset()         { *m = ExcludedAddressScoreEntry{} }
+func (m *ExcludedAddressScoreEntry) String() string { return proto.CompactTextString(m) }
+func (*ExcludedAddressScoreEntry) ProtoMessage()    {}
+func (*ExcludedAddressScoreEntry) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d215b1db402695da, []int{1}
+}
+func (m *ExcludedAddressScoreEntry) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ExcludedAddressScoreEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ExcludedAddressScoreEntry.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ExcludedAddressScoreEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExcludedAddressScoreEntry.Merge(m, src)
+}
+func (m *ExcludedAddressScoreEntry) XXX_Size() int {
+	return m.Size()
+}
+func (m *ExcludedAddressScoreEntry) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExcludedAddressScoreEntry.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ExcludedAddressScoreEntry proto.InternalMessageInfo
+
+func (m *ExcludedAddressScoreEntry) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
 type DelegationTimeEntryExport struct {
 	ValidatorAddress   string                      `protobuf:"bytes,1,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty" yaml:"validator_address"`
 	DelegatorAddress   string                      `protobuf:"bytes,2,opt,name=delegator_address,json=delegatorAddress,proto3" json:"delegator_address,omitempty" yaml:"delegator_address"`
 	Shares             cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=shares,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"shares" yaml:"shares"`
 	LastChangedUnixSec int64                       `protobuf:"varint,4,opt,name=last_changed_unix_sec,json=lastChangedUnixSec,proto3" json:"last_changed_unix_sec,omitempty" yaml:"last_changed_unix_sec"`
+	DistributionID     uint64                      `protobuf:"varint,5,opt,name=distribution_id,json=distributionId,proto3" json:"distribution_id,omitempty" yaml:"distribution_id"`
 }
 
 func (m *DelegationTimeEntryExport) Reset()         { *m = DelegationTimeEntryExport{} }
 func (m *DelegationTimeEntryExport) String() string { return proto.CompactTextString(m) }
 func (*DelegationTimeEntryExport) ProtoMessage()    {}
 func (*DelegationTimeEntryExport) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d215b1db402695da, []int{1}
+	return fileDescriptor_d215b1db402695da, []int{2}
 }
 func (m *DelegationTimeEntryExport) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -168,16 +241,69 @@ func (m *DelegationTimeEntryExport) GetLastChangedUnixSec() int64 {
 	return 0
 }
 
+func (m *DelegationTimeEntryExport) GetDistributionID() uint64 {
+	if m != nil {
+		return m.DistributionID
+	}
+	return 0
+}
+
+type TotalScoreEntry struct {
+	DistributionID uint64                `protobuf:"varint,1,opt,name=distribution_id,json=distributionId,proto3" json:"distribution_id,omitempty" yaml:"distribution_id"`
+	TotalScore     cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=total_score,json=totalScore,proto3,customtype=cosmossdk.io/math.Int" json:"total_score" yaml:"total_score"`
+}
+
+func (m *TotalScoreEntry) Reset()         { *m = TotalScoreEntry{} }
+func (m *TotalScoreEntry) String() string { return proto.CompactTextString(m) }
+func (*TotalScoreEntry) ProtoMessage()    {}
+func (*TotalScoreEntry) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d215b1db402695da, []int{3}
+}
+func (m *TotalScoreEntry) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TotalScoreEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TotalScoreEntry.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TotalScoreEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TotalScoreEntry.Merge(m, src)
+}
+func (m *TotalScoreEntry) XXX_Size() int {
+	return m.Size()
+}
+func (m *TotalScoreEntry) XXX_DiscardUnknown() {
+	xxx_messageInfo_TotalScoreEntry.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TotalScoreEntry proto.InternalMessageInfo
+
+func (m *TotalScoreEntry) GetDistributionID() uint64 {
+	if m != nil {
+		return m.DistributionID
+	}
+	return 0
+}
+
 type AccountScore struct {
-	Address string                `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty" yaml:"address"`
-	Score   cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=score,proto3,customtype=cosmossdk.io/math.Int" json:"score" yaml:"score"`
+	Address        string                `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty" yaml:"address"`
+	Score          cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=score,proto3,customtype=cosmossdk.io/math.Int" json:"score" yaml:"score"`
+	DistributionID uint64                `protobuf:"varint,3,opt,name=distribution_id,json=distributionId,proto3" json:"distribution_id,omitempty" yaml:"distribution_id"`
 }
 
 func (m *AccountScore) Reset()         { *m = AccountScore{} }
 func (m *AccountScore) String() string { return proto.CompactTextString(m) }
 func (*AccountScore) ProtoMessage()    {}
 func (*AccountScore) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d215b1db402695da, []int{2}
+	return fileDescriptor_d215b1db402695da, []int{4}
 }
 func (m *AccountScore) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -213,58 +339,80 @@ func (m *AccountScore) GetAddress() string {
 	return ""
 }
 
+func (m *AccountScore) GetDistributionID() uint64 {
+	if m != nil {
+		return m.DistributionID
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*GenesisState)(nil), "tx.pse.v1.GenesisState")
+	proto.RegisterType((*ExcludedAddressScoreEntry)(nil), "tx.pse.v1.ExcludedAddressScoreEntry")
 	proto.RegisterType((*DelegationTimeEntryExport)(nil), "tx.pse.v1.DelegationTimeEntryExport")
+	proto.RegisterType((*TotalScoreEntry)(nil), "tx.pse.v1.TotalScoreEntry")
 	proto.RegisterType((*AccountScore)(nil), "tx.pse.v1.AccountScore")
 }
 
 func init() { proto.RegisterFile("tx/pse/v1/genesis.proto", fileDescriptor_d215b1db402695da) }
 
 var fileDescriptor_d215b1db402695da = []byte{
-	// 660 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0xdf, 0x6a, 0xd3, 0x50,
-	0x1c, 0x6e, 0xd6, 0x6e, 0xba, 0xb3, 0x3f, 0xb8, 0xb0, 0xae, 0xdd, 0xdc, 0x92, 0x1a, 0x44, 0x8a,
-	0xd0, 0x84, 0x4d, 0x41, 0xd0, 0xab, 0xc5, 0x8e, 0x31, 0xf0, 0x42, 0x53, 0x05, 0x19, 0x48, 0x38,
-	0x4d, 0x7e, 0xa4, 0x87, 0x35, 0x39, 0x25, 0xe7, 0xb4, 0xa4, 0xde, 0x89, 0x3e, 0x80, 0xf8, 0x12,
-	0xbe, 0x80, 0x0f, 0xb1, 0xcb, 0xe1, 0x95, 0x78, 0x11, 0x64, 0x7b, 0x83, 0x3c, 0x81, 0x24, 0x27,
-	0xed, 0xb2, 0x75, 0xd3, 0xbb, 0xe6, 0xfb, 0x7d, 0xbf, 0xef, 0xfb, 0xf5, 0xe3, 0x4b, 0x50, 0x8d,
-	0x47, 0xc6, 0x80, 0x81, 0x31, 0xda, 0x35, 0x3c, 0x08, 0x80, 0x11, 0xa6, 0x0f, 0x42, 0xca, 0xa9,
-	0xbc, 0xc8, 0x23, 0x7d, 0xc0, 0x40, 0x1f, 0xed, 0x6e, 0xad, 0x7b, 0xd4, 0xa3, 0x19, 0x6a, 0xa4,
-	0xbf, 0x04, 0x61, 0x6b, 0xd3, 0xa1, 0xcc, 0xa7, 0xcc, 0x16, 0x03, 0xf1, 0x90, 0x8f, 0x36, 0x2e,
-	0x45, 0x07, 0x38, 0xc4, 0xfe, 0x04, 0xdf, 0xbe, 0xc4, 0x5d, 0xc2, 0x78, 0x48, 0xba, 0x43, 0x4e,
-	0x68, 0x20, 0xa6, 0xda, 0xe7, 0x0a, 0x5a, 0x3e, 0x14, 0x37, 0x74, 0x38, 0xe6, 0x20, 0x1b, 0x68,
-	0x41, 0xac, 0xd7, 0xa5, 0x86, 0xd4, 0x5c, 0xda, 0x5b, 0xd3, 0xa7, 0x37, 0xe9, 0xaf, 0xb3, 0x81,
-	0x59, 0x39, 0x8d, 0xd5, 0x92, 0x95, 0xd3, 0xe4, 0x4f, 0x12, 0xaa, 0x31, 0xa7, 0x07, 0xee, 0xb0,
-	0x0f, 0xae, 0x5d, 0xb4, 0x60, 0xf5, 0xb9, 0x46, 0xb9, 0xb9, 0xb4, 0xd7, 0x28, 0x48, 0x74, 0x26,
-	0xcc, 0x76, 0x81, 0x68, 0x3e, 0x4a, 0x15, 0x93, 0x58, 0x55, 0xc6, 0xd8, 0xef, 0x3f, 0xd7, 0x6e,
-	0x91, 0xd3, 0xac, 0x0d, 0x76, 0xd3, 0x3a, 0x93, 0xbf, 0x48, 0xa8, 0xe6, 0x42, 0x1f, 0x3c, 0x9c,
-	0x3e, 0xdb, 0x9c, 0xf8, 0x60, 0x43, 0xc0, 0x43, 0x02, 0xac, 0x5e, 0xce, 0x6e, 0x78, 0x58, 0xb8,
-	0xa1, 0x3d, 0x65, 0xbe, 0x25, 0x3e, 0x1c, 0x04, 0x3c, 0x1c, 0x1f, 0x44, 0x03, 0x1a, 0xf2, 0xeb,
-	0x77, 0xdc, 0x22, 0xa9, 0x59, 0x55, 0x77, 0x46, 0x82, 0x00, 0x93, 0x3f, 0xa0, 0x55, 0xec, 0x38,
-	0x74, 0x18, 0x70, 0x9b, 0x39, 0x34, 0x04, 0x56, 0xaf, 0x64, 0xe6, 0xb5, 0x82, 0xf9, 0xbe, 0x20,
-	0x74, 0xd2, 0xb9, 0xb9, 0x93, 0xfb, 0x55, 0x85, 0xdf, 0xd5, 0x65, 0xcd, 0x5a, 0xc1, 0x05, 0x32,
-	0x93, 0xdf, 0xa3, 0x8d, 0x2b, 0x79, 0xa4, 0xe9, 0xe0, 0x6e, 0x1f, 0xdc, 0xfa, 0x7c, 0x43, 0x6a,
-	0xde, 0x35, 0x1f, 0x24, 0xb1, 0xba, 0x93, 0x5f, 0x7e, 0x23, 0x2f, 0x3d, 0xbc, 0x38, 0x68, 0x4f,
-	0xf0, 0x6f, 0x65, 0xb4, 0x79, 0x6b, 0x2a, 0x32, 0x46, 0x6b, 0x23, 0xdc, 0x27, 0x2e, 0xe6, 0x34,
-	0xb4, 0xb1, 0xeb, 0x86, 0xc0, 0x44, 0x3b, 0x16, 0xcd, 0xa7, 0x49, 0xac, 0xd6, 0x85, 0xe5, 0x0c,
-	0x45, 0xfb, 0xf9, 0xa3, 0xb5, 0x9e, 0x57, 0x74, 0x5f, 0x40, 0x1d, 0x1e, 0x92, 0xc0, 0xb3, 0xee,
-	0x4d, 0xb9, 0x39, 0x9e, 0x5a, 0xe4, 0x91, 0x16, 0x2c, 0xe6, 0xae, 0x5b, 0xcc, 0x50, 0xfe, 0x61,
-	0x31, 0xe5, 0x4e, 0x2c, 0x8e, 0xd1, 0x02, 0xeb, 0xe1, 0x30, 0x6b, 0x44, 0xaa, 0x6b, 0xa6, 0xd9,
-	0xff, 0x8e, 0xd5, 0xfb, 0x62, 0x9f, 0xb9, 0x27, 0x3a, 0xa1, 0x86, 0x8f, 0x79, 0x4f, 0x7f, 0x05,
-	0x1e, 0x76, 0xc6, 0x6d, 0x70, 0x92, 0x58, 0x5d, 0xc9, 0x2b, 0x99, 0xad, 0xa6, 0x7e, 0x28, 0xf7,
-	0x6b, 0x83, 0x63, 0xe5, 0x8a, 0x72, 0x07, 0x55, 0xfb, 0x98, 0x71, 0xdb, 0xe9, 0xe1, 0xc0, 0x03,
-	0xd7, 0x1e, 0x06, 0x24, 0xb2, 0x19, 0x38, 0xf5, 0x4a, 0x43, 0x6a, 0x96, 0xcd, 0x46, 0x12, 0xab,
-	0xdb, 0x42, 0xe7, 0x46, 0x9a, 0x66, 0xc9, 0x29, 0xfe, 0x52, 0xc0, 0xef, 0x02, 0x12, 0x75, 0xc0,
-	0xd1, 0xbe, 0x4b, 0x68, 0xb9, 0xd8, 0x16, 0xb9, 0x8d, 0xee, 0x5c, 0x4d, 0xff, 0x71, 0x12, 0xab,
-	0xab, 0x79, 0x75, 0xfe, 0x17, 0xc8, 0x64, 0x55, 0x7e, 0x83, 0xe6, 0xb3, 0x7e, 0xe5, 0xf1, 0xbe,
-	0xc8, 0x63, 0xa8, 0xce, 0xc6, 0x70, 0x14, 0xf0, 0x24, 0x56, 0x97, 0x27, 0xef, 0x24, 0x0d, 0xa1,
-	0xf8, 0xff, 0x8f, 0x02, 0x6e, 0x09, 0x25, 0xf3, 0xf0, 0xf4, 0x5c, 0x91, 0xce, 0xce, 0x15, 0xe9,
-	0xcf, 0xb9, 0x22, 0x7d, 0xbd, 0x50, 0x4a, 0x67, 0x17, 0x4a, 0xe9, 0xd7, 0x85, 0x52, 0x3a, 0x6e,
-	0x79, 0x84, 0xf7, 0x86, 0x5d, 0xdd, 0xa1, 0xbe, 0xc1, 0xe9, 0x09, 0x04, 0xe4, 0x23, 0xb4, 0x22,
-	0x83, 0x47, 0x2d, 0xa7, 0x87, 0x49, 0x60, 0x8c, 0x9e, 0x19, 0xe2, 0xeb, 0xc4, 0xc7, 0x03, 0x60,
-	0xdd, 0x85, 0xec, 0xa3, 0xf4, 0xe4, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x50, 0x0d, 0x7b, 0xb3,
-	0x21, 0x05, 0x00, 0x00,
+	// 872 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x56, 0x31, 0x6f, 0xdb, 0x46,
+	0x14, 0x36, 0x2d, 0x5b, 0x49, 0xce, 0x8e, 0xd3, 0x5c, 0x23, 0x9b, 0xb6, 0x13, 0x51, 0x25, 0xda,
+	0x42, 0x28, 0x6a, 0x11, 0x49, 0x0b, 0x14, 0x68, 0x27, 0xb3, 0x32, 0x52, 0x03, 0x19, 0x52, 0x2a,
+	0x01, 0x0a, 0x03, 0x05, 0x71, 0xe2, 0x1d, 0xa4, 0x43, 0x28, 0x9e, 0xc0, 0x3b, 0x19, 0x72, 0xb7,
+	0x02, 0x5d, 0x0b, 0xf4, 0xc7, 0xe4, 0x47, 0x64, 0xe8, 0x10, 0x74, 0x2a, 0x3a, 0x10, 0x85, 0x3c,
+	0x75, 0xd5, 0xd0, 0xb1, 0x28, 0x78, 0x77, 0x94, 0xcf, 0xa4, 0x94, 0x0e, 0x5e, 0xba, 0x49, 0xef,
+	0x7d, 0xef, 0xfb, 0x3e, 0x3e, 0xbe, 0xf7, 0x40, 0xb0, 0x27, 0xa6, 0xde, 0x98, 0x13, 0xef, 0xfc,
+	0xb1, 0x37, 0x20, 0x09, 0xe1, 0x94, 0x77, 0xc6, 0x29, 0x13, 0x0c, 0xde, 0x11, 0xd3, 0xce, 0x98,
+	0x93, 0xce, 0xf9, 0xe3, 0x83, 0xfd, 0x88, 0xf1, 0x11, 0xe3, 0xa1, 0x4c, 0x78, 0xea, 0x8f, 0x42,
+	0x1d, 0x3c, 0x18, 0xb0, 0x01, 0x53, 0xf1, 0xfc, 0x97, 0x8e, 0x3e, 0xbc, 0x22, 0xc5, 0x94, 0x8b,
+	0x94, 0xf6, 0x27, 0x82, 0xb2, 0x44, 0x67, 0x77, 0xaf, 0xb2, 0x63, 0x94, 0xa2, 0x91, 0xe6, 0x72,
+	0xff, 0xae, 0x83, 0xed, 0xa7, 0xca, 0x43, 0x4f, 0x20, 0x41, 0xa0, 0x07, 0xea, 0x0a, 0x60, 0x5b,
+	0x2d, 0xab, 0xbd, 0xf5, 0xe4, 0x7e, 0x67, 0xe1, 0xa9, 0xf3, 0x5c, 0x26, 0xfc, 0x8d, 0x37, 0x99,
+	0xb3, 0x16, 0x68, 0x18, 0xfc, 0xd1, 0x02, 0x7b, 0x3c, 0x1a, 0x12, 0x3c, 0x89, 0x09, 0x0e, 0x4d,
+	0x69, 0x6e, 0xaf, 0xb7, 0x6a, 0xed, 0xad, 0x27, 0x2d, 0x83, 0xa2, 0x57, 0x20, 0xbb, 0x06, 0xd0,
+	0xff, 0x38, 0x67, 0x9c, 0x67, 0x4e, 0xf3, 0x02, 0x8d, 0xe2, 0x2f, 0xdd, 0x15, 0x74, 0x6e, 0xb0,
+	0xcb, 0x97, 0x95, 0x73, 0xf8, 0x93, 0x05, 0xf6, 0x30, 0x89, 0xc9, 0x00, 0xe5, 0xff, 0x43, 0x41,
+	0x47, 0x24, 0x24, 0x89, 0x48, 0x29, 0xe1, 0x76, 0x4d, 0x7a, 0xf8, 0xd0, 0xf0, 0xd0, 0x5d, 0x20,
+	0x5f, 0xd0, 0x11, 0x39, 0x49, 0x44, 0x7a, 0x71, 0x32, 0x1d, 0xb3, 0x54, 0x94, 0x7d, 0xac, 0xa0,
+	0x74, 0x83, 0x06, 0xae, 0x50, 0x50, 0xc2, 0xe1, 0xf7, 0x60, 0x07, 0x45, 0x11, 0x9b, 0x24, 0x22,
+	0xe4, 0x11, 0x4b, 0x09, 0xb7, 0x37, 0xa4, 0xf8, 0x9e, 0x21, 0x7e, 0xac, 0x00, 0xbd, 0x3c, 0xef,
+	0x3f, 0xd2, 0x7a, 0x0d, 0xa5, 0x77, 0xbd, 0xd8, 0x0d, 0xee, 0x22, 0x03, 0xcc, 0xe1, 0x77, 0x60,
+	0xf7, 0x5a, 0x3f, 0xf2, 0xee, 0xa0, 0x7e, 0x4c, 0xb0, 0xbd, 0xd9, 0xb2, 0xda, 0xb7, 0xfd, 0x0f,
+	0xe6, 0x99, 0xf3, 0x48, 0x3b, 0x5f, 0x8a, 0xcb, 0x8d, 0x9b, 0x89, 0xae, 0x8e, 0xc3, 0x33, 0xb0,
+	0x2d, 0x98, 0x40, 0x71, 0x61, 0xbb, 0x2e, 0x6d, 0x1f, 0x18, 0xb6, 0x5f, 0xe4, 0x69, 0xe9, 0x43,
+	0xf6, 0xcb, 0x3f, 0xd4, 0xce, 0xdf, 0x57, 0x7a, 0x66, 0xb5, 0x1b, 0x6c, 0x89, 0x05, 0x9a, 0xc3,
+	0x9f, 0x2d, 0xd0, 0x8c, 0x11, 0x17, 0xf9, 0x24, 0x47, 0x84, 0xf3, 0xd2, 0x5b, 0x0d, 0x29, 0xb6,
+	0x6f, 0xb5, 0xac, 0xf6, 0x86, 0xff, 0xcd, 0x2c, 0x73, 0x0e, 0x9f, 0x21, 0x2e, 0x9e, 0x17, 0x40,
+	0xf3, 0x25, 0x9f, 0x76, 0xe7, 0x99, 0xf3, 0x91, 0x52, 0x7b, 0x37, 0x9d, 0x1b, 0x1c, 0xc6, 0x2b,
+	0x59, 0xb0, 0x9c, 0x15, 0x32, 0x8d, 0xe2, 0x09, 0x26, 0x38, 0x44, 0x18, 0xa7, 0x84, 0xf3, 0xe2,
+	0xb9, 0x6f, 0x57, 0x66, 0xe5, 0x44, 0x23, 0x8f, 0x15, 0xd0, 0xe8, 0x40, 0x69, 0x56, 0x56, 0x50,
+	0xba, 0x41, 0x83, 0x2c, 0xa1, 0xe0, 0xee, 0x6b, 0x0b, 0xec, 0xaf, 0x24, 0x87, 0x5d, 0x70, 0x4b,
+	0xf3, 0xc8, 0x35, 0xbc, 0xe3, 0x7f, 0x32, 0xcf, 0x9c, 0x1d, 0x3d, 0x25, 0x2a, 0xe1, 0xfe, 0xf6,
+	0xfa, 0xe8, 0x81, 0xbe, 0x0b, 0x05, 0x81, 0x48, 0x69, 0x32, 0x08, 0x8a, 0x52, 0xf8, 0x2d, 0xd8,
+	0x94, 0x2e, 0xec, 0x75, 0xc9, 0xf1, 0x55, 0xee, 0xf8, 0x8f, 0xcc, 0x69, 0xa8, 0x2a, 0x8e, 0x5f,
+	0x75, 0x28, 0xf3, 0x46, 0x48, 0x0c, 0x3b, 0xa7, 0x89, 0x98, 0x67, 0xce, 0x76, 0xb1, 0x7e, 0x2c,
+	0x25, 0x39, 0x3d, 0xd0, 0xf4, 0xa7, 0x89, 0x08, 0x14, 0x93, 0xfb, 0x57, 0x0d, 0xec, 0xaf, 0xdc,
+	0x1f, 0x88, 0xc0, 0xfd, 0x73, 0x14, 0x53, 0x8c, 0x04, 0x4b, 0xc3, 0xeb, 0x0f, 0xf0, 0xf9, 0x3c,
+	0x73, 0x6c, 0xc5, 0x5f, 0x81, 0xac, 0x7e, 0x94, 0xf7, 0x16, 0x58, 0x1d, 0xcf, 0x25, 0xf4, 0xf2,
+	0x19, 0x12, 0xeb, 0x65, 0x89, 0x0a, 0xe4, 0x1d, 0x12, 0x0b, 0x6c, 0x21, 0x71, 0x06, 0xea, 0x7c,
+	0x88, 0x52, 0x79, 0x3b, 0x72, 0x5e, 0x5f, 0xf7, 0xed, 0xb0, 0xda, 0xb7, 0x67, 0x64, 0x80, 0xa2,
+	0x8b, 0x2e, 0x89, 0xe6, 0x99, 0x73, 0x57, 0x77, 0x4f, 0x96, 0x9a, 0xed, 0xeb, 0x92, 0x28, 0xd0,
+	0x8c, 0xb0, 0x07, 0x1a, 0x72, 0x7a, 0xa3, 0x21, 0x4a, 0x06, 0x04, 0x87, 0x93, 0x84, 0x4e, 0x43,
+	0x4e, 0x22, 0x7b, 0xa3, 0x65, 0xb5, 0x6b, 0x7e, 0x6b, 0x9e, 0x39, 0x0f, 0x8d, 0x21, 0x2f, 0xc3,
+	0xdc, 0x00, 0xe6, 0xf1, 0xaf, 0x55, 0xf8, 0x65, 0x42, 0xa7, 0x3d, 0x12, 0xc1, 0x97, 0xe0, 0x5e,
+	0x79, 0xa5, 0x36, 0xe5, 0x4a, 0x7d, 0x3a, 0xcb, 0x9c, 0x9d, 0xca, 0x16, 0xed, 0x56, 0x6f, 0x84,
+	0x5c, 0x9b, 0x1d, 0x7c, 0x6d, 0x53, 0xdc, 0x5f, 0x2d, 0x70, 0xaf, 0xb4, 0xf7, 0xcb, 0xa4, 0xac,
+	0x9b, 0x4b, 0xc1, 0x3e, 0xd8, 0x32, 0x4e, 0x88, 0x7e, 0x9f, 0xc7, 0xff, 0x35, 0xaf, 0xb0, 0x72,
+	0x7c, 0xca, 0x53, 0x0b, 0xae, 0x2e, 0x91, 0xfb, 0x8f, 0x05, 0xb6, 0xcd, 0xeb, 0xfb, 0xbf, 0x5d,
+	0xb2, 0x65, 0x4d, 0xae, 0xdd, 0xbc, 0xc9, 0xfe, 0xd3, 0x37, 0xb3, 0xa6, 0xf5, 0x76, 0xd6, 0xb4,
+	0xfe, 0x9c, 0x35, 0xad, 0x5f, 0x2e, 0x9b, 0x6b, 0x6f, 0x2f, 0x9b, 0x6b, 0xbf, 0x5f, 0x36, 0xd7,
+	0xce, 0x8e, 0x06, 0x54, 0x0c, 0x27, 0xfd, 0x4e, 0xc4, 0x46, 0x9e, 0x60, 0xaf, 0x48, 0x42, 0x7f,
+	0x20, 0x47, 0x53, 0x4f, 0x4c, 0x8f, 0xa2, 0x21, 0xa2, 0x89, 0x77, 0xfe, 0x85, 0xa7, 0x3e, 0x1f,
+	0xc4, 0xc5, 0x98, 0xf0, 0x7e, 0x5d, 0x7e, 0x3b, 0x7c, 0xf6, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xec, 0x0a, 0x8d, 0xf5, 0xc8, 0x08, 0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -287,6 +435,39 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.ExcludedAddressScores) > 0 {
+		for iNdEx := len(m.ExcludedAddressScores) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ExcludedAddressScores[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if m.LastProcessedDistributionID != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.LastProcessedDistributionID))
+		i--
+		dAtA[i] = 0x38
+	}
+	if len(m.TotalScores) > 0 {
+		for iNdEx := len(m.TotalScores) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TotalScores[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintGenesis(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x32
+		}
+	}
 	if m.DistributionsDisabled {
 		i--
 		if m.DistributionsDisabled {
@@ -352,6 +533,46 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *ExcludedAddressScoreEntry) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExcludedAddressScoreEntry) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ExcludedAddressScoreEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.Score.Size()
+		i -= size
+		if _, err := m.Score.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Address) > 0 {
+		i -= len(m.Address)
+		copy(dAtA[i:], m.Address)
+		i = encodeVarintGenesis(dAtA, i, uint64(len(m.Address)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *DelegationTimeEntryExport) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -372,6 +593,11 @@ func (m *DelegationTimeEntryExport) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	_ = i
 	var l int
 	_ = l
+	if m.DistributionID != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.DistributionID))
+		i--
+		dAtA[i] = 0x28
+	}
 	if m.LastChangedUnixSec != 0 {
 		i = encodeVarintGenesis(dAtA, i, uint64(m.LastChangedUnixSec))
 		i--
@@ -404,6 +630,44 @@ func (m *DelegationTimeEntryExport) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
+func (m *TotalScoreEntry) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TotalScoreEntry) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TotalScoreEntry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.TotalScore.Size()
+		i -= size
+		if _, err := m.TotalScore.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if m.DistributionID != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.DistributionID))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *AccountScore) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -424,6 +688,11 @@ func (m *AccountScore) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.DistributionID != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.DistributionID))
+		i--
+		dAtA[i] = 0x18
+	}
 	{
 		size := m.Score.Size()
 		i -= size
@@ -484,6 +753,36 @@ func (m *GenesisState) Size() (n int) {
 	if m.DistributionsDisabled {
 		n += 2
 	}
+	if len(m.TotalScores) > 0 {
+		for _, e := range m.TotalScores {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	if m.LastProcessedDistributionID != 0 {
+		n += 1 + sovGenesis(uint64(m.LastProcessedDistributionID))
+	}
+	if len(m.ExcludedAddressScores) > 0 {
+		for _, e := range m.ExcludedAddressScores {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ExcludedAddressScoreEntry) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Address)
+	if l > 0 {
+		n += 1 + l + sovGenesis(uint64(l))
+	}
+	l = m.Score.Size()
+	n += 1 + l + sovGenesis(uint64(l))
 	return n
 }
 
@@ -506,6 +805,23 @@ func (m *DelegationTimeEntryExport) Size() (n int) {
 	if m.LastChangedUnixSec != 0 {
 		n += 1 + sovGenesis(uint64(m.LastChangedUnixSec))
 	}
+	if m.DistributionID != 0 {
+		n += 1 + sovGenesis(uint64(m.DistributionID))
+	}
+	return n
+}
+
+func (m *TotalScoreEntry) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DistributionID != 0 {
+		n += 1 + sovGenesis(uint64(m.DistributionID))
+	}
+	l = m.TotalScore.Size()
+	n += 1 + l + sovGenesis(uint64(l))
 	return n
 }
 
@@ -521,6 +837,9 @@ func (m *AccountScore) Size() (n int) {
 	}
 	l = m.Score.Size()
 	n += 1 + l + sovGenesis(uint64(l))
+	if m.DistributionID != 0 {
+		n += 1 + sovGenesis(uint64(m.DistributionID))
+	}
 	return n
 }
 
@@ -714,6 +1033,209 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.DistributionsDisabled = bool(v != 0)
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalScores", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TotalScores = append(m.TotalScores, TotalScoreEntry{})
+			if err := m.TotalScores[len(m.TotalScores)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastProcessedDistributionID", wireType)
+			}
+			m.LastProcessedDistributionID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LastProcessedDistributionID |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExcludedAddressScores", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExcludedAddressScores = append(m.ExcludedAddressScores, ExcludedAddressScoreEntry{})
+			if err := m.ExcludedAddressScores[len(m.ExcludedAddressScores)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExcludedAddressScoreEntry) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExcludedAddressScoreEntry: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExcludedAddressScoreEntry: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Score", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Score.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])
@@ -881,6 +1403,128 @@ func (m *DelegationTimeEntryExport) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DistributionID", wireType)
+			}
+			m.DistributionID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DistributionID |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenesis(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TotalScoreEntry) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenesis
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TotalScoreEntry: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TotalScoreEntry: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DistributionID", wireType)
+			}
+			m.DistributionID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DistributionID |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalScore", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TotalScore.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])
@@ -997,6 +1641,25 @@ func (m *AccountScore) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DistributionID", wireType)
+			}
+			m.DistributionID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DistributionID |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])

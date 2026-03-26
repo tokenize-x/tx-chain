@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -208,6 +209,13 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	distributionStartTime := time.Now().Add(10 * time.Second).Add(*govParams.ExpeditedVotingPeriod)
 
+	// Query LastProcessedDistributionID to determine the starting ID for new schedule entries.
+	// On a fresh chain it's 0 (IDs start from 1), after v7 upgrade it's 1 (IDs start from 2).
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
+	lastIDRes, err := pseClient.LastProcessedDistributionID(ctx, &psetypes.QueryLastProcessedDistributionIDRequest{})
+	requireT.NoError(err)
+	startID := lastIDRes.LastProcessedDistributionId + 1
+
 	chain.Governance.ExpeditedProposalFromMsgAndVote(
 		ctx, t, nil, "-", "-", "-", govtypesv1.OptionYes,
 		&psetypes.MsgUpdateMinDistributionGap{
@@ -217,9 +225,9 @@ func TestPSEDistribution(t *testing.T) {
 		&psetypes.MsgUpdateDistributionSchedule{
 			Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Schedule: []psetypes.ScheduledDistribution{
-				{ID: 1, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
-				{ID: 2, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
-				{ID: 3, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID, Timestamp: uint64(distributionStartTime.Add(30 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID + 1, Timestamp: uint64(distributionStartTime.Add(60 * time.Second).Unix()), Allocations: allocations},
+				{ID: startID + 2, Timestamp: uint64(distributionStartTime.Add(90 * time.Second).Unix()), Allocations: allocations},
 			},
 		},
 		&psetypes.MsgUpdateClearingAccountMappings{
@@ -251,12 +259,12 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	t.Logf("Distribution 1 at height: %d", height)
 
-	scheduledDistributions, err := getScheduledDistribution(ctx, chain)
-	requireT.NoError(err)
-	requireT.Len(scheduledDistributions, 2)
+	awaitScheduleCount(ctx, t, chain, 2)
+	requireT.NoError(assertCommunityIntermediaryDrained(ctx, chain, chain.ChainSettings.Denom))
 
 	balancesBefore, scoresBefore, totalScore := getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ := getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// Excluded delegator should receive nothing
 	requireT.Equal(balancesBefore[excludedDelegator], balancesAfter[excludedDelegator],
@@ -298,12 +306,12 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	t.Logf("Distribution 2 at height: %d", height)
 
-	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
-	requireT.NoError(err)
-	requireT.Len(scheduledDistributions, 1)
+	awaitScheduleCount(ctx, t, chain, 1)
+	requireT.NoError(assertCommunityIntermediaryDrained(ctx, chain, chain.ChainSettings.Denom))
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// Re-included delegator should now receive rewards
 	reIncludedIncrease := balancesAfter[excludedDelegator].Sub(balancesBefore[excludedDelegator])
@@ -336,12 +344,12 @@ func TestPSEDistribution(t *testing.T) {
 	requireT.NoError(err)
 	t.Logf("Distribution 3 at height: %d", height)
 
-	scheduledDistributions, err = getScheduledDistribution(ctx, chain)
-	requireT.NoError(err)
-	requireT.Len(scheduledDistributions, 0)
+	awaitScheduleCount(ctx, t, chain, 0)
+	requireT.NoError(assertCommunityIntermediaryDrained(ctx, chain, chain.ChainSettings.Denom))
 
 	balancesBefore, scoresBefore, totalScore = getAllDelegatorInfo(ctx, t, chain, height-1)
 	balancesAfter, _, _ = getAllDelegatorInfo(ctx, t, chain, height)
+	requireT.True(totalScore.IsPositive(), "total score at height %d must be positive", height-1)
 
 	// All delegators (including re-included) should receive rewards
 	for _, delegator := range delegators {
@@ -390,7 +398,7 @@ func TestPSEDistribution(t *testing.T) {
 		DelegatorAddr: excludedDelegator,
 	})
 	requireT.NoError(err)
-	requireT.Len(delRespAfter.DelegationResponses, 0, "Should have zero delegations after full undelegation")
+	requireT.Empty(delRespAfter.DelegationResponses, "Should have zero delegations after full undelegation")
 
 	t.Logf("Re-included delegator successfully undelegated full amount (%s)", currentDelegation.String())
 }
@@ -836,7 +844,7 @@ func awaitScheduledDistributionEvent(
 ) (int64, communityDistributedEvent, error) {
 	var observedHeight int64
 	err := chain.AwaitState(ctx, func(ctx context.Context) error {
-		query := fmt.Sprintf("tx.pse.v1.EventAllocationDistributed.mode='EndBlock' AND block.height>%d", startHeight)
+		query := fmt.Sprintf("tx.pse.v1.EventCommunityDistributed.mode='EndBlock' AND block.height>%d", startHeight)
 		blocks, err := chain.ClientContext.RPCClient().BlockSearch(ctx, query, nil, nil, "")
 		if err != nil {
 			return err
@@ -878,6 +886,54 @@ func getScheduledDistribution(
 		return nil, err
 	}
 	return pseResponse.ScheduledDistributions, nil
+}
+
+func awaitScheduleCount(ctx context.Context, t *testing.T, chain integration.TXChain, expectedUnprocessedCount int) {
+	t.Helper()
+	requireT := require.New(t)
+	pseClient := psetypes.NewQueryClient(chain.ClientContext)
+	err := chain.AwaitState(ctx, func(ctx context.Context) error {
+		dist, err := getScheduledDistribution(ctx, chain)
+		if err != nil {
+			return err
+		}
+		lastIDRes, err := pseClient.LastProcessedDistributionID(
+			ctx, &psetypes.QueryLastProcessedDistributionIDRequest{},
+		)
+		if err != nil {
+			return err
+		}
+		unprocessedCount := 0
+		for _, sd := range dist {
+			if sd.ID > lastIDRes.LastProcessedDistributionId {
+				unprocessedCount++
+			}
+		}
+		if unprocessedCount != expectedUnprocessedCount {
+			return fmt.Errorf("expected %d unprocessed scheduled distributions, got %d",
+				expectedUnprocessedCount, unprocessedCount)
+		}
+		return nil
+	}, integration.WithAwaitStateTimeout(10*time.Second))
+	requireT.NoError(err)
+}
+
+// assertCommunityIntermediaryDrained verifies that pse_community_intermediary has zero balance,
+// confirming that the intermediary was fully drained after a community distribution completes.
+func assertCommunityIntermediaryDrained(ctx context.Context, chain integration.TXChain, denom string) error {
+	bankClient := banktypes.NewQueryClient(chain.ClientContext)
+	intermediaryAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityIntermediary).String()
+	resp, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: intermediaryAddr,
+		Denom:   denom,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to query pse_community_intermediary balance: %w", err)
+	}
+	if !resp.Balance.IsZero() {
+		return fmt.Errorf("pse_community_intermediary must be zero after distribution, got %s", resp.Balance)
+	}
+	return nil
 }
 
 func removeAttributeFromEvent(events []tmtypes.Event, key string) []tmtypes.Event {

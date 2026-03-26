@@ -284,7 +284,9 @@
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [AccountScore](#tx.pse.v1.AccountScore)
     - [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport)
+    - [ExcludedAddressScoreEntry](#tx.pse.v1.ExcludedAddressScoreEntry)
     - [GenesisState](#tx.pse.v1.GenesisState)
+    - [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry)
   
 - [tx/pse/v1/params.proto](#tx/pse/v1/params.proto)
     - [Params](#tx.pse.v1.Params)
@@ -293,6 +295,8 @@
     - [ClearingAccountBalance](#tx.pse.v1.ClearingAccountBalance)
     - [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest)
     - [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse)
+    - [QueryLastProcessedDistributionIDRequest](#tx.pse.v1.QueryLastProcessedDistributionIDRequest)
+    - [QueryLastProcessedDistributionIDResponse](#tx.pse.v1.QueryLastProcessedDistributionIDResponse)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
     - [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest)
@@ -309,6 +313,7 @@
     - [EmptyResponse](#tx.pse.v1.EmptyResponse)
     - [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions)
     - [MsgUpdateClearingAccountMappings](#tx.pse.v1.MsgUpdateClearingAccountMappings)
+    - [MsgUpdateDistributionBatchSize](#tx.pse.v1.MsgUpdateDistributionBatchSize)
     - [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule)
     - [MsgUpdateExcludedAddresses](#tx.pse.v1.MsgUpdateExcludedAddresses)
     - [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap)
@@ -5829,6 +5834,7 @@ Each distribution is identified by a unique, sequential id.
 | `timestamp` | [uint64](#uint64) |  |  `timestamp is when this allocation should occur (Unix timestamp in seconds).`  |
 | `allocations` | [ClearingAccountAllocation](#tx.pse.v1.ClearingAccountAllocation) | repeated |  `allocations is the list of amounts to allocate from each clearing account at this time.`  |
 | `id` | [uint64](#uint64) |  |  `id is the unique, sequential identifier for this distribution. Used as the storage key in the AllocationSchedule map.`  |
+| `started_at` | [int64](#int64) |  |  `started_at is the Unix timestamp (seconds) of the block in which this distribution began processing. Set when the ScheduledDistribution transitions to OngoingDistribution.`  |
 
 
 
@@ -5890,6 +5896,7 @@ Any remainder from division is sent to the community pool.
 | `total_pse_score` | [string](#string) |  |    |
 | `amount` | [string](#string) |  |    |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the distribution was scheduled to occur.`  |
+| `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique identifier of the distribution.`  |
 
 
 
@@ -5922,6 +5929,7 @@ Any remainder from division is sent to the community pool.
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |    |
 | `score` | [string](#string) |  |    |
+| `distribution_id` | [uint64](#uint64) |  |    |
 
 
 
@@ -5940,6 +5948,27 @@ Any remainder from division is sent to the community pool.
 | `delegator_address` | [string](#string) |  |    |
 | `shares` | [string](#string) |  |    |
 | `last_changed_unix_sec` | [int64](#int64) |  |    |
+| `distribution_id` | [uint64](#uint64) |  |    |
+
+
+
+
+
+
+<a name="tx.pse.v1.ExcludedAddressScoreEntry"></a>
+
+### ExcludedAddressScoreEntry
+
+```
+ExcludedAddressScoreEntry holds the accumulated score for a single excluded address.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `address` | [string](#string) |  |    |
+| `score` | [string](#string) |  |    |
 
 
 
@@ -5963,6 +5992,25 @@ GenesisState defines the module's genesis state.
 | `delegation_time_entries` | [DelegationTimeEntryExport](#tx.pse.v1.DelegationTimeEntryExport) | repeated |    |
 | `account_scores` | [AccountScore](#tx.pse.v1.AccountScore) | repeated |    |
 | `distributions_disabled` | [bool](#bool) |  |    |
+| `total_scores` | [TotalScoreEntry](#tx.pse.v1.TotalScoreEntry) | repeated |    |
+| `last_processed_distribution_id` | [uint64](#uint64) |  |    |
+| `excluded_address_scores` | [ExcludedAddressScoreEntry](#tx.pse.v1.ExcludedAddressScoreEntry) | repeated |  `excluded_address_scores stores the accumulated score for each excluded address. Score is invisible in queries and unused in distributions, but preserved for restoration on re-inclusion.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.TotalScoreEntry"></a>
+
+### TotalScoreEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `distribution_id` | [uint64](#uint64) |  |    |
+| `total_score` | [string](#string) |  |    |
 
 
 
@@ -6000,6 +6048,7 @@ Params store gov manageable parameters.
 | `excluded_addresses` | [string](#string) | repeated |  `excluded_addresses is a list of addresses excluded from PSE distribution. This list includes account addresses that should not receive PSE rewards. Can be modified via governance proposals.`  |
 | `clearing_account_mappings` | [ClearingAccountMapping](#tx.pse.v1.ClearingAccountMapping) | repeated |  `clearing_account_mappings defines the mapping between clearing accounts and their sub accounts (multisig wallets). These mappings can be modified via governance proposals.`  |
 | `min_distribution_gap_seconds` | [uint64](#uint64) |  |  `min_distribution_gap_seconds is the minimum required gap in seconds between consecutive distributions.`  |
+| `distribution_batch_size` | [uint64](#uint64) |  |  `distribution_batch_size is the number of delegation entries processed per EndBlock during multi-block community distribution.`  |
 
 
 
@@ -6069,6 +6118,39 @@ QueryClearingAccountBalancesResponse defines the response type for querying clea
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `balances` | [ClearingAccountBalance](#tx.pse.v1.ClearingAccountBalance) | repeated |  `balances contains the current balances of all PSE clearing accounts in the bond denom.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryLastProcessedDistributionIDRequest"></a>
+
+### QueryLastProcessedDistributionIDRequest
+
+```
+QueryLastProcessedDistributionIDRequest defines the request type for querying the last processed distribution ID.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryLastProcessedDistributionIDResponse"></a>
+
+### QueryLastProcessedDistributionIDResponse
+
+```
+QueryLastProcessedDistributionIDResponse defines the response type for querying the last processed distribution ID.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `last_processed_distribution_id` | [uint64](#uint64) |  |  `last_processed_distribution_id is the ID of the last completed distribution. Returns 0 if no distribution has been processed yet.`  |
 
 
 
@@ -6201,6 +6283,7 @@ Query defines the gRPC querier service.
 | `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
 | `ScheduledDistributions` | [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest) | [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse) | `ScheduledDistributions queries all future scheduled distributions.` | GET|/tx/pse/v1/scheduled_distributions |
 | `ClearingAccountBalances` | [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest) | [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse) | `ClearingAccountBalances queries the current balances of all PSE clearing accounts.` | GET|/tx/pse/v1/clearing_account_balances |
+| `LastProcessedDistributionID` | [QueryLastProcessedDistributionIDRequest](#tx.pse.v1.QueryLastProcessedDistributionIDRequest) | [QueryLastProcessedDistributionIDResponse](#tx.pse.v1.QueryLastProcessedDistributionIDResponse) | `LastProcessedDistributionID queries the ID of the last completed distribution.` | GET|/tx/pse/v1/last_processed_distribution_id |
 
  <!-- end services -->
 
@@ -6293,6 +6376,27 @@ Community clearing account uses score-based distribution and should not have rec
 
 
 
+<a name="tx.pse.v1.MsgUpdateDistributionBatchSize"></a>
+
+### MsgUpdateDistributionBatchSize
+
+```
+MsgUpdateDistributionBatchSize is a governance operation to update the number of
+delegation entries processed per EndBlock during multi-block community distribution.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authority` | [string](#string) |  |  `authority is the address authorized to update the batch size (governance module address).`  |
+| `distribution_batch_size` | [uint64](#uint64) |  |  `distribution_batch_size is the number of entries to process per EndBlock. Must be greater than 0.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.MsgUpdateDistributionSchedule"></a>
 
 ### MsgUpdateDistributionSchedule
@@ -6376,6 +6480,7 @@ Msg defines the Msg service.
 | `UpdateDistributionSchedule` | [MsgUpdateDistributionSchedule](#tx.pse.v1.MsgUpdateDistributionSchedule) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionSchedule is a governance operation to update the distribution schedule.` |  |
 | `DisableDistributions` | [MsgDisableDistributions](#tx.pse.v1.MsgDisableDistributions) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `DisableDistributions is a governance operation to disable distributions.` |  |
 | `UpdateMinDistributionGap` | [MsgUpdateMinDistributionGap](#tx.pse.v1.MsgUpdateMinDistributionGap) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateMinDistributionGap is a governance operation to update the minimum gap between distributions.` |  |
+| `UpdateDistributionBatchSize` | [MsgUpdateDistributionBatchSize](#tx.pse.v1.MsgUpdateDistributionBatchSize) | [EmptyResponse](#tx.pse.v1.EmptyResponse) | `UpdateDistributionBatchSize is a governance operation to update the multi-block batch size.` |  |
 
  <!-- end services -->
 
