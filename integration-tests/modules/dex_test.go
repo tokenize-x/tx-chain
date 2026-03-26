@@ -3303,11 +3303,11 @@ func TestFrozenTokenFreezeAfterOrderPlacement(t *testing.T) {
 	dexParamsRes, err := dexClient.Params(ctx, &dextypes.QueryParamsRequest{})
 	requireT.NoError(err)
 
-	// Setup: token with freezing, Alice has 100 TKN (1,000,000), Bob has quote
+	// Setup: token with freezing, Alice has 100 TKN (100,000,000), Bob has quote
 	issuer, denom := genAccountAndIssueFT(
-		ctx, t, chain, 1_000_000, sdkmath.NewInt(1_000_000), assetfttypes.Feature_freezing,
+		ctx, t, chain, 1_000_000_000, sdkmath.NewInt(1_000_000_000), assetfttypes.Feature_freezing,
 	)
-	quoteDenom := issueFT(ctx, t, chain, issuer, sdkmath.NewInt(1_000_000))
+	quoteDenom := issueFT(ctx, t, chain, issuer, sdkmath.NewInt(1_000_000_000))
 
 	alice := chain.GenAccount()
 	bob := chain.GenAccount()
@@ -3337,7 +3337,7 @@ func TestFrozenTokenFreezeAfterOrderPlacement(t *testing.T) {
 		},
 	})
 
-	aliceBaseAmount := int64(1_000_000) // 100 TKN
+	aliceBaseAmount := int64(100_000_000) // 100 TKN
 	sendToAlice := &banktypes.MsgSend{
 		FromAddress: issuer.String(),
 		ToAddress:   alice.String(),
@@ -3347,7 +3347,7 @@ func TestFrozenTokenFreezeAfterOrderPlacement(t *testing.T) {
 		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendToAlice)), sendToAlice)
 	requireT.NoError(err)
 
-	bobQuoteAmount := int64(1_000_000)
+	bobQuoteAmount := int64(100_000_000)
 	sendToBob := &banktypes.MsgSend{
 		FromAddress: issuer.String(),
 		ToAddress:   bob.String(),
@@ -3357,8 +3357,8 @@ func TestFrozenTokenFreezeAfterOrderPlacement(t *testing.T) {
 		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendToBob)), sendToBob)
 	requireT.NoError(err)
 
-	// Step 1: Alice places sell order for 80 TKN (800,000) — no freeze yet, all 100 available
-	orderAmount := int64(800_000)
+	// Step 1: Alice places sell order for 80 TKN (80,000,000) — no freeze yet, all 100 available
+	orderAmount := int64(80_000_000)
 	placeSell := &dextypes.MsgPlaceOrder{
 		Sender:      alice.String(),
 		Type:        dextypes.ORDER_TYPE_LIMIT,
@@ -3379,10 +3379,10 @@ func TestFrozenTokenFreezeAfterOrderPlacement(t *testing.T) {
 		Denom:   denom,
 	})
 	requireT.NoError(err)
-	requireT.Equal(orderAmount, balanceRes.LockedInDEX.Int64(), "800,000 should be DEX-locked")
+	requireT.Equal(orderAmount, balanceRes.LockedInDEX.Int64(), "80,000,000 should be DEX-locked")
 
-	// Step 2: Issuer freezes 20 TKN (200,000) of Alice's balance
-	freezeAmount := int64(200_000)
+	// Step 2: Issuer freezes 20 TKN (20,000,000) of Alice's balance
+	freezeAmount := int64(20_000_000)
 	freezeMsg := &assetfttypes.MsgFreeze{
 		Sender:  issuer.String(),
 		Account: alice.String(),
@@ -3414,7 +3414,7 @@ func TestFrozenTokenFreezeAfterOrderPlacement(t *testing.T) {
 	})
 	requireT.NoError(err)
 	requireT.Equal(aliceBaseAmount-orderAmount, aliceBalanceRes.Balance.Int64(),
-		"Alice should have 200,000 base tokens after selling 800,000")
+		"Alice should have 20,000,000 base tokens after selling 80,000,000")
 	requireT.Equal(int64(0), aliceBalanceRes.LockedInDEX.Int64(), "Alice's DEX lock should be released")
 
 	bobBalanceRes, err := assetFTClient.Balance(ctx, &assetfttypes.QueryBalanceRequest{
@@ -3423,7 +3423,7 @@ func TestFrozenTokenFreezeAfterOrderPlacement(t *testing.T) {
 	})
 	requireT.NoError(err)
 	requireT.Equal(orderAmount, bobBalanceRes.Balance.Int64(),
-		"Bob should have received 800,000 base tokens")
+		"Bob should have received 80,000,000 base tokens")
 
 	aliceQuoteRes, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
 		Address: alice.String(),
