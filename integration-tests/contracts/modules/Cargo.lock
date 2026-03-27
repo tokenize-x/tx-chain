@@ -1245,7 +1245,8 @@ dependencies = [
 [[package]]
 name = "tx-std-derive"
 version = "0.21.0"
-source = "git+https://github.com/tokenize-x/tx-std-derive.git?tag=v0.21.0#8a90a69fd9f7444cdc8665401529095617703384"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b09b1d924b1de80dbf93605332c3e8305db8f6433516c8afb5d603573b351f96"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -1257,7 +1258,8 @@ dependencies = [
 [[package]]
 name = "tx-wasm-sdk"
 version = "1.3.0"
-source = "git+https://github.com/tokenize-x/tx-wasm-sdk.git?tag=v1.3.0#ce69facf34293311a9478182d21895e0e8d2f2ec"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "938826ce40885f20733f99b57620a706a0c795837b4a30ae1d904ad413e35a04"
 dependencies = [
  "chrono",
  "cosmwasm-schema",
