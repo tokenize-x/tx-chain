@@ -3,7 +3,8 @@ FROM --platform=$BUILDPLATFORM {{ .From }} as builder
 ARG TARGETARCH
 COPY {{if .InDocker}}docker.{{end}}linux.$TARGETARCH/{{ .TXdBinary }} /{{ .TXdBinary }}
 COPY docker.linux.$TARGETARCH/{{ .CosmovisorBinary }} /{{ .CosmovisorBinary }}
-
+{{ if .IncludeWASMLib }}COPY docker.linux.$TARGETARCH/lib/ /wasmlib/
+{{ end }}
 {{ $txd := .TXdBinary }}
 {{ range .Networks }}
 RUN mkdir -p /app/{{ . }}/cosmovisor/genesis/bin && \
@@ -17,5 +18,6 @@ FROM --platform=$TARGETPLATFORM {{ .From }}
 COPY --from=builder /app /app
 COPY --from=builder /{{ .TXdBinary }} /{{ .TXdBinary }}
 COPY --from=builder /{{ .CosmovisorBinary }} /{{ .CosmovisorBinary }}
-
+{{ if .IncludeWASMLib }}COPY --from=builder /wasmlib/ /usr/lib/
+{{ end }}
 ENTRYPOINT ["/bin/cosmovisor", "run"]

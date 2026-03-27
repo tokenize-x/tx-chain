@@ -31,24 +31,24 @@ func ReleaseTXd(ctx context.Context, deps types.DepsFunc) error {
 	}
 
 	if err := buildTXdInDocker(
-		ctx, deps, tools.TargetPlatformLinuxAMD64InDocker, []string{}, true,
+		ctx, deps, tools.TargetPlatformLinuxAMD64InDocker, []string{}, true, docker.ImageOSAlpine,
 	); err != nil {
 		return err
 	}
 
 	if err := buildTXdInDocker(
-		ctx, deps, tools.TargetPlatformLinuxARM64InDocker, []string{}, true,
+		ctx, deps, tools.TargetPlatformLinuxARM64InDocker, []string{}, true, docker.ImageOSAlpine,
 	); err != nil {
 		return err
 	}
 
 	if err := buildTXdInDocker(
-		ctx, deps, tools.TargetPlatformDarwinAMD64InDocker, []string{}, true,
+		ctx, deps, tools.TargetPlatformDarwinAMD64InDocker, []string{}, true, docker.ImageOSAlpine,
 	); err != nil {
 		return err
 	}
 
-	return buildTXdInDocker(ctx, deps, tools.TargetPlatformDarwinARM64InDocker, []string{}, true)
+	return buildTXdInDocker(ctx, deps, tools.TargetPlatformDarwinARM64InDocker, []string{}, true, docker.ImageOSAlpine)
 }
 
 // ReleaseTXdImage releases txd docker images for amd64 and arm64.
