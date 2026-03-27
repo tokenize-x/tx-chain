@@ -808,17 +808,16 @@ func (k Keeper) GetSpendableBalance(
 	if err != nil {
 		return sdk.Coin{}, err
 	}
-	// the spendable balance counts the frozen balance
+	// the spendable balance counts the frozen balance (additive: balance - locked - frozen)
 	if def != nil && def.IsFeatureEnabled(types.Feature_freezing) {
 		frozenBalance, err := k.GetFrozenBalance(ctx, addr, denom)
 		if err != nil {
 			return sdk.Coin{}, err
 		}
-		notFrozenAmt := balance.Amount.Sub(frozenBalance.Amount)
-		if notFrozenAmt.IsNegative() {
+		spendableAmount := notLockedAmt.Sub(frozenBalance.Amount)
+		if spendableAmount.IsNegative() {
 			return sdk.NewCoin(denom, sdkmath.ZeroInt()), nil
 		}
-		spendableAmount := sdkmath.MinInt(notLockedAmt, notFrozenAmt)
 		return sdk.NewCoin(denom, spendableAmount), nil
 	}
 
@@ -1015,22 +1014,22 @@ func (k Keeper) validateCoinSpendable(
 		)
 	}
 
-	if err := k.validateCoinIsNotLockedByDEXAndBank(ctx, addr, sdk.NewCoin(def.Denom, amount)); err != nil {
-		return err
-	}
+	// Spendable = spendableBalance (bank balance - bank Locked) - dexLocked - frozen (additive when freezing enabled)
+	spendableBalance := k.bankKeeper.SpendableCoin(ctx, addr, def.Denom)
+	dexLockedAmt := k.GetDEXLockedBalance(ctx, addr, def.Denom).Amount
+	availableAmt := spendableBalance.Amount.Sub(dexLockedAmt)
 
 	if def.IsFeatureEnabled(types.Feature_freezing) && !def.HasAdminPrivileges(addr) {
 		frozenBalance, err := k.GetFrozenBalance(ctx, addr, def.Denom)
 		if err != nil {
 			return err
 		}
-		frozenAmt := frozenBalance.Amount
-		balance := k.bankKeeper.GetBalance(ctx, addr, def.Denom)
-		notFrozenAmt := balance.Amount.Sub(frozenAmt)
-		if notFrozenAmt.LT(amount) {
-			return sdkerrors.Wrapf(cosmoserrors.ErrInsufficientFunds, "%s%s is not available, available %s%s",
-				amount.String(), def.Denom, notFrozenAmt.String(), def.Denom)
-		}
+		availableAmt = availableAmt.Sub(frozenBalance.Amount)
+	}
+
+	if availableAmt.LT(amount) {
+		return sdkerrors.Wrapf(cosmoserrors.ErrInsufficientFunds, "%s%s is not available, available %s%s",
+			amount.String(), def.Denom, availableAmt.String(), def.Denom)
 	}
 
 	return nil

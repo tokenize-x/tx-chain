@@ -13,8 +13,10 @@ const (
 	Cosmovisor tools.Name = "cosmovisor"
 	// MuslCC static cross- and native- musl-based toolchains.
 	MuslCC tools.Name = "muslcc"
-	// LibWASM is the WASM VM library.
+	// LibWASM is the WASM VM static library for musl/Alpine builds.
 	LibWASM tools.Name = "libwasmvm"
+	// LibWASMGlibc is the WASM VM shared library for glibc/Ubuntu builds.
+	LibWASMGlibc tools.Name = "libwasmvm-glibc"
 	// Gaia is Cosmos Hub chain.
 	Gaia tools.Name = "gaia"
 	// Osmosis is Osmosis chain.
@@ -116,6 +118,28 @@ var Tools = []tools.Tool{
 				Hash: "sha256:5c2aac650d13fc7e34e895878a0f69266f74c539db6bf5d90d3d4d66d2982a11",
 				Binaries: map[string]string{
 					"lib/libwasmvmstatic_darwin.a": "libwasmvmstatic_darwin.a",
+				},
+			},
+		},
+	},
+
+	// https://github.com/CosmWasm/wasmvm/releases
+	tools.BinaryTool{
+		Name:    LibWASMGlibc,
+		Version: "v2.3.2",
+		Sources: tools.Sources{
+			tools.TargetPlatformLinuxAMD64InDocker: {
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm.x86_64.so",
+				Hash: "sha256:0b51f84345f01cc287356e393ece8e10c47ab8c2aa2b04b9727be32f12d3daba",
+				Binaries: map[string]string{
+					"lib/libwasmvm.x86_64.so": "libwasmvm.x86_64.so",
+				},
+			},
+			tools.TargetPlatformLinuxARM64InDocker: {
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm.aarch64.so",
+				Hash: "sha256:c9913881add185f00550356dd5434f5852ffabed7cbe9cd5d0e84a3cd1957d91",
+				Binaries: map[string]string{
+					"lib/libwasmvm.aarch64.so": "libwasmvm.aarch64.so",
 				},
 			},
 		},

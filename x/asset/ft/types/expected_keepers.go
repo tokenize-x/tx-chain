@@ -18,6 +18,8 @@ type AccountKeeper interface {
 }
 
 // BankKeeper defines the expected bank interface.
+//
+//nolint:interfacebloat
 type BankKeeper interface {
 	GetDenomMetaData(ctx context.Context, denom string) (banktypes.Metadata, bool)
 	SetDenomMetaData(ctx context.Context, denomMetaData banktypes.Metadata)
@@ -37,6 +39,7 @@ type BankKeeper interface {
 		amt sdk.Coins,
 	) error
 	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
+	SpendableCoin(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	LockedCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 	HasSupply(ctx context.Context, denom string) bool
 }

@@ -268,10 +268,11 @@ func TestKeeper_DEXLocked(t *testing.T) {
 
 	// freeze locked balance
 	requireT.NoError(ftKeeper.Freeze(ctx, issuer, acc, coinToSend))
-	// 1050 - total, 600 locked by dex, 50 locked by bank, 1000 frozen
+	// 1050 total, 600 locked by dex, 50 locked by bank, 1000 frozen
+	// spendable = 1050 - 600 - 50 - 1000 = -600 -> 0 (additive: locked and frozen both reduce spendable)
 	spendableBalance, err = ftKeeper.GetSpendableBalance(ctx, acc, denom)
 	requireT.NoError(err)
-	requireT.Equal(sdk.NewInt64Coin(denom, 50).String(), spendableBalance.String())
+	requireT.Equal(sdk.NewInt64Coin(denom, 0).String(), spendableBalance.String())
 
 	// decrease locked 2d part, even when it's frozen we allow it
 	requireT.NoError(ftKeeper.DEXDecreaseLocked(ctx, acc, sdk.NewInt64Coin(denom, 600)))
@@ -295,20 +296,21 @@ func TestKeeper_DEXLocked(t *testing.T) {
 	requireT.Equal(sdk.NewInt64Coin(denom, 700).String(), frozenBalance.String())
 
 	// now 700 frozen, 50 locked by vesting, 1050 balance
+	// spendable = 1050 - 50 - 700 = 300 (additive)
 	// try to use more than allowed
 	err = ftKeeper.DEXCheckOrderAmounts(
 		ctx,
 		types.DEXOrder{Creator: acc},
-		sdk.NewInt64Coin(denom, 351),
+		sdk.NewInt64Coin(denom, 301),
 		sdk.NewInt64Coin(denom1, 0),
 	)
 	requireT.ErrorIs(err, types.ErrDEXInsufficientSpendableBalance)
-	requireT.ErrorContains(err, "available 350")
+	requireT.ErrorContains(err, "available 300")
 
 	// try to send more than allowed
-	err = bankKeeper.SendCoins(ctx, acc, acc, sdk.NewCoins(sdk.NewInt64Coin(denom, 351)))
+	err = bankKeeper.SendCoins(ctx, acc, acc, sdk.NewCoins(sdk.NewInt64Coin(denom, 301)))
 	requireT.ErrorIs(err, cosmoserrors.ErrInsufficientFunds)
-	requireT.ErrorContains(err, "available 350")
+	requireT.ErrorContains(err, "available 300")
 
 	// try to use with global freezing
 	requireT.NoError(ftKeeper.GloballyFreeze(ctx, issuer, denom))
@@ -316,7 +318,7 @@ func TestKeeper_DEXLocked(t *testing.T) {
 		ftKeeper.DEXCheckOrderAmounts(
 			ctx,
 			types.DEXOrder{Creator: acc},
-			sdk.NewInt64Coin(denom, 350),
+			sdk.NewInt64Coin(denom, 300),
 			sdk.NewInt64Coin(denom1, 0),
 		),
 		fmt.Sprintf("usage of %s for DEX is blocked because the token is globally frozen", denom),
@@ -330,11 +332,11 @@ func TestKeeper_DEXLocked(t *testing.T) {
 		ftKeeper.DEXCheckOrderAmounts(
 			ctx,
 			types.DEXOrder{Creator: acc},
-			sdk.NewInt64Coin(denom, 350),
+			sdk.NewInt64Coin(denom, 300),
 			sdk.NewInt64Coin(denom1, 0),
 		),
 	)
-	requireT.NoError(ftKeeper.DEXIncreaseLocked(ctx, acc, sdk.NewInt64Coin(denom, 350)))
+	requireT.NoError(ftKeeper.DEXIncreaseLocked(ctx, acc, sdk.NewInt64Coin(denom, 300)))
 	// freeze more than balance
 	requireT.NoError(ftKeeper.Freeze(ctx, issuer, acc, sdk.NewInt64Coin(denom, 1_000_000)))
 }

@@ -4,8 +4,6 @@ go 1.24.0
 
 toolchain go1.24.6
 
-replace github.com/tokenize-x/tx-chain/v7 => ../
-
 // CosmosSDK replacements
 replace (
 	// use cosmos fork of keyring
@@ -32,9 +30,10 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
+	github.com/spf13/pflag v1.0.10
 	github.com/tokenize-x/tx-chain/v7 v7.0.0-20260217111039-9296d325fd38
-	github.com/tokenize-x/tx-crust v0.0.0-20260223095532-73eae35f9722
-	github.com/tokenize-x/tx-crust/znet v0.0.0-20260223095532-73eae35f9722
+	github.com/tokenize-x/tx-crust v0.0.0-20260324133824-bc5b1acb5e4e
+	github.com/tokenize-x/tx-crust/znet v0.0.0-20260324133824-bc5b1acb5e4e
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 
@@ -112,9 +111,11 @@ require (
 	github.com/cosmos/gogoproto v1.7.2 // indirect
 	github.com/cosmos/iavl v1.2.4 // indirect
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10 v10.1.0 // indirect
-	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 v10.0.0-20250919123430-5596e0a03585 // indirect
+	github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v8.0.0 // indirect
+	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10 v10.1.1 // indirect
 	github.com/cosmos/ibc-go/v10 v10.5.0 // indirect
+	github.com/cosmos/ibc-go/v8 v8.7.0 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v1.0.0 // indirect
 	github.com/danieljoos/wincred v1.2.1 // indirect
@@ -226,7 +227,6 @@ require (
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/cobra v1.10.1 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spf13/viper v1.21.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
