@@ -38,6 +38,8 @@ message EventAllocationDistributed {
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
+  // distribution_id is the unique identifier of the scheduled distribution.
+  uint64 distribution_id = 7;
 }
 
 message EventCommunityDistributed {

@@ -5878,6 +5878,7 @@ Any remainder from division is sent to the community pool.
 | `community_pool_amount` | [string](#string) |  |  `community_pool_amount is the remainder sent to the community pool. This is calculated as: total_amount % num_recipients. Will be zero if total_amount is evenly divisible by num_recipients.`  |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
 | `total_amount` | [string](#string) |  |  `total_amount is the total amount allocated from the clearing account. This equals: (amount_per_recipient * num_recipients) + community_pool_amount.`  |
+| `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique identifier of the scheduled distribution.`  |
 
 
 
