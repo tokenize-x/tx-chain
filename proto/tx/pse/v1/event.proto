@@ -61,3 +61,23 @@ message EventCommunityDistributed {
   // distribution_id is the unique identifier of the distribution.
   uint64 distribution_id = 6;
 }
+
+// EventCommunityDistributionFinalized is emitted once when all AccountScoreSnapshot entries
+// have been paid out and the leftover has been sent to the community pool.
+message EventCommunityDistributionFinalized {
+  // scheduled_at is the Unix timestamp when the distribution was scheduled to occur.
+  uint64 scheduled_at = 1;
+  // distribution_id is the unique identifier of the distribution.
+  uint64 distribution_id = 2;
+  // total_distributed is the total amount paid out to delegators.
+  string total_distributed = 3 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  // community_pool_amount is the leftover sent to the community pool after all
+  // delegators have been paid (rounding dust + undelegated users).
+  string community_pool_amount = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+}
