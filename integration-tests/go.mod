@@ -20,9 +20,9 @@ require (
 	cosmossdk.io/x/feegrant v0.1.1
 	cosmossdk.io/x/nft v0.1.1
 	cosmossdk.io/x/upgrade v0.2.0
-	github.com/CosmWasm/wasmd v0.60.5
+	github.com/CosmWasm/wasmd v0.60.6
 	github.com/cometbft/cometbft v0.38.21
-	github.com/cosmos/cosmos-sdk v0.53.5
+	github.com/cosmos/cosmos-sdk v0.53.6
 	github.com/cosmos/gogoproto v1.7.2
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10 v10.1.0
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 v10.0.0-20250919123430-5596e0a03585

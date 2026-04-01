@@ -2,6 +2,8 @@ module github.com/tokenize-x/tx-chain/build
 
 go 1.24.0
 
+replace github.com/tokenize-x/tx-chain/v7 => ../
+
 toolchain go1.24.6
 
 // CosmosSDK replacements
@@ -70,7 +72,7 @@ require (
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.2 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
-	github.com/CosmWasm/wasmd v0.60.5 // indirect
+	github.com/CosmWasm/wasmd v0.60.6 // indirect
 	github.com/CosmWasm/wasmvm/v2 v2.3.2 // indirect
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/DataDog/zstd v1.5.7 // indirect
@@ -105,17 +107,15 @@ require (
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-db v1.1.3 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
-	github.com/cosmos/cosmos-sdk v0.53.5 // indirect
+	github.com/cosmos/cosmos-sdk v0.53.6 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.7.2 // indirect
 	github.com/cosmos/iavl v1.2.4 // indirect
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10 v10.1.0 // indirect
-	github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v8.0.0 // indirect
-	github.com/cosmos/ibc-go/modules/capability v1.0.1 // indirect
+	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 v10.0.0-20250919123430-5596e0a03585 // indirect
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10 v10.1.1 // indirect
 	github.com/cosmos/ibc-go/v10 v10.5.0 // indirect
-	github.com/cosmos/ibc-go/v8 v8.7.0 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v1.0.0 // indirect
 	github.com/danieljoos/wincred v1.2.1 // indirect
