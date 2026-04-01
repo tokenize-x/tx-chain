@@ -273,7 +273,7 @@ func (k Keeper) finalizeCommunityDistribution(
 		TotalDistributed:    distributedSoFar,
 		CommunityPoolAmount: leftover,
 	}); err != nil {
-		return err
+		sdkCtx.Logger().Error("failed to emit community distributed finalized event", "error", err)
 	}
 	return k.cleanupOngoingDistribution(ctx, ongoing.ID)
 }
