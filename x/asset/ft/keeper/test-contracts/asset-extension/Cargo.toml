@@ -28,7 +28,7 @@ cosmwasm-std = { version = "2.3.2", features = ["cosmwasm_2_0"] }
 cw2 = "2.0.0"
 thiserror = "2.0.18"
 cosmwasm-schema = "2.3.2"
-tx-wasm-sdk = { git = "https://github.com/tokenize-x/tx-wasm-sdk.git", tag = "v1.3.0" }
+tx-wasm-sdk = "1.3.0"
 cw-storage-plus = "2.0.0"
 prost = "0.13.5"
 serde = { version = "1.0.203", default-features = false, features = ["derive"] }
