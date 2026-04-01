@@ -1,6 +1,8 @@
 package ft
 
 import (
+	"math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
@@ -104,32 +106,32 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 // ExportGenesis returns the asset module's exported genesis.
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	// Export fungible token definitions
-	tokens, _, err := k.GetTokens(ctx, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	tokens, _, err := k.GetTokens(ctx, &query.PageRequest{Limit: math.MaxUint64})
 	if err != nil {
 		panic(err)
 	}
 
 	// Export frozen balances
-	frozenBalances, _, err := k.GetAccountsFrozenBalances(ctx, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	frozenBalances, _, err := k.GetAccountsFrozenBalances(ctx, &query.PageRequest{Limit: math.MaxUint64})
 	if err != nil {
 		panic(err)
 	}
 
 	// Export whitelisted balances
 	whitelistedBalances, _, err := k.GetAccountsWhitelistedBalances(ctx,
-		&query.PageRequest{Limit: query.PaginationMaxLimit},
+		&query.PageRequest{Limit: math.MaxUint64},
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	dexLockedBalances, _, err := k.GetAccountsDEXLockedBalances(ctx, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	dexLockedBalances, _, err := k.GetAccountsDEXLockedBalances(ctx, &query.PageRequest{Limit: math.MaxUint64})
 	if err != nil {
 		panic(err)
 	}
 
 	dexExpectedToReceiveBalances, _, err := k.GetAccountsDEXExpectedToReceiveBalances(
-		ctx, &query.PageRequest{Limit: query.PaginationMaxLimit},
+		ctx, &query.PageRequest{Limit: math.MaxUint64},
 	)
 	if err != nil {
 		panic(err)
@@ -140,7 +142,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 		panic(err)
 	}
 
-	dexSettings, _, err := k.GetDEXSettingsWithDenoms(ctx, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	dexSettings, _, err := k.GetDEXSettingsWithDenoms(ctx, &query.PageRequest{Limit: math.MaxUint64})
 	if err != nil {
 		panic(err)
 	}

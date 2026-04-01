@@ -1,6 +1,8 @@
 package dex
 
 import (
+	"math"
+
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -101,18 +103,18 @@ func InitGenesis(
 
 // ExportGenesis returns the dex module's exported genesis.
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
-	orders, _, err := k.GetAccountsOrders(ctx, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	orders, _, err := k.GetAccountsOrders(ctx, &query.PageRequest{Limit: math.MaxUint64})
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get orders with sequence"))
 	}
 
-	orderBooksWithID, _, err := k.GetOrderBooksWithID(ctx, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	orderBooksWithID, _, err := k.GetOrderBooksWithID(ctx, &query.PageRequest{Limit: math.MaxUint64})
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get order books with ID"))
 	}
 
 	accountsDenomsOrdersCounts, _, err := k.GetAccountsDenomsOrdersCounts(
-		ctx, &query.PageRequest{Limit: query.PaginationMaxLimit},
+		ctx, &query.PageRequest{Limit: math.MaxUint64},
 	)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get accounts denoms orders counts"))

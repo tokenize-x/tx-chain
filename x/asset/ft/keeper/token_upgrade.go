@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/binary"
+	"math"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/store/prefix"
@@ -28,7 +29,7 @@ func (k Keeper) ExportPendingTokenUpgrades(ctx sdk.Context) ([]types.PendingToke
 	moduleStore := k.storeService.OpenKVStore(ctx)
 	store := prefix.NewStore(runtime.KVStoreAdapter(moduleStore), types.PendingTokenUpgradeKeyPrefix)
 	versions := []types.PendingTokenUpgrade{}
-	_, err := query.Paginate(store, &query.PageRequest{Limit: query.PaginationMaxLimit}, func(key, value []byte) error {
+	_, err := query.Paginate(store, &query.PageRequest{Limit: math.MaxUint64}, func(key, value []byte) error {
 		version, n := binary.Uvarint(value)
 		if n <= 0 {
 			return sdkerrors.Wrap(types.ErrInvalidState, "unmarshalling varint failed")

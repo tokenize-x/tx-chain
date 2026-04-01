@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -293,7 +294,7 @@ func registerCounterparty(
 func listClientIDs(ctx context.Context, t *testing.T, chain integration.Chain) []string {
 	t.Helper()
 	res, err := clienttypes.NewQueryClient(chain.ClientContext).ClientStates(ctx, &clienttypes.QueryClientStatesRequest{
-		Pagination: &query.PageRequest{Limit: query.PaginationMaxLimit},
+		Pagination: &query.PageRequest{Limit: math.MaxUint64},
 	})
 	require.NoError(t, err)
 	ids := make([]string, 0, len(res.ClientStates))

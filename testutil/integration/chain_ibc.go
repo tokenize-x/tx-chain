@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"context"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -360,7 +361,7 @@ func (c ChainContext) getIBCClientAndConnectionIDs(ctx context.Context, peerChai
 	ibcChannelClient := ibcconnectiontypes.NewQueryClient(c.ClientContext)
 
 	clientStatesRes, err := ibcClientClient.ClientStates(ctx, &ibcclienttypes.QueryClientStatesRequest{
-		Pagination: &query.PageRequest{Limit: query.PaginationMaxLimit},
+		Pagination: &query.PageRequest{Limit: math.MaxUint64},
 	})
 	if err != nil {
 		return "", "", err
