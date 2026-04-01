@@ -245,6 +245,7 @@ func (k Keeper) distributeNonCommunityAllocations(
 			CommunityPoolAmount: remainder,
 			ScheduledAt:         scheduledDistribution.Timestamp,
 			TotalAmount:         allocation.Amount,
+			DistributionId:      scheduledDistribution.ID,
 		}); err != nil {
 			sdkCtx.Logger().Error("failed to emit allocation completed event", "error", err)
 		}

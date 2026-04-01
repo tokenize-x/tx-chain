@@ -197,7 +197,7 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	// Only triggered when all delegators have been processed.
 	// Send leftover to community pool and clean up.
 	if len(batch) == 0 {
-		return true, k.finalizeCommunityDistribution(ctx, ongoingID, totalPSEAmount, bondDenom)
+		return true, k.finalizeCommunityDistribution(ctx, ongoing, totalPSEAmount, bondDenom)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -250,12 +250,13 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	return false, nil
 }
 
-// finalizeCommunityDistribution sends the undistributed leftover to the community pool and cleans up state.
+// finalizeCommunityDistribution sends the undistributed leftover to the community pool, emits a
+// finalization event, and cleans up all state for the completed distribution.
 // Called when all AccountScoreSnapshot entries for the ongoing distribution have been processed.
 func (k Keeper) finalizeCommunityDistribution(
-	ctx context.Context, distributionID uint64, totalPSEAmount sdkmath.Int, bondDenom string,
+	ctx context.Context, ongoing types.ScheduledDistribution, totalPSEAmount sdkmath.Int, bondDenom string,
 ) error {
-	distributedSoFar, err := k.getDistributedAmount(ctx, distributionID)
+	distributedSoFar, err := k.getDistributedAmount(ctx, ongoing.ID)
 	if err != nil {
 		return err
 	}
@@ -265,7 +266,16 @@ func (k Keeper) finalizeCommunityDistribution(
 			return err
 		}
 	}
-	return k.cleanupOngoingDistribution(ctx, distributionID)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventCommunityDistributionFinalized{
+		ScheduledAt:         ongoing.Timestamp,
+		DistributionId:      ongoing.ID,
+		TotalDistributed:    distributedSoFar,
+		CommunityPoolAmount: leftover,
+	}); err != nil {
+		sdkCtx.Logger().Error("failed to emit community distributed finalized event", "error", err)
+	}
+	return k.cleanupOngoingDistribution(ctx, ongoing.ID)
 }
 
 // getCommunityAllocationAmount extracts the community clearing account allocation from a distribution.
