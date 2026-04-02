@@ -130,6 +130,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	"github.com/tokenize-x/tx-chain/v7/app/openapi"
@@ -1109,6 +1111,10 @@ func New(
 	}
 
 	reflectionv1.RegisterReflectionServiceServer(app.GRPCQueryRouter(), reflectionSvc)
+
+	healthSvc := health.NewServer()
+	healthSvc.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+	grpc_health_v1.RegisterHealthServer(app.GRPCQueryRouter(), healthSvc)
 
 	// add test gRPC service for testing gRPC queries in isolation
 	// testdata_pulsar.RegisterQueryServer(app.GRPCQueryRouter(), testdata_pulsar.QueryImpl{})
