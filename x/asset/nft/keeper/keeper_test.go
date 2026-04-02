@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"math"
 	"sort"
 	"strings"
 	"testing"
@@ -128,7 +129,7 @@ func TestKeeper_GetClasses(t *testing.T) {
 	}
 
 	// get all classes without the issuer
-	classes, _, err := nftKeeper.GetClasses(ctx, nil, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	classes, _, err := nftKeeper.GetClasses(ctx, nil, &query.PageRequest{Limit: math.MaxUint64})
 	requireT.NoError(err)
 	requireT.Len(classes, len(allSettings))
 	sort.Slice(classes, func(i, j int) bool {
@@ -140,7 +141,7 @@ func TestKeeper_GetClasses(t *testing.T) {
 	}
 
 	// get issuer 2 classes
-	classes, _, err = nftKeeper.GetClasses(ctx, &issuer2, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	classes, _, err = nftKeeper.GetClasses(ctx, &issuer2, &query.PageRequest{Limit: math.MaxUint64})
 	requireT.NoError(err)
 	requireT.Len(classes, 2)
 	sort.Slice(classes, func(i, j int) bool {
@@ -1102,7 +1103,7 @@ func TestKeeper_Whitelist(t *testing.T) {
 	requireT.NoError(assetNFTKeeper.AddToWhitelist(ctx, classID, nftID, issuer, recipient2))
 
 	whitelistedNftAccounts, _, err := assetNFTKeeper.GetWhitelistedAccountsForNFT(
-		ctx, classID, nftID, &query.PageRequest{Limit: query.PaginationMaxLimit},
+		ctx, classID, nftID, &query.PageRequest{Limit: math.MaxUint64},
 	)
 	requireT.NoError(err)
 	requireT.Len(whitelistedNftAccounts, 2)
@@ -1287,7 +1288,7 @@ func TestKeeper_ClassWhitelist(t *testing.T) {
 	requireT.True(isWhitelisted)
 
 	whitelistedNftAccounts, _, err := assetNFTKeeper.GetClassWhitelistedAccounts(
-		ctx, classID, &query.PageRequest{Limit: query.PaginationMaxLimit},
+		ctx, classID, &query.PageRequest{Limit: math.MaxUint64},
 	)
 	requireT.NoError(err)
 	requireT.Len(whitelistedNftAccounts, 2)

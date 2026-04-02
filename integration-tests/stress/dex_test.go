@@ -1,6 +1,7 @@
 package stress
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -34,7 +35,7 @@ func TestLimitOrdersStressMatching(t *testing.T) {
 	creatorOrdersRes, err := dexClient.Orders(ctx, &dextypes.QueryOrdersRequest{
 		Creator: preCreatedOrdersCreator,
 		Pagination: &query.PageRequest{
-			Limit:      query.PaginationMaxLimit,
+			Limit:      math.MaxUint64,
 			CountTotal: true,
 		},
 	})
@@ -111,7 +112,7 @@ func TestLimitOrdersStressMatching(t *testing.T) {
 	creatorOrdersRes, err = dexClient.Orders(ctx, &dextypes.QueryOrdersRequest{
 		Creator: preCreatedOrdersCreator,
 		Pagination: &query.PageRequest{
-			Limit:      query.PaginationMaxLimit,
+			Limit:      math.MaxUint64,
 			CountTotal: true,
 		},
 	})

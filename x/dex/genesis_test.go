@@ -2,6 +2,7 @@ package dex_test
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 
@@ -231,7 +232,7 @@ func TestInitAndExportGenesis(t *testing.T) {
 
 	// check that this order sequence is next
 	orders, _, err := dexKeeper.GetAccountsOrders(
-		sdkCtx, &query.PageRequest{Limit: query.PaginationMaxLimit},
+		sdkCtx, &query.PageRequest{Limit: math.MaxUint64},
 	)
 	require.NoError(t, err)
 
@@ -272,13 +273,13 @@ func TestInitAndExportGenesis(t *testing.T) {
 	require.Equal(t, uint32(5), denom3ToDenom1OrderBookID)
 
 	// cancel orders by denom to be sure that the acc-denom-order mapping is saved
-	acc1Orders, _, err := dexKeeper.GetOrders(sdkCtx, acc2, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	acc1Orders, _, err := dexKeeper.GetOrders(sdkCtx, acc2, &query.PageRequest{Limit: math.MaxUint64})
 	require.NoError(t, err)
 	require.Len(t, acc1Orders, 3)
 
 	require.NoError(t, dexKeeper.CancelOrdersByDenom(sdkCtx, issuer, acc2, denoms[2]))
 
-	acc1Orders, _, err = dexKeeper.GetOrders(sdkCtx, acc2, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	acc1Orders, _, err = dexKeeper.GetOrders(sdkCtx, acc2, &query.PageRequest{Limit: math.MaxUint64})
 	require.NoError(t, err)
 	require.Len(t, acc1Orders, 1)
 }

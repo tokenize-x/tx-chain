@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"math"
 	"time"
 
 	sdkstore "cosmossdk.io/core/store"
@@ -215,7 +216,7 @@ func (k Keeper) ExportDelayedItems(ctx sdk.Context) ([]types.DelayedItem, error)
 	moduleStore := k.storeService.OpenKVStore(ctx)
 	store := prefix.NewStore(runtime.KVStoreAdapter(moduleStore), types.DelayedItemKeyPrefix)
 	delayedItems := make([]types.DelayedItem, 0)
-	_, err := query.Paginate(store, &query.PageRequest{Limit: query.PaginationMaxLimit}, func(key, value []byte) error {
+	_, err := query.Paginate(store, &query.PageRequest{Limit: math.MaxUint64}, func(key, value []byte) error {
 		executionTime, id, err := types.DecodeDelayedItemKey(key)
 		if err != nil {
 			return err
@@ -295,7 +296,7 @@ func (k Keeper) ExportBlockItems(ctx sdk.Context) ([]types.BlockItem, error) {
 	moduleStore := k.storeService.OpenKVStore(ctx)
 	store := prefix.NewStore(runtime.KVStoreAdapter(moduleStore), types.BlockItemKeyPrefix)
 	blockItems := make([]types.BlockItem, 0)
-	_, err := query.Paginate(store, &query.PageRequest{Limit: query.PaginationMaxLimit}, func(key, value []byte) error {
+	_, err := query.Paginate(store, &query.PageRequest{Limit: math.MaxUint64}, func(key, value []byte) error {
 		height, id, err := types.DecodeBlockItemKey(key)
 		if err != nil {
 			return err
