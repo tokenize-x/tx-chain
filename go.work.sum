@@ -915,6 +915,8 @@ github.com/CosmWasm/wasmd v0.55.1 h1:Rv6UaN+b9fRfOl7C1G2OPSegJ3G6s6/F+hOIqjxq/nY
 github.com/CosmWasm/wasmd v0.55.1/go.mod h1:EfUH0kyExr+dlcQQSWcW5phrpw/JMGBitvAwG9J5FZk=
 github.com/CosmWasm/wasmd v0.60.0 h1:zaMX7wCnce55844BNd2om/LCWrL39zR4s8yHvNxxXig=
 github.com/CosmWasm/wasmd v0.60.0/go.mod h1:3CfQjeiCkZSHfQEif8eBLI0/V/edGZfaIo5cT/auThc=
+github.com/CosmWasm/wasmd v0.60.6 h1:fHv//SyVv/L6SS33fxMC2JGAUxy3ZyUlIOb6U3vkJvo=
+github.com/CosmWasm/wasmd v0.60.6/go.mod h1:2Fs7Y8CEvtgjv5moPdOGLbZ6Vv49bypD5xu3DY0s4Hc=
 github.com/CosmWasm/wasmvm/v2 v2.0.0/go.mod h1:su9lg5qLr7adV95eOfzjZWkGiky8WNaNIHDr7Fpu7Ck=
 github.com/CosmWasm/wasmvm/v2 v2.2.1/go.mod h1:bMhLQL4Yp9CzJi9A83aR7VO9wockOsSlZbT4ztOl6bg=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
@@ -1360,6 +1362,8 @@ github.com/cosmos/cosmos-sdk v0.50.12/go.mod h1:hrWEFMU1eoXqLJeE6VVESpJDQH67FS1n
 github.com/cosmos/cosmos-sdk v0.50.13/go.mod h1:hrWEFMU1eoXqLJeE6VVESpJDQH67FS1nnMrQIjO2daw=
 github.com/cosmos/cosmos-sdk v0.53.0/go.mod h1:UPcRyFwOUy2PfSFBWxBceO/HTjZOuBVqY583WyazIGs=
 github.com/cosmos/cosmos-sdk v0.53.4/go.mod h1:7U3+WHZtI44dEOnU46+lDzBb2tFh1QlMvi8Z5JugopI=
+github.com/cosmos/cosmos-sdk v0.53.6 h1:aJeInld7rbsHtH1qLHu2aZJF9t40mGlqp3ylBLDT0HI=
+github.com/cosmos/cosmos-sdk v0.53.6/go.mod h1:N6YuprhAabInbT3YGumGDKONbvPX5dNro7RjHvkQoKE=
 github.com/cosmos/cosmos-sdk/db v1.0.0-beta.1.0.20220726092710-f848e4300a8a/go.mod h1:c8IO23vgNxueCCJlSI9awQtcxsvc+buzaeThB85qfBU=
 github.com/cosmos/gogoproto v1.4.3/go.mod h1:0hLIG5TR7IvV1fme1HCFKjfzW9X2x0Mo+RooWXCnOWU=
 github.com/cosmos/gogoproto v1.4.11/go.mod h1:/g39Mh8m17X8Q/GDEs5zYTSNaNnInBSohtaxzQnYq1Y=
@@ -2920,16 +2924,12 @@ github.com/tokenize-x/tx-crust v0.0.0-20260210121155-7b32c8260237 h1:LfBAQVVMSqP
 github.com/tokenize-x/tx-crust v0.0.0-20260210121155-7b32c8260237/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
 github.com/tokenize-x/tx-crust v0.0.0-20260223095532-73eae35f9722 h1:4HbCx+SpZ2fVXBkZyw8w8jJR7WRX1g89NCWeG9Etaws=
 github.com/tokenize-x/tx-crust v0.0.0-20260223095532-73eae35f9722/go.mod h1:uBS4jcaHdXgfZTGYdpGm00EvHtramk3+W1g0EF6WI3E=
-github.com/tokenize-x/tx-crust v0.0.0-20260324133824-bc5b1acb5e4e h1:sXOBuGtyL56ZYqdrL+FG72cXPZMbc2pswdmK0iNtO+I=
-github.com/tokenize-x/tx-crust v0.0.0-20260324133824-bc5b1acb5e4e/go.mod h1:bnIWfIPSdiRnv19dioLlZVqJp/xngLjQWjZ9qBr+0Hs=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20251204091714-85b536a4d6a0 h1:CkcEu9z6bWu+bjuaURFalnI0X2SpWnvvSNODtlSQd2I=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20251204091714-85b536a4d6a0/go.mod h1:328EyqltI5jgYWvbvVsZjlzjZ1Fm/EGSS7xEm0TpSdw=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260210121155-7b32c8260237 h1:e9flocsMtTCWHNE4wsCTFqrEqU8WSKT0HlW5nPboKBQ=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260210121155-7b32c8260237/go.mod h1:93TCCNLv8U5QxOQfflfj2BWGzILfvsjsfE9O1DXk+dE=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260223095532-73eae35f9722 h1:0DynqWpwuVvDHbuHeuyuPhFH7rLMN+Xmu2v7KyKs7zM=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260223095532-73eae35f9722/go.mod h1:LJuHXCcsW3yiR0m1LI9DYfWfXYoxlNZAZ040uYXCEYE=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260324133824-bc5b1acb5e4e h1:4h4grHzuDy1wKFK/O62ZKTKxXcRAn/K6lTXFnJkAN88=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260324133824-bc5b1acb5e4e/go.mod h1:LJuHXCcsW3yiR0m1LI9DYfWfXYoxlNZAZ040uYXCEYE=
 github.com/tomarrell/wrapcheck/v2 v2.8.1 h1:HxSqDSN0sAt0yJYsrcYVoEeyM4aI9yAm3KQpIXDJRhQ=
 github.com/tomarrell/wrapcheck/v2 v2.8.1/go.mod h1:/n2Q3NZ4XFT50ho6Hbxg+RV1uyo2Uow/Vdm9NQcl5SE=
 github.com/tommy-muehle/go-mnd/v2 v2.5.1 h1:NowYhSdyE/1zwK9QCLeRb6USWdoif80Ie+v+yU8u1Zw=

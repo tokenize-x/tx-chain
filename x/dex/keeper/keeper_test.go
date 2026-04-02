@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -703,7 +704,7 @@ func TestKeeper_GetOrdersAndOrderBookOrders(t *testing.T) {
 	require.Len(t, acc1Orders, 2)
 
 	acc1Orders, _, err = testApp.DEXKeeper.GetOrders(sdkCtx, acc1, &query.PageRequest{
-		Limit: query.PaginationMaxLimit,
+		Limit: math.MaxUint64,
 	})
 	require.NoError(t, err)
 
@@ -734,7 +735,7 @@ func TestKeeper_GetOrdersAndOrderBookOrders(t *testing.T) {
 		testSet.denom2,
 		types.SIDE_SELL,
 		&query.PageRequest{
-			Limit: query.PaginationMaxLimit,
+			Limit: math.MaxUint64,
 		},
 	)
 	require.NoError(t, err)
@@ -1099,7 +1100,7 @@ func TestKeeper_PlaceAndCancelOrdersByDenom(t *testing.T) {
 	))
 
 	orders, _, err := testApp.DEXKeeper.GetOrders(sdkCtx, acc1, &query.PageRequest{
-		Limit: query.PaginationMaxLimit,
+		Limit: math.MaxUint64,
 	})
 	require.NoError(t, err)
 	require.Len(t, orders, 15)
@@ -1120,7 +1121,7 @@ func TestKeeper_PlaceAndCancelOrdersByDenom(t *testing.T) {
 	))
 
 	orders, _, err = testApp.DEXKeeper.GetOrders(sdkCtx, acc1, &query.PageRequest{
-		Limit: query.PaginationMaxLimit,
+		Limit: math.MaxUint64,
 	})
 	require.NoError(t, err)
 	require.Len(t, orders, 5)
@@ -1143,7 +1144,7 @@ func TestKeeper_PlaceAndCancelOrdersByDenom(t *testing.T) {
 		getAccountDenomsOrdersCount(t, testApp, sdkCtx, acc1),
 	))
 	orders, _, err = testApp.DEXKeeper.GetOrders(sdkCtx, acc1, &query.PageRequest{
-		Limit: query.PaginationMaxLimit,
+		Limit: math.MaxUint64,
 	})
 	require.NoError(t, err)
 	require.Empty(t, orders)
@@ -1281,7 +1282,7 @@ func getAccountDenomsOrdersCount(
 	accountsDenomsOrdersCount, _, err := testApp.DEXKeeper.GetAccountsDenomsOrdersCounts(
 		sdkCtx,
 		&query.PageRequest{
-			Limit: query.PaginationMaxLimit,
+			Limit: math.MaxUint64,
 		},
 	)
 	require.NoError(t, err)

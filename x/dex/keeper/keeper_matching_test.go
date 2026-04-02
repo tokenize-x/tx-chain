@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"reflect"
 	"strings"
@@ -6870,7 +6871,7 @@ func cancelAllOrdersAndAssertState(
 ) {
 	t.Helper()
 
-	orders, _, err := testApp.DEXKeeper.GetAccountsOrders(sdkCtx, &query.PageRequest{Limit: query.PaginationMaxLimit})
+	orders, _, err := testApp.DEXKeeper.GetAccountsOrders(sdkCtx, &query.PageRequest{Limit: math.MaxUint64})
 	require.NoError(t, err)
 
 	t.Logf("Cancelling all orders, count %d", len(orders))
