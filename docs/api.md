@@ -280,6 +280,7 @@
 - [tx/pse/v1/event.proto](#tx/pse/v1/event.proto)
     - [EventAllocationDistributed](#tx.pse.v1.EventAllocationDistributed)
     - [EventCommunityDistributed](#tx.pse.v1.EventCommunityDistributed)
+    - [EventCommunityDistributionFinalized](#tx.pse.v1.EventCommunityDistributionFinalized)
   
 - [tx/pse/v1/genesis.proto](#tx/pse/v1/genesis.proto)
     - [AccountScore](#tx.pse.v1.AccountScore)
@@ -5877,6 +5878,7 @@ Any remainder from division is sent to the community pool.
 | `community_pool_amount` | [string](#string) |  |  `community_pool_amount is the remainder sent to the community pool. This is calculated as: total_amount % num_recipients. Will be zero if total_amount is evenly divisible by num_recipients.`  |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the allocation was scheduled to occur.`  |
 | `total_amount` | [string](#string) |  |  `total_amount is the total amount allocated from the clearing account. This equals: (amount_per_recipient * num_recipients) + community_pool_amount.`  |
+| `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique identifier of the scheduled distribution.`  |
 
 
 
@@ -5897,6 +5899,29 @@ Any remainder from division is sent to the community pool.
 | `amount` | [string](#string) |  |    |
 | `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the distribution was scheduled to occur.`  |
 | `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique identifier of the distribution.`  |
+
+
+
+
+
+
+<a name="tx.pse.v1.EventCommunityDistributionFinalized"></a>
+
+### EventCommunityDistributionFinalized
+
+```
+EventCommunityDistributionFinalized is emitted once when all AccountScoreSnapshot entries
+have been paid out and the leftover has been sent to the community pool.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `scheduled_at` | [uint64](#uint64) |  |  `scheduled_at is the Unix timestamp when the distribution was scheduled to occur.`  |
+| `distribution_id` | [uint64](#uint64) |  |  `distribution_id is the unique identifier of the distribution.`  |
+| `total_distributed` | [string](#string) |  |  `total_distributed is the total amount paid out to delegators.`  |
+| `community_pool_amount` | [string](#string) |  |  `community_pool_amount is the leftover sent to the community pool after all delegators have been paid (rounding dust + undelegated users).`  |
 
 
 
