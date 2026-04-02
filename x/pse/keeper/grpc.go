@@ -2,6 +2,9 @@ package keeper
 
 import (
 	"context"
+	"errors"
+
+	"cosmossdk.io/collections"
 
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
@@ -70,6 +73,56 @@ func (qs QueryService) ScheduledDistributions(
 	return &types.QueryScheduledDistributionsResponse{
 		ScheduledDistributions: scheduledDistributions,
 		DisableDistributions:   disabled,
+	}, nil
+}
+
+// UnprocessedScheduledDistributions returns only unprocessed (upcoming) scheduled distributions.
+func (qs QueryService) UnprocessedScheduledDistributions(
+	ctx context.Context, req *types.QueryUnprocessedScheduledDistributionsRequest,
+) (*types.QueryUnprocessedScheduledDistributionsResponse, error) {
+	scheduledDistributions, err := qs.keeper.GetUnprocessedDistributionSchedule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	lastID, err := qs.keeper.LastProcessedDistributionID.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastID = 0
+	} else if err != nil {
+		return nil, err
+	}
+
+	disabled, err := qs.keeper.DistributionDisabled.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryUnprocessedScheduledDistributionsResponse{
+		ScheduledDistributions:      scheduledDistributions,
+		LastProcessedDistributionId: lastID,
+		DisableDistributions:        disabled,
+	}, nil
+}
+
+// ProcessedScheduledDistributions returns only processed (completed) scheduled distributions.
+func (qs QueryService) ProcessedScheduledDistributions(
+	ctx context.Context, req *types.QueryProcessedScheduledDistributionsRequest,
+) (*types.QueryProcessedScheduledDistributionsResponse, error) {
+	scheduledDistributions, err := qs.keeper.GetProcessedDistributionSchedule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	lastID, err := qs.keeper.LastProcessedDistributionID.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastID = 0
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &types.QueryProcessedScheduledDistributionsResponse{
+		ScheduledDistributions:      scheduledDistributions,
+		LastProcessedDistributionId: lastID,
 	}, nil
 }
 

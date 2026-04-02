@@ -381,6 +381,163 @@ func TestQueryAllocationSchedule(t *testing.T) {
 	})
 }
 
+func TestQueryUnprocessedScheduledDistributions(t *testing.T) {
+	t.Run("empty schedule", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		ctx := testApp.NewContext(false).WithBlockTime(time.Now())
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		resp, err := queryService.UnprocessedScheduledDistributions(ctx, &types.QueryUnprocessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+		requireT.NotNil(resp)
+		requireT.Empty(resp.ScheduledDistributions)
+		requireT.Equal(uint64(0), resp.LastProcessedDistributionId)
+		requireT.False(resp.DisableDistributions)
+	})
+
+	t.Run("returns only unprocessed entries", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		schedule := []types.ScheduledDistribution{
+			{ID: 1, Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)}}},
+			{ID: 2, Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(2000)}}},
+			{ID: 3, Timestamp: uint64(currentTime.Add(3 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(3000)}}},
+			{ID: 4, Timestamp: uint64(currentTime.Add(4 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(4000)}}},
+		}
+		requireT.NoError(testApp.PSEKeeper.SaveDistributionSchedule(ctx, schedule))
+		requireT.NoError(testApp.PSEKeeper.LastProcessedDistributionID.Set(ctx, 2))
+
+		resp, err := queryService.UnprocessedScheduledDistributions(ctx, &types.QueryUnprocessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+		requireT.Len(resp.ScheduledDistributions, 2)
+		requireT.Equal(uint64(3), resp.ScheduledDistributions[0].ID)
+		requireT.Equal(uint64(4), resp.ScheduledDistributions[1].ID)
+		requireT.Equal(uint64(2), resp.LastProcessedDistributionId)
+	})
+
+	t.Run("all processed returns empty", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		schedule := []types.ScheduledDistribution{
+			{ID: 1, Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)}}},
+			{ID: 2, Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(2000)}}},
+		}
+		requireT.NoError(testApp.PSEKeeper.SaveDistributionSchedule(ctx, schedule))
+		requireT.NoError(testApp.PSEKeeper.LastProcessedDistributionID.Set(ctx, 2))
+
+		resp, err := queryService.UnprocessedScheduledDistributions(ctx, &types.QueryUnprocessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+		requireT.Empty(resp.ScheduledDistributions)
+		requireT.Equal(uint64(2), resp.LastProcessedDistributionId)
+	})
+}
+
+func TestQueryProcessedScheduledDistributions(t *testing.T) {
+	t.Run("none processed", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		schedule := []types.ScheduledDistribution{
+			{ID: 1, Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)}}},
+			{ID: 2, Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(2000)}}},
+		}
+		requireT.NoError(testApp.PSEKeeper.SaveDistributionSchedule(ctx, schedule))
+
+		resp, err := queryService.ProcessedScheduledDistributions(ctx, &types.QueryProcessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+		requireT.Empty(resp.ScheduledDistributions)
+		requireT.Equal(uint64(0), resp.LastProcessedDistributionId)
+	})
+
+	t.Run("returns only processed entries", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		schedule := []types.ScheduledDistribution{
+			{ID: 1, Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)}}},
+			{ID: 2, Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(2000)}}},
+			{ID: 3, Timestamp: uint64(currentTime.Add(3 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(3000)}}},
+			{ID: 4, Timestamp: uint64(currentTime.Add(4 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(4000)}}},
+		}
+		requireT.NoError(testApp.PSEKeeper.SaveDistributionSchedule(ctx, schedule))
+		requireT.NoError(testApp.PSEKeeper.LastProcessedDistributionID.Set(ctx, 2))
+
+		resp, err := queryService.ProcessedScheduledDistributions(ctx, &types.QueryProcessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+		requireT.Len(resp.ScheduledDistributions, 2)
+		requireT.Equal(uint64(1), resp.ScheduledDistributions[0].ID)
+		requireT.Equal(uint64(2), resp.ScheduledDistributions[1].ID)
+		requireT.Equal(uint64(2), resp.LastProcessedDistributionId)
+	})
+
+	t.Run("all processed", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		schedule := []types.ScheduledDistribution{
+			{ID: 1, Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)}}},
+			{ID: 2, Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(2000)}}},
+		}
+		requireT.NoError(testApp.PSEKeeper.SaveDistributionSchedule(ctx, schedule))
+		requireT.NoError(testApp.PSEKeeper.LastProcessedDistributionID.Set(ctx, 2))
+
+		resp, err := queryService.ProcessedScheduledDistributions(ctx, &types.QueryProcessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+		requireT.Len(resp.ScheduledDistributions, 2)
+		requireT.Equal(uint64(1), resp.ScheduledDistributions[0].ID)
+		requireT.Equal(uint64(2), resp.ScheduledDistributions[1].ID)
+	})
+
+	t.Run("processed plus unprocessed equals total", func(t *testing.T) {
+		requireT := require.New(t)
+		testApp := simapp.New()
+		currentTime := time.Now()
+		ctx := testApp.NewContext(false).WithBlockTime(currentTime)
+		queryService := keeper.NewQueryService(testApp.PSEKeeper)
+
+		schedule := []types.ScheduledDistribution{
+			{ID: 1, Timestamp: uint64(currentTime.Add(1 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(1000)}}},
+			{ID: 2, Timestamp: uint64(currentTime.Add(2 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(2000)}}},
+			{ID: 3, Timestamp: uint64(currentTime.Add(3 * time.Hour).Unix()), Allocations: []types.ClearingAccountAllocation{{ClearingAccount: types.ClearingAccountCommunity, Amount: sdkmath.NewInt(3000)}}},
+		}
+		requireT.NoError(testApp.PSEKeeper.SaveDistributionSchedule(ctx, schedule))
+		requireT.NoError(testApp.PSEKeeper.LastProcessedDistributionID.Set(ctx, 1))
+
+		allResp, err := queryService.ScheduledDistributions(ctx, &types.QueryScheduledDistributionsRequest{})
+		requireT.NoError(err)
+
+		processedResp, err := queryService.ProcessedScheduledDistributions(ctx, &types.QueryProcessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+
+		unprocessedResp, err := queryService.UnprocessedScheduledDistributions(ctx, &types.QueryUnprocessedScheduledDistributionsRequest{})
+		requireT.NoError(err)
+
+		requireT.Equal(
+			len(allResp.ScheduledDistributions),
+			len(processedResp.ScheduledDistributions)+len(unprocessedResp.ScheduledDistributions),
+			"processed + unprocessed should equal total",
+		)
+	})
+}
+
 func TestQueryClearingAccountBalances(t *testing.T) {
 	t.Run("all accounts with zero balance", func(t *testing.T) {
 		requireT := require.New(t)

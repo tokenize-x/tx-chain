@@ -288,6 +288,36 @@ func (k Keeper) GetDistributionSchedule(ctx context.Context) ([]types.ScheduledD
 	return schedule, nil
 }
 
+// GetProcessedDistributionSchedule returns only processed scheduled distributions
+// (ID <= LastProcessedDistributionID), sorted by id in ascending order.
+func (k Keeper) GetProcessedDistributionSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {
+	lastProcessed, err := k.LastProcessedDistributionID.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		lastProcessed = 0
+	} else if err != nil {
+		return nil, err
+	}
+
+	var schedule []types.ScheduledDistribution
+	rng := new(collections.Range[uint64]).EndInclusive(lastProcessed)
+
+	iter, err := k.AllocationSchedule.Iterate(ctx, rng)
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		kv, err := iter.KeyValue()
+		if err != nil {
+			return nil, err
+		}
+		schedule = append(schedule, kv.Value)
+	}
+
+	return schedule, nil
+}
+
 // GetUnprocessedDistributionSchedule returns only unprocessed scheduled distributions
 // (ID > LastProcessedDistributionID), sorted by id in ascending order.
 func (k Keeper) GetUnprocessedDistributionSchedule(ctx context.Context) ([]types.ScheduledDistribution, error) {

@@ -300,10 +300,14 @@
     - [QueryLastProcessedDistributionIDResponse](#tx.pse.v1.QueryLastProcessedDistributionIDResponse)
     - [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest)
     - [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse)
+    - [QueryProcessedScheduledDistributionsRequest](#tx.pse.v1.QueryProcessedScheduledDistributionsRequest)
+    - [QueryProcessedScheduledDistributionsResponse](#tx.pse.v1.QueryProcessedScheduledDistributionsResponse)
     - [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest)
     - [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse)
     - [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest)
     - [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse)
+    - [QueryUnprocessedScheduledDistributionsRequest](#tx.pse.v1.QueryUnprocessedScheduledDistributionsRequest)
+    - [QueryUnprocessedScheduledDistributionsResponse](#tx.pse.v1.QueryUnprocessedScheduledDistributionsResponse)
   
     - [Query](#tx.pse.v1.Query)
   
@@ -6215,6 +6219,40 @@ QueryParamsResponse defines the response type for querying module parameters.
 
 
 
+<a name="tx.pse.v1.QueryProcessedScheduledDistributionsRequest"></a>
+
+### QueryProcessedScheduledDistributionsRequest
+
+```
+QueryProcessedScheduledDistributionsRequest defines the request type for querying processed scheduled distributions.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryProcessedScheduledDistributionsResponse"></a>
+
+### QueryProcessedScheduledDistributionsResponse
+
+```
+QueryProcessedScheduledDistributionsResponse defines the response type for querying processed scheduled distributions.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains processed (completed) scheduled distributions with ID <= LastProcessedDistributionID, sorted by id in ascending order.`  |
+| `last_processed_distribution_id` | [uint64](#uint64) |  |  `last_processed_distribution_id is the ID of the last completed distribution.`  |
+
+
+
+
+
+
 <a name="tx.pse.v1.QueryScheduledDistributionsRequest"></a>
 
 ### QueryScheduledDistributionsRequest
@@ -6286,6 +6324,41 @@ QueryScoreResponse defines the response type for querying an account's current s
 
 
 
+
+<a name="tx.pse.v1.QueryUnprocessedScheduledDistributionsRequest"></a>
+
+### QueryUnprocessedScheduledDistributionsRequest
+
+```
+QueryUnprocessedScheduledDistributionsRequest defines the request type for querying unprocessed scheduled distributions.
+```
+
+
+
+
+
+
+
+<a name="tx.pse.v1.QueryUnprocessedScheduledDistributionsResponse"></a>
+
+### QueryUnprocessedScheduledDistributionsResponse
+
+```
+QueryUnprocessedScheduledDistributionsResponse defines the response type for querying unprocessed scheduled distributions.
+```
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `scheduled_distributions` | [ScheduledDistribution](#tx.pse.v1.ScheduledDistribution) | repeated |  `scheduled_distributions contains unprocessed (upcoming) scheduled distributions with ID > LastProcessedDistributionID, sorted by id in ascending order.`  |
+| `last_processed_distribution_id` | [uint64](#uint64) |  |  `last_processed_distribution_id is the ID of the last completed distribution for context.`  |
+| `disable_distributions` | [bool](#bool) |  |  `disable_distributions indicates whether distributions are currently disabled.`  |
+
+
+
+
+
  <!-- end messages -->
 
  <!-- end enums -->
@@ -6306,7 +6379,9 @@ Query defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `Params` | [QueryParamsRequest](#tx.pse.v1.QueryParamsRequest) | [QueryParamsResponse](#tx.pse.v1.QueryParamsResponse) | `Params queries the parameters of the module.` | GET|/tx/pse/v1/params |
 | `Score` | [QueryScoreRequest](#tx.pse.v1.QueryScoreRequest) | [QueryScoreResponse](#tx.pse.v1.QueryScoreResponse) | `Score queries the current total score of an account (delegator).` | GET|/tx/pse/v1/score/{address} |
-| `ScheduledDistributions` | [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest) | [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse) | `ScheduledDistributions queries all future scheduled distributions.` | GET|/tx/pse/v1/scheduled_distributions |
+| `ScheduledDistributions` | [QueryScheduledDistributionsRequest](#tx.pse.v1.QueryScheduledDistributionsRequest) | [QueryScheduledDistributionsResponse](#tx.pse.v1.QueryScheduledDistributionsResponse) | `ScheduledDistributions queries all scheduled distributions (both processed and unprocessed).` | GET|/tx/pse/v1/scheduled_distributions |
+| `UnprocessedScheduledDistributions` | [QueryUnprocessedScheduledDistributionsRequest](#tx.pse.v1.QueryUnprocessedScheduledDistributionsRequest) | [QueryUnprocessedScheduledDistributionsResponse](#tx.pse.v1.QueryUnprocessedScheduledDistributionsResponse) | `UnprocessedScheduledDistributions queries only unprocessed (upcoming) scheduled distributions.` | GET|/tx/pse/v1/unprocessed_scheduled_distributions |
+| `ProcessedScheduledDistributions` | [QueryProcessedScheduledDistributionsRequest](#tx.pse.v1.QueryProcessedScheduledDistributionsRequest) | [QueryProcessedScheduledDistributionsResponse](#tx.pse.v1.QueryProcessedScheduledDistributionsResponse) | `ProcessedScheduledDistributions queries only processed (completed) scheduled distributions.` | GET|/tx/pse/v1/processed_scheduled_distributions |
 | `ClearingAccountBalances` | [QueryClearingAccountBalancesRequest](#tx.pse.v1.QueryClearingAccountBalancesRequest) | [QueryClearingAccountBalancesResponse](#tx.pse.v1.QueryClearingAccountBalancesResponse) | `ClearingAccountBalances queries the current balances of all PSE clearing accounts.` | GET|/tx/pse/v1/clearing_account_balances |
 | `LastProcessedDistributionID` | [QueryLastProcessedDistributionIDRequest](#tx.pse.v1.QueryLastProcessedDistributionIDRequest) | [QueryLastProcessedDistributionIDResponse](#tx.pse.v1.QueryLastProcessedDistributionIDResponse) | `LastProcessedDistributionID queries the ID of the last completed distribution.` | GET|/tx/pse/v1/last_processed_distribution_id |
 

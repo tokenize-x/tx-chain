@@ -513,6 +513,217 @@ func (m *QueryLastProcessedDistributionIDResponse) GetLastProcessedDistributionI
 	return 0
 }
 
+// QueryUnprocessedScheduledDistributionsRequest defines the request type for querying unprocessed scheduled distributions.
+type QueryUnprocessedScheduledDistributionsRequest struct {
+}
+
+func (m *QueryUnprocessedScheduledDistributionsRequest) Reset() {
+	*m = QueryUnprocessedScheduledDistributionsRequest{}
+}
+func (m *QueryUnprocessedScheduledDistributionsRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*QueryUnprocessedScheduledDistributionsRequest) ProtoMessage() {}
+func (*QueryUnprocessedScheduledDistributionsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1bf0a69d5178bfb9, []int{11}
+}
+func (m *QueryUnprocessedScheduledDistributionsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryUnprocessedScheduledDistributionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryUnprocessedScheduledDistributionsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryUnprocessedScheduledDistributionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryUnprocessedScheduledDistributionsRequest.Merge(m, src)
+}
+func (m *QueryUnprocessedScheduledDistributionsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryUnprocessedScheduledDistributionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryUnprocessedScheduledDistributionsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryUnprocessedScheduledDistributionsRequest proto.InternalMessageInfo
+
+// QueryUnprocessedScheduledDistributionsResponse defines the response type for querying unprocessed scheduled distributions.
+type QueryUnprocessedScheduledDistributionsResponse struct {
+	// scheduled_distributions contains unprocessed (upcoming) scheduled distributions
+	// with ID > LastProcessedDistributionID, sorted by id in ascending order.
+	ScheduledDistributions []ScheduledDistribution `protobuf:"bytes,1,rep,name=scheduled_distributions,json=scheduledDistributions,proto3" json:"scheduled_distributions" yaml:"scheduled_distributions"`
+	// last_processed_distribution_id is the ID of the last completed distribution for context.
+	LastProcessedDistributionId uint64 `protobuf:"varint,2,opt,name=last_processed_distribution_id,json=lastProcessedDistributionId,proto3" json:"last_processed_distribution_id,omitempty"`
+	// disable_distributions indicates whether distributions are currently disabled.
+	DisableDistributions bool `protobuf:"varint,3,opt,name=disable_distributions,json=disableDistributions,proto3" json:"disable_distributions,omitempty"`
+}
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) Reset() {
+	*m = QueryUnprocessedScheduledDistributionsResponse{}
+}
+func (m *QueryUnprocessedScheduledDistributionsResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*QueryUnprocessedScheduledDistributionsResponse) ProtoMessage() {}
+func (*QueryUnprocessedScheduledDistributionsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1bf0a69d5178bfb9, []int{12}
+}
+func (m *QueryUnprocessedScheduledDistributionsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryUnprocessedScheduledDistributionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryUnprocessedScheduledDistributionsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryUnprocessedScheduledDistributionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryUnprocessedScheduledDistributionsResponse.Merge(m, src)
+}
+func (m *QueryUnprocessedScheduledDistributionsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryUnprocessedScheduledDistributionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryUnprocessedScheduledDistributionsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryUnprocessedScheduledDistributionsResponse proto.InternalMessageInfo
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) GetScheduledDistributions() []ScheduledDistribution {
+	if m != nil {
+		return m.ScheduledDistributions
+	}
+	return nil
+}
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) GetLastProcessedDistributionId() uint64 {
+	if m != nil {
+		return m.LastProcessedDistributionId
+	}
+	return 0
+}
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) GetDisableDistributions() bool {
+	if m != nil {
+		return m.DisableDistributions
+	}
+	return false
+}
+
+// QueryProcessedScheduledDistributionsRequest defines the request type for querying processed scheduled distributions.
+type QueryProcessedScheduledDistributionsRequest struct {
+}
+
+func (m *QueryProcessedScheduledDistributionsRequest) Reset() {
+	*m = QueryProcessedScheduledDistributionsRequest{}
+}
+func (m *QueryProcessedScheduledDistributionsRequest) String() string {
+	return proto.CompactTextString(m)
+}
+func (*QueryProcessedScheduledDistributionsRequest) ProtoMessage() {}
+func (*QueryProcessedScheduledDistributionsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1bf0a69d5178bfb9, []int{13}
+}
+func (m *QueryProcessedScheduledDistributionsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryProcessedScheduledDistributionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryProcessedScheduledDistributionsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryProcessedScheduledDistributionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryProcessedScheduledDistributionsRequest.Merge(m, src)
+}
+func (m *QueryProcessedScheduledDistributionsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryProcessedScheduledDistributionsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryProcessedScheduledDistributionsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryProcessedScheduledDistributionsRequest proto.InternalMessageInfo
+
+// QueryProcessedScheduledDistributionsResponse defines the response type for querying processed scheduled distributions.
+type QueryProcessedScheduledDistributionsResponse struct {
+	// scheduled_distributions contains processed (completed) scheduled distributions
+	// with ID <= LastProcessedDistributionID, sorted by id in ascending order.
+	ScheduledDistributions []ScheduledDistribution `protobuf:"bytes,1,rep,name=scheduled_distributions,json=scheduledDistributions,proto3" json:"scheduled_distributions" yaml:"scheduled_distributions"`
+	// last_processed_distribution_id is the ID of the last completed distribution.
+	LastProcessedDistributionId uint64 `protobuf:"varint,2,opt,name=last_processed_distribution_id,json=lastProcessedDistributionId,proto3" json:"last_processed_distribution_id,omitempty"`
+}
+
+func (m *QueryProcessedScheduledDistributionsResponse) Reset() {
+	*m = QueryProcessedScheduledDistributionsResponse{}
+}
+func (m *QueryProcessedScheduledDistributionsResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*QueryProcessedScheduledDistributionsResponse) ProtoMessage() {}
+func (*QueryProcessedScheduledDistributionsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1bf0a69d5178bfb9, []int{14}
+}
+func (m *QueryProcessedScheduledDistributionsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryProcessedScheduledDistributionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryProcessedScheduledDistributionsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryProcessedScheduledDistributionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryProcessedScheduledDistributionsResponse.Merge(m, src)
+}
+func (m *QueryProcessedScheduledDistributionsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryProcessedScheduledDistributionsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryProcessedScheduledDistributionsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryProcessedScheduledDistributionsResponse proto.InternalMessageInfo
+
+func (m *QueryProcessedScheduledDistributionsResponse) GetScheduledDistributions() []ScheduledDistribution {
+	if m != nil {
+		return m.ScheduledDistributions
+	}
+	return nil
+}
+
+func (m *QueryProcessedScheduledDistributionsResponse) GetLastProcessedDistributionId() uint64 {
+	if m != nil {
+		return m.LastProcessedDistributionId
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*QueryParamsRequest)(nil), "tx.pse.v1.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "tx.pse.v1.QueryParamsResponse")
@@ -525,62 +736,75 @@ func init() {
 	proto.RegisterType((*QueryClearingAccountBalancesResponse)(nil), "tx.pse.v1.QueryClearingAccountBalancesResponse")
 	proto.RegisterType((*QueryLastProcessedDistributionIDRequest)(nil), "tx.pse.v1.QueryLastProcessedDistributionIDRequest")
 	proto.RegisterType((*QueryLastProcessedDistributionIDResponse)(nil), "tx.pse.v1.QueryLastProcessedDistributionIDResponse")
+	proto.RegisterType((*QueryUnprocessedScheduledDistributionsRequest)(nil), "tx.pse.v1.QueryUnprocessedScheduledDistributionsRequest")
+	proto.RegisterType((*QueryUnprocessedScheduledDistributionsResponse)(nil), "tx.pse.v1.QueryUnprocessedScheduledDistributionsResponse")
+	proto.RegisterType((*QueryProcessedScheduledDistributionsRequest)(nil), "tx.pse.v1.QueryProcessedScheduledDistributionsRequest")
+	proto.RegisterType((*QueryProcessedScheduledDistributionsResponse)(nil), "tx.pse.v1.QueryProcessedScheduledDistributionsResponse")
 }
 
 func init() { proto.RegisterFile("tx/pse/v1/query.proto", fileDescriptor_1bf0a69d5178bfb9) }
 
 var fileDescriptor_1bf0a69d5178bfb9 = []byte{
-	// 794 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0xdd, 0x6e, 0xe3, 0x44,
-	0x14, 0x8e, 0x0b, 0xe9, 0xcf, 0x54, 0x50, 0x3a, 0x6d, 0x92, 0xd6, 0x4d, 0x9c, 0x30, 0xa4, 0x90,
-	0x02, 0xb1, 0xd5, 0xf4, 0x02, 0x09, 0x09, 0x09, 0xdc, 0x0a, 0x54, 0x89, 0x8b, 0x62, 0x04, 0x95,
-	0xb8, 0x89, 0x26, 0xf6, 0x28, 0xb1, 0x9a, 0x78, 0x52, 0xcf, 0xa4, 0x4a, 0x41, 0x20, 0xc4, 0x13,
-	0x20, 0xf1, 0x08, 0xdc, 0xec, 0x03, 0xec, 0x4d, 0xdf, 0xa0, 0x97, 0xd5, 0xee, 0xcd, 0x6a, 0x2f,
-	0xa2, 0x55, 0xba, 0x4f, 0x90, 0x17, 0xd8, 0x95, 0x3d, 0xe3, 0xd4, 0x4e, 0x93, 0xb4, 0x7b, 0x17,
-	0x9f, 0xf3, 0x9d, 0xef, 0x7c, 0xe7, 0x9c, 0x39, 0x27, 0x20, 0xc3, 0xfb, 0x46, 0x97, 0x11, 0xe3,
-	0x62, 0xdf, 0x38, 0xef, 0x11, 0xff, 0x52, 0xef, 0xfa, 0x94, 0x53, 0xb8, 0xc2, 0xfb, 0x7a, 0x97,
-	0x11, 0xfd, 0x62, 0x5f, 0xdd, 0x6c, 0xd2, 0x26, 0x0d, 0xad, 0x46, 0xf0, 0x4b, 0x00, 0xd4, 0x7c,
-	0x93, 0xd2, 0x66, 0x9b, 0x18, 0xb8, 0xeb, 0x1a, 0xd8, 0xf3, 0x28, 0xc7, 0xdc, 0xa5, 0x1e, 0x93,
-	0xde, 0x6d, 0x9b, 0xb2, 0x0e, 0x65, 0x75, 0x11, 0x26, 0x3e, 0xa4, 0x2b, 0x7b, 0x97, 0xb0, 0x8b,
-	0x7d, 0xdc, 0x89, 0xec, 0xf9, 0x3b, 0xbb, 0xe3, 0x32, 0xee, 0xbb, 0x8d, 0x5e, 0xc0, 0x28, 0xbc,
-	0x68, 0x13, 0xc0, 0x9f, 0x02, 0x79, 0x27, 0x61, 0x88, 0x45, 0xce, 0x7b, 0x84, 0x71, 0x74, 0x0a,
-	0x36, 0x12, 0x56, 0xd6, 0xa5, 0x1e, 0x23, 0xf0, 0x5b, 0xb0, 0x28, 0xa8, 0xb7, 0x94, 0x92, 0x52,
-	0x59, 0xad, 0xad, 0xeb, 0xe3, 0x6a, 0x74, 0x01, 0x35, 0x33, 0xd7, 0x83, 0x62, 0x6a, 0x34, 0x28,
-	0x7e, 0x70, 0x89, 0x3b, 0xed, 0xaf, 0x91, 0x80, 0x23, 0x4b, 0xc6, 0xa1, 0x2a, 0x58, 0x0f, 0x89,
-	0x7f, 0xb6, 0xa9, 0x4f, 0x64, 0x36, 0xb8, 0x05, 0x96, 0xb0, 0xe3, 0xf8, 0x84, 0x09, 0xde, 0x15,
-	0x2b, 0xfa, 0x44, 0xc7, 0x52, 0x9d, 0x84, 0x4b, 0x19, 0x07, 0x20, 0xcd, 0x02, 0x83, 0x40, 0x9b,
-	0x85, 0x20, 0xe5, 0xcb, 0x41, 0x31, 0x23, 0xda, 0xc1, 0x9c, 0x33, 0xdd, 0xa5, 0x46, 0x07, 0xf3,
-	0x96, 0x7e, 0xec, 0x71, 0x4b, 0x60, 0x51, 0x19, 0x20, 0x49, 0xd5, 0x22, 0x4e, 0xaf, 0x4d, 0x9c,
-	0xa3, 0x58, 0x33, 0xc6, 0x85, 0xbf, 0x51, 0xc0, 0x27, 0x73, 0x61, 0x52, 0xc2, 0xdf, 0x0a, 0xc8,
-	0xb1, 0x08, 0x52, 0x8f, 0xf7, 0x35, 0xa8, 0xe1, 0xbd, 0xca, 0x6a, 0xad, 0x14, 0xeb, 0xcd, 0x54,
-	0x32, 0x73, 0x57, 0xb6, 0xaa, 0x20, 0x5a, 0x15, 0xd1, 0x25, 0xd9, 0x90, 0x95, 0x65, 0x53, 0xa5,
-	0xc0, 0x5f, 0x40, 0xc6, 0x71, 0x19, 0x6e, 0x4c, 0x46, 0x6c, 0x2d, 0x94, 0x94, 0xca, 0xb2, 0x59,
-	0x1a, 0x0d, 0x8a, 0x79, 0xc1, 0x3c, 0x15, 0x86, 0xac, 0x4d, 0x69, 0x4f, 0xd0, 0xa2, 0x5d, 0xd9,
-	0x80, 0xc3, 0x36, 0xc1, 0xbe, 0xeb, 0x35, 0xbf, 0xb3, 0x6d, 0xda, 0xf3, 0xb8, 0x89, 0xdb, 0xd8,
-	0xb3, 0xc9, 0xb8, 0x51, 0x57, 0x0a, 0xc8, 0x4e, 0x87, 0xc0, 0xef, 0xc1, 0x47, 0xb6, 0xf4, 0xd4,
-	0xb1, 0x70, 0xc9, 0x49, 0xed, 0x8c, 0x06, 0xc5, 0x9c, 0xd0, 0x34, 0x89, 0x40, 0xd6, 0x9a, 0x9d,
-	0xa4, 0x83, 0xa7, 0x60, 0xa9, 0x21, 0x28, 0xc3, 0x92, 0x56, 0xcc, 0x6f, 0xe6, 0x0e, 0x7a, 0x34,
-	0x28, 0x7e, 0x28, 0xb8, 0x65, 0x14, 0x7a, 0xf6, 0xb4, 0x0a, 0xe4, 0x8a, 0x04, 0x0f, 0x21, 0x62,
-	0x43, 0x7f, 0x81, 0xf2, 0xfc, 0x12, 0xe5, 0x90, 0x7f, 0x05, 0xcb, 0x32, 0x24, 0x1a, 0xea, 0xc7,
-	0xb1, 0xa1, 0x4e, 0x8f, 0x36, 0x73, 0x72, 0xaa, 0x6b, 0x09, 0x2d, 0x0c, 0x59, 0x63, 0x2e, 0xb4,
-	0x07, 0x3e, 0x0b, 0xf3, 0xff, 0x88, 0x19, 0x3f, 0xf1, 0xa9, 0x4d, 0x18, 0x4b, 0x0e, 0xf7, 0xf8,
-	0x28, 0x6a, 0x33, 0x05, 0x95, 0x87, 0xa1, 0x52, 0xee, 0x21, 0xd0, 0xda, 0x98, 0xf1, 0xe0, 0x36,
-	0x08, 0x5c, 0x62, 0xe0, 0x75, 0xd7, 0x09, 0xa7, 0xf0, 0xbe, 0xb5, 0xd3, 0x9e, 0x49, 0xe6, 0xd4,
-	0x86, 0x69, 0x90, 0x0e, 0x33, 0xc2, 0x06, 0x58, 0x14, 0x3b, 0x0d, 0x0b, 0xb1, 0xaa, 0xef, 0x1f,
-	0x0b, 0x55, 0x9b, 0xe5, 0x16, 0xba, 0xd0, 0xf6, 0x3f, 0xcf, 0x5f, 0xff, 0xb7, 0xb0, 0x01, 0xd7,
-	0x8d, 0xc9, 0x0b, 0x05, 0x5b, 0x20, 0x1d, 0xae, 0x36, 0xcc, 0x4f, 0x72, 0xc4, 0x0f, 0x84, 0x5a,
-	0x98, 0xe1, 0x95, 0x09, 0x50, 0x98, 0x20, 0x0f, 0xd5, 0x58, 0x82, 0x70, 0xe9, 0x8d, 0x3f, 0xe4,
-	0x21, 0xf9, 0x13, 0xfe, 0xaf, 0x80, 0xec, 0xf4, 0x9d, 0x86, 0xd5, 0xfb, 0xec, 0x73, 0x4e, 0x84,
-	0xaa, 0x3f, 0x16, 0x2e, 0xd5, 0x7d, 0x1e, 0xaa, 0x2b, 0x43, 0x94, 0x50, 0x37, 0xf5, 0x74, 0xc0,
-	0x27, 0x0a, 0xc8, 0xcd, 0x78, 0x95, 0xf0, 0x5e, 0xde, 0xf9, 0x1b, 0xaa, 0x1a, 0x8f, 0xc6, 0x4b,
-	0xa1, 0x5f, 0x86, 0x42, 0x3f, 0x85, 0xe5, 0x98, 0xd0, 0xc9, 0x35, 0xad, 0x47, 0x8f, 0x18, 0x5e,
-	0x29, 0x60, 0x67, 0xce, 0xab, 0x84, 0xb5, 0xc9, 0xf4, 0x0f, 0xbf, 0x76, 0xf5, 0xe0, 0x9d, 0x62,
-	0xa4, 0xec, 0xfd, 0x50, 0xf6, 0x17, 0x70, 0x2f, 0x26, 0x7b, 0xfe, 0x1e, 0x98, 0x3f, 0x5c, 0x0f,
-	0x35, 0xe5, 0x66, 0xa8, 0x29, 0xaf, 0x86, 0x9a, 0xf2, 0xef, 0xad, 0x96, 0xba, 0xb9, 0xd5, 0x52,
-	0x2f, 0x6e, 0xb5, 0xd4, 0x6f, 0xd5, 0xa6, 0xcb, 0x5b, 0xbd, 0x86, 0x6e, 0xd3, 0x8e, 0xc1, 0xe9,
-	0x19, 0xf1, 0xdc, 0xdf, 0x49, 0xb5, 0x6f, 0xf0, 0x7e, 0xd5, 0x6e, 0x61, 0xd7, 0x33, 0x2e, 0xbe,
-	0x32, 0x44, 0x12, 0x7e, 0xd9, 0x25, 0xac, 0xb1, 0x18, 0xfe, 0x89, 0x1e, 0xbc, 0x0d, 0x00, 0x00,
-	0xff, 0xff, 0x2c, 0x26, 0xcd, 0x48, 0xed, 0x07, 0x00, 0x00,
+	// 930 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x56, 0x4f, 0x6f, 0xdc, 0x44,
+	0x14, 0x8f, 0x53, 0x92, 0x36, 0xaf, 0x82, 0x92, 0x69, 0xfe, 0xd5, 0xd9, 0x78, 0xd3, 0x21, 0x2d,
+	0x29, 0xcd, 0xda, 0x24, 0x41, 0x2d, 0x20, 0x21, 0xc1, 0xb6, 0x02, 0x45, 0xe2, 0x50, 0x8c, 0x4a,
+	0x25, 0x2e, 0xab, 0x59, 0x7b, 0xb4, 0x6b, 0x75, 0xd7, 0xb3, 0xf5, 0xcc, 0x46, 0x09, 0x08, 0x54,
+	0xf8, 0x04, 0x48, 0x7c, 0x04, 0x2e, 0x9c, 0x38, 0x71, 0xe9, 0x37, 0xc8, 0x31, 0x82, 0x0b, 0xe2,
+	0xb0, 0x42, 0x09, 0x9f, 0x20, 0x17, 0x8e, 0x20, 0xcf, 0x8c, 0x37, 0xf6, 0xfe, 0xf1, 0x3a, 0x88,
+	0x13, 0xb7, 0xec, 0xcc, 0xef, 0xfd, 0xde, 0xef, 0xfd, 0xde, 0x3c, 0xbf, 0xc0, 0xa2, 0x38, 0x70,
+	0x3a, 0x9c, 0x3a, 0xfb, 0xdb, 0xce, 0xb3, 0x2e, 0x8d, 0x0e, 0xed, 0x4e, 0xc4, 0x04, 0x43, 0x73,
+	0xe2, 0xc0, 0xee, 0x70, 0x6a, 0xef, 0x6f, 0x9b, 0x0b, 0x0d, 0xd6, 0x60, 0xf2, 0xd4, 0x89, 0xff,
+	0x52, 0x00, 0xb3, 0xd4, 0x60, 0xac, 0xd1, 0xa2, 0x0e, 0xe9, 0x04, 0x0e, 0x09, 0x43, 0x26, 0x88,
+	0x08, 0x58, 0xc8, 0xf5, 0xed, 0x0d, 0x8f, 0xf1, 0x36, 0xe3, 0x35, 0x15, 0xa6, 0x7e, 0xe8, 0xab,
+	0xa5, 0xf3, 0x84, 0x1d, 0x12, 0x91, 0x76, 0x72, 0x5e, 0x3a, 0x3f, 0xf7, 0x03, 0x2e, 0xa2, 0xa0,
+	0xde, 0x8d, 0x19, 0xd5, 0x2d, 0x5e, 0x00, 0xf4, 0x49, 0x2c, 0xef, 0x91, 0x0c, 0x71, 0xe9, 0xb3,
+	0x2e, 0xe5, 0x02, 0x3f, 0x81, 0xeb, 0x99, 0x53, 0xde, 0x61, 0x21, 0xa7, 0xe8, 0x7d, 0x98, 0x55,
+	0xd4, 0x2b, 0xc6, 0xba, 0xb1, 0x79, 0x75, 0x67, 0xde, 0xee, 0x57, 0x63, 0x2b, 0x68, 0x75, 0xf1,
+	0xa8, 0x57, 0x9e, 0x3a, 0xeb, 0x95, 0x5f, 0x3e, 0x24, 0xed, 0xd6, 0xbb, 0x58, 0xc1, 0xb1, 0xab,
+	0xe3, 0x70, 0x05, 0xe6, 0x25, 0xf1, 0xa7, 0x1e, 0x8b, 0xa8, 0xce, 0x86, 0x56, 0xe0, 0x32, 0xf1,
+	0xfd, 0x88, 0x72, 0xc5, 0x3b, 0xe7, 0x26, 0x3f, 0xf1, 0x9e, 0x56, 0xa7, 0xe1, 0x5a, 0xc6, 0x2e,
+	0xcc, 0xf0, 0xf8, 0x40, 0xa1, 0xab, 0x6b, 0x71, 0xca, 0xdf, 0x7b, 0xe5, 0x45, 0x65, 0x07, 0xf7,
+	0x9f, 0xda, 0x01, 0x73, 0xda, 0x44, 0x34, 0xed, 0xbd, 0x50, 0xb8, 0x0a, 0x8b, 0x37, 0x00, 0x6b,
+	0xaa, 0x26, 0xf5, 0xbb, 0x2d, 0xea, 0x3f, 0x4c, 0x99, 0xd1, 0x2f, 0xfc, 0x6f, 0x03, 0x5e, 0xcb,
+	0x85, 0x69, 0x09, 0xcf, 0x0d, 0x58, 0xe6, 0x09, 0xa4, 0x96, 0xf6, 0x35, 0xae, 0xe1, 0xd2, 0xe6,
+	0xd5, 0x9d, 0xf5, 0x94, 0x37, 0x23, 0xc9, 0xaa, 0xb7, 0xb4, 0x55, 0x6b, 0xca, 0xaa, 0x84, 0x2e,
+	0xcb, 0x86, 0xdd, 0x25, 0x3e, 0x52, 0x0a, 0x7a, 0x0c, 0x8b, 0x7e, 0xc0, 0x49, 0x7d, 0x30, 0x62,
+	0x65, 0x7a, 0xdd, 0xd8, 0xbc, 0x52, 0x5d, 0x3f, 0xeb, 0x95, 0x4b, 0x8a, 0x79, 0x24, 0x0c, 0xbb,
+	0x0b, 0xfa, 0x3c, 0x43, 0x8b, 0x6f, 0x69, 0x03, 0x1e, 0xb4, 0x28, 0x89, 0x82, 0xb0, 0xf1, 0x81,
+	0xe7, 0xb1, 0x6e, 0x28, 0xaa, 0xa4, 0x45, 0x42, 0x8f, 0xf6, 0x8d, 0x7a, 0x61, 0xc0, 0xd2, 0x68,
+	0x08, 0xfa, 0x10, 0x5e, 0xf5, 0xf4, 0x4d, 0x8d, 0xa8, 0x2b, 0xdd, 0xa9, 0xd5, 0xb3, 0x5e, 0x79,
+	0x59, 0x69, 0x1a, 0x44, 0x60, 0xf7, 0x9a, 0x97, 0xa5, 0x43, 0x4f, 0xe0, 0x72, 0x5d, 0x51, 0xca,
+	0x92, 0xe6, 0xaa, 0xef, 0xe5, 0x36, 0xfa, 0xac, 0x57, 0x7e, 0x45, 0x71, 0xeb, 0x28, 0xfc, 0xcb,
+	0xcf, 0x15, 0xd0, 0x23, 0x12, 0x3f, 0x84, 0x84, 0x0d, 0x7f, 0x0d, 0x1b, 0xf9, 0x25, 0xea, 0x26,
+	0x7f, 0x06, 0x57, 0x74, 0x48, 0xd2, 0xd4, 0x9b, 0xa9, 0xa6, 0x8e, 0x8e, 0xae, 0x2e, 0xeb, 0xae,
+	0x5e, 0xcb, 0x68, 0xe1, 0xd8, 0xed, 0x73, 0xe1, 0x3b, 0xf0, 0xba, 0xcc, 0xff, 0x31, 0xe1, 0xe2,
+	0x51, 0xc4, 0x3c, 0xca, 0x79, 0xb6, 0xb9, 0x7b, 0x0f, 0x13, 0x9b, 0x19, 0x6c, 0x4e, 0x86, 0x6a,
+	0xb9, 0x0f, 0xc0, 0x6a, 0x11, 0x2e, 0xe2, 0x6f, 0x83, 0xc2, 0x65, 0x1a, 0x5e, 0x0b, 0x7c, 0xd9,
+	0x85, 0x97, 0xdc, 0xd5, 0xd6, 0x58, 0x32, 0x1f, 0x3b, 0x50, 0x91, 0x09, 0x1f, 0x87, 0x7d, 0x9a,
+	0xfc, 0x89, 0xf9, 0x69, 0x1a, 0xec, 0xa2, 0x11, 0x5a, 0xe8, 0x37, 0xff, 0xc1, 0xf0, 0xdc, 0xd6,
+	0x36, 0x5b, 0xd9, 0xe1, 0xf1, 0x8b, 0x4e, 0xcf, 0x64, 0xb3, 0xa6, 0x27, 0x9a, 0x85, 0x76, 0xc7,
+	0x8d, 0xe0, 0xa5, 0x78, 0x04, 0xc7, 0x0c, 0x58, 0x05, 0xee, 0xaa, 0x6f, 0x6b, 0x31, 0x7f, 0xff,
+	0x32, 0x60, 0xab, 0x18, 0xfe, 0x7f, 0xe6, 0xee, 0xce, 0xf3, 0x39, 0x98, 0x91, 0x95, 0xa3, 0x3a,
+	0xcc, 0xaa, 0xf5, 0x82, 0xd6, 0x52, 0xd2, 0x87, 0xf7, 0x96, 0x69, 0x8d, 0xbb, 0x56, 0xde, 0xe0,
+	0x1b, 0xdf, 0xfe, 0xfa, 0xe7, 0xf7, 0xd3, 0xd7, 0xd1, 0xbc, 0x33, 0xb8, 0x2c, 0x51, 0x13, 0x66,
+	0xe4, 0x96, 0x41, 0xa5, 0x41, 0x8e, 0xf4, 0xae, 0x32, 0xd7, 0xc6, 0xdc, 0xea, 0x04, 0x58, 0x26,
+	0x28, 0x21, 0x33, 0x95, 0x40, 0xee, 0x1f, 0xe7, 0x4b, 0xbd, 0xd3, 0xbe, 0x42, 0x3f, 0x18, 0xb0,
+	0x34, 0xba, 0x87, 0xa8, 0x32, 0xcc, 0x9e, 0xf3, 0x36, 0x4c, 0xbb, 0x28, 0x5c, 0xab, 0x7b, 0x43,
+	0xaa, 0xdb, 0x40, 0x38, 0xa3, 0x6e, 0x64, 0x6f, 0xd1, 0xb1, 0x01, 0x37, 0x27, 0x8e, 0x34, 0x7a,
+	0x7b, 0x50, 0x41, 0xd1, 0xef, 0x86, 0xf9, 0xce, 0xbf, 0x88, 0xd4, 0x65, 0xdc, 0x93, 0x65, 0xbc,
+	0x89, 0xec, 0x54, 0x19, 0xdd, 0xf3, 0xe8, 0xda, 0xb8, 0x92, 0x8e, 0x0c, 0x28, 0x4f, 0x98, 0x22,
+	0x74, 0x6f, 0xe8, 0x05, 0x15, 0x2b, 0xe7, 0xfe, 0x85, 0xe3, 0x74, 0x31, 0x6f, 0xc9, 0x62, 0x6c,
+	0xb4, 0x95, 0x7e, 0x92, 0x13, 0x4b, 0xf9, 0xd1, 0x80, 0xe5, 0x31, 0xeb, 0x0b, 0x0d, 0xbd, 0x8a,
+	0xfc, 0x55, 0x6e, 0x3a, 0x85, 0xf1, 0x5a, 0xf2, 0x96, 0x94, 0x7c, 0x1b, 0x6d, 0xa4, 0x24, 0x0f,
+	0xee, 0xf3, 0x5a, 0xb2, 0xed, 0xd0, 0x0b, 0x03, 0x56, 0x73, 0xd6, 0x17, 0xda, 0x19, 0x4c, 0x3f,
+	0x79, 0x2d, 0x9a, 0xbb, 0x17, 0x8a, 0xd1, 0xb2, 0xb7, 0xa5, 0xec, 0xbb, 0xe8, 0x4e, 0x4a, 0x76,
+	0xfe, 0x57, 0xaa, 0xfa, 0xd1, 0xd1, 0x89, 0x65, 0x1c, 0x9f, 0x58, 0xc6, 0x1f, 0x27, 0x96, 0xf1,
+	0xdd, 0xa9, 0x35, 0x75, 0x7c, 0x6a, 0x4d, 0xfd, 0x76, 0x6a, 0x4d, 0x7d, 0x5e, 0x69, 0x04, 0xa2,
+	0xd9, 0xad, 0xdb, 0x1e, 0x6b, 0x3b, 0x82, 0x3d, 0xa5, 0x61, 0xf0, 0x05, 0xad, 0x1c, 0x38, 0xe2,
+	0xa0, 0xe2, 0x35, 0x49, 0x10, 0x3a, 0xfb, 0xf7, 0x1d, 0x95, 0x44, 0x1c, 0x76, 0x28, 0xaf, 0xcf,
+	0xca, 0xff, 0xb6, 0x77, 0xff, 0x09, 0x00, 0x00, 0xff, 0xff, 0x2e, 0x49, 0xd3, 0x32, 0x16, 0x0c,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -599,8 +823,12 @@ type QueryClient interface {
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// Score queries the current total score of an account (delegator).
 	Score(ctx context.Context, in *QueryScoreRequest, opts ...grpc.CallOption) (*QueryScoreResponse, error)
-	// ScheduledDistributions queries all future scheduled distributions.
+	// ScheduledDistributions queries all scheduled distributions (both processed and unprocessed).
 	ScheduledDistributions(ctx context.Context, in *QueryScheduledDistributionsRequest, opts ...grpc.CallOption) (*QueryScheduledDistributionsResponse, error)
+	// UnprocessedScheduledDistributions queries only unprocessed (upcoming) scheduled distributions.
+	UnprocessedScheduledDistributions(ctx context.Context, in *QueryUnprocessedScheduledDistributionsRequest, opts ...grpc.CallOption) (*QueryUnprocessedScheduledDistributionsResponse, error)
+	// ProcessedScheduledDistributions queries only processed (completed) scheduled distributions.
+	ProcessedScheduledDistributions(ctx context.Context, in *QueryProcessedScheduledDistributionsRequest, opts ...grpc.CallOption) (*QueryProcessedScheduledDistributionsResponse, error)
 	// ClearingAccountBalances queries the current balances of all PSE clearing accounts.
 	ClearingAccountBalances(ctx context.Context, in *QueryClearingAccountBalancesRequest, opts ...grpc.CallOption) (*QueryClearingAccountBalancesResponse, error)
 	// LastProcessedDistributionID queries the ID of the last completed distribution.
@@ -642,6 +870,24 @@ func (c *queryClient) ScheduledDistributions(ctx context.Context, in *QuerySched
 	return out, nil
 }
 
+func (c *queryClient) UnprocessedScheduledDistributions(ctx context.Context, in *QueryUnprocessedScheduledDistributionsRequest, opts ...grpc.CallOption) (*QueryUnprocessedScheduledDistributionsResponse, error) {
+	out := new(QueryUnprocessedScheduledDistributionsResponse)
+	err := c.cc.Invoke(ctx, "/tx.pse.v1.Query/UnprocessedScheduledDistributions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ProcessedScheduledDistributions(ctx context.Context, in *QueryProcessedScheduledDistributionsRequest, opts ...grpc.CallOption) (*QueryProcessedScheduledDistributionsResponse, error) {
+	out := new(QueryProcessedScheduledDistributionsResponse)
+	err := c.cc.Invoke(ctx, "/tx.pse.v1.Query/ProcessedScheduledDistributions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) ClearingAccountBalances(ctx context.Context, in *QueryClearingAccountBalancesRequest, opts ...grpc.CallOption) (*QueryClearingAccountBalancesResponse, error) {
 	out := new(QueryClearingAccountBalancesResponse)
 	err := c.cc.Invoke(ctx, "/tx.pse.v1.Query/ClearingAccountBalances", in, out, opts...)
@@ -666,8 +912,12 @@ type QueryServer interface {
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// Score queries the current total score of an account (delegator).
 	Score(context.Context, *QueryScoreRequest) (*QueryScoreResponse, error)
-	// ScheduledDistributions queries all future scheduled distributions.
+	// ScheduledDistributions queries all scheduled distributions (both processed and unprocessed).
 	ScheduledDistributions(context.Context, *QueryScheduledDistributionsRequest) (*QueryScheduledDistributionsResponse, error)
+	// UnprocessedScheduledDistributions queries only unprocessed (upcoming) scheduled distributions.
+	UnprocessedScheduledDistributions(context.Context, *QueryUnprocessedScheduledDistributionsRequest) (*QueryUnprocessedScheduledDistributionsResponse, error)
+	// ProcessedScheduledDistributions queries only processed (completed) scheduled distributions.
+	ProcessedScheduledDistributions(context.Context, *QueryProcessedScheduledDistributionsRequest) (*QueryProcessedScheduledDistributionsResponse, error)
 	// ClearingAccountBalances queries the current balances of all PSE clearing accounts.
 	ClearingAccountBalances(context.Context, *QueryClearingAccountBalancesRequest) (*QueryClearingAccountBalancesResponse, error)
 	// LastProcessedDistributionID queries the ID of the last completed distribution.
@@ -686,6 +936,12 @@ func (*UnimplementedQueryServer) Score(ctx context.Context, req *QueryScoreReque
 }
 func (*UnimplementedQueryServer) ScheduledDistributions(ctx context.Context, req *QueryScheduledDistributionsRequest) (*QueryScheduledDistributionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ScheduledDistributions not implemented")
+}
+func (*UnimplementedQueryServer) UnprocessedScheduledDistributions(ctx context.Context, req *QueryUnprocessedScheduledDistributionsRequest) (*QueryUnprocessedScheduledDistributionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnprocessedScheduledDistributions not implemented")
+}
+func (*UnimplementedQueryServer) ProcessedScheduledDistributions(ctx context.Context, req *QueryProcessedScheduledDistributionsRequest) (*QueryProcessedScheduledDistributionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessedScheduledDistributions not implemented")
 }
 func (*UnimplementedQueryServer) ClearingAccountBalances(ctx context.Context, req *QueryClearingAccountBalancesRequest) (*QueryClearingAccountBalancesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClearingAccountBalances not implemented")
@@ -752,6 +1008,42 @@ func _Query_ScheduledDistributions_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_UnprocessedScheduledDistributions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryUnprocessedScheduledDistributionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).UnprocessedScheduledDistributions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tx.pse.v1.Query/UnprocessedScheduledDistributions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).UnprocessedScheduledDistributions(ctx, req.(*QueryUnprocessedScheduledDistributionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ProcessedScheduledDistributions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryProcessedScheduledDistributionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ProcessedScheduledDistributions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tx.pse.v1.Query/ProcessedScheduledDistributions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ProcessedScheduledDistributions(ctx, req.(*QueryProcessedScheduledDistributionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_ClearingAccountBalances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryClearingAccountBalancesRequest)
 	if err := dec(in); err != nil {
@@ -803,6 +1095,14 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ScheduledDistributions",
 			Handler:    _Query_ScheduledDistributions_Handler,
+		},
+		{
+			MethodName: "UnprocessedScheduledDistributions",
+			Handler:    _Query_UnprocessedScheduledDistributions_Handler,
+		},
+		{
+			MethodName: "ProcessedScheduledDistributions",
+			Handler:    _Query_ProcessedScheduledDistributions_Handler,
 		},
 		{
 			MethodName: "ClearingAccountBalances",
@@ -1157,6 +1457,146 @@ func (m *QueryLastProcessedDistributionIDResponse) MarshalToSizedBuffer(dAtA []b
 	return len(dAtA) - i, nil
 }
 
+func (m *QueryUnprocessedScheduledDistributionsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryUnprocessedScheduledDistributionsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryUnprocessedScheduledDistributionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.DisableDistributions {
+		i--
+		if m.DisableDistributions {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.LastProcessedDistributionId != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.LastProcessedDistributionId))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.ScheduledDistributions) > 0 {
+		for iNdEx := len(m.ScheduledDistributions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ScheduledDistributions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryProcessedScheduledDistributionsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryProcessedScheduledDistributionsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryProcessedScheduledDistributionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryProcessedScheduledDistributionsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryProcessedScheduledDistributionsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryProcessedScheduledDistributionsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.LastProcessedDistributionId != 0 {
+		i = encodeVarintQuery(dAtA, i, uint64(m.LastProcessedDistributionId))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.ScheduledDistributions) > 0 {
+		for iNdEx := len(m.ScheduledDistributions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ScheduledDistributions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -1293,6 +1733,63 @@ func (m *QueryLastProcessedDistributionIDResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.LastProcessedDistributionId != 0 {
+		n += 1 + sovQuery(uint64(m.LastProcessedDistributionId))
+	}
+	return n
+}
+
+func (m *QueryUnprocessedScheduledDistributionsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *QueryUnprocessedScheduledDistributionsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ScheduledDistributions) > 0 {
+		for _, e := range m.ScheduledDistributions {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	if m.LastProcessedDistributionId != 0 {
+		n += 1 + sovQuery(uint64(m.LastProcessedDistributionId))
+	}
+	if m.DisableDistributions {
+		n += 2
+	}
+	return n
+}
+
+func (m *QueryProcessedScheduledDistributionsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *QueryProcessedScheduledDistributionsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ScheduledDistributions) > 0 {
+		for _, e := range m.ScheduledDistributions {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
 	if m.LastProcessedDistributionId != 0 {
 		n += 1 + sovQuery(uint64(m.LastProcessedDistributionId))
 	}
@@ -2088,6 +2585,332 @@ func (m *QueryLastProcessedDistributionIDResponse) Unmarshal(dAtA []byte) error 
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastProcessedDistributionId", wireType)
+			}
+			m.LastProcessedDistributionId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LastProcessedDistributionId |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryUnprocessedScheduledDistributionsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryUnprocessedScheduledDistributionsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryUnprocessedScheduledDistributionsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryUnprocessedScheduledDistributionsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryUnprocessedScheduledDistributionsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryUnprocessedScheduledDistributionsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScheduledDistributions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScheduledDistributions = append(m.ScheduledDistributions, ScheduledDistribution{})
+			if err := m.ScheduledDistributions[len(m.ScheduledDistributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastProcessedDistributionId", wireType)
+			}
+			m.LastProcessedDistributionId = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LastProcessedDistributionId |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisableDistributions", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.DisableDistributions = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryProcessedScheduledDistributionsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryProcessedScheduledDistributionsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryProcessedScheduledDistributionsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryProcessedScheduledDistributionsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryProcessedScheduledDistributionsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryProcessedScheduledDistributionsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScheduledDistributions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScheduledDistributions = append(m.ScheduledDistributions, ScheduledDistribution{})
+			if err := m.ScheduledDistributions[len(m.ScheduledDistributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastProcessedDistributionId", wireType)
 			}
