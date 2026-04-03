@@ -27,6 +27,8 @@ func GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(CmdQueryParams())
 	cmd.AddCommand(CmdQueryScore())
 	cmd.AddCommand(CmdQueryScheduledDistributions())
+	cmd.AddCommand(CmdQueryUnprocessedScheduledDistributions())
+	cmd.AddCommand(CmdQueryProcessedScheduledDistributions())
 	cmd.AddCommand(CmdQueryClearingAccountBalances())
 	cmd.AddCommand(CmdQueryLastProcessedDistributionID())
 
@@ -123,6 +125,66 @@ $ %[1]s query %s scheduled-distributions
 
 			params := &types.QueryScheduledDistributionsRequest{}
 			res, err := queryClient.ScheduledDistributions(cmd.Context(), params)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// CmdQueryUnprocessedScheduledDistributions implements a command to fetch unprocessed scheduled distributions.
+func CmdQueryUnprocessedScheduledDistributions() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "unprocessed-scheduled-distributions",
+		Short: "Query unprocessed (upcoming) scheduled distributions",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.UnprocessedScheduledDistributions(
+				cmd.Context(),
+				&types.QueryUnprocessedScheduledDistributionsRequest{},
+			)
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+// CmdQueryProcessedScheduledDistributions implements a command to fetch processed scheduled distributions.
+func CmdQueryProcessedScheduledDistributions() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "processed-scheduled-distributions",
+		Short: "Query processed (completed) scheduled distributions",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.ProcessedScheduledDistributions(
+				cmd.Context(),
+				&types.QueryProcessedScheduledDistributionsRequest{},
+			)
 			if err != nil {
 				return err
 			}
