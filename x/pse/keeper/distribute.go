@@ -377,6 +377,11 @@ func (k Keeper) distributeToDelegator(
 	}
 
 	for _, delegation := range delegations {
+		// Skip fully-slashed validators (Balance=0) and auto-delegate only to healthy ones.
+		// Otherwise SDK Delegate returns ErrDelegatorShareExRateInvalid and disables PSE.
+		if delegation.Balance.Amount.IsZero() {
+			continue
+		}
 		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
 		// if that one subunit exists, it will remain in user balance as undelegated.
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)

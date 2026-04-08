@@ -881,3 +881,131 @@ func TestCommunityIntermediary_FundIsolation(t *testing.T) {
 	requireT.Equal(remaining, testApp.BankKeeper.GetBalance(ctx, communityAddr, bondDenom).Amount,
 		"pse_community must still hold future rounds' funds untouched after distribution")
 }
+
+// TestDistribution_SlashedValidator_RedirectsRewardToHealthy verifies that when a delegator has
+// stake on one healthy and one fully-slashed validator, PSE Phase 2 skips the slashed validator
+// and routes the delegator's full reward to the healthy validator(s) instead. Without the fix,
+// Phase 2 calls Delegate(slashedVal, 0) which returns ErrDelegatorShareExRateInvalid and disables PSE.
+func TestDistribution_SlashedValidator_RedirectsRewardToHealthy(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	// Use explicit timing so Phase 1 produces a positive score.
+	t0 := time.Now().UTC().Round(time.Second)
+	ctx, _, err := testApp.BeginNextBlockAtTime(t0)
+	requireT.NoError(err)
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Two validators (slashed + healthy) and a delegator with stake on both.
+	makeValidator := func() sdk.ValAddress {
+		op, _ := testApp.GenAccount(ctx)
+		requireT.NoError(testApp.FundAccount(ctx, op, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+		val, err := testApp.AddValidator(ctx, op, sdk.NewInt64Coin(bondDenom, 10), nil)
+		requireT.NoError(err)
+		return sdk.MustValAddressFromBech32(val.GetOperator())
+	}
+	valSlashedAddr := makeValidator()
+	valHealthyAddr := makeValidator()
+
+	delAddr, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delAddr, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(10_000)))))
+
+	const delegationAmt = int64(1_000)
+	delegate := func(val sdk.ValAddress, amt int64) {
+		_, err := stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+			DelegatorAddress: delAddr.String(),
+			ValidatorAddress: val.String(),
+			Amount:           sdk.NewInt64Coin(bondDenom, amt),
+		})
+		requireT.NoError(err)
+	}
+	delegate(valSlashedAddr, delegationAmt)
+	delegate(valHealthyAddr, delegationAmt)
+
+	// Schedule timestamp 5 seconds after delegations so Phase 1 produces score.
+	scheduleTimestamp := t0.Add(5 * time.Second)
+	requireT.NoError(pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{{
+		ID:        firstDistributionID,
+		Timestamp: uint64(scheduleTimestamp.Unix()),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          sdkmath.NewInt(10_000_000),
+		}},
+	}}))
+
+	// Post-100%-slash state on valSlashed: Tokens=0, DelegatorShares unchanged.
+	valSlashed, err := stakingKeeper.GetValidator(ctx, valSlashedAddr)
+	requireT.NoError(err)
+	valSlashed.Tokens = sdkmath.ZeroInt()
+	requireT.NoError(stakingKeeper.SetValidator(ctx, valSlashed))
+
+	// Fund the community clearing account.
+	communityCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(10_000_000)))
+	macc := testApp.AccountKeeper.GetModuleAccount(ctx, types.ClearingAccountCommunity)
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, communityCoins))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, macc.GetName(), communityCoins,
+	))
+
+	// Capture wallet + healthy delegation balances right before the distribution starts.
+	walletBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom).Amount
+	healthyBefore := func() sdkmath.Int {
+		d, derr := stakingKeeper.GetDelegation(ctx, delAddr, valHealthyAddr)
+		requireT.NoError(derr)
+		val, verr := stakingKeeper.GetValidator(ctx, valHealthyAddr)
+		requireT.NoError(verr)
+		return val.TokensFromShares(d.Shares).TruncateInt()
+	}()
+
+	// Trigger block at t0+10s which will set OngoingDistribution.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(10 * time.Second)))
+
+	// Phase 1 batch + Phase 2 first batch (pays the delegator).
+	// Slashed validator should be skipped and entire userAmount should be paid to the healthy one.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(15 * time.Second)))
+
+	// Phase 2 second batch is empty. cleanup -> lastProcessed advances.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(20 * time.Second)))
+
+	ctx, _, err = testApp.BeginNextBlockAtTime(t0.Add(25 * time.Second))
+	requireT.NoError(err)
+
+	// PSE must NOT be disabled — the fix kept the failing path from firing.
+	disabled, err := pseKeeper.DistributionDisabled.Get(ctx)
+	requireT.NoError(err)
+	requireT.False(disabled, "PSE must not be disabled — the slashed validator's slice was skipped")
+
+	// LastProcessedDistributionID must have advanced — distribution finalized successfully.
+	lastProcessed, err := pseKeeper.LastProcessedDistributionID.Get(ctx)
+	requireT.NoError(err)
+	requireT.Equal(firstDistributionID, lastProcessed, "distribution must have finalized")
+
+	// Verify the slashed validator's slice was fully redirected to the healthy validator:
+	walletAfter := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom).Amount
+	walletLeftover := walletAfter.Sub(walletBefore)
+	requireT.True(walletLeftover.LTE(sdkmath.NewInt(1)),
+		"wallet leftover=%s exceeds 1 subunit — reward was not fully auto-delegated to the healthy validator",
+		walletLeftover)
+
+	stakingQuerier := stakingkeeper.NewQuerier(stakingKeeper)
+	delResp, err := stakingQuerier.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
+		DelegatorAddr: delAddr.String(),
+	})
+	requireT.NoError(err)
+	requireT.Len(delResp.DelegationResponses, 2)
+	for _, d := range delResp.DelegationResponses {
+		switch d.Delegation.ValidatorAddress {
+		case valHealthyAddr.String():
+			healthyGrowth := d.Balance.Amount.Sub(healthyBefore)
+			requireT.True(healthyGrowth.IsPositive(),
+				"healthy validator delegation must have grown from auto-delegate (got growth=%s)", healthyGrowth)
+		case valSlashedAddr.String():
+			requireT.True(d.Balance.Amount.IsZero(),
+				"slashed validator delegation Balance must remain zero (validator.Tokens=0)")
+		}
+	}
+}
