@@ -1543,7 +1543,7 @@ func TestWASMFungibleTokenInContract(t *testing.T) {
 	requireT.NoError(err)
 	var wasmFTParamsRes struct {
 		Params struct {
-			IssueFee sdk.Coin `json:"issue_fee"`
+			IssueFee sdk.Coin `json:"issue_fee"` //nolint:tagliatelle
 		} `json:"params"`
 	}
 	requireT.NoError(json.Unmarshal(queryOut, &wasmFTParamsRes))
