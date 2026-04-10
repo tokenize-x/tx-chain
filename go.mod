@@ -51,7 +51,7 @@ require (
 	github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v10 v10.1.0
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 v10.0.0-20250919123430-5596e0a03585
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v10 v10.1.1
-	github.com/cosmos/ibc-go/v10 v10.5.0
+	github.com/cosmos/ibc-go/v10 v10.5.1
 	github.com/cosmos/rosetta v0.50.12
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/golang/protobuf v1.5.4
