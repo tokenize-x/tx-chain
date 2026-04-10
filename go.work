@@ -7,5 +7,3 @@ use .
 use ./build
 
 use ./integration-tests
-
-replace github.com/cosmos/ibc-go/v10 => github.com/tokenize-x/ibc-go/v10 v10.0.0-20260217122659-7416630b53cc
