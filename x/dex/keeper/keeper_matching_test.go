@@ -461,7 +461,7 @@ func TestKeeper_MatchOrders_NoMatching(t *testing.T) {
 			},
 		},
 
-		// TODO(v7): Revise this behavior.
+		// TODO(v8): Revise this behavior.
 		{
 			name: "partially_fillable_orders_accepted_for_creation",
 			balances: func(testSet TestSet) map[string]sdk.Coins {
@@ -705,7 +705,7 @@ func TestKeeper_MatchOrders_DirectOBLimitMatching(t *testing.T) {
 			},
 		},
 
-		// TODO(v7): Revise this behavior.
+		// TODO(v8): Revise this behavior.
 		// we can possibly create an order, but it seems to violate quote quantity step rule.
 		// {
 		// 	name: "match_limit_directOB_maker_sell_taker_buy_close_maker_with_partial_filling",
@@ -1923,7 +1923,7 @@ func TestKeeper_MatchOrders_DirectOBMarketMatching(t *testing.T) {
 			},
 		},
 		{
-			// TODO(v7): Revise this behavior.
+			// TODO(v8): Revise this behavior.
 			name: "match_market_directOB_maker_sell_taker_buy_with_partially_filling",
 			balances: func(testSet TestSet) map[string]sdk.Coins {
 				return map[string]sdk.Coins{
@@ -2314,7 +2314,7 @@ func TestKeeper_MatchOrders_InvertedOBLimitMatching(t *testing.T) {
 			},
 		},
 		{
-			// TODO(v7): Revise this behavior.
+			// TODO(v8): Revise this behavior.
 			name: "match_limit_invertedOB_maker_sell_taker_sell_close_taker",
 			balances: func(testSet TestSet) map[string]sdk.Coins {
 				return map[string]sdk.Coins{
@@ -2454,7 +2454,7 @@ func TestKeeper_MatchOrders_InvertedOBLimitMatching(t *testing.T) {
 			},
 		},
 		{
-			// TODO(v7): Revise this behavior. Shouldn't we return actual balance in error ?
+			// TODO(v8): Revise this behavior. Shouldn't we return actual balance in error ?
 			name: "match_limit_invertedOB_maker_buy_taker_buy_insufficient_funds",
 			balances: func(testSet TestSet) map[string]sdk.Coins {
 				return map[string]sdk.Coins{

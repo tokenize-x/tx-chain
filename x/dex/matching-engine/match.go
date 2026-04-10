@@ -182,7 +182,7 @@ func match(takerRecord, makerRecord OBRecord) (Trade, CloseResult) {
 	}
 
 	// But for matching execution we use integers.
-	// TODO (v7): Take zero quantity into consideration.
+	// TODO (v8): Take zero quantity into consideration.
 	trade.BaseQuantity, trade.QuoteQuantity = computeMaxIntExecutionQuantity(
 		trade.Price,
 		cbig.IntQuo(baseQuantityRat.Num(), baseQuantityRat.Denom()),
@@ -208,7 +208,7 @@ func (me MatchingEngine) getMakerLockedAndExpectedToReceiveCoins(
 	lockedCoins := sdk.NewCoins(
 		sdk.NewCoin(makerSpendsDenom, makerRecord.RemainingSpendableBalance),
 	)
-	// TODO (v7): move GetOrderData out of the matching engine.
+	// TODO (v8): move GetOrderData out of the matching engine.
 	recordToCloseOrderData, err := me.dexKeeper.GetOrderData(ctx, makerRecord.OrderSequence)
 	if err != nil {
 		return nil, sdk.Coin{}, err

@@ -329,7 +329,7 @@ func DefaultConfig() Config {
 			&ibcclienttypes.MsgUpdateClient{},
 			&ibcclienttypes.MsgUpgradeClient{},
 			&ibcclienttypes.MsgDeleteClientCreator{},
-			&ibcclienttypes.MsgSubmitMisbehaviour{}, //nolint // TODO (v7) remove legacy message
+			&ibcclienttypes.MsgSubmitMisbehaviour{}, //nolint // TODO (v8) remove legacy message
 			&ibcclienttypes.MsgUpdateParams{},
 			&ibcclienttypes.MsgIBCSoftwareUpgrade{},
 			&ibcclienttypes.MsgRecoverClient{},

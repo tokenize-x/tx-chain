@@ -1475,7 +1475,7 @@ func initParamsKeeper(
 	//nolint:staticcheck
 	paramsKeeper := paramskeeper.NewKeeper(appCodec, legacyAmino, key, tkey)
 
-	// TODO(v7): Remove after ibc is migrated to the param management system, we should remove this after ParamKeyTable
+	// TODO(v8): Remove after ibc is migrated to the param management system, we should remove this after ParamKeyTable
 	// of the ibc types get deprecated.
 	// register the key tables for legacy param subspaces.
 	keyTable := ibcclienttypes.ParamKeyTable()

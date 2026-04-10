@@ -56,7 +56,7 @@ const (
 // IgnoredModulesForExport defines module names that should be ignored in entire process.
 var IgnoredModulesForExport = map[string]struct{}{
 	upgradetypes.ModuleName: {}, // Upgrade exports empty genesis.
-	// TODO (v7): fix Error calling the VM: Cache error: Error opening Wasm file for reading
+	// TODO (v8): fix Error calling the VM: Cache error: Error opening Wasm file for reading
 	"wasm": {},
 }
 
