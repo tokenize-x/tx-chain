@@ -107,6 +107,10 @@ type accountBodyFTRequest struct {
 	Account string `json:"account"`
 }
 
+type issuerBodyFTRequest struct {
+	Issuer string `json:"issuer"`
+}
+
 type placeOrderBodyDEXRequest struct {
 	Order dextypes.MsgPlaceOrder `json:"order"`
 }
@@ -178,6 +182,13 @@ const (
 	ftMethodClawback            ftMethod = "clawback"
 	ftMethodTransferAdmin       ftMethod = "transfer_admin"
 	ftMethodClearAdmin          ftMethod = "clear_admin"
+	// query.
+	ftMethodQueryParams             ftMethod = "params"
+	ftMethodQueryToken              ftMethod = "token"
+	ftMethodQueryTokens             ftMethod = "tokens"
+	ftMethodQueryBalance            ftMethod = "balance"
+	ftMethodQueryFrozenBalance      ftMethod = "frozen_balance"
+	ftMethodQueryWhitelistedBalance ftMethod = "whitelisted_balance"
 )
 
 type dexMethod string
@@ -1521,7 +1532,81 @@ func TestWASMFungibleTokenInContract(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Empty(tokenRes.Token.Admin)
 
-	// TODO (v7): Once we upgrade to SDK v0.50 and have the new GRPCQueries, we can test the queries here as well.
+	// ********** Queries **********
+
+	// Params
+	ftParamsPayload, err := json.Marshal(map[ftMethod]struct{}{
+		ftMethodQueryParams: {},
+	})
+	requireT.NoError(err)
+	queryOut, err := chain.Wasm.QueryWASMContract(ctx, contractAddr, ftParamsPayload)
+	requireT.NoError(err)
+	var wasmFTParamsRes struct {
+		Params struct {
+			IssueFee sdk.Coin `json:"issue_fee"` //nolint:tagliatelle
+		} `json:"params"`
+	}
+	requireT.NoError(json.Unmarshal(queryOut, &wasmFTParamsRes))
+	ftParams := chain.QueryAssetFTParams(ctx, t)
+	requireT.Equal(ftParams.IssueFee.Denom, wasmFTParamsRes.Params.IssueFee.Denom)
+	requireT.Equal(ftParams.IssueFee.Amount, wasmFTParamsRes.Params.IssueFee.Amount)
+
+	// Token
+	ftTokenPayload, err := json.Marshal(map[ftMethod]struct{}{
+		ftMethodQueryToken: {},
+	})
+	requireT.NoError(err)
+	queryOut, err = chain.Wasm.QueryWASMContract(ctx, contractAddr, ftTokenPayload)
+	requireT.NoError(err)
+	var wasmFTTokenRes assetfttypes.QueryTokenResponse
+	requireT.NoError(json.Unmarshal(queryOut, &wasmFTTokenRes))
+	requireT.Equal(denom, wasmFTTokenRes.Token.Denom)
+	requireT.Empty(wasmFTTokenRes.Token.Admin)
+
+	// Tokens
+	ftTokensPayload, err := json.Marshal(map[ftMethod]issuerBodyFTRequest{
+		ftMethodQueryTokens: {Issuer: contractAddr},
+	})
+	requireT.NoError(err)
+	queryOut, err = chain.Wasm.QueryWASMContract(ctx, contractAddr, ftTokensPayload)
+	requireT.NoError(err)
+	var wasmFTTokensRes assetfttypes.QueryTokensResponse
+	requireT.NoError(json.Unmarshal(queryOut, &wasmFTTokensRes))
+	requireT.Len(wasmFTTokensRes.Tokens, 1)
+	requireT.Equal(denom, wasmFTTokensRes.Tokens[0].Denom)
+
+	// Balance
+	ftBalancePayload, err := json.Marshal(map[ftMethod]accountBodyFTRequest{
+		ftMethodQueryBalance: {Account: recipient2.String()},
+	})
+	requireT.NoError(err)
+	queryOut, err = chain.Wasm.QueryWASMContract(ctx, contractAddr, ftBalancePayload)
+	requireT.NoError(err)
+	var wasmFTBalanceRes assetfttypes.QueryBalanceResponse
+	requireT.NoError(json.Unmarshal(queryOut, &wasmFTBalanceRes))
+	requireT.Equal(amountToMint.Sub(amountToClawback).String(), wasmFTBalanceRes.Balance.String())
+
+	// FrozenBalance
+	ftFrozenBalancePayload, err := json.Marshal(map[ftMethod]accountBodyFTRequest{
+		ftMethodQueryFrozenBalance: {Account: recipient1.String()},
+	})
+	requireT.NoError(err)
+	queryOut, err = chain.Wasm.QueryWASMContract(ctx, contractAddr, ftFrozenBalancePayload)
+	requireT.NoError(err)
+	var wasmFTFrozenBalanceRes assetfttypes.QueryFrozenBalanceResponse
+	requireT.NoError(json.Unmarshal(queryOut, &wasmFTFrozenBalanceRes))
+	requireT.Equal(amountToSetFrozen.String(), wasmFTFrozenBalanceRes.Balance.Amount.String())
+
+	// WhitelistedBalance
+	ftWhitelistedBalancePayload, err := json.Marshal(map[ftMethod]accountBodyFTRequest{
+		ftMethodQueryWhitelistedBalance: {Account: recipient1.String()},
+	})
+	requireT.NoError(err)
+	queryOut, err = chain.Wasm.QueryWASMContract(ctx, contractAddr, ftWhitelistedBalancePayload)
+	requireT.NoError(err)
+	var wasmFTWhitelistedBalanceRes assetfttypes.QueryWhitelistedBalanceResponse
+	requireT.NoError(json.Unmarshal(queryOut, &wasmFTWhitelistedBalanceRes))
+	requireT.Equal(amountToWhitelist.String(), wasmFTWhitelistedBalanceRes.Balance.Amount.String())
 }
 
 // TestWASMNonFungibleTokenInContract verifies that smart contract is able to execute all non-fungible TX-Chain
@@ -2117,7 +2202,22 @@ func TestWASMNonFungibleTokenInContract(t *testing.T) {
 	_, err = chain.Wasm.ExecuteWASMContract(ctx, txf, admin, contractAddrWhitelist, sendPayload, sdk.Coin{})
 	requireT.NoError(err)
 
-	// TODO (v7): Once we upgrade to SDK v0.50 and have the new GRPCQueries, we can test the queries here as well.
+	// ********** Queries (contractAddrWhitelist) **********
+
+	// Owner (id-send was sent to recipient)
+	// Note: cosmos/nft Class and Classes queries are excluded — the asset NFT Class type contains a
+	// google.protobuf.Any data field that the WASM VM cannot serialize to JSON.
+	ownerQueryPayload, err := json.Marshal(map[moduleswasm.NftMethod]moduleswasm.NftIDRequest{
+		moduleswasm.NftMethodOwner: {ID: mintNFTReq2.ID},
+	})
+	requireT.NoError(err)
+	queryOut, err := chain.Wasm.QueryWASMContract(ctx, contractAddrWhitelist, ownerQueryPayload)
+	requireT.NoError(err)
+	var wasmNFTOwnerRes struct {
+		Owner string `json:"owner"`
+	}
+	requireT.NoError(json.Unmarshal(queryOut, &wasmNFTOwnerRes))
+	requireT.Equal(recipient.String(), wasmNFTOwnerRes.Owner)
 }
 
 // TestWASMContractInstantiationIsNotRejectedIfAccountExists verifies that smart contract instantiation
