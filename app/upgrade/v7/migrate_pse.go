@@ -21,11 +21,12 @@ var mainnetScheduleJSON []byte
 
 // firstMultiBlockDistributionID is the ID of the first distribution that will be
 // processed using multi-block logic.
-// The first entry (ID=1) will be processed by single-block PSE logic.
-const firstMultiBlockDistributionID uint64 = 2
+// Entries 1-2 (March 5 and April 5, 2026) were processed by v6 single-block PSE.
+const firstMultiBlockDistributionID uint64 = 3
 
 // lastProcessedID is the ID of the distribution already processed before the upgrade.
-const lastProcessedID uint64 = 1
+// Two distributions were processed on testnet before the v7 upgrade.
+const lastProcessedID uint64 = 2
 
 // scheduledDistributionsJSON is the JSON structure for the embedded schedule file.
 type scheduledDistributionsJSON struct {
