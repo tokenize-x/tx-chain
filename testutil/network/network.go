@@ -1,9 +1,7 @@
 package network
 
 import (
-	"context"
 	"os"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -28,7 +26,6 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/app"
 	"github.com/tokenize-x/tx-chain/v7/pkg/config"
 	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
-	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
 type (
@@ -58,24 +55,7 @@ func New(t *testing.T, configs ...network.Config) *network.Network {
 		cfg = configs[0]
 	}
 
-	var net *Network
-
-	// Sometimes another process already binds the port to bind to.
-	// So we need to retry to used another random port.
-	// TODO (v7): Remove the retry when upgrading to cosmos v0.52.x
-	retryCtx, retryCancel := context.WithTimeout(t.Context(), 10*time.Second)
-	defer retryCancel()
-	err := retry.Do(retryCtx, 2*time.Second, func() error {
-		n, err := network.New(t, t.TempDir(), cfg)
-		if err != nil {
-			if strings.Contains(err.Error(), "address already in use") {
-				return retry.Retryable(err)
-			}
-			return err
-		}
-		net = n
-		return nil
-	})
+	net, err := network.New(t, t.TempDir(), cfg)
 	require.NoError(t, err)
 	t.Cleanup(net.Cleanup)
 	return net
