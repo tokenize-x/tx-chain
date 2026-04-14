@@ -90,7 +90,7 @@ Community distributions are processed over multiple blocks to avoid gas spikes. 
 3. **Fairness bonus**: delegators processed in later batches receive a bonus score (`distributed_amount × elapsed_seconds_since_start`) credited to the next distribution, compensating for the batch-ordering bias.
 4. When all delegators are processed, any leftover in `pse_community_intermediary` is sent to the community pool.
 
-Both phases use `DistributionBatchSize` (configurable param, default 100) to limit per-block work.
+Both phases use `DistributionBatchSize` (configurable param, default 1000) to limit per-block work.
 
 ### Excluded Addresses
 
@@ -144,7 +144,7 @@ Module parameters containing:
 - `ExcludedAddresses`: List of addresses excluded from Community distributions
 - `ClearingAccountMappings`: Recipient address mappings for non-Community clearing accounts
 - `MinDistributionGapSeconds`: Minimum time gap (in seconds) between consecutive scheduled distributions (default: 86400 = 1 day)
-- `DistributionBatchSize`: Number of entries processed per block during multi-block distribution (default: 100)
+- `DistributionBatchSize`: Number of entries processed per block during multi-block distribution (default: 1000)
 
 ### DelegationTimeEntry
 
@@ -414,7 +414,7 @@ The PSE module parameters can be queried but are primarily managed through gover
 | ExcludedAddresses         | []string                      | Addresses excluded from Community score-based distribution |
 | ClearingAccountMappings   | []ClearingAccountMapping      | Recipient address mappings for non-Community accounts      |
 | MinDistributionGapSeconds | uint64                        | Minimum seconds between consecutive distributions (default: 86400) |
-| DistributionBatchSize     | uint64                        | Entries processed per block during multi-block distribution (default: 100) |
+| DistributionBatchSize     | uint64                        | Entries processed per block during multi-block distribution (default: 1000) |
 
 ### ExcludedAddresses
 
