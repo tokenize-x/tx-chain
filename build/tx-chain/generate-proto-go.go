@@ -85,7 +85,7 @@ func executeGoProtocCommand(ctx context.Context, deps types.DepsFunc, includeDir
 	for _, files := range packages {
 		args := append([]string{}, args...)
 		args = append(args, files...)
-		cmd := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
+		cmd := exec.CommandContext(ctx, txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 		cmd.Dir = outDir
 		if err := libexec.Exec(ctx, cmd); err != nil {
 			return err

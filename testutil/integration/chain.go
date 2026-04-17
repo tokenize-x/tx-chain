@@ -285,6 +285,7 @@ func (c ChainContext) LatestBlockHeader(ctx context.Context) (cmtservice.Header,
 // Chain holds network and client for the blockchain.
 type Chain struct {
 	ChainContext
+
 	Faucet Faucet
 	Wasm   Wasm
 }

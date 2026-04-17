@@ -25,6 +25,7 @@ import (
 // HandlerOptions are the options required for constructing a default SDK AnteHandler.
 type HandlerOptions struct {
 	authante.HandlerOptions
+
 	DeterministicGasConfig deterministicgas.Config
 	FeeModelKeeper         feemodelante.Keeper
 	WasmConfig             wasmtypes.NodeConfig

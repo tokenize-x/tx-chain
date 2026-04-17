@@ -21,6 +21,7 @@ import (
 // BaseKeeperWrapper is a wrapper of the cosmos-sdk bank module.
 type BaseKeeperWrapper struct {
 	bankkeeper.BaseKeeper
+
 	ak         banktypes.AccountKeeper
 	wasmKeeper cwasmtypes.WasmKeeper
 	ftProvider types.FungibleTokenProvider

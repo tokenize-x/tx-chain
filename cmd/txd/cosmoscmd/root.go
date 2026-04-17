@@ -187,6 +187,7 @@ func initAppConfig() (string, interface{}) {
 
 	type CustomAppConfig struct {
 		serverconfig.Config
+
 		WASM WASMConfig
 	}
 

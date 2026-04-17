@@ -1902,7 +1902,7 @@ func TestAssetNFTAuthZ(t *testing.T) {
 		Issuer: granter.String(),
 		Symbol: "NFTClassSymbol",
 		Features: []assetnfttypes.ClassFeature{
-			assetnfttypes.ClassFeature_freezing, //nolint:nosnakecase // generated variable
+			assetnfttypes.ClassFeature_freezing,
 		},
 	}
 

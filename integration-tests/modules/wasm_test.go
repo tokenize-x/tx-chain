@@ -1611,8 +1611,6 @@ func TestWASMFungibleTokenInContract(t *testing.T) {
 
 // TestWASMNonFungibleTokenInContract verifies that smart contract is able to execute all non-fungible TX-Chain
 // token messages and queries from smart contracts.
-//
-//nolint:nosnakecase
 func TestWASMNonFungibleTokenInContract(t *testing.T) {
 	t.Parallel()
 

@@ -15,6 +15,7 @@ import (
 // Wrapper wraps the original nft keeper and intercepts its original methods if needed.
 type Wrapper struct {
 	nftkeeper.Keeper
+
 	nonFungibleTokenProvider types.NonFungibleTokenProvider
 }
 

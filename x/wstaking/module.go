@@ -17,6 +17,7 @@ import (
 // AppModule implements an application module for the wrapped staking module.
 type AppModule struct {
 	staking.AppModule
+
 	stakingKeeper      *stakingkeeper.Keeper
 	legacySubspace     stakingexported.Subspace
 	customParamsKeeper wstakingtypes.CustomParamsKeeper

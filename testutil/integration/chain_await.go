@@ -26,24 +26,25 @@ func defaultAwaitStateOptions() awaitStateOptions {
 	}
 }
 
-type awaitStateOptionsFunc = func(options *awaitStateOptions)
+// AwaitStateOptionsFunc is an option for AwaitState.
+type AwaitStateOptionsFunc = func(options *awaitStateOptions)
 
 // WithAwaitStateTimeout sets the timeout for the await state.
-func WithAwaitStateTimeout(timeout time.Duration) awaitStateOptionsFunc {
+func WithAwaitStateTimeout(timeout time.Duration) AwaitStateOptionsFunc {
 	return func(options *awaitStateOptions) {
 		options.timeout = timeout
 	}
 }
 
 // WithAwaitStateRecheckDelay sets the recheck delay for the await state.
-func WithAwaitStateRecheckDelay(recheckDelay time.Duration) awaitStateOptionsFunc {
+func WithAwaitStateRecheckDelay(recheckDelay time.Duration) AwaitStateOptionsFunc {
 	return func(options *awaitStateOptions) {
 		options.recheckDelay = recheckDelay
 	}
 }
 
 // WithAwaitStateCheckTimeout sets the check timeout for the await state.
-func WithAwaitStateCheckTimeout(checkTimeout time.Duration) awaitStateOptionsFunc {
+func WithAwaitStateCheckTimeout(checkTimeout time.Duration) AwaitStateOptionsFunc {
 	return func(options *awaitStateOptions) {
 		options.checkTimeout = checkTimeout
 	}
@@ -53,7 +54,7 @@ func WithAwaitStateCheckTimeout(checkTimeout time.Duration) awaitStateOptionsFun
 func (c ChainContext) AwaitState(
 	ctx context.Context,
 	stateChecker func(ctx context.Context) error,
-	opts ...awaitStateOptionsFunc) error {
+	opts ...AwaitStateOptionsFunc) error {
 	options := defaultAwaitStateOptions()
 	for _, optFunc := range opts {
 		optFunc(&options)

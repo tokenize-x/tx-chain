@@ -61,7 +61,7 @@ func breakingProto(ctx context.Context, deps types.DepsFunc) error {
 		return errors.WithStack(err)
 	}
 
-	cmdImage := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal),
+	cmdImage := exec.CommandContext(ctx, txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal),
 		append(
 			append([]string{"--include_imports", "--include_source_info", "-o", imageFile}, masterIncludeArgs...),
 			masterProtoFiles...)...)
@@ -105,6 +105,6 @@ func breakingProto(ctx context.Context, deps types.DepsFunc) error {
 
 	args = append(args, includeArgs...)
 	args = append(args, masterProtoFiles...)
-	cmdBreaking := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
+	cmdBreaking := exec.CommandContext(ctx, txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 	return libexec.Exec(ctx, cmdBreaking)
 }

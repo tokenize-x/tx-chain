@@ -33,7 +33,7 @@ const (
 	URIHashFlag     = "uri-hash"
 	DataFileFlag    = "data-file"
 	DataTypeFlag    = "data-type"
-	// data types.
+	// DataTypeBytes is the bytes data type.
 	DataTypeBytes   = "bytes"
 	DataTypeDynamic = "dynamic"
 )

@@ -34,8 +34,8 @@ require (
 	github.com/samber/lo v1.49.1
 	github.com/spf13/pflag v1.0.10
 	github.com/tokenize-x/tx-chain/v7 v7.0.0-20260217111039-9296d325fd38
-	github.com/tokenize-x/tx-crust v0.0.0-20260324133824-bc5b1acb5e4e
-	github.com/tokenize-x/tx-crust/znet v0.0.0-20260324133824-bc5b1acb5e4e
+	github.com/tokenize-x/tx-crust v0.0.0-20260417084924-fb1833215b9c
+	github.com/tokenize-x/tx-crust/znet v0.0.0-20260417084924-fb1833215b9c
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 

@@ -19,6 +19,7 @@ type AppModuleBasic struct {
 // AppModule implements an application module for the wrapped IBC trnasfer module.
 type AppModule struct {
 	transfer.AppModule
+
 	keeper keeper.TransferKeeperWrapper
 }
 

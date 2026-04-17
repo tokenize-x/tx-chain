@@ -460,7 +460,7 @@ func txdVersionLDFlags(ctx context.Context, buildTags []string) ([]string, error
 func formatProto(ctx context.Context, deps types.DepsFunc) error {
 	deps(txchaintools.EnsureBuf)
 
-	cmd := exec.Command(txcrusttools.Path("bin/buf", txcrusttools.TargetPlatformLocal), "format", "-w")
+	cmd := exec.CommandContext(ctx, txcrusttools.Path("bin/buf", txcrusttools.TargetPlatformLocal), "format", "-w")
 	cmd.Dir = filepath.Join(repoPath, "proto", "coreum")
 	return libexec.Exec(ctx, cmd)
 }

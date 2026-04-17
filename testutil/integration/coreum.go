@@ -23,6 +23,7 @@ import (
 // TXChain is configured tx-chain chain.
 type TXChain struct {
 	Chain
+
 	Governance             Governance
 	DeterministicGasConfig deterministicgas.Config
 }

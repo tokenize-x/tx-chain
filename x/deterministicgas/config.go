@@ -59,7 +59,8 @@ type (
 	// MsgURL is a type used to uniquely identify msg in URL-like format. E.g "/coreum.asset.ft.v1.MsgMint".
 	MsgURL string
 
-	gasByMsgFunc = func(msg sdk.Msg) (uint64, bool)
+	// GasByMsgFunc is a function that calculates gas for a specific message type.
+	GasByMsgFunc = func(msg sdk.Msg) (uint64, bool)
 )
 
 // Config specifies gas required by all transaction types.
@@ -69,7 +70,7 @@ type Config struct {
 	FreeBytes      uint64
 	FreeSignatures uint64
 
-	gasByMsg map[MsgURL]gasByMsgFunc
+	gasByMsg map[MsgURL]GasByMsgFunc
 }
 
 // DefaultConfig returns default config for deterministic gas.
@@ -82,7 +83,7 @@ func DefaultConfig() Config {
 		FreeSignatures: 1,
 	}
 	storeConfig := storetypes.KVGasConfig()
-	cfg.gasByMsg = map[MsgURL]gasByMsgFunc{
+	cfg.gasByMsg = map[MsgURL]GasByMsgFunc{
 		// asset/ft
 		MsgToMsgURL(&assetfttypes.MsgIssue{}):                     constantGasFunc(70_000),
 		MsgToMsgURL(&assetfttypes.MsgMint{}):                      constantGasFunc(31_000),
@@ -402,8 +403,8 @@ func (cfg Config) GasRequiredByMessage(msg sdk.Msg) (uint64, bool) {
 }
 
 // GasByMessageMap returns copy mapping of message types and functions to calculate gas for specific type.
-func (cfg Config) GasByMessageMap() map[MsgURL]gasByMsgFunc {
-	newGasByMsg := make(map[MsgURL]gasByMsgFunc, len(cfg.gasByMsg))
+func (cfg Config) GasByMessageMap() map[MsgURL]GasByMsgFunc {
+	newGasByMsg := make(map[MsgURL]GasByMsgFunc, len(cfg.gasByMsg))
 	for k, v := range cfg.gasByMsg {
 		newGasByMsg[k] = v
 	}
@@ -418,7 +419,7 @@ func MsgToMsgURL(msg sdk.Msg) MsgURL {
 	return MsgURL(sdk.MsgTypeURL(msg))
 }
 
-func authzMsgGrantGasFunc(baseGas, gasPerByte uint64) gasByMsgFunc {
+func authzMsgGrantGasFunc(baseGas, gasPerByte uint64) GasByMsgFunc {
 	return func(msg sdk.Msg) (uint64, bool) {
 		m, ok := msg.(*authz.MsgGrant)
 		if !ok {
@@ -437,7 +438,7 @@ func authzMsgGrantGasFunc(baseGas, gasPerByte uint64) gasByMsgFunc {
 	}
 }
 
-func dataGasFunc(constGas uint64) gasByMsgFunc {
+func dataGasFunc(constGas uint64) GasByMsgFunc {
 	return func(msg sdk.Msg) (uint64, bool) {
 		var dataLen int
 		switch m := msg.(type) {
@@ -464,7 +465,7 @@ func registerNondeterministicGasFuncs(cfg *Config, msgs []sdk.Msg) {
 	}
 }
 
-func constantGasFunc(constGasVal uint64) gasByMsgFunc {
+func constantGasFunc(constGasVal uint64) GasByMsgFunc {
 	return func(msg sdk.Msg) (uint64, bool) {
 		return constGasVal, true
 	}
@@ -474,7 +475,7 @@ func nondeterministicGasFunc(_ sdk.Msg) (uint64, bool) {
 	return 0, false
 }
 
-func bankSendMsgGasFunc(bankSendPerCoinGas uint64) gasByMsgFunc {
+func bankSendMsgGasFunc(bankSendPerCoinGas uint64) GasByMsgFunc {
 	return func(msg sdk.Msg) (uint64, bool) {
 		m, ok := msg.(*banktypes.MsgSend)
 		if !ok {
@@ -486,7 +487,7 @@ func bankSendMsgGasFunc(bankSendPerCoinGas uint64) gasByMsgFunc {
 	}
 }
 
-func bankMultiSendMsgGasFunc(bankMultiSendPerOperationGas uint64) gasByMsgFunc {
+func bankMultiSendMsgGasFunc(bankMultiSendPerOperationGas uint64) GasByMsgFunc {
 	return func(msg sdk.Msg) (uint64, bool) {
 		m, ok := msg.(*banktypes.MsgMultiSend)
 		if !ok {
@@ -509,7 +510,7 @@ func bankMultiSendMsgGasFunc(bankMultiSendPerOperationGas uint64) gasByMsgFunc {
 func updateDEXWhitelistedDenomsGasFunc(
 	dexUpdateWhitelistedDenomBaseGas,
 	dexWhitelistedPerDenomGas uint64,
-) gasByMsgFunc {
+) GasByMsgFunc {
 	return func(msg sdk.Msg) (uint64, bool) {
 		m, ok := msg.(*assetfttypes.MsgUpdateDEXWhitelistedDenoms)
 		if !ok {

@@ -87,9 +87,9 @@ type NftClassIDWithIDRequest struct {
 // NftMethod is a wrapper type for all the methods used in smart contract.
 type NftMethod string
 
-// all the methods used for smart contract.
+// NftMethod constants for smart contract methods.
 const (
-	// transactions.
+	// NftMethodMint is the mint transaction method.
 	NftMethodMint                     NftMethod = "mint"
 	NftMethodMintImmutable            NftMethod = "mint_immutable"
 	NftMethodMintMutable              NftMethod = "mint_mutable"
@@ -104,7 +104,7 @@ const (
 	NftMethodAddToClassWhitelist      NftMethod = "add_to_class_whitelist"
 	NftMethodRemoveFromClassWhitelist NftMethod = "remove_from_class_whitelist"
 	NftMethodSend                     NftMethod = "send"
-	// queries.
+	// NftMethodParams is the params query method.
 	NftMethodParams                    NftMethod = "params"
 	NftMethodClass                     NftMethod = "class"
 	NftMethodClasses                   NftMethod = "classes"

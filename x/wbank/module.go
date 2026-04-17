@@ -21,6 +21,7 @@ type AppModuleBasic struct {
 // AppModule implements an application module for the wrapped bank module.
 type AppModule struct {
 	bank.AppModule
+
 	keeper         keeper.BaseKeeperWrapper
 	legacySubspace bankexported.Subspace
 }

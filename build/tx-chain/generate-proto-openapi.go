@@ -139,7 +139,7 @@ func executeOpenAPIProtocCommand(ctx context.Context, deps types.DepsFunc, inclu
 			}
 			args := append([]string{}, args...)
 			args = append(args, pf)
-			cmd := exec.Command(txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
+			cmd := exec.CommandContext(ctx, txcrusttools.Path("bin/protoc", txcrusttools.TargetPlatformLocal), args...)
 			cmd.Dir = dir
 			if err := libexec.Exec(ctx, cmd); err != nil {
 				return err

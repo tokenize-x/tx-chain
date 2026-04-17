@@ -18,6 +18,7 @@ type AppModuleBasic struct {
 // AppModule implements an application module for the wnft module.
 type AppModule struct {
 	nftmodule.AppModule
+
 	keeper keeper.Wrapper
 }
 

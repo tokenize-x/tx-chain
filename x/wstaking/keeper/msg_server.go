@@ -13,6 +13,7 @@ import (
 // MsgServer is wrapper staking customParamsKeeper message server.
 type MsgServer struct {
 	stakingtypes.MsgServer
+
 	customParamsKeeper wstakingtypes.CustomParamsKeeper
 }
 

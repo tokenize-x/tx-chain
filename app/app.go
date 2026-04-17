@@ -746,7 +746,7 @@ func New(
 			appCodec,
 			&app.TransferKeeper,
 			// TODO (v8): Remove legacy message handler. Planned for 2026 Q4.
-			wasmcustomhandler.NewTXChainMsgHandler(),
+			wasmcustomhandler.NewTXChainMsgHandler(), //nolint:staticcheck // intentionally kept until v8
 		))),
 		// TODO (v8): Remove legacy custom query handler, keep only GRPC queries. Planned for 2026 Q4.
 		wasmkeeper.WithQueryPlugins(wasmcustomhandler.NewTXChainQueryHandler(

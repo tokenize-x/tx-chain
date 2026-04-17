@@ -167,6 +167,7 @@ func (c Context) WithClient(client client.CometRPC) Context {
 
 // WithRPCClient returns a copy of the context with an updated RPC client
 // instance.
+//
 // Deprecated: It will be removed in the near future! Please use WithClient instead.
 func (c Context) WithRPCClient(client rpcclient.Client) Context {
 	return c.WithClient(client)
