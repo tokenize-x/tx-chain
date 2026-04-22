@@ -157,6 +157,11 @@ func (k Keeper) Codec() codec.BinaryCodec {
 	return k.cdc
 }
 
+// AddressCodec returns the bech32 address codec used by the keeper.
+func (k Keeper) AddressCodec() addresscodec.Codec {
+	return k.addressCodec
+}
+
 // GetClearingAccountBalances returns the current balances of all PSE clearing accounts in the bond denom.
 func (k Keeper) GetClearingAccountBalances(ctx context.Context) ([]types.ClearingAccountBalance, error) {
 	// Get bond denom from staking params

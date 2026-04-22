@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/collections"
@@ -55,7 +56,9 @@ func migratePSEStore(ctx context.Context, pseKeeper pskeeper.Keeper) error {
 		return err
 	}
 
-	if err := migrateAccountScoreSnapshots(ctx, storeService, firstMultiBlockDistributionID); err != nil {
+	if err := migrateAccountScoreSnapshots(
+		ctx, pseKeeper, storeService, firstMultiBlockDistributionID,
+	); err != nil {
 		return err
 	}
 
@@ -205,6 +208,7 @@ func migrateDelegationTimeEntries(
 
 func migrateAccountScoreSnapshots(
 	ctx context.Context,
+	pseKeeper pskeeper.Keeper,
 	storeService sdkstore.KVStoreService,
 	distributionID uint64,
 ) error {
@@ -250,9 +254,71 @@ func migrateAccountScoreSnapshots(
 		return err
 	}
 
+	// Route any excluded-address entries to ExcludedAddressScore so they
+	// don't participate in the first multi-block distribution.
+	excludedMap, err := pseKeeper.LoadExcludedAddressMap(ctx)
+	if err != nil {
+		return err
+	}
+	addressCodec := pseKeeper.AddressCodec()
+
+	totalScore := sdkmath.ZeroInt()
 	for _, e := range entries {
+		addrStr, err := addressCodec.BytesToString(e.addr)
+		if err != nil {
+			return err
+		}
+		if excludedMap[addrStr] {
+			if err := accumulateExcludedScore(ctx, pseKeeper, e.addr, e.score); err != nil {
+				return err
+			}
+			continue
+		}
+
 		key := collections.Join(distributionID, e.addr)
 		if err := newMap.Set(ctx, key, e.score); err != nil {
+			return err
+		}
+		totalScore = totalScore.Add(e.score)
+	}
+
+	return writeTotalScore(ctx, storeService, distributionID, totalScore)
+}
+
+// accumulateExcludedScore adds a score to an excluded address' running total,
+// initializing from zero if no prior entry exists.
+func accumulateExcludedScore(
+	ctx context.Context, pseKeeper pskeeper.Keeper, addr sdk.AccAddress, score sdkmath.Int,
+) error {
+	if score.IsZero() {
+		return nil
+	}
+	existing, err := pseKeeper.ExcludedAddressScore.Get(ctx, addr)
+	if errors.Is(err, collections.ErrNotFound) {
+		existing = sdkmath.ZeroInt()
+	} else if err != nil {
+		return err
+	}
+	return pseKeeper.ExcludedAddressScore.Set(ctx, addr, existing.Add(score))
+}
+
+// writeTotalScore maintains the invariant TotalScore[distID] == sum(AccountScoreSnapshot[distID]).
+func writeTotalScore(
+	ctx context.Context, storeService sdkstore.KVStoreService, distributionID uint64, totalScore sdkmath.Int,
+) error {
+	if !totalScore.IsZero() {
+		totalSB := collections.NewSchemaBuilder(storeService)
+		totalScoreMap := collections.NewMap(
+			totalSB,
+			types.TotalScoreKey,
+			"total_score",
+			collections.Uint64Key,
+			sdk.IntValue,
+		)
+		if _, err := totalSB.Build(); err != nil {
+			return err
+		}
+		if err := totalScoreMap.Set(ctx, distributionID, totalScore); err != nil {
 			return err
 		}
 	}
