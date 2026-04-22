@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/collections"
 	addresscodec "cosmossdk.io/core/address"
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -26,13 +27,14 @@ func RecoverOngoingDistribution(
 		return nil
 	}
 	if err != nil {
-		return err
+		return errorsmod.Wrap(err, "v7patch1 recover: read OngoingDistribution")
 	}
 	distID := ongoing.ID
 
 	excludedMap, err := pseKeeper.LoadExcludedAddressMap(ctx)
 	if err != nil {
-		return err
+		return errorsmod.Wrapf(err,
+			"v7patch1 recover: load excluded-address map: distribution_id=%d", distID)
 	}
 
 	type snapshotEntry struct {
@@ -49,19 +51,22 @@ func RecoverOngoingDistribution(
 		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](distID),
 	)
 	if err != nil {
-		return err
+		return errorsmod.Wrapf(err,
+			"v7patch1 recover: iterate snapshot: distribution_id=%d", distID)
 	}
 	for ; iter.Valid(); iter.Next() {
 		kv, err := iter.KeyValue()
 		if err != nil {
 			iter.Close()
-			return err
+			return errorsmod.Wrapf(err,
+				"v7patch1 recover: read snapshot kv: distribution_id=%d", distID)
 		}
 		addr := kv.Key.K2()
 		addrStr, err := addressCodec.BytesToString(addr)
 		if err != nil {
 			iter.Close()
-			return err
+			return errorsmod.Wrapf(err,
+				"v7patch1 recover: encode snapshot address: distribution_id=%d", distID)
 		}
 		entry := snapshotEntry{addr: addr, score: kv.Value}
 		if excludedMap[addrStr] {
@@ -73,10 +78,13 @@ func RecoverOngoingDistribution(
 	iter.Close()
 
 	for _, e := range excludedEntries {
+		addrStr, _ := addressCodec.BytesToString(e.addr)
 		if err := pseKeeper.AccountScoreSnapshot.Remove(
 			ctx, collections.Join(distID, e.addr),
 		); err != nil {
-			return err
+			return errorsmod.Wrapf(err,
+				"v7patch1 recover: remove excluded snapshot entry: distribution_id=%d address=%s",
+				distID, addrStr)
 		}
 		if e.score.IsZero() {
 			continue
@@ -85,10 +93,13 @@ func RecoverOngoingDistribution(
 		if errors.Is(err, collections.ErrNotFound) {
 			existing = sdkmath.ZeroInt()
 		} else if err != nil {
-			return err
+			return errorsmod.Wrapf(err,
+				"v7patch1 recover: read ExcludedAddressScore: address=%s", addrStr)
 		}
 		if err := pseKeeper.ExcludedAddressScore.Set(ctx, e.addr, existing.Add(e.score)); err != nil {
-			return err
+			return errorsmod.Wrapf(err,
+				"v7patch1 recover: write ExcludedAddressScore: address=%s score=%s",
+				addrStr, existing.Add(e.score))
 		}
 	}
 
@@ -98,10 +109,16 @@ func RecoverOngoingDistribution(
 		totalScore = totalScore.Add(e.score)
 	}
 	if err := pseKeeper.TotalScore.Set(ctx, distID, totalScore); err != nil {
-		return err
+		return errorsmod.Wrapf(err,
+			"v7patch1 recover: write TotalScore: distribution_id=%d total=%s kept_entries=%d",
+			distID, totalScore, len(keep))
 	}
 
 	// Clear the circuit breaker so the next EndBlock resumes the stuck
 	// distribution through ProcessNextDistribution -> resumeOngoingDistribution.
-	return pseKeeper.DistributionDisabled.Set(ctx, false)
+	if err := pseKeeper.DistributionDisabled.Set(ctx, false); err != nil {
+		return errorsmod.Wrapf(err,
+			"v7patch1 recover: clear circuit breaker: distribution_id=%d", distID)
+	}
+	return nil
 }
