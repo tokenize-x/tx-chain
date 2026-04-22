@@ -5,6 +5,7 @@ package upgrade
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
@@ -83,39 +84,39 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.Equal(psetypes.DefaultParams().DistributionBatchSize, paramsRes.Params.DistributionBatchSize,
 		"distribution_batch_size must be initialized to default by v7 upgrade")
 
-	// LastProcessedDistributionID should be set to 1 by migration
-	// (first distribution already processed by single-block logic).
+	// LastProcessedDistributionID on the testnet branch is 2 (two single-block
+	// distributions were processed before v7 upgrade).
 	lastIDRes, err := pseClient.LastProcessedDistributionID(
 		ctx, &psetypes.QueryLastProcessedDistributionIDRequest{},
 	)
 	requireT.NoError(err)
-	requireT.Equal(uint64(1), lastIDRes.LastProcessedDistributionId)
+	requireT.Equal(uint64(2), lastIDRes.LastProcessedDistributionId)
 
-	// AllocationSchedule should be replaced with the full mainnet schedule from embedded JSON.
+	// AllocationSchedule should equal the full embedded schedule.
 	schedRes, err := pseClient.ScheduledDistributions(
 		ctx, &psetypes.QueryScheduledDistributionsRequest{},
 	)
 	requireT.NoError(err)
 
-	// Load expected schedule from the embedded JSON to verify count and content.
-	expectedCount := loadMainnetScheduleCount(t)
-	requireT.Len(schedRes.ScheduledDistributions, expectedCount,
-		"migrated schedule should match embedded mainnet schedule count")
+	expectedSchedule := loadEmbeddedSchedule(t)
+	requireT.Len(schedRes.ScheduledDistributions, len(expectedSchedule),
+		"migrated schedule should match embedded schedule count")
 
-	// Verify sequential IDs.
+	// Verify sequential IDs and six clearing-account allocations per entry.
 	for i, sd := range schedRes.ScheduledDistributions {
 		requireT.Equal(uint64(i+1), sd.ID, "schedule entry %d should have sequential ID", i)
 		requireT.Len(sd.Allocations, 6, "schedule entry %d should have 6 clearing accounts", i)
 	}
 
-	// First entry (ID=1) should be the already-processed distribution.
-	requireT.Equal(uint64(1775476800), schedRes.ScheduledDistributions[0].Timestamp)
-	// Second entry (ID=2) is the first multi-block distribution.
-	requireT.Equal(uint64(1778068800), schedRes.ScheduledDistributions[1].Timestamp)
-	// Last entry (ID=84) boundary check.
+	// Timestamps must match the embedded JSON (branch-specific values).
+	requireT.Equal(mustParseUint64(t, expectedSchedule[0].Timestamp),
+		schedRes.ScheduledDistributions[0].Timestamp)
+	requireT.Equal(mustParseUint64(t, expectedSchedule[1].Timestamp),
+		schedRes.ScheduledDistributions[1].Timestamp)
 	last := schedRes.ScheduledDistributions[len(schedRes.ScheduledDistributions)-1]
-	requireT.Equal(uint64(expectedCount), last.ID)
-	requireT.Equal(uint64(1993723200), last.Timestamp)
+	requireT.Equal(uint64(len(expectedSchedule)), last.ID)
+	requireT.Equal(mustParseUint64(t, expectedSchedule[len(expectedSchedule)-1].Timestamp),
+		last.Timestamp)
 	requireT.Len(last.Allocations, 6)
 
 	// Validate score growth (with a percentage-based tolerance).
@@ -153,17 +154,33 @@ func (p *pseMigrationTest) After(t *testing.T) {
 		actualGrowth, expectedGrowth, elapsedSec)
 }
 
-// loadMainnetScheduleCount reads the embedded mainnet schedule JSON and returns the number of entries.
-func loadMainnetScheduleCount(t *testing.T) int {
+// embeddedScheduleEntry mirrors the JSON shape of the embedded schedule,
+// extracting only the fields used by the test.
+type embeddedScheduleEntry struct {
+	Timestamp string `json:"timestamp"`
+}
+
+// loadEmbeddedSchedule reads the embedded schedule JSON and returns its
+// entries. Timestamps are strings because the embedded JSON stores them as
+// strings.
+func loadEmbeddedSchedule(t *testing.T) []embeddedScheduleEntry {
 	t.Helper()
 
 	data, err := os.ReadFile("../../app/upgrade/v7/scheduled-distributions-mainnet.json")
 	require.NoError(t, err)
 
 	var schedule struct {
-		ScheduledDistributions []json.RawMessage `json:"scheduled_distributions"` //nolint:tagliatelle
+		ScheduledDistributions []embeddedScheduleEntry `json:"scheduled_distributions"` //nolint:tagliatelle
 	}
 	require.NoError(t, json.Unmarshal(data, &schedule))
 
-	return len(schedule.ScheduledDistributions)
+	return schedule.ScheduledDistributions
+}
+
+// mustParseUint64 parses an unsigned 64-bit integer from a string or fails the test.
+func mustParseUint64(t *testing.T, s string) uint64 {
+	t.Helper()
+	v, err := strconv.ParseUint(s, 10, 64)
+	require.NoError(t, err)
+	return v
 }

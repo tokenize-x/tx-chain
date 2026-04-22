@@ -3,6 +3,7 @@ package pse
 import (
 	"context"
 	"encoding/json"
+	"runtime/debug"
 
 	"cosmossdk.io/core/appmodule"
 	errorsmod "cosmossdk.io/errors"
@@ -153,13 +154,23 @@ func (am AppModule) EndBlock(c context.Context) (err error) {
 			ctx.Logger().Error(
 				"failed to process next distribution (panic), disabling all future distributions",
 				"panic", r,
+				"stack", string(debug.Stack()),
+				"block_height", ctx.BlockHeight(),
+				"block_time", ctx.BlockTime().Unix(),
 			)
 			err = am.keeper.DistributionDisabled.Set(c, true)
 		}
 	}()
 	err = am.keeper.ProcessNextDistribution(cacheCtx) //nolint:contextcheck // this is correct context passing
 	if err != nil {
-		ctx.Logger().Error("failed to process next distribution, disabling all future distributions", "error", err)
+		// Distribution context (distribution_id, score, amounts) is already
+		// embedded in the wrapped error chain.
+		ctx.Logger().Error(
+			"failed to process next distribution, disabling all future distributions",
+			"error", err,
+			"block_height", ctx.BlockHeight(),
+			"block_time", ctx.BlockTime().Unix(),
+		)
 		return am.keeper.DistributionDisabled.Set(c, true)
 	}
 	writeCache()
