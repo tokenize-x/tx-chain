@@ -137,6 +137,7 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/app/openapi"
 	appupgrade "github.com/tokenize-x/tx-chain/v7/app/upgrade"
 	appupgradev7 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v7"
+	appupgradev7patch1 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v7patch1"
 	"github.com/tokenize-x/tx-chain/v7/docs"
 	"github.com/tokenize-x/tx-chain/v7/pkg/config"
 	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
@@ -1222,6 +1223,12 @@ func New(
 			app.PSEKeeper,
 			app.AccountKeeper.AddressCodec(),
 			app.StakingKeeper.ValidatorAddressCodec(),
+		),
+		appupgradev7patch1.New(
+			app.ModuleManager,
+			app.configurator,
+			app.PSEKeeper,
+			app.AccountKeeper.AddressCodec(),
 		),
 	}
 
