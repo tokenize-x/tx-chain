@@ -132,7 +132,7 @@ func TestRecoverOngoingDistribution_HappyPath(t *testing.T) {
 	requireT.True(disabled)
 
 	addressCodec := authcodec.NewBech32Codec(addrPrefix)
-	requireT.NoError(recoverOngoingDistribution(ctx, keeper, addressCodec))
+	requireT.NoError(RecoverOngoingDistribution(ctx, keeper, addressCodec))
 
 	expectedSum := sdkmath.ZeroInt()
 	for _, e := range nonZero {
@@ -202,7 +202,7 @@ func TestRecoverOngoingDistribution_MovesExcludedEntries(t *testing.T) {
 		{excludedAddr, excludedScore},
 	}, []string{excludedBech32})
 
-	requireT.NoError(recoverOngoingDistribution(ctx, keeper, addressCodec))
+	requireT.NoError(RecoverOngoingDistribution(ctx, keeper, addressCodec))
 
 	gotTotal, err := keeper.TotalScore.Get(ctx, distID)
 	requireT.NoError(err)
@@ -228,7 +228,7 @@ func TestRecoverOngoingDistribution_NoOngoingIsNoOp(t *testing.T) {
 
 	addressCodec := authcodec.NewBech32Codec(addrPrefix)
 
-	requireT.NoError(recoverOngoingDistribution(ctx, keeper, addressCodec))
+	requireT.NoError(RecoverOngoingDistribution(ctx, keeper, addressCodec))
 
 	_, err := keeper.OngoingDistribution.Get(ctx)
 	requireT.ErrorIs(err, collections.ErrNotFound)
@@ -251,11 +251,11 @@ func TestRecoverOngoingDistribution_IsIdempotent(t *testing.T) {
 		score sdkmath.Int
 	}{{addr, score}}, nil)
 
-	requireT.NoError(recoverOngoingDistribution(ctx, keeper, addressCodec))
+	requireT.NoError(RecoverOngoingDistribution(ctx, keeper, addressCodec))
 	first, err := keeper.TotalScore.Get(ctx, distID)
 	requireT.NoError(err)
 
-	requireT.NoError(recoverOngoingDistribution(ctx, keeper, addressCodec))
+	requireT.NoError(RecoverOngoingDistribution(ctx, keeper, addressCodec))
 	second, err := keeper.TotalScore.Get(ctx, distID)
 	requireT.NoError(err)
 	requireT.True(first.Equal(second))

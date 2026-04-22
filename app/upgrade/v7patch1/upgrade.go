@@ -32,7 +32,7 @@ func New(
 			Deleted: []string{},
 		},
 		Upgrade: func(ctx context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			if err := recoverOngoingDistribution(ctx, pseKeeper, addressCodec); err != nil {
+			if err := RecoverOngoingDistribution(ctx, pseKeeper, addressCodec); err != nil {
 				return nil, err
 			}
 			return mm.RunMigrations(ctx, configurator, vm)

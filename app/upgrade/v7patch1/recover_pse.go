@@ -12,11 +12,11 @@ import (
 	pskeeper "github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
 )
 
-// recoverOngoingDistribution restores TotalScore[ongoingID] to the sum of its
+// RecoverOngoingDistribution restores TotalScore[ongoingID] to the sum of its
 // AccountScoreSnapshot entries, routes excluded-address entries to
 // ExcludedAddressScore, and clears DistributionDisabled. No-op when no ongoing
 // distribution exists.
-func recoverOngoingDistribution(
+func RecoverOngoingDistribution(
 	ctx context.Context,
 	pseKeeper pskeeper.Keeper,
 	addressCodec addresscodec.Codec,
