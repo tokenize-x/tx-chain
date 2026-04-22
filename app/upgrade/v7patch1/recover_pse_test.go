@@ -23,14 +23,12 @@ import (
 	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
 )
 
-const addrPrefix = "testcore"
+func accountBech32Prefix() string {
+	return sdk.GetConfig().GetBech32AccountAddrPrefix()
+}
 
-func init() {
-	// Match the global bech32 prefix to the test codecs so Params.ValidateBasic accepts the addresses.
-	cfg := sdk.GetConfig()
-	cfg.SetBech32PrefixForAccount(addrPrefix, addrPrefix+"pub")
-	cfg.SetBech32PrefixForValidator(addrPrefix+"valoper", addrPrefix+"valoperpub")
-	cfg.SetBech32PrefixForConsensusNode(addrPrefix+"valcons", addrPrefix+"valconspub")
+func validatorBech32Prefix() string {
+	return sdk.GetConfig().GetBech32ValidatorAddrPrefix()
 }
 
 func setup(t *testing.T) (sdk.Context, pskeeper.Keeper) {
@@ -46,8 +44,8 @@ func setup(t *testing.T) (sdk.Context, pskeeper.Keeper) {
 	encodingConfig := config.NewEncodingConfig(pse.AppModuleBasic{})
 	storeService := runtime.NewKVStoreService(key)
 
-	addressCodec := authcodec.NewBech32Codec(addrPrefix)
-	valAddressCodec := authcodec.NewBech32Codec(addrPrefix + "valoper")
+	addressCodec := authcodec.NewBech32Codec(accountBech32Prefix())
+	valAddressCodec := authcodec.NewBech32Codec(validatorBech32Prefix())
 
 	keeper := pskeeper.NewKeeper(
 		storeService,
@@ -131,7 +129,7 @@ func TestRecoverOngoingDistribution_HappyPath(t *testing.T) {
 	requireT.NoError(err)
 	requireT.True(disabled)
 
-	addressCodec := authcodec.NewBech32Codec(addrPrefix)
+	addressCodec := authcodec.NewBech32Codec(accountBech32Prefix())
 	requireT.NoError(RecoverOngoingDistribution(ctx, keeper, addressCodec))
 
 	expectedSum := sdkmath.ZeroInt()
@@ -181,7 +179,7 @@ func TestRecoverOngoingDistribution_MovesExcludedEntries(t *testing.T) {
 	requireT := require.New(t)
 	ctx, keeper := setup(t)
 
-	addressCodec := authcodec.NewBech32Codec(addrPrefix)
+	addressCodec := authcodec.NewBech32Codec(accountBech32Prefix())
 	const distID = uint64(3)
 
 	normal := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
@@ -226,7 +224,7 @@ func TestRecoverOngoingDistribution_NoOngoingIsNoOp(t *testing.T) {
 	requireT := require.New(t)
 	ctx, keeper := setup(t)
 
-	addressCodec := authcodec.NewBech32Codec(addrPrefix)
+	addressCodec := authcodec.NewBech32Codec(accountBech32Prefix())
 
 	requireT.NoError(RecoverOngoingDistribution(ctx, keeper, addressCodec))
 
@@ -240,7 +238,7 @@ func TestRecoverOngoingDistribution_IsIdempotent(t *testing.T) {
 	requireT := require.New(t)
 	ctx, keeper := setup(t)
 
-	addressCodec := authcodec.NewBech32Codec(addrPrefix)
+	addressCodec := authcodec.NewBech32Codec(accountBech32Prefix())
 	const distID = uint64(3)
 
 	addr := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
