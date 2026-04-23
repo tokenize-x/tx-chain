@@ -151,14 +151,20 @@ func (p *pseMigrationTest) After(t *testing.T) {
 
 	// pse_community_intermediary must exist in state after the v7 migration.
 	authClient := authtypes.NewQueryClient(chain.ClientContext)
-	intermediaryAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityIntermediary).String()
+	intermediaryAddr := authtypes.NewModuleAddress(
+		psetypes.ClearingAccountCommunityIntermediary,
+	).String()
 	accRes, err := authClient.Account(ctx, &authtypes.QueryAccountRequest{Address: intermediaryAddr})
 	requireT.NoError(err, "pse_community_intermediary account must exist in state after upgrade")
 	requireT.NotNil(accRes.Account, "pse_community_intermediary account response must not be nil")
 
-	t.Logf("PSE After: schedule=%d entries, lastProcessedID=1, score %s -> %s (growth=%s, expectedRange=[%s..%s], elapsedWindow=[%ds..%ds])",
+	t.Logf(
+		"PSE After: schedule=%d entries, lastProcessedID=1, "+
+			"score %s -> %s (growth=%s, expectedRange=[%s..%s], "+
+			"elapsedWindow=[%ds..%ds])",
 		len(schedRes.ScheduledDistributions), p.preUpgradeScore, scoreRes.Score,
-		actualGrowth, expectedGrowthMin, expectedGrowthMax, elapsedMinSec, elapsedMaxSec)
+		actualGrowth, expectedGrowthMin, expectedGrowthMax, elapsedMinSec, elapsedMaxSec,
+	)
 }
 
 // loadMainnetScheduleCount reads the embedded mainnet schedule JSON and returns the number of entries.
