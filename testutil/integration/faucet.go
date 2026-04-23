@@ -160,14 +160,26 @@ func (f Faucet) collectRequests(ctx context.Context, leaderReq fundingRequest) (
 func (f Faucet) prepareMultiSendMessage(requests []fundingRequest) *banktypes.MsgMultiSend {
 	msg := &banktypes.MsgMultiSend{}
 	sum := sdk.NewCoins()
+	outputsByAddress := map[string]sdk.Coins{}
+	addressOrder := make([]string, 0)
 	for _, r := range requests {
 		for _, a := range r.AccountsToFund {
 			sum = sum.Add(a.Amount)
-			msg.Outputs = append(msg.Outputs, banktypes.Output{
-				Address: f.chainCtx.MustConvertToBech32Address(a.Address),
-				Coins:   sdk.NewCoins(a.Amount),
-			})
+			address := f.chainCtx.MustConvertToBech32Address(a.Address)
+			coins := sdk.NewCoins(a.Amount)
+			if existing, ok := outputsByAddress[address]; ok {
+				outputsByAddress[address] = existing.Add(coins...)
+				continue
+			}
+			outputsByAddress[address] = coins
+			addressOrder = append(addressOrder, address)
 		}
+	}
+	for _, address := range addressOrder {
+		msg.Outputs = append(msg.Outputs, banktypes.Output{
+			Address: address,
+			Coins:   outputsByAddress[address],
+		})
 	}
 	msg.Inputs = []banktypes.Input{{
 		Address: f.chainCtx.MustConvertToBech32Address(f.chainCtx.ClientContext.FromAddress()),
