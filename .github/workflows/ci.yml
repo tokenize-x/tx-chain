@@ -30,7 +30,8 @@ jobs:
               - '.github/**'
             code:
               - '**/*.go'
-              - 'go.mod'
+              - '**/go.mod'
+              - '**/go.sum'
               - 'x/**'
               - 'integration-tests/**'
   ci:
