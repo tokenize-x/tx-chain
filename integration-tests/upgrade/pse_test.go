@@ -23,7 +23,8 @@ type pseMigrationTest struct {
 	preUpgradeParams       psetypes.Params
 	validatorDelegatorAddr string
 	preUpgradeScore        sdkmath.Int
-	preUpgradeBlockTimeSec int64
+	preScoreBlockBeforeSec int64
+	preScoreBlockAfterSec  int64
 	validatorTokens        sdkmath.Int
 }
 
@@ -53,18 +54,28 @@ func (p *pseMigrationTest) Before(t *testing.T) {
 	p.validatorDelegatorAddr = delegatorAddr.String()
 	p.validatorTokens = validatorsRes.Validators[0].Tokens
 
-	// Capture pre-upgrade score and block time for deterministic growth assertion.
+	// Bracket the pre-upgrade score query with block times.
+	beforeScoreBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
+	requireT.NoError(err)
+	p.preScoreBlockBeforeSec = beforeScoreBlock.SdkBlock.Header.Time.Unix()
+
 	scoreRes, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{Address: p.validatorDelegatorAddr})
 	requireT.NoError(err)
 	p.preUpgradeScore = scoreRes.Score
 	requireT.True(p.preUpgradeScore.GT(sdkmath.ZeroInt()), "genesis validator should have non-zero PSE score")
 
-	latestBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
+	afterScoreBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
 	requireT.NoError(err)
-	p.preUpgradeBlockTimeSec = latestBlock.SdkBlock.Header.Time.Unix()
+	p.preScoreBlockAfterSec = afterScoreBlock.SdkBlock.Header.Time.Unix()
+	requireT.GreaterOrEqual(
+		p.preScoreBlockAfterSec,
+		p.preScoreBlockBeforeSec,
+		"pre-score after block time must be >= pre-score before block time",
+	)
 
-	t.Logf("PSE Before: validator=%s tokens=%s score=%s blockTime=%d",
-		p.validatorDelegatorAddr, p.validatorTokens, p.preUpgradeScore, p.preUpgradeBlockTimeSec)
+	t.Logf("PSE Before: validator=%s tokens=%s score=%s preScoreWindow=[%d..%d]",
+		p.validatorDelegatorAddr, p.validatorTokens, p.preUpgradeScore,
+		p.preScoreBlockBeforeSec, p.preScoreBlockAfterSec)
 }
 
 func (p *pseMigrationTest) After(t *testing.T) {
@@ -129,8 +140,8 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.NoError(err)
 	afterScoreBlockTimeSec := afterScoreBlock.SdkBlock.Header.Time.Unix()
 
-	elapsedMinSec := beforeScoreBlockTimeSec - p.preUpgradeBlockTimeSec
-	elapsedMaxSec := afterScoreBlockTimeSec - p.preUpgradeBlockTimeSec
+	elapsedMinSec := beforeScoreBlockTimeSec - p.preScoreBlockAfterSec
+	elapsedMaxSec := afterScoreBlockTimeSec - p.preScoreBlockBeforeSec
 	requireT.Positive(elapsedMinSec, "time must have elapsed between Before and After")
 	requireT.GreaterOrEqual(elapsedMaxSec, elapsedMinSec, "elapsed max must be >= elapsed min")
 
