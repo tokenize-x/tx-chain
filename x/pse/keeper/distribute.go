@@ -172,16 +172,6 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		return false, err
 	}
 
-	// Invariant: positive amount with non-positive score indicates a scoring bug.
-	// Return error and disable PSE.
-	if totalPSEAmount.IsPositive() && !totalScore.IsPositive() {
-		return false, errorsmod.Wrapf(
-			types.ErrInvariantViolation,
-			"positive PSE amount %s but non-positive total score %s for distribution %d",
-			totalPSEAmount, totalScore, ongoingID,
-		)
-	}
-
 	// Collect a batch of score snapshots.
 	iter, err := k.AccountScoreSnapshot.Iterate(
 		ctx,
@@ -210,10 +200,19 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	}
 	iter.Close()
 
-	// Only triggered when all delegators have been processed.
-	// Send leftover to community pool and clean up.
+	// Empty batch: distribution complete or no eligible recipients.
+	// Finalize and refund any remaining intermediary balance to the community pool.
 	if len(batch) == 0 {
 		return true, k.finalizeCommunityDistribution(ctx, ongoing, totalPSEAmount, bondDenom)
+	}
+
+	// Invariant: non-empty snapshot with non-positive total score indicates a scoring bug.
+	if totalPSEAmount.IsPositive() && !totalScore.IsPositive() {
+		return false, errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"positive PSE amount %s but non-positive total score %s for distribution %d",
+			totalPSEAmount, totalScore, ongoingID,
+		)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

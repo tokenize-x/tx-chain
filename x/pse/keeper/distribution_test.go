@@ -646,11 +646,12 @@ func TestDistribution_EndBlockerWithScenarios(t *testing.T) {
 			},
 		},
 		{
-			name: "zero score via EndBlocker triggers invariant violation",
+			name: "no eligible recipients via EndBlocker finalizes to community pool",
 			actions: []func(*runEnv){
 				func(r *runEnv) {
-					endBlockerDistributeExpectInvariantViolation(r, sdkmath.NewInt(1000))
+					endBlockerDistributeExpectFinalizeToCommunityPool(r, sdkmath.NewInt(1000))
 				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(1000)) },
 			},
 		},
 		{

@@ -147,11 +147,12 @@ func TestKeeper_Distribute(t *testing.T) {
 			},
 		},
 		{
-			name: "zero score triggers invariant violation",
+			name: "no eligible recipients finalizes to community pool",
 			actions: []func(*runEnv){
 				func(r *runEnv) {
-					distributeExpectInvariantViolation(r, sdkmath.NewInt(1000))
+					distributeExpectFinalizeToCommunityPool(r, sdkmath.NewInt(1000))
 				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(1000)) },
 			},
 		},
 		{
