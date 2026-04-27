@@ -2,6 +2,7 @@ package v7
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"cosmossdk.io/collections"
@@ -275,6 +276,62 @@ func TestMigratePSEStore_TotalScoreInvariant(t *testing.T) {
 		firstMultiBlockDistributionID, totalScore, expectedSum)
 }
 
+// TestMigratePSEStore_TotalScoreFromMultipleEntries asserts migration writes
+// TotalScore equal to the sum of pre-v7 entries spanning multiple magnitudes.
+func TestMigratePSEStore_TotalScoreFromMultipleEntries(t *testing.T) {
+	requireT := require.New(t)
+	ctx, pseKeeper := setup(t)
+
+	storeService := pseKeeper.StoreService()
+
+	type entry struct {
+		addr  sdk.AccAddress
+		score sdkmath.Int
+	}
+	entries := []entry{
+		{sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()), sdkmath.NewInt(2_199_878_160_334_053)},
+		{sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()), sdkmath.NewInt(2_003_391_705_000_000)},
+		{sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()), sdkmath.NewInt(595_409_231_313_825)},
+		{sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()), sdkmath.NewInt(8_819_999_720)},
+		{sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address()), sdkmath.NewInt(1_749_486_060)},
+	}
+
+	oldScoreSB := collections.NewSchemaBuilder(storeService)
+	oldScoreMap := collections.NewMap(
+		oldScoreSB,
+		types.AccountScoreKey,
+		"account_score",
+		sdk.AccAddressKey,
+		sdk.IntValue,
+	)
+	_, err := oldScoreSB.Build()
+	requireT.NoError(err)
+
+	for _, e := range entries {
+		requireT.NoError(oldScoreMap.Set(ctx, e.addr, e.score))
+	}
+
+	requireT.NoError(migratePSEStore(ctx, pseKeeper))
+
+	// Every entry must land in AccountScoreSnapshot under the new key.
+	expectedSum := sdkmath.ZeroInt()
+	for _, e := range entries {
+		got, err := pseKeeper.AccountScoreSnapshot.Get(
+			ctx, collections.Join(firstMultiBlockDistributionID, e.addr),
+		)
+		requireT.NoError(err)
+		requireT.True(e.score.Equal(got))
+		expectedSum = expectedSum.Add(e.score)
+	}
+
+	// TotalScore must equal the sum of all migrated entries.
+	totalScore, err := pseKeeper.TotalScore.Get(ctx, firstMultiBlockDistributionID)
+	requireT.NoError(err)
+	requireT.True(expectedSum.Equal(totalScore),
+		"TotalScore[%d]=%s, expected=%s",
+		firstMultiBlockDistributionID, totalScore, expectedSum)
+}
+
 // TestMigratePSEStore_RoutesExcludedAddresses verifies that pre-v7 entries
 // for addresses in the current excluded-addresses list are routed to
 // ExcludedAddressScore (not AccountScoreSnapshot) and excluded from TotalScore.
@@ -338,4 +395,112 @@ func TestMigratePSEStore_RoutesExcludedAddresses(t *testing.T) {
 	gotTotal, err := pseKeeper.TotalScore.Get(ctx, firstMultiBlockDistributionID)
 	requireT.NoError(err)
 	requireT.True(normalScore.Equal(gotTotal))
+}
+
+// TestMigratePSEStore_EmptyStoreLeavesTotalScoreUnset: empty pre-v7 store
+// migrates cleanly, leaves AccountScoreSnapshot/TotalScore unset, PSE enabled.
+func TestMigratePSEStore_EmptyStoreLeavesTotalScoreUnset(t *testing.T) {
+	requireT := require.New(t)
+	ctx, pseKeeper := setup(t)
+
+	// No seed data — old account_score store is empty.
+
+	requireT.NoError(migratePSEStore(ctx, pseKeeper))
+
+	// AccountScoreSnapshot must be empty for the first multi-block distribution.
+	iter, err := pseKeeper.AccountScoreSnapshot.Iterate(
+		ctx,
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](firstMultiBlockDistributionID),
+	)
+	requireT.NoError(err)
+	defer iter.Close()
+	requireT.False(iter.Valid(), "AccountScoreSnapshot must be empty after no-data migration")
+
+	// TotalScore must not be written when there is nothing to sum.
+	_, err = pseKeeper.TotalScore.Get(ctx, firstMultiBlockDistributionID)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"TotalScore must remain unset when no eligible entries are migrated")
+
+	// PSE must remain enabled when the score snapshot is empty.
+	disabled, err := pseKeeper.DistributionDisabled.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		disabled = false
+	} else {
+		requireT.NoError(err)
+	}
+	requireT.False(disabled)
+}
+
+// TestMigratePSEStore_AllExcludedLeavesTotalScoreUnset: when every pre-v7
+// entry is excluded, migration routes them to ExcludedAddressScore, leaves
+// AccountScoreSnapshot/TotalScore unset, and PSE remains enabled.
+func TestMigratePSEStore_AllExcludedLeavesTotalScoreUnset(t *testing.T) {
+	requireT := require.New(t)
+	ctx, pseKeeper := setup(t)
+
+	storeService := pseKeeper.StoreService()
+	addressCodec := pseKeeper.AddressCodec()
+
+	excluded1 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	excluded2 := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	excluded1Bech32, err := addressCodec.BytesToString(excluded1)
+	requireT.NoError(err)
+	excluded2Bech32, err := addressCodec.BytesToString(excluded2)
+	requireT.NoError(err)
+
+	// Seed the old-format account_score store — both entries excluded.
+	oldScoreSB := collections.NewSchemaBuilder(storeService)
+	oldScoreMap := collections.NewMap(
+		oldScoreSB,
+		types.AccountScoreKey,
+		"account_score",
+		sdk.AccAddressKey,
+		sdk.IntValue,
+	)
+	_, err = oldScoreSB.Build()
+	requireT.NoError(err)
+
+	score1 := sdkmath.NewInt(1_000_000)
+	score2 := sdkmath.NewInt(500_000)
+	requireT.NoError(oldScoreMap.Set(ctx, excluded1, score1))
+	requireT.NoError(oldScoreMap.Set(ctx, excluded2, score2))
+
+	params := types.DefaultParams()
+	params.ExcludedAddresses = []string{excluded1Bech32, excluded2Bech32}
+	requireT.NoError(pseKeeper.SetParams(ctx, params))
+
+	requireT.NoError(migratePSEStore(ctx, pseKeeper))
+
+	// AccountScoreSnapshot must be empty — every entry was routed away.
+	iter, err := pseKeeper.AccountScoreSnapshot.Iterate(
+		ctx,
+		collections.NewPrefixedPairRange[uint64, sdk.AccAddress](firstMultiBlockDistributionID),
+	)
+	requireT.NoError(err)
+	defer iter.Close()
+	requireT.False(iter.Valid(),
+		"AccountScoreSnapshot must be empty when all migrated entries are excluded")
+
+	// TotalScore must not be written.
+	_, err = pseKeeper.TotalScore.Get(ctx, firstMultiBlockDistributionID)
+	requireT.ErrorIs(err, collections.ErrNotFound,
+		"TotalScore must remain unset when no eligible entries are migrated")
+
+	// Both scores land in ExcludedAddressScore, intact.
+	got1, err := pseKeeper.ExcludedAddressScore.Get(ctx, excluded1)
+	requireT.NoError(err)
+	requireT.True(score1.Equal(got1))
+
+	got2, err := pseKeeper.ExcludedAddressScore.Get(ctx, excluded2)
+	requireT.NoError(err)
+	requireT.True(score2.Equal(got2))
+
+	// PSE must remain enabled when the score snapshot is empty.
+	disabled, err := pseKeeper.DistributionDisabled.Get(ctx)
+	if errors.Is(err, collections.ErrNotFound) {
+		disabled = false
+	} else {
+		requireT.NoError(err)
+	}
+	requireT.False(disabled)
 }
