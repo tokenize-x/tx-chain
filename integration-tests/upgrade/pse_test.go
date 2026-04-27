@@ -23,7 +23,8 @@ type pseMigrationTest struct {
 	preUpgradeParams       psetypes.Params
 	validatorDelegatorAddr string
 	preUpgradeScore        sdkmath.Int
-	preUpgradeBlockTimeSec int64
+	preScoreBlockBeforeSec int64
+	preScoreBlockAfterSec  int64
 	validatorTokens        sdkmath.Int
 }
 
@@ -53,18 +54,28 @@ func (p *pseMigrationTest) Before(t *testing.T) {
 	p.validatorDelegatorAddr = delegatorAddr.String()
 	p.validatorTokens = validatorsRes.Validators[0].Tokens
 
-	// Capture pre-upgrade score and block time for deterministic growth assertion.
+	// Bracket the pre-upgrade score query with block times.
+	beforeScoreBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
+	requireT.NoError(err)
+	p.preScoreBlockBeforeSec = beforeScoreBlock.SdkBlock.Header.Time.Unix()
+
 	scoreRes, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{Address: p.validatorDelegatorAddr})
 	requireT.NoError(err)
 	p.preUpgradeScore = scoreRes.Score
 	requireT.True(p.preUpgradeScore.GT(sdkmath.ZeroInt()), "genesis validator should have non-zero PSE score")
 
-	latestBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
+	afterScoreBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
 	requireT.NoError(err)
-	p.preUpgradeBlockTimeSec = latestBlock.SdkBlock.Header.Time.Unix()
+	p.preScoreBlockAfterSec = afterScoreBlock.SdkBlock.Header.Time.Unix()
+	requireT.GreaterOrEqual(
+		p.preScoreBlockAfterSec,
+		p.preScoreBlockBeforeSec,
+		"pre-score after block time must be >= pre-score before block time",
+	)
 
-	t.Logf("PSE Before: validator=%s tokens=%s score=%s blockTime=%d",
-		p.validatorDelegatorAddr, p.validatorTokens, p.preUpgradeScore, p.preUpgradeBlockTimeSec)
+	t.Logf("PSE Before: validator=%s tokens=%s score=%s preScoreWindow=[%d..%d]",
+		p.validatorDelegatorAddr, p.validatorTokens, p.preUpgradeScore,
+		p.preScoreBlockBeforeSec, p.preScoreBlockAfterSec)
 }
 
 func (p *pseMigrationTest) After(t *testing.T) {
@@ -118,39 +129,53 @@ func (p *pseMigrationTest) After(t *testing.T) {
 	requireT.Equal(uint64(1993723200), last.Timestamp)
 	requireT.Len(last.Allocations, 6)
 
-	// Validate score growth (with a percentage-based tolerance).
+	beforeScoreBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
+	requireT.NoError(err)
+	beforeScoreBlockTimeSec := beforeScoreBlock.SdkBlock.Header.Time.Unix()
+
 	scoreRes, err := pseClient.Score(ctx, &psetypes.QueryScoreRequest{Address: p.validatorDelegatorAddr})
 	requireT.NoError(err)
 
-	latestBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
+	afterScoreBlock, err := tmClient.GetLatestBlock(ctx, &cmtservice.GetLatestBlockRequest{})
 	requireT.NoError(err)
-	afterBlockTimeSec := latestBlock.SdkBlock.Header.Time.Unix()
+	afterScoreBlockTimeSec := afterScoreBlock.SdkBlock.Header.Time.Unix()
 
-	elapsedSec := afterBlockTimeSec - p.preUpgradeBlockTimeSec
-	requireT.Positive(elapsedSec, "time must have elapsed between Before and After")
+	elapsedMinSec := beforeScoreBlockTimeSec - p.preScoreBlockAfterSec
+	elapsedMaxSec := afterScoreBlockTimeSec - p.preScoreBlockBeforeSec
+	requireT.Positive(elapsedMinSec, "time must have elapsed between Before and After")
+	requireT.GreaterOrEqual(elapsedMaxSec, elapsedMinSec, "elapsed max must be >= elapsed min")
 
-	expectedGrowth := p.validatorTokens.MulRaw(elapsedSec)
+	expectedGrowthMin := p.validatorTokens.MulRaw(elapsedMinSec)
+	expectedGrowthMax := p.validatorTokens.MulRaw(elapsedMaxSec)
 
 	actualGrowth := scoreRes.Score.Sub(p.preUpgradeScore)
 	requireT.True(actualGrowth.IsPositive(), "score must have grown")
 
-	// Allow 10% deviation to account for block time jitter between queries.
-	diff := actualGrowth.Sub(expectedGrowth).Abs()
-	maxDeviation := expectedGrowth.QuoRaw(10) // 10%
-	requireT.True(diff.LTE(maxDeviation),
-		"score growth %s deviates from expected %s by %s (>10%%)",
-		actualGrowth, expectedGrowth, diff)
+	// Allow 10% deviation around the expected range to account for block-time jitter.
+	lowerBound := expectedGrowthMin.Sub(expectedGrowthMin.QuoRaw(10))
+	upperBound := expectedGrowthMax.Add(expectedGrowthMax.QuoRaw(10))
+	requireT.True(
+		actualGrowth.GTE(lowerBound) && actualGrowth.LTE(upperBound),
+		"score growth %s outside expected range [%s, %s] (elapsed window %ds..%ds, 10%% tolerance)",
+		actualGrowth, lowerBound, upperBound, elapsedMinSec, elapsedMaxSec,
+	)
 
 	// pse_community_intermediary must exist in state after the v7 migration.
 	authClient := authtypes.NewQueryClient(chain.ClientContext)
-	intermediaryAddr := authtypes.NewModuleAddress(psetypes.ClearingAccountCommunityIntermediary).String()
+	intermediaryAddr := authtypes.NewModuleAddress(
+		psetypes.ClearingAccountCommunityIntermediary,
+	).String()
 	accRes, err := authClient.Account(ctx, &authtypes.QueryAccountRequest{Address: intermediaryAddr})
 	requireT.NoError(err, "pse_community_intermediary account must exist in state after upgrade")
 	requireT.NotNil(accRes.Account, "pse_community_intermediary account response must not be nil")
 
-	t.Logf("PSE After: schedule=%d entries, lastProcessedID=1, score %s -> %s (growth=%s, expected~%s, elapsed=%ds)",
+	t.Logf(
+		"PSE After: schedule=%d entries, lastProcessedID=1, "+
+			"score %s -> %s (growth=%s, expectedRange=[%s..%s], "+
+			"elapsedWindow=[%ds..%ds])",
 		len(schedRes.ScheduledDistributions), p.preUpgradeScore, scoreRes.Score,
-		actualGrowth, expectedGrowth, elapsedSec)
+		actualGrowth, expectedGrowthMin, expectedGrowthMax, elapsedMinSec, elapsedMaxSec,
+	)
 }
 
 // loadMainnetScheduleCount reads the embedded mainnet schedule JSON and returns the number of entries.
