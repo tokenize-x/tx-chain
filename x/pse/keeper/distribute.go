@@ -24,6 +24,8 @@ import (
 //  4. Remove entry from ongoingID
 //
 // Returns true when all ongoingID entries have been processed.
+//
+//nolint:funlen
 func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 	ctx context.Context, ongoing types.ScheduledDistribution,
 ) (bool, error) {
@@ -82,7 +84,7 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 	for _, item := range batch {
 		addrStr, err := k.addressCodec.BytesToString(item.delAddr)
 		if err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err, "encode delegator bech32")
 		}
 		isExcluded := excludedMap[addrStr]
 
@@ -90,10 +92,14 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 		// Excluded addresses route to ExcludedAddressScore instead of AccountScoreSnapshot+TotalScore.
 		score, err := calculateScoreAtTimestamp(ctx, k, item.valAddr, item.entry, distTimestamp)
 		if err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err,
+				"phase 1 ongoing score: distribution_id=%d delegator=%s validator=%s last_changed=%d dist_ts=%d",
+				ongoingID, addrStr, item.valAddr, item.entry.LastChangedUnixSec, distTimestamp)
 		}
 		if err := k.addScoreForAddress(ctx, ongoingID, item.delAddr, score, isExcluded); err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err,
+				"phase 1 add ongoing score: distribution_id=%d delegator=%s score=%s excluded=%v",
+				ongoingID, addrStr, score, isExcluded)
 		}
 
 		// Score for nextID: distTimestamp -> blockTime (gap during Phase 1 processing).
@@ -102,10 +108,14 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 			Shares:             item.entry.Shares,
 		}, blockTime)
 		if err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err,
+				"phase 1 gap score: next_id=%d delegator=%s validator=%s dist_ts=%d block_ts=%d",
+				nextID, addrStr, item.valAddr, distTimestamp, blockTime)
 		}
 		if err := k.addScoreForAddress(ctx, nextID, item.delAddr, gapScore, isExcluded); err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err,
+				"phase 1 add gap score: next_id=%d delegator=%s score=%s excluded=%v",
+				nextID, addrStr, gapScore, isExcluded)
 		}
 
 		// Migrate entry to nextID with same shares, lastChanged = current block time.
@@ -113,12 +123,16 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 			LastChangedUnixSec: blockTime,
 			Shares:             item.entry.Shares,
 		}); err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err,
+				"phase 1 migrate entry to next_id: next_id=%d delegator=%s validator=%s",
+				nextID, addrStr, item.valAddr)
 		}
 
 		// Remove from ongoingID.
 		if err := k.RemoveDelegationTimeEntry(ctx, ongoingID, item.valAddr, item.delAddr); err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err,
+				"phase 1 remove ongoing entry: distribution_id=%d delegator=%s validator=%s",
+				ongoingID, addrStr, item.valAddr)
 		}
 	}
 
@@ -137,6 +151,8 @@ func (k Keeper) ConsumeOngoingDelegationTimeEntries(
 //
 // When all delegators have been processed, sends leftover (rounding errors + undelegated users) to the community pool.
 // Returns true when distribution is complete and all state has been cleaned up.
+//
+//nolint:funlen
 func (k Keeper) ProcessOngoingTokenDistribution(
 	ctx context.Context, ongoing types.ScheduledDistribution, bondDenom string,
 ) (bool, error) {
@@ -154,16 +170,6 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		totalScore = sdkmath.NewInt(0)
 	} else if err != nil {
 		return false, err
-	}
-
-	// Invariant: positive amount with non-positive score indicates a scoring bug.
-	// Return error and disable PSE.
-	if totalPSEAmount.IsPositive() && !totalScore.IsPositive() {
-		return false, errorsmod.Wrapf(
-			types.ErrInvariantViolation,
-			"positive PSE amount %s but non-positive total score %s for distribution %d",
-			totalPSEAmount, totalScore, ongoingID,
-		)
 	}
 
 	// Collect a batch of score snapshots.
@@ -194,10 +200,19 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 	}
 	iter.Close()
 
-	// Only triggered when all delegators have been processed.
-	// Send leftover to community pool and clean up.
+	// Empty batch: distribution complete or no eligible recipients.
+	// Finalize and refund any remaining intermediary balance to the community pool.
 	if len(batch) == 0 {
 		return true, k.finalizeCommunityDistribution(ctx, ongoing, totalPSEAmount, bondDenom)
+	}
+
+	// Invariant: non-empty snapshot with non-positive total score indicates a scoring bug.
+	if totalPSEAmount.IsPositive() && !totalScore.IsPositive() {
+		return false, errorsmod.Wrapf(
+			types.ErrInvariantViolation,
+			"positive PSE amount %s but non-positive total score %s for distribution %d",
+			totalPSEAmount, totalScore, ongoingID,
+		)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -213,7 +228,9 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		userAmount := totalPSEAmount.Mul(item.score).Quo(totalScore)
 		distributedAmount, err := k.distributeToDelegator(ctx, item.delAddr, userAmount, bondDenom)
 		if err != nil {
-			return false, err
+			return false, errorsmod.Wrapf(err,
+				"phase 2: distribution_id=%d delegator=%s score=%s user_amount=%s total_score=%s total_pse=%s",
+				ongoingID, item.delAddr, item.score, userAmount, totalScore, totalPSEAmount)
 		}
 		batchDistributed = batchDistributed.Add(distributedAmount)
 
@@ -222,7 +239,9 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 		if distributedAmount.IsPositive() && ongoing.StartedAt > 0 && processingElapsedSec > 0 {
 			bonusScore := distributedAmount.MulRaw(processingElapsedSec)
 			if err := k.addToMainScore(ctx, nextID, item.delAddr, bonusScore); err != nil {
-				return false, err
+				return false, errorsmod.Wrapf(err,
+					"fairness bonus: next_id=%d delegator=%s bonus=%s",
+					nextID, item.delAddr, bonusScore)
 			}
 		}
 
@@ -347,13 +366,14 @@ func (k Keeper) distributeToDelegator(
 
 	delAddrBech32, err := k.addressCodec.BytesToString(delAddr)
 	if err != nil {
-		return sdkmath.NewInt(0), err
+		return sdkmath.NewInt(0), errorsmod.Wrapf(err, "encode delegator bech32")
 	}
 	delegationResponse, err := k.stakingKeeper.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: delAddrBech32,
 	})
 	if err != nil {
-		return sdkmath.NewInt(0), err
+		return sdkmath.NewInt(0), errorsmod.Wrapf(err,
+			"query delegations: delegator=%s", delAddrBech32)
 	}
 	var delegations []stakingtypes.DelegationResponse
 	totalDelegationAmount := sdkmath.NewInt(0)
@@ -373,7 +393,9 @@ func (k Keeper) distributeToDelegator(
 		delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, amount)),
 	); err != nil {
-		return sdkmath.NewInt(0), err
+		return sdkmath.NewInt(0), errorsmod.Wrapf(err,
+			"send reward from intermediary: delegator=%s amount=%s%s",
+			delAddrBech32, amount, bondDenom)
 	}
 
 	for _, delegation := range delegations {
@@ -387,17 +409,23 @@ func (k Keeper) distributeToDelegator(
 		delegationAmount := delegation.Balance.Amount.Mul(amount).Quo(totalDelegationAmount)
 		valAddr, err := k.valAddressCodec.StringToBytes(delegation.Delegation.ValidatorAddress)
 		if err != nil {
-			return sdkmath.NewInt(0), err
+			return sdkmath.NewInt(0), errorsmod.Wrapf(err,
+				"decode validator address: delegator=%s validator=%s",
+				delAddrBech32, delegation.Delegation.ValidatorAddress)
 		}
 
 		val, err := k.stakingKeeper.GetValidator(ctx, valAddr)
 		if err != nil {
-			return sdkmath.NewInt(0), err
+			return sdkmath.NewInt(0), errorsmod.Wrapf(err,
+				"get validator: delegator=%s validator=%s",
+				delAddrBech32, delegation.Delegation.ValidatorAddress)
 		}
 
 		_, err = k.stakingKeeper.Delegate(ctx, delAddr, delegationAmount, stakingtypes.Unbonded, val, true)
 		if err != nil {
-			return sdkmath.NewInt(0), err
+			return sdkmath.NewInt(0), errorsmod.Wrapf(err,
+				"auto-delegate: delegator=%s validator=%s amount=%s%s",
+				delAddrBech32, delegation.Delegation.ValidatorAddress, delegationAmount, bondDenom)
 		}
 	}
 	return amount, nil

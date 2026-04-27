@@ -147,11 +147,12 @@ func TestKeeper_Distribute(t *testing.T) {
 			},
 		},
 		{
-			name: "zero score triggers invariant violation",
+			name: "no eligible recipients finalizes to community pool",
 			actions: []func(*runEnv){
 				func(r *runEnv) {
-					distributeExpectInvariantViolation(r, sdkmath.NewInt(1000))
+					distributeExpectFinalizeToCommunityPool(r, sdkmath.NewInt(1000))
 				},
+				func(r *runEnv) { assertCommunityPoolBalanceAction(r, sdkmath.NewInt(1000)) },
 			},
 		},
 		{
@@ -1007,5 +1008,75 @@ func TestDistribution_SlashedValidator_RedirectsRewardToHealthy(t *testing.T) {
 			requireT.True(d.Balance.Amount.IsZero(),
 				"slashed validator delegation Balance must remain zero (validator.Tokens=0)")
 		}
+	}
+}
+
+// TestProcessOngoingTokenDistribution_ErrorContext asserts that Phase 2
+// failures surface the full wrap chain (delegator, distID, score, amounts)
+// in the returned error.
+func TestProcessOngoingTokenDistribution_ErrorContext(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContext(false).WithBlockTime(time.Now().Round(time.Second))
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	valOp, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, valOp, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000_000)))))
+	val, err := testApp.AddValidator(ctx, valOp, sdk.NewInt64Coin(bondDenom, 100_000), nil)
+	requireT.NoError(err)
+	valAddr := sdk.MustValAddressFromBech32(val.GetOperator())
+
+	delAddr, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delAddr, sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000_000)))))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 100_000),
+	})
+	requireT.NoError(err)
+
+	// Allocation larger than the intermediary's funded balance → Phase 2 fails.
+	const distID = uint64(1)
+	allocationAmount := sdkmath.NewInt(1_000_000)
+	ongoing := types.ScheduledDistribution{
+		ID:        distID,
+		Timestamp: uint64(ctx.BlockTime().Unix()),
+		Allocations: []types.ClearingAccountAllocation{
+			{ClearingAccount: types.ClearingAccountCommunity, Amount: allocationAmount},
+		},
+	}
+	requireT.NoError(pseKeeper.OngoingDistribution.Set(ctx, ongoing))
+
+	// One entry so the single delegator's userAmount equals the full allocation.
+	score := sdkmath.NewInt(100)
+	requireT.NoError(pseKeeper.AccountScoreSnapshot.Set(ctx, collections.Join(distID, delAddr), score))
+	requireT.NoError(pseKeeper.TotalScore.Set(ctx, distID, score))
+
+	// Underfund the intermediary so the first send fails.
+	intermediaryCoins := sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1)))
+	requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, intermediaryCoins))
+	requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+		ctx, minttypes.ModuleName, types.ClearingAccountCommunityIntermediary, intermediaryCoins,
+	))
+
+	_, err = pseKeeper.ProcessOngoingTokenDistribution(ctx, ongoing, bondDenom)
+	requireT.Error(err)
+
+	errStr := err.Error()
+	t.Logf("wrapped error: %s", errStr)
+	for _, want := range []string{
+		"phase 2:",
+		"distribution_id=1",
+		"user_amount=1000000",
+		"total_score=100",
+		"send reward from intermediary:",
+		delAddr.String(),
+	} {
+		requireT.Contains(errStr, want, "missing %q from error chain", want)
 	}
 }
