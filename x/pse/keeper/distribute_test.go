@@ -1375,6 +1375,117 @@ func TestDistribution_JailedValidator_ScorePreserved(t *testing.T) {
 		"intermediary must be fully drained after finalization")
 }
 
+// TestDistribution_JailedValidator_BatchTransition documents the accepted behavior when a
+// validator is jailed between Phase-2 batches: earlier batches may treat it as healthy while
+// later batches treat it as jailed. The test verifies no panic and no PSE disable occur.
+//
+// This scenario is intentionally reproduced using a small batch size (1) so that
+// two delegators span two separate Phase-2 batches.
+func TestDistribution_JailedValidator_BatchTransition(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	t0 := time.Now().UTC().Round(time.Second)
+	ctx, _, err := testApp.BeginNextBlockAtTime(t0)
+	requireT.NoError(err)
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	// Set batch size to 1 so each delegator is processed in its own Phase-2 block.
+	// This forces the batch-transition scenario where the validator state can change
+	// between batch 1 (block N) and batch 2 (block N+1).
+	params, err := pseKeeper.GetParams(ctx)
+	requireT.NoError(err)
+	params.DistributionBatchSize = 1
+	requireT.NoError(pseKeeper.SetParams(ctx, params))
+
+	// Single shared validator used by both delegators.
+	op, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, op,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+	sharedVal, err := testApp.AddValidator(ctx, op, sdk.NewInt64Coin(bondDenom, 10), nil)
+	requireT.NoError(err)
+	sharedValAddr := sdk.MustValAddressFromBech32(sharedVal.GetOperator())
+
+	// Two delegators — each will occupy one Phase-2 batch.
+	del1, _ := testApp.GenAccount(ctx)
+	del2, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, del1,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(10_000)))))
+	requireT.NoError(testApp.FundAccount(ctx, del2,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(10_000)))))
+
+	delegateTo := func(del sdk.AccAddress, amount int64) {
+		_, err := stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+			DelegatorAddress: del.String(),
+			ValidatorAddress: sharedValAddr.String(),
+			Amount:           sdk.NewInt64Coin(bondDenom, amount),
+		})
+		requireT.NoError(err)
+	}
+	delegateTo(del1, 1_000)
+	delegateTo(del2, 1_000)
+
+	// Schedule and fund the distribution.
+	scheduleTimestamp := t0.Add(5 * time.Second)
+	const distributionAmount = int64(10_000_000)
+	requireT.NoError(pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{{
+		ID:        1,
+		Timestamp: uint64(scheduleTimestamp.Unix()),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          sdkmath.NewInt(distributionAmount),
+		}},
+	}}))
+	fundCommunityAccount(requireT, testApp, ctx, bondDenom, sdkmath.NewInt(distributionAmount))
+
+	// t0+10s: non-community allocations + BeginCommunityDistribution.
+	// Phase-1 runs with batchSize=1 so it may take multiple blocks.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(10 * time.Second)))
+
+	// FIX: With batchSize=1, Phase 1 needs more blocks (4 DTE entries to process).
+	// Adding extra Phase 1 blocks to ensure completion.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(11 * time.Second)))
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(11 * time.Second).Add(500 * time.Millisecond)))
+
+	// t0+12s: Phase-2 batch 1 — del1 is processed while validator is healthy.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(12 * time.Second)))
+
+	// Jail the validator between batch 1 and batch 2 to trigger the transition scenario.
+	ctx, _, err = testApp.BeginNextBlockAtTime(t0.Add(13 * time.Second))
+	requireT.NoError(err)
+	jailValidator(t, requireT, ctx, stakingKeeper, sharedValAddr)
+
+	// t0+15s: Phase-2 batch 2 — del2 is processed while validator is now jailed.
+	// Earlier batch (del1) processed as healthy; this batch (del2) processes as jailed.
+	// This is accepted behavior per spec: batch-ordering bias is documented, not fixed here.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(15 * time.Second)))
+
+	// Need additional Phase-2 blocks to process remaining delegators and finalize.
+	// With batchSize=1 and 4 delegators, need 4 blocks + 1 empty batch.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(16 * time.Second)))
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(17 * time.Second)))
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(18 * time.Second)))
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(19 * time.Second)))
+
+	// t0+20s: finalize + cleanup.
+	requireT.NoError(testApp.FinalizeBlockAtTime(t0.Add(20 * time.Second)))
+
+	// Core assertion: no panic and no PSE disable despite mid-distribution jailing.
+	assertDistributionFinalized(requireT, pseKeeper, ctx, 1)
+
+	// Intermediary must be fully drained regardless of batch-transition state.
+	intermediaryAddr := testApp.AccountKeeper.GetModuleAccount(
+		ctx, types.ClearingAccountCommunityIntermediary,
+	).GetAddress()
+	intermediaryBalance := testApp.BankKeeper.GetBalance(ctx, intermediaryAddr, bondDenom).Amount
+	requireT.True(intermediaryBalance.IsZero(),
+		"intermediary must be drained even after a mid-distribution jail event")
+}
+
 // jailValidator is a test helper that jails the given validator and asserts
 // the jailed flag is visible through GetAllValidators.
 func jailValidator(
