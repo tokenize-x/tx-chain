@@ -381,18 +381,18 @@ func (k Keeper) distributeToDelegator(
 		totalDelegationAmount = totalDelegationAmount.Add(delegation.Balance.Amount)
 	}
 
-	if totalDelegationAmount.IsZero() {
+	if len(delegationResponse.DelegationResponses) == 0 || totalDelegationAmount.IsZero() {
 		// Delegator has no stake at all — full amount stays in intermediary.
 		return sdkmath.NewInt(0), nil
 	}
 
-	type eligibleEntry struct {
+	type eligibleDelegationEntry struct {
 		delegation stakingtypes.DelegationResponse
 		val        stakingtypes.Validator
 		valAddr    sdk.ValAddress
 	}
 
-	var eligibles []eligibleEntry
+	var eligibleDelegations []eligibleDelegationEntry
 	eligibleDelegationAmount := sdkmath.NewInt(0)
 
 	for _, delegation := range delegationResponse.DelegationResponses {
@@ -421,7 +421,7 @@ func (k Keeper) distributeToDelegator(
 			continue
 		}
 
-		eligibles = append(eligibles, eligibleEntry{
+		eligibleDelegations = append(eligibleDelegations, eligibleDelegationEntry{
 			delegation: delegation,
 			val:        val,
 			valAddr:    valAddr,
@@ -453,22 +453,22 @@ func (k Keeper) distributeToDelegator(
 	}
 
 	// Auto-delegate eligibleShare proportionally across eligible validators only.
-	for _, eligible := range eligibles {
-		if eligible.delegation.Balance.Amount.IsZero() {
+	for _, eligibleDelegation := range eligibleDelegations {
+		if eligibleDelegation.delegation.Balance.Amount.IsZero() {
 			continue
 		}
 		// NOTE: this division will have rounding errors up to 1 subunit, which is acceptable and will be ignored.
 		// if that one subunit exists, it will remain in user balance as undelegated.
-		delegationAmount := eligible.delegation.Balance.Amount.Mul(eligibleShare).Quo(eligibleDelegationAmount)
+		delegationAmount := eligibleDelegation.delegation.Balance.Amount.Mul(eligibleShare).Quo(eligibleDelegationAmount)
 		if delegationAmount.IsZero() {
 			continue
 		}
 
-		_, err = k.stakingKeeper.Delegate(ctx, delAddr, delegationAmount, stakingtypes.Unbonded, eligible.val, true)
+		_, err = k.stakingKeeper.Delegate(ctx, delAddr, delegationAmount, stakingtypes.Unbonded, eligibleDelegation.val, true)
 		if err != nil {
 			return sdkmath.NewInt(0), errorsmod.Wrapf(err,
 				"auto-delegate: delegator=%s validator=%s amount=%s%s",
-				delAddrBech32, eligible.delegation.Delegation.ValidatorAddress, delegationAmount, bondDenom)
+				delAddrBech32, eligibleDelegation.delegation.Delegation.ValidatorAddress, delegationAmount, bondDenom)
 		}
 	}
 
