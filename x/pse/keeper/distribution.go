@@ -102,7 +102,7 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	// Consume remaining DelegationTimeEntries for score conversion.
 	isConsumed, err := k.ConsumeOngoingDelegationTimeEntries(ctx, ongoing)
 	if err != nil {
-		return err
+		return errorsmod.Wrapf(err, "resume phase 1: distribution_id=%d", ongoingID)
 	}
 	if !isConsumed {
 		return nil
@@ -111,11 +111,11 @@ func (k Keeper) resumeOngoingDistribution(ctx context.Context, ongoing types.Sch
 	// All entries consumed — distribute tokens.
 	bondDenom, err := k.stakingKeeper.BondDenom(ctx)
 	if err != nil {
-		return err
+		return errorsmod.Wrap(err, "get bond denom")
 	}
 	done, err := k.ProcessOngoingTokenDistribution(ctx, ongoing, bondDenom)
 	if err != nil {
-		return err
+		return errorsmod.Wrapf(err, "resume phase 2: distribution_id=%d", ongoingID)
 	}
 	if done {
 		sdkCtx.Logger().Info("multi-block community distribution complete",

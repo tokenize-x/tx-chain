@@ -11,6 +11,7 @@ import (
 
 	sdkstore "cosmossdk.io/core/store"
 	nftkeeper "cosmossdk.io/x/nft/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -55,6 +56,9 @@ var ignoredPrefixes = map[string][][]byte{
 	ibcexported.StoreKey: {
 		ibchost.KeyClientStorePrefix,
 		[]byte(ibchost.KeyNextSeqSendPrefix),
+	},
+	wasmtypes.StoreKey: {
+		wasmtypes.TXCounterPrefix,
 	},
 	authzkeeper.StoreKey: {
 		authzkeeper.GrantQueuePrefix,
