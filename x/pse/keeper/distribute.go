@@ -381,7 +381,7 @@ func (k Keeper) distributeToDelegator(
 		totalDelegationAmount = totalDelegationAmount.Add(delegation.Balance.Amount)
 	}
 
-	if len(delegationResponse.DelegationResponses) == 0 || totalDelegationAmount.IsZero() {
+	if totalDelegationAmount.IsZero() {
 		// Delegator has no stake at all — full amount stays in intermediary.
 		return sdkmath.NewInt(0), nil
 	}
@@ -417,7 +417,8 @@ func (k Keeper) distributeToDelegator(
 		}
 
 		if delegation.Balance.Amount.IsZero() {
-			// Fully slashed: skip to prevent ErrDelegatorShareExRateInvalid.
+			// Skip fully-slashed validators (Balance=0) and auto-delegate only to healthy ones.
+			// Otherwise SDK Delegate returns ErrDelegatorShareExRateInvalid and disables PSE.
 			continue
 		}
 

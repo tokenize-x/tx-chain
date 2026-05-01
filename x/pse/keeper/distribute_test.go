@@ -1285,7 +1285,7 @@ func TestDistribution_JailedValidator_ScorePreserved(t *testing.T) {
 	requireT.NoError(testApp.FundAccount(ctx, delAddr,
 		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(20_000)))))
 
-	// Step 1: Delegate while validator is bonded.
+	// Delegate while validator is bonded.
 	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
 		DelegatorAddress: delAddr.String(),
 		ValidatorAddress: valAddr.String(),
@@ -1293,7 +1293,7 @@ func TestDistribution_JailedValidator_ScorePreserved(t *testing.T) {
 	})
 	requireT.NoError(err)
 
-	// Step 2: Advance time to accumulate score while validator is healthy.
+	// Advance time to accumulate score while validator is healthy.
 	// Score accumulated here = 1000 tokens × 8 seconds = 8000.
 	ctx, _, err = testApp.BeginNextBlockAtTime(t0.Add(8 * time.Second))
 	requireT.NoError(err)
@@ -1313,7 +1313,7 @@ func TestDistribution_JailedValidator_ScorePreserved(t *testing.T) {
 	requireT.True(scoreAfterBondedPeriod.IsPositive(),
 		"score must have accumulated during the bonded period")
 
-	// Step 3: Jail the validator — score must not be affected.
+	// Jail the validator — score must not be affected.
 	jailValidator(t, requireT, ctx, stakingKeeper, valAddr)
 
 	// Verify score is unchanged after jailing (Phase-1 scoring is not modified).
@@ -1327,7 +1327,7 @@ func TestDistribution_JailedValidator_ScorePreserved(t *testing.T) {
 	communityBefore := communityPoolBalance(requireT, testApp, ctx, bondDenom)
 	walletBefore := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom).Amount
 
-	// Step 4: Schedule and fund the distribution.
+	// Schedule and fund the distribution.
 	scheduleTimestamp := t0.Add(5 * time.Second) // already past, so it's due immediately
 	const distributionAmount = int64(10_000_000)
 	requireT.NoError(pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{{
@@ -1349,7 +1349,7 @@ func TestDistribution_JailedValidator_ScorePreserved(t *testing.T) {
 	// PSE must not be disabled; distribution must have finalized.
 	assertDistributionFinalized(requireT, pseKeeper, ctx, 1)
 
-	// Step 5: Verify outcomes.
+	// Verify outcomes.
 	//
 	// Wallet unchanged: validator is jailed so no bank-send occurred.
 	walletAfter := testApp.BankKeeper.GetBalance(ctx, delAddr, bondDenom).Amount
