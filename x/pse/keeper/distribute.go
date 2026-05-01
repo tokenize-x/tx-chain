@@ -357,6 +357,7 @@ func (k Keeper) addToDistributedAmount(ctx context.Context, distributionID uint6
 	return k.DistributedAmount.Set(ctx, distributionID, current.Add(amount))
 }
 
+//nolint:funlen
 func (k Keeper) distributeToDelegator(
 	ctx context.Context, delAddr sdk.AccAddress, amount sdkmath.Int, bondDenom string,
 ) (sdkmath.Int, error) {
@@ -381,8 +382,8 @@ func (k Keeper) distributeToDelegator(
 		totalDelegationAmount = totalDelegationAmount.Add(delegation.Balance.Amount)
 	}
 
+	// Only distribute to users with active stakes. If not, it will be leftover.
 	if totalDelegationAmount.IsZero() {
-		// Delegator has no stake at all — full amount stays in intermediary.
 		return sdkmath.NewInt(0), nil
 	}
 
