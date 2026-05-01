@@ -1546,6 +1546,8 @@ func runDistribution(
 }
 
 // assertDistributionFinalized checks PSE is not disabled and distribution ID advanced.
+//
+//nolint:unparam
 func assertDistributionFinalized(
 	requireT *require.Assertions,
 	pseKeeper keeper.Keeper,
