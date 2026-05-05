@@ -249,7 +249,7 @@ func (k Keeper) ProcessOngoingTokenDistribution(
 			DelegatorAddress: item.delAddr.String(),
 			Score:            item.score,
 			TotalPseScore:    totalScore,
-			Amount:           userAmount, // TODO: discuss if it should be replaced with distributedAmount
+			Amount:           distributedAmount,
 			ScheduledAt:      ongoing.Timestamp,
 			DistributionId:   ongoingID,
 		}); err != nil {
