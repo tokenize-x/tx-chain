@@ -12,8 +12,8 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/x/deterministicgas"
 )
 
 //go:generate go run . ./README.md
@@ -70,7 +70,7 @@ func main() {
 	generatorComment := `[//]: # (GENERATED DOC.)
 [//]: # (DO NOT EDIT MANUALLY!!!)`
 
-	file, err := os.OpenFile(os.Args[1], os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(os.Args[1], os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		panic(err)
 	}

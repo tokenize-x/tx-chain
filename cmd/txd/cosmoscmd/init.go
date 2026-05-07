@@ -22,8 +22,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v7/app"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v8/app"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config"
 )
 
 const (
@@ -137,7 +137,7 @@ func InitCmd(basicManager module.BasicManager, defaultNodeHome string) *cobra.Co
 				return errors.Wrap(err, "unable to make config directory")
 			}
 
-			if err := os.WriteFile(filepath.Join(configDir, genesisFileName), genDocBytes, 0644); err != nil {
+			if err := os.WriteFile(filepath.Join(configDir, genesisFileName), genDocBytes, 0o644); err != nil {
 				return errors.Wrap(err, "unable to write genesis bytes to file")
 			}
 

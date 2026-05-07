@@ -19,11 +19,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
-	"github.com/tokenize-x/tx-chain/v7/testutil/event"
-	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/keeper"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v8/testutil/event"
+	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/nft/keeper"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/nft/types"
 )
 
 func TestKeeper_IssueClass(t *testing.T) {

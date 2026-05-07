@@ -1,23 +1,22 @@
 syntax = "proto3";
 package tx.pse.v1;
 
-
-import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
 
-option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
+option go_package = "github.com/tokenize-x/tx-chain/v8/x/pse/types";
 
 message DelegationTimeEntry {
-  option (gogoproto.equal)           = false;
+  option (gogoproto.equal) = false;
   option (gogoproto.goproto_getters) = false;
-  
+
   // shares define the delegation shares received.
   string shares = 1 [
-    (cosmos_proto.scalar)  = "cosmos.Dec",
+    (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable)   = false
+    (gogoproto.nullable) = false
   ];
-  
+
   // last block timestamp where the delegators balance changed.
   int64 last_changed_unix_sec = 2;
 }

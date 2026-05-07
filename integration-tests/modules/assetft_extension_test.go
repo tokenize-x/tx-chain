@@ -18,14 +18,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
-	moduleswasm "github.com/tokenize-x/tx-chain/v7/integration-tests/contracts/modules"
-	"github.com/tokenize-x/tx-chain/v7/pkg/client"
-	"github.com/tokenize-x/tx-chain/v7/testutil/event"
-	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
-	testcontracts "github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper/test-contracts"
-	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	dextypes "github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v8/integration-tests/contracts/modules"
+	"github.com/tokenize-x/tx-chain/v8/pkg/client"
+	"github.com/tokenize-x/tx-chain/v8/testutil/event"
+	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
+	testcontracts "github.com/tokenize-x/tx-chain/v8/x/asset/ft/keeper/test-contracts"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	dextypes "github.com/tokenize-x/tx-chain/v8/x/dex/types"
 )
 
 var AmountBlockSmartContractTrigger = sdkmath.NewInt(testcontracts.AmountBlockSmartContractTrigger)

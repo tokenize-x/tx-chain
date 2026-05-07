@@ -7,10 +7,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v7/testutil/network"
-	"github.com/tokenize-x/tx-chain/v7/x/dex/client/cli"
-	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v8/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v8/testutil/network"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/client/cli"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/types"
 )
 
 var defaultQuantity = sdkmath.NewInt(1_000_000)

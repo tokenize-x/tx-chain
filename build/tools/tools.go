@@ -23,8 +23,8 @@ const (
 	Osmosis tools.Name = "osmosis"
 	// Hermes is an Inter-Blockchain Communication (IBC) relayer.
 	Hermes tools.Name = "hermes"
-	// TXdV600 is the version of txd used for testing chain upgrades.
-	TXdV600 tools.Name = "txd-v6.0.0"
+	// TXdV700 is the version of txd used for testing chain upgrades.
+	TXdV700 tools.Name = "txd-v7.0.0"
 	// Buf is a tool for working with Protocol Buffers.
 	Buf tools.Name = "buf"
 	// Protoc is the Protocol Buffers compiler.
@@ -244,49 +244,49 @@ var Tools = []tools.Tool{
 
 	// https://github.com/CoreumFoundation/coreum/releases
 	tools.BinaryTool{
-		Name:    TXdV600,
-		Version: "v6.0.0",
+		Name:    TXdV700,
+		Version: "v7.0.0",
 		Sources: tools.Sources{
 			tools.TargetPlatformLinuxAMD64InDocker: {
-				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-amd64",
-				Hash: "sha256:68a91363b4f8fcfc32f01675f93c92c80fdcb54bc5d2e3779b293308cbfdd984",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v7.0.0/txd-linux-amd64",
+				Hash: "sha256:c337c5a9a106a2073955569e207b055760e5eaeb8de9d3335a086973e66ecc22",
 				Binaries: map[string]string{
-					"bin/txd-v6.0.0": "txd-linux-amd64",
+					"bin/txd-v7.0.0": "txd-linux-amd64",
 				},
 			},
 			tools.TargetPlatformLinuxARM64InDocker: {
-				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-arm64",
-				Hash: "sha256:c815d4a388d9d4d39c61dbb20c74c1bc3d5abf918e5b3a81316098831072aac2",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v7.0.0/txd-linux-arm64",
+				Hash: "sha256:f27d5cf73ed305ec21fd80a3cdd68e3e44f5b339ce42dcbfef1685da85bbb812",
 				Binaries: map[string]string{
-					"bin/txd-v6.0.0": "txd-linux-arm64",
+					"bin/txd-v7.0.0": "txd-linux-arm64",
 				},
 			},
 			tools.TargetPlatformLinuxAMD64: {
-				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-amd64",
-				Hash: "sha256:68a91363b4f8fcfc32f01675f93c92c80fdcb54bc5d2e3779b293308cbfdd984",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v7.0.0/txd-linux-amd64",
+				Hash: "sha256:c337c5a9a106a2073955569e207b055760e5eaeb8de9d3335a086973e66ecc22",
 				Binaries: map[string]string{
-					"bin/txd-v6.0.0": "txd-linux-amd64",
+					"bin/txd-v7.0.0": "txd-linux-amd64",
 				},
 			},
 			tools.TargetPlatformLinuxARM64: {
-				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-linux-arm64",
-				Hash: "sha256:c815d4a388d9d4d39c61dbb20c74c1bc3d5abf918e5b3a81316098831072aac2",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v7.0.0/txd-linux-arm64",
+				Hash: "sha256:f27d5cf73ed305ec21fd80a3cdd68e3e44f5b339ce42dcbfef1685da85bbb812",
 				Binaries: map[string]string{
-					"bin/txd-v6.0.0": "txd-linux-arm64",
+					"bin/txd-v7.0.0": "txd-linux-arm64",
 				},
 			},
 			tools.TargetPlatformDarwinAMD64: {
-				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-darwin-amd64",
-				Hash: "sha256:aa417cea9aaeca87ac7ad553a677486936f67304e7a9d62198c142e8de63ad7a",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v7.0.0/txd-darwin-amd64",
+				Hash: "sha256:d01f33b1b35698c1b053c4caf859181ac47c3695a93255a46d6e237be7eaae58",
 				Binaries: map[string]string{
-					"bin/txd-v6.0.0": "txd-darwin-amd64",
+					"bin/txd-v7.0.0": "txd-darwin-amd64",
 				},
 			},
 			tools.TargetPlatformDarwinARM64: {
-				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v6.0.0/txd-darwin-arm64",
-				Hash: "sha256:28b34bc86b6377e12b6423152e42bf2cf7a47e4d0dfeeb52a94ea612999ddcd0",
+				URL:  "https://github.com/tokenize-x/tx-chain/releases/download/v7.0.0/txd-darwin-arm64",
+				Hash: "sha256:a006fe41529a1cf4eaa1087d1a15d07197dadaa140fa2f0266807a3180cea58b",
 				Binaries: map[string]string{
-					"bin/txd-v6.0.0": "txd-darwin-arm64",
+					"bin/txd-v7.0.0": "txd-darwin-arm64",
 				},
 			},
 		},

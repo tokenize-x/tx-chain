@@ -16,11 +16,11 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/testutil/event"
-	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
-	testcontracts "github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper/test-contracts"
-	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v8/testutil/event"
+	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
+	testcontracts "github.com/tokenize-x/tx-chain/v8/x/asset/ft/keeper/test-contracts"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/types"
 )
 
 const (

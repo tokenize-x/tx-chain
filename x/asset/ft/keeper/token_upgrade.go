@@ -11,7 +11,7 @@ import (
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
 
 // ImportPendingTokenUpgrades imports pending version upgrades from genesis state.

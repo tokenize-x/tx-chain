@@ -23,13 +23,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
-	"github.com/tokenize-x/tx-chain/v7/pkg/client"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
-	"github.com/tokenize-x/tx-chain/v7/testutil/event"
-	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
-	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
-	psetypes "github.com/tokenize-x/tx-chain/v7/x/pse/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	"github.com/tokenize-x/tx-chain/v8/pkg/client"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v8/testutil/event"
+	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
+	customparamstypes "github.com/tokenize-x/tx-chain/v8/x/customparams/types"
+	psetypes "github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
 
 // defaultClearingAccountMappings returns the default clearing account mappings for the given chain ID.

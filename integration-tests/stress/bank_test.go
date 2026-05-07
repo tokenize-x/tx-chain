@@ -13,10 +13,10 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
-	"github.com/tokenize-x/tx-chain/v7/pkg/client"
-	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
-	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	"github.com/tokenize-x/tx-chain/v8/pkg/client"
+	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
 
 // TestBankMultiSendBatchOutputs tests MultiSend message with maximum amount of addresses.

@@ -13,7 +13,7 @@
   "paths": {
     "/coreum/asset/ft/v1/accounts/{account}/balances/frozen": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesFrozenBalances",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesFrozenBalances",
         "parameters": [
           {
             "name": "account",
@@ -83,7 +83,7 @@
     },
     "/coreum/asset/ft/v1/accounts/{account}/balances/frozen/{denom}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesFrozenBalance",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesFrozenBalance",
         "parameters": [
           {
             "name": "account",
@@ -122,7 +122,7 @@
     },
     "/coreum/asset/ft/v1/accounts/{account}/balances/summary/{denom}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesBalance",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesBalance",
         "parameters": [
           {
             "name": "account",
@@ -161,7 +161,7 @@
     },
     "/coreum/asset/ft/v1/accounts/{account}/balances/whitelisted": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesWhitelistedBalances",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesWhitelistedBalances",
         "parameters": [
           {
             "name": "account",
@@ -231,7 +231,7 @@
     },
     "/coreum/asset/ft/v1/accounts/{account}/balances/whitelisted/{denom}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesWhitelistedBalance",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesWhitelistedBalance",
         "parameters": [
           {
             "name": "account",
@@ -270,7 +270,7 @@
     },
     "/coreum/asset/ft/v1/params": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesParams",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesParams",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -293,7 +293,7 @@
     },
     "/coreum/asset/ft/v1/tokens": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesTokens",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesTokens",
         "parameters": [
           {
             "name": "pagination.key",
@@ -362,7 +362,7 @@
     },
     "/coreum/asset/ft/v1/tokens/{denom}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesToken",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesToken",
         "parameters": [
           {
             "name": "denom",
@@ -393,7 +393,7 @@
     },
     "/coreum/asset/ft/v1/tokens/{denom}/dex-settings": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesDEXSettings",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesDEXSettings",
         "parameters": [
           {
             "name": "denom",
@@ -425,7 +425,7 @@
     },
     "/coreum/asset/ft/v1/tokens/{denom}/upgrade-statuses": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetFtTypesTokenUpgradeStatuses",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetFtTypesTokenUpgradeStatuses",
         "parameters": [
           {
             "name": "denom",
@@ -456,7 +456,7 @@
     },
     "/coreum/asset/nft/v1/classes": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesClasses",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesClasses",
         "parameters": [
           {
             "name": "pagination.key",
@@ -525,7 +525,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/burnt": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesBurntNFTsInClass",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesBurntNFTsInClass",
         "parameters": [
           {
             "name": "class_id",
@@ -594,7 +594,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/burnt/{nft_id}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesBurntNFT",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesBurntNFT",
         "parameters": [
           {
             "name": "class_id",
@@ -631,7 +631,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/frozen": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesClassFrozenAccounts",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesClassFrozenAccounts",
         "parameters": [
           {
             "name": "class_id",
@@ -700,7 +700,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/frozen/{account}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesClassFrozen",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesClassFrozen",
         "parameters": [
           {
             "name": "class_id",
@@ -737,7 +737,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/nfts/{id}/frozen": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesFrozen",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesFrozen",
         "parameters": [
           {
             "name": "class_id",
@@ -774,7 +774,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/nfts/{id}/whitelisted": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesWhitelistedAccountsForNFT",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesWhitelistedAccountsForNFT",
         "parameters": [
           {
             "name": "class_id",
@@ -849,7 +849,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/nfts/{id}/whitelisted/{account}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesWhitelisted",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesWhitelisted",
         "parameters": [
           {
             "name": "class_id",
@@ -892,7 +892,7 @@
     },
     "/coreum/asset/nft/v1/classes/{class_id}/whitelisted": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesClassWhitelistedAccounts",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesClassWhitelistedAccounts",
         "parameters": [
           {
             "name": "class_id",
@@ -961,7 +961,7 @@
     },
     "/coreum/asset/nft/v1/classes/{id}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesClass",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesClass",
         "parameters": [
           {
             "name": "id",
@@ -993,7 +993,7 @@
     },
     "/coreum/asset/nft/v1/params": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XAssetNftTypesParams",
+        "operationId": "GithubComTokenizeXTxChainV8XAssetNftTypesParams",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1016,7 +1016,7 @@
     },
     "/coreum/customparams/v1/stakingparams": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XCustomparamsTypesStakingParams",
+        "operationId": "GithubComTokenizeXTxChainV8XCustomparamsTypesStakingParams",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1039,7 +1039,7 @@
     },
     "/coreum/dex/v1/accounts/{account}/denoms/{denom}/orders-count": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesAccountDenomOrdersCount",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesAccountDenomOrdersCount",
         "parameters": [
           {
             "name": "account",
@@ -1076,7 +1076,7 @@
     },
     "/coreum/dex/v1/accounts/{account}/dex-reserve": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesAccountDEXReserve",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesAccountDEXReserve",
         "parameters": [
           {
             "name": "account",
@@ -1108,7 +1108,7 @@
     },
     "/coreum/dex/v1/order-book-params": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesOrderBookParams",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesOrderBookParams",
         "parameters": [
           {
             "name": "base_denom",
@@ -1147,7 +1147,7 @@
     },
     "/coreum/dex/v1/order-books": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesOrderBooks",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesOrderBooks",
         "parameters": [
           {
             "name": "pagination.key",
@@ -1210,7 +1210,7 @@
     },
     "/coreum/dex/v1/order-books/{base_denom}/{quote_denom}/orders": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesOrderBookOrders",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesOrderBookOrders",
         "parameters": [
           {
             "name": "base_denom",
@@ -1300,7 +1300,7 @@
     },
     "/coreum/dex/v1/orders/{creator}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesOrders",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesOrders",
         "parameters": [
           {
             "name": "creator",
@@ -1370,7 +1370,7 @@
     },
     "/coreum/dex/v1/orders/{creator}/{id}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesOrder",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesOrder",
         "parameters": [
           {
             "name": "creator",
@@ -1409,7 +1409,7 @@
     },
     "/coreum/dex/v1/params": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XDexTypesParams",
+        "operationId": "GithubComTokenizeXTxChainV8XDexTypesParams",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1432,7 +1432,7 @@
     },
     "/coreum/feemodel/v1/min_gas_price": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XFeemodelTypesMinGasPrice",
+        "operationId": "GithubComTokenizeXTxChainV8XFeemodelTypesMinGasPrice",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1455,7 +1455,7 @@
     },
     "/coreum/feemodel/v1/params": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XFeemodelTypesParams",
+        "operationId": "GithubComTokenizeXTxChainV8XFeemodelTypesParams",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1478,7 +1478,7 @@
     },
     "/coreum/feemodel/v1/recommended_gas_price": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XFeemodelTypesRecommendedGasPrice",
+        "operationId": "GithubComTokenizeXTxChainV8XFeemodelTypesRecommendedGasPrice",
         "parameters": [
           {
             "name": "after_blocks",
@@ -9633,7 +9633,7 @@
     },
     "/tx/pse/v1/clearing_account_balances": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XPseTypesClearingAccountBalances",
+        "operationId": "GithubComTokenizeXTxChainV8XPseTypesClearingAccountBalances",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -9656,7 +9656,7 @@
     },
     "/tx/pse/v1/last_processed_distribution_id": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XPseTypesLastProcessedDistributionID",
+        "operationId": "GithubComTokenizeXTxChainV8XPseTypesLastProcessedDistributionID",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -9679,7 +9679,7 @@
     },
     "/tx/pse/v1/params": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XPseTypesParams",
+        "operationId": "GithubComTokenizeXTxChainV8XPseTypesParams",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -9702,7 +9702,7 @@
     },
     "/tx/pse/v1/processed_scheduled_distributions": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XPseTypesProcessedScheduledDistributions",
+        "operationId": "GithubComTokenizeXTxChainV8XPseTypesProcessedScheduledDistributions",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -9725,7 +9725,7 @@
     },
     "/tx/pse/v1/scheduled_distributions": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XPseTypesScheduledDistributions",
+        "operationId": "GithubComTokenizeXTxChainV8XPseTypesScheduledDistributions",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -9748,7 +9748,7 @@
     },
     "/tx/pse/v1/score/{address}": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XPseTypesScore",
+        "operationId": "GithubComTokenizeXTxChainV8XPseTypesScore",
         "parameters": [
           {
             "name": "address",
@@ -9780,7 +9780,7 @@
     },
     "/tx/pse/v1/unprocessed_scheduled_distributions": {
       "get": {
-        "operationId": "GithubComTokenizeXTxChainV7XPseTypesUnprocessedScheduledDistributions",
+        "operationId": "GithubComTokenizeXTxChainV8XPseTypesUnprocessedScheduledDistributions",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -16950,7 +16950,7 @@
             "type": "object",
             "$ref": "#/definitions/tx.pse.v1.ScheduledDistribution"
           },
-          "description": "scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order.\nPast scheduled distributions list are automatically removed after processing, \nso all returned scheduled distributions are future scheduled distributions."
+          "description": "scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order.\nPast scheduled distributions list are automatically removed after processing,\nso all returned scheduled distributions are future scheduled distributions."
         },
         "disable_distributions": {
           "type": "boolean"

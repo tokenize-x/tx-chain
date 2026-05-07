@@ -1,16 +1,16 @@
 syntax = "proto3";
 package tx.pse.v1;
 
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos_proto/cosmos.proto";
-import "tx/pse/v1/params.proto";
 import "tx/pse/v1/distribution.proto";
+import "tx/pse/v1/params.proto";
 
-option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
+option go_package = "github.com/tokenize-x/tx-chain/v8/x/pse/types";
 
 // Query defines the gRPC querier service.
-service Query {    
+service Query {
   // Params queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/tx/pse/v1/params";
@@ -82,16 +82,14 @@ message QueryScheduledDistributionsRequest {}
 // QueryScheduledDistributionsResponse defines the response type for querying future scheduled distributions.
 message QueryScheduledDistributionsResponse {
   // scheduled_distributions contains all future scheduled distributions sorted by timestamp in ascending order.
-  // Past scheduled distributions list are automatically removed after processing, 
+  // Past scheduled distributions list are automatically removed after processing,
   // so all returned scheduled distributions are future scheduled distributions.
   repeated ScheduledDistribution scheduled_distributions = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"schedule_distributions\""
   ];
 
-  bool disable_distributions = 2 [
-    (gogoproto.moretags) = "yaml:\"disable_distributions\""
-  ];
+  bool disable_distributions = 2 [(gogoproto.moretags) = "yaml:\"disable_distributions\""];
 }
 
 // QueryClearingAccountBalancesRequest defines the request type for querying clearing account balances.
@@ -100,9 +98,7 @@ message QueryClearingAccountBalancesRequest {}
 // ClearingAccountBalance represents the balance of a single clearing account.
 message ClearingAccountBalance {
   // clearing_account is the name of the clearing account.
-  string clearing_account = 1 [
-    (gogoproto.moretags) = "yaml:\"clearing_account\""
-  ];
+  string clearing_account = 1 [(gogoproto.moretags) = "yaml:\"clearing_account\""];
 
   // balance is the current balance of the clearing account in the bond denom.
   string balance = 2 [

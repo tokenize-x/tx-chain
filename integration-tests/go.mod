@@ -1,4 +1,4 @@
-module github.com/tokenize-x/tx-chain/v7/integration-tests
+module github.com/tokenize-x/tx-chain/v8/integration-tests
 
 go 1.24.0
 
@@ -10,7 +10,7 @@ replace (
 	// https://github.com/cosmos/cosmos-sdk/issues/14949
 	// pin the version of goleveldb to v1.0.1-0.20210819022825-2ae1ddf74ef7 required by SDK v47 upgrade guide.
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-	github.com/tokenize-x/tx-chain/v7 => ../
+	github.com/tokenize-x/tx-chain/v8 => ../
 )
 
 require (
@@ -31,7 +31,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.11.1
-	github.com/tokenize-x/tx-chain/v7 v7.0.0-20260211080000-000000000000
+	github.com/tokenize-x/tx-chain/v8 v8.0.0-20260211080000-000000000000
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 	google.golang.org/grpc v1.78.0
 )

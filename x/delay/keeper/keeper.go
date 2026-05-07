@@ -15,7 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/gogoproto/proto"
 
-	"github.com/tokenize-x/tx-chain/v7/x/delay/types"
+	"github.com/tokenize-x/tx-chain/v8/x/delay/types"
 )
 
 // Keeper is delay module Keeper.

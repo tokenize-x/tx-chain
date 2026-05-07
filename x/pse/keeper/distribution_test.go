@@ -13,8 +13,8 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
-	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
+	"github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
 
 func TestDistribution_GenesisRebuild(t *testing.T) {

@@ -32,8 +32,8 @@ import (
 	ibctmtypes "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 	"github.com/stretchr/testify/require"
 
-	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
-	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
 )
 
 const (

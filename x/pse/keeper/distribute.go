@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
 
 // ConsumeOngoingDelegationTimeEntries processes a batch of DelegationTimeEntries

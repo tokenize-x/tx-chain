@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/pkg/store"
+	"github.com/tokenize-x/tx-chain/v8/pkg/store"
 )
 
 func TestInt8ToAndFromOrderedBytes(t *testing.T) {

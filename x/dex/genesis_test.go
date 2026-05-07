@@ -13,10 +13,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
-	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v7/x/dex"
-	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/x/dex"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/types"
 )
 
 func TestInitAndExportGenesis(t *testing.T) {

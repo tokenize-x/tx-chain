@@ -13,10 +13,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	assetftkeeper "github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	cwasmtypes "github.com/tokenize-x/tx-chain/v7/x/wasm/types"
-	wibctransfertypes "github.com/tokenize-x/tx-chain/v7/x/wibctransfer/types"
+	assetftkeeper "github.com/tokenize-x/tx-chain/v8/x/asset/ft/keeper"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	cwasmtypes "github.com/tokenize-x/tx-chain/v8/x/wasm/types"
+	wibctransfertypes "github.com/tokenize-x/tx-chain/v8/x/wibctransfer/types"
 )
 
 func TestApplyRate(t *testing.T) {

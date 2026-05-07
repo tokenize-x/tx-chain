@@ -8,11 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v7/testutil/network"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/client/cli"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v8/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v8/testutil/network"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/ft/client/cli"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
 
 func TestQueryTokens(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
-	customparamstypes "github.com/tokenize-x/tx-chain/v7/x/customparams/types"
+	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
+	customparamstypes "github.com/tokenize-x/tx-chain/v8/x/customparams/types"
 )
 
 func Test_WrappedMsgCreateValidatorHandler(t *testing.T) {

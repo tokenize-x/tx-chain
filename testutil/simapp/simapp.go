@@ -43,9 +43,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/app"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v8/app"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 )
 
 const (

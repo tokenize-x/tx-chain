@@ -2,7 +2,7 @@ module github.com/tokenize-x/tx-chain/build
 
 go 1.24.0
 
-replace github.com/tokenize-x/tx-chain/v7 => ../
+replace github.com/tokenize-x/tx-chain/v8 => ../
 
 toolchain go1.24.6
 
@@ -33,9 +33,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
 	github.com/spf13/pflag v1.0.10
-	github.com/tokenize-x/tx-chain/v7 v7.0.0-20260217111039-9296d325fd38
-	github.com/tokenize-x/tx-crust v0.0.0-20260427120657-25602d11eaad
-	github.com/tokenize-x/tx-crust/znet v0.0.0-20260427120657-25602d11eaad
+	github.com/tokenize-x/tx-chain/v8 v8.0.0-20260507085824-58d04e9ee5f6
+	github.com/tokenize-x/tx-crust v0.0.0-20260507090046-39aceb4c39a5
+	github.com/tokenize-x/tx-crust/znet v0.0.0-20260507090046-39aceb4c39a5
 	github.com/tokenize-x/tx-tools v0.0.0-20251006151522-f6df01ec2033
 )
 

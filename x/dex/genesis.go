@@ -8,8 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/pkg/errors"
 
-	"github.com/tokenize-x/tx-chain/v7/x/dex/keeper"
-	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/keeper"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/types"
 )
 
 // InitGenesis initializes the dex module's state from a provided genesis state.

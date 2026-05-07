@@ -19,9 +19,9 @@ import (
 	"github.com/samber/lo"
 	googlegrpc "google.golang.org/grpc"
 
-	testutilconstant "github.com/tokenize-x/tx-chain/v7/testutil/constant"
-	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v7/x/deterministicgas"
+	testutilconstant "github.com/tokenize-x/tx-chain/v8/testutil/constant"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/x/deterministicgas"
 )
 
 const (

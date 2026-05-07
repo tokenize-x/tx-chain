@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 import "tx/pse/v1/distribution.proto";
 import "tx/pse/v1/params.proto";
 
-option go_package = "github.com/tokenize-x/tx-chain/v7/x/pse/types";
+option go_package = "github.com/tokenize-x/tx-chain/v8/x/pse/types";
 
 // GenesisState defines the module's genesis state.
 message GenesisState {

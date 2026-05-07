@@ -7,7 +7,7 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/tokenize-x/tx-chain/v7/app/upgrade"
+	"github.com/tokenize-x/tx-chain/v8/app/upgrade"
 )
 
 // Name defines the upgrade name.

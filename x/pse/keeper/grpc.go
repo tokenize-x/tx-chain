@@ -6,7 +6,7 @@ import (
 
 	"cosmossdk.io/collections"
 
-	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
 
 // QueryService serves grpc requests for the module.

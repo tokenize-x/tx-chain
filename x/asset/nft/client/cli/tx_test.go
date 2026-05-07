@@ -15,10 +15,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v7/testutil/network"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/client/cli"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/nft/types"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v8/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v8/testutil/network"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/nft/client/cli"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/nft/types"
 )
 
 const nftID = "nft-1"

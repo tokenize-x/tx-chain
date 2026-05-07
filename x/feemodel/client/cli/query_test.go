@@ -7,10 +7,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v7/testutil/network"
-	"github.com/tokenize-x/tx-chain/v7/x/feemodel/client/cli"
-	"github.com/tokenize-x/tx-chain/v7/x/feemodel/types"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v8/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v8/testutil/network"
+	"github.com/tokenize-x/tx-chain/v8/x/feemodel/client/cli"
+	"github.com/tokenize-x/tx-chain/v8/x/feemodel/types"
 )
 
 func TestMinGasPrice(t *testing.T) {

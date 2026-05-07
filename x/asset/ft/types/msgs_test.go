@@ -13,9 +13,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/pkg/config"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
 
 func TestMain(m *testing.M) {

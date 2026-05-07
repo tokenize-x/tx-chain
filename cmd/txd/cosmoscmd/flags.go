@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/tokenize-x/tx-chain/v7/app"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v8/app"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 )
 
 // OverwriteDefaultChainIDFlags searches for the DefaultChainID flag and replaces its value of the current default.

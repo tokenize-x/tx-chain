@@ -1,10 +1,10 @@
-module github.com/tokenize-x/tx-chain/v7
+module github.com/tokenize-x/tx-chain/v8
 
 go 1.24.0
 
 toolchain go1.24.6
 
-replace github.com/tokenize-x/tx-chain/v7 => ./
+replace github.com/tokenize-x/tx-chain/v8 => ./
 
 replace (
 	// use cosmos fork of keyring

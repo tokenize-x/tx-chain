@@ -43,9 +43,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/tokenize-x/tx-chain/v7/app"
-	txchainclient "github.com/tokenize-x/tx-chain/v7/pkg/client"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config"
+	"github.com/tokenize-x/tx-chain/v8/app"
+	txchainclient "github.com/tokenize-x/tx-chain/v8/pkg/client"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config"
 )
 
 const ledgerAppName = "Coreum"

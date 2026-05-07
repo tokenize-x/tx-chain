@@ -17,9 +17,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	"github.com/tokenize-x/tx-chain/v7/x/pse/client/cli"
-	"github.com/tokenize-x/tx-chain/v7/x/pse/keeper"
-	"github.com/tokenize-x/tx-chain/v7/x/pse/types"
+	"github.com/tokenize-x/tx-chain/v8/x/pse/client/cli"
+	"github.com/tokenize-x/tx-chain/v8/x/pse/keeper"
+	"github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
 
 var (

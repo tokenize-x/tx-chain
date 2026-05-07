@@ -8,7 +8,7 @@ import (
 
 	txchaintools "github.com/tokenize-x/tx-chain/build/tools"
 	"github.com/tokenize-x/tx-chain/build/tx-chain/image"
-	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 	"github.com/tokenize-x/tx-crust/build/config"
 	"github.com/tokenize-x/tx-crust/build/docker"
 	txcrusttools "github.com/tokenize-x/tx-crust/build/tools"
@@ -127,7 +127,7 @@ func ensureWASMLibForDockerContext(
 
 // ensureReleasedBinaries ensures that all previous txd versions are installed.
 func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
-	const binaryTool = txchaintools.TXdV600
+	const binaryTool = txchaintools.TXdV700
 	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}

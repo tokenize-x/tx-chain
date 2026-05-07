@@ -17,10 +17,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/testutil/simapp"
-	testcontracts "github.com/tokenize-x/tx-chain/v7/x/asset/ft/keeper/test-contracts"
-	"github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	wibctransfertypes "github.com/tokenize-x/tx-chain/v7/x/wibctransfer/types"
+	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
+	testcontracts "github.com/tokenize-x/tx-chain/v8/x/asset/ft/keeper/test-contracts"
+	"github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	wibctransfertypes "github.com/tokenize-x/tx-chain/v8/x/wibctransfer/types"
 )
 
 var (

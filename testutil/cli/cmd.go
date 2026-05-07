@@ -17,8 +17,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tokenize-x/tx-chain/v7/app"
-	"github.com/tokenize-x/tx-chain/v7/testutil/network"
+	"github.com/tokenize-x/tx-chain/v8/app"
+	"github.com/tokenize-x/tx-chain/v8/testutil/network"
 )
 
 // ExecTxCmd is a func to execute tx cmd.

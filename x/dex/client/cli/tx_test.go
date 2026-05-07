@@ -16,13 +16,13 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	txchainclitestutil "github.com/tokenize-x/tx-chain/v7/testutil/cli"
-	"github.com/tokenize-x/tx-chain/v7/testutil/event"
-	"github.com/tokenize-x/tx-chain/v7/testutil/network"
-	assetftcli "github.com/tokenize-x/tx-chain/v7/x/asset/ft/client/cli"
-	assetfttypes "github.com/tokenize-x/tx-chain/v7/x/asset/ft/types"
-	"github.com/tokenize-x/tx-chain/v7/x/dex/client/cli"
-	"github.com/tokenize-x/tx-chain/v7/x/dex/types"
+	txchainclitestutil "github.com/tokenize-x/tx-chain/v8/testutil/cli"
+	"github.com/tokenize-x/tx-chain/v8/testutil/event"
+	"github.com/tokenize-x/tx-chain/v8/testutil/network"
+	assetftcli "github.com/tokenize-x/tx-chain/v8/x/asset/ft/client/cli"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/client/cli"
+	"github.com/tokenize-x/tx-chain/v8/x/dex/types"
 )
 
 func TestCmdPlaceOrder(t *testing.T) {

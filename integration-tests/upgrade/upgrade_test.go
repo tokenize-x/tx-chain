@@ -18,9 +18,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	appupgradev8 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v8"
-	integrationtests "github.com/tokenize-x/tx-chain/v7/integration-tests"
-	"github.com/tokenize-x/tx-chain/v7/testutil/integration"
+	appupgradev8 "github.com/tokenize-x/tx-chain/v8/app/upgrade/v8"
+	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
 	"github.com/tokenize-x/tx-tools/pkg/retry"
 )
 
