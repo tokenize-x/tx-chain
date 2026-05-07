@@ -2928,8 +2928,8 @@ github.com/tokenize-x/tx-crust v0.0.0-20260417073923-d4456872ff25 h1:XxTVIHdTcbV
 github.com/tokenize-x/tx-crust v0.0.0-20260417073923-d4456872ff25/go.mod h1:bnIWfIPSdiRnv19dioLlZVqJp/xngLjQWjZ9qBr+0Hs=
 github.com/tokenize-x/tx-crust v0.0.0-20260427120657-25602d11eaad h1:1FJObgaIJEyk0GjV4XI7KgZkCpgpWEeJ3FV3LayV6pI=
 github.com/tokenize-x/tx-crust v0.0.0-20260427120657-25602d11eaad/go.mod h1:bnIWfIPSdiRnv19dioLlZVqJp/xngLjQWjZ9qBr+0Hs=
-github.com/tokenize-x/tx-crust v0.0.0-20260507090046-39aceb4c39a5 h1:9KDjyh+wqRE2TvO5rm7/WYL6u79Oh/JyqQ+ESOqpb24=
-github.com/tokenize-x/tx-crust v0.0.0-20260507090046-39aceb4c39a5/go.mod h1:bnIWfIPSdiRnv19dioLlZVqJp/xngLjQWjZ9qBr+0Hs=
+github.com/tokenize-x/tx-crust v0.0.0-20260507151753-31cc4a3a1683 h1:+WSQK1+hOSl9aiJKudKIhMaQvkEHNJmuIerU8LfKPO4=
+github.com/tokenize-x/tx-crust v0.0.0-20260507151753-31cc4a3a1683/go.mod h1:bnIWfIPSdiRnv19dioLlZVqJp/xngLjQWjZ9qBr+0Hs=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20251204091714-85b536a4d6a0 h1:CkcEu9z6bWu+bjuaURFalnI0X2SpWnvvSNODtlSQd2I=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20251204091714-85b536a4d6a0/go.mod h1:328EyqltI5jgYWvbvVsZjlzjZ1Fm/EGSS7xEm0TpSdw=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260210121155-7b32c8260237 h1:e9flocsMtTCWHNE4wsCTFqrEqU8WSKT0HlW5nPboKBQ=
@@ -2942,8 +2942,8 @@ github.com/tokenize-x/tx-crust/znet v0.0.0-20260417073923-d4456872ff25 h1:OZb7UT
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260417073923-d4456872ff25/go.mod h1:QlZww6NNfngfdTWkMphzEAAnGUl2nHi7T+t3Ngk4Jd0=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260427120657-25602d11eaad h1:8NNUm5f3NVNxkBQ6OYvDTro9/b7L3MEoIoYD3RTXtgk=
 github.com/tokenize-x/tx-crust/znet v0.0.0-20260427120657-25602d11eaad/go.mod h1:QlZww6NNfngfdTWkMphzEAAnGUl2nHi7T+t3Ngk4Jd0=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260507090046-39aceb4c39a5 h1:qyUev2FZhzsGvZ8SADNiH0392qBI31r+ka/ZyfcQdUQ=
-github.com/tokenize-x/tx-crust/znet v0.0.0-20260507090046-39aceb4c39a5/go.mod h1:UNUWVy68Xh4JDw1Ddfekm+92MNUP33jWb1s+jvFx3fE=
+github.com/tokenize-x/tx-crust/znet v0.0.0-20260507151753-31cc4a3a1683 h1:jdvEvwOyWiWxUBfxWS2sCD9zQYXKP2HpPuxXBfoLePU=
+github.com/tokenize-x/tx-crust/znet v0.0.0-20260507151753-31cc4a3a1683/go.mod h1:UNUWVy68Xh4JDw1Ddfekm+92MNUP33jWb1s+jvFx3fE=
 github.com/tomarrell/wrapcheck/v2 v2.8.1 h1:HxSqDSN0sAt0yJYsrcYVoEeyM4aI9yAm3KQpIXDJRhQ=
 github.com/tomarrell/wrapcheck/v2 v2.8.1/go.mod h1:/n2Q3NZ4XFT50ho6Hbxg+RV1uyo2Uow/Vdm9NQcl5SE=
 github.com/tommy-muehle/go-mnd/v2 v2.5.1 h1:NowYhSdyE/1zwK9QCLeRb6USWdoif80Ie+v+yU8u1Zw=
