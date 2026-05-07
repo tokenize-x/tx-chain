@@ -136,7 +136,7 @@ import (
 
 	"github.com/tokenize-x/tx-chain/v7/app/openapi"
 	appupgrade "github.com/tokenize-x/tx-chain/v7/app/upgrade"
-	appupgradev7 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v7"
+	appupgradev8 "github.com/tokenize-x/tx-chain/v7/app/upgrade/v8"
 	"github.com/tokenize-x/tx-chain/v7/docs"
 	"github.com/tokenize-x/tx-chain/v7/pkg/config"
 	"github.com/tokenize-x/tx-chain/v7/pkg/config/constant"
@@ -1213,15 +1213,9 @@ func New(
 
 	/**** Upgrades ****/
 	upgrades := []appupgrade.Upgrade{
-		appupgradev7.New(
+		appupgradev8.New(
 			app.ModuleManager,
 			app.configurator,
-			app.BankKeeper,
-			app.MintKeeper,
-			app.StakingKeeper,
-			app.PSEKeeper,
-			app.AccountKeeper.AddressCodec(),
-			app.StakingKeeper.ValidatorAddressCodec(),
 		),
 	}
 
