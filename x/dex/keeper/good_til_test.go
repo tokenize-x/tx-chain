@@ -528,8 +528,8 @@ func TestKeeper_GoodTil(t *testing.T) {
 			endHeight:   110,
 		},
 		{
-			// Regression for CertiK Submission #2: when both fields are set and the time boundary
-			// is reached first, the order is cancelled by the time path.
+			// Regression: when both fields are set and the time boundary is reached first,
+			// the order is cancelled by the time path.
 			name: "no_match_with_good_til_block_time_before_height_cancel_by_time",
 			orders: func(testSet TestSet) map[uint64][]types.Order {
 				return map[uint64][]types.Order{
