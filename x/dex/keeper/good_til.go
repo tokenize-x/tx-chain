@@ -41,10 +41,14 @@ func (k Keeper) delayGoodTilCancellation(
 	creator sdk.AccAddress,
 ) error {
 	if goodTil.GoodTilBlockHeight > 0 {
-		return k.delayGoodTilBlockHeightCancellation(ctx, goodTil.GoodTilBlockHeight, orderSequence, creator)
+		if err := k.delayGoodTilBlockHeightCancellation(ctx, goodTil.GoodTilBlockHeight, orderSequence, creator); err != nil {
+			return err
+		}
 	}
 	if goodTil.GoodTilBlockTime != nil {
-		return k.delayGoodTilBlockTimeCancellation(ctx, *goodTil.GoodTilBlockTime, orderSequence, creator)
+		if err := k.delayGoodTilBlockTimeCancellation(ctx, *goodTil.GoodTilBlockTime, orderSequence, creator); err != nil {
+			return err
+		}
 	}
 
 	return nil

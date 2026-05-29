@@ -527,6 +527,39 @@ func TestKeeper_GoodTil(t *testing.T) {
 			startHeight: 100,
 			endHeight:   110,
 		},
+		{
+			// Regression for CertiK Submission #2: time-based delay must be
+			// scheduled even when height-based delay is also set. Time expires
+			// at block 103, height expires far past endHeight, so the order
+			// can only be cancelled by the time-based path.
+			name: "no_match_with_good_til_block_time_before_height_cancel_by_time",
+			orders: func(testSet TestSet) map[uint64][]types.Order {
+				return map[uint64][]types.Order{
+					101: {
+						{
+							Creator:    testSet.acc1.String(),
+							Type:       types.ORDER_TYPE_LIMIT,
+							ID:         "id1",
+							BaseDenom:  testSet.denom1,
+							QuoteDenom: testSet.denom2,
+							Price:      lo.ToPtr(types.MustNewPriceFromString("376e-3")),
+							Quantity:   quantity,
+							Side:       types.SIDE_SELL,
+							GoodTil: &types.GoodTil{
+								GoodTilBlockHeight: 200,
+								GoodTilBlockTime:   lo.ToPtr(initialBlockTime.Add(blockTime * time.Duration(3))),
+							},
+							TimeInForce: types.TIME_IN_FORCE_GTC,
+						},
+					},
+				}
+			},
+			wantOrders: func(testSet TestSet) []types.Order {
+				return []types.Order{}
+			},
+			startHeight: 100,
+			endHeight:   105,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
