@@ -2069,7 +2069,7 @@ func TestLimitOrdersMatchingWithAssetFTWhitelist(t *testing.T) {
 	requireT.NoError(err)
 	requireT.Equal(sdkmath.NewInt(33_000).String(), balanceRes.LockedInDEX.String())
 
-	// Reducing the whitelist limit will not interfere with DEX order after order placement
+	// Reducing the whitelist limit after order placement must take effect at settlement
 	msgSetWhitelistedLimit = &assetfttypes.MsgSetWhitelistedLimit{
 		Sender:  issuer.String(),
 		Account: acc2.String(),
@@ -2084,7 +2084,8 @@ func TestLimitOrdersMatchingWithAssetFTWhitelist(t *testing.T) {
 	)
 	requireT.NoError(err)
 
-	// place sell order to match the buy
+	// place sell order trying to match the buy - must be rejected at settlement
+	// because acc2's whitelist limit was lowered to 0 post-placement.
 	placeSellOrderMsg := &dextypes.MsgPlaceOrder{
 		Sender:      acc1.String(),
 		Type:        dextypes.ORDER_TYPE_LIMIT,
@@ -2103,31 +2104,11 @@ func TestLimitOrdersMatchingWithAssetFTWhitelist(t *testing.T) {
 		chain.TxFactoryAuto(),
 		placeSellOrderMsg,
 	)
-	requireT.NoError(err)
+	requireT.ErrorContains(err, assetfttypes.ErrDEXSettlementBlocked.Error())
 
-	assertBalance(ctx, t, bankClient, acc1, denom2, 11_000)
-	assertBalance(ctx, t, bankClient, acc2, denom1, 100_000)
-
-	// place order should succeed as issuer because admin (issuer) doesn't have whitelist limit
-	placeSellOrderMsg = &dextypes.MsgPlaceOrder{
-		Sender:      issuer.String(),
-		Type:        dextypes.ORDER_TYPE_LIMIT,
-		ID:          "id1",
-		BaseDenom:   denom1,
-		QuoteDenom:  denom2,
-		Price:       lo.ToPtr(dextypes.MustNewPriceFromString("1e-1")),
-		Quantity:    sdkmath.NewInt(100_000),
-		Side:        dextypes.SIDE_SELL,
-		TimeInForce: dextypes.TIME_IN_FORCE_GTC,
-	}
-
-	_, err = client.BroadcastTx(
-		ctx,
-		chain.ClientContext.WithFromAddress(issuer),
-		chain.TxFactoryAuto(),
-		placeSellOrderMsg,
-	)
-	requireT.NoError(err)
+	// whitelist invariant preserved; no tokens leaked to acc2.
+	assertBalance(ctx, t, bankClient, acc1, denom2, 0)
+	assertBalance(ctx, t, bankClient, acc2, denom1, 0)
 }
 
 // TestCancelOrdersByDenom tests the dex modules ability to cancel all orders of the account and by denom.
