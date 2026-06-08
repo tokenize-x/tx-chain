@@ -661,10 +661,10 @@ func (k Keeper) validateDEXSettlementSend(ctx sdk.Context, send types.CoinToSend
 		return nil
 	}
 	if err := k.validateSenderAtDEXSettlement(ctx, send.FromAddress, *def, send.Coin.Amount); err != nil {
-		return sdkerrors.Wrap(err, "DEX settlement: sender check failed")
+		return sdkerrors.Wrapf(types.ErrDEXSettlementBlocked, "sender check failed: %s", err)
 	}
 	if err := k.validateCoinReceivable(ctx, send.ToAddress, *def, send.Coin.Amount); err != nil {
-		return sdkerrors.Wrap(err, "DEX settlement: recipient check failed")
+		return sdkerrors.Wrapf(types.ErrDEXSettlementBlocked, "recipient check failed: %s", err)
 	}
 	return nil
 }

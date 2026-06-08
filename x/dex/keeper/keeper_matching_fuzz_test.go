@@ -494,6 +494,10 @@ func (fa *FuzzApp) PlaceOrder(t *testing.T, sdkCtx sdk.Context, order types.Orde
 		t.Logf("Placement failed, err: %s", err.Error())
 		creator := sdk.MustAccAddressFromBech32(order.Creator)
 		switch {
+		case sdkerrors.IsOf(err, assetfttypes.ErrDEXSettlementBlocked):
+			// Settlement-time maker-side compliance recheck.
+			t.Logf("Placement has failed due to settlement-time maker compliance: %v", err.Error())
+			return
 		case sdkerrors.IsOf(err, assetfttypes.ErrDEXInsufficientSpendableBalance):
 			// check that the order can't be placed because of the lack of balance
 			if order.Type != types.ORDER_TYPE_LIMIT {
@@ -572,8 +576,7 @@ func (fa *FuzzApp) PlaceOrder(t *testing.T, sdkCtx sdk.Context, order types.Orde
 			strings.Contains(err.Error(), "has to be multiple of quantity step"),
 			strings.Contains(err.Error(), "good til block"),
 			strings.Contains(err.Error(), "it's prohibited to save more than"),
-			strings.Contains(err.Error(), "not whitelisted for"), // whitelisted denoms
-			strings.Contains(err.Error(), "DEX settlement:"):     // maker-side compliance recheck (Immunefi 77114)
+			strings.Contains(err.Error(), "not whitelisted for"): // whitelisted denoms
 			t.Logf("Placement has failed due to expected error: %v", err.Error())
 			return
 		default:

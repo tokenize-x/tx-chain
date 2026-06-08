@@ -1073,7 +1073,7 @@ func TestLimitOrdersMatchingWithAssetFTFreeze(t *testing.T) {
 		chain.TxFactoryAuto(),
 		placeBuyOrderMsg,
 	)
-	requireT.ErrorContains(err, "DEX settlement: sender check failed")
+	requireT.ErrorContains(err, assetfttypes.ErrDEXSettlementBlocked.Error())
 
 	// invariant balance >= frozen preserved; no tokens leaked to acc2.
 	assertBalance(ctx, t, bankClient, acc1, denom1, 150_000)

@@ -639,8 +639,7 @@ func TestDEXSettlement_RejectsMatchAgainstFrozenMaker_Immunefi77114(t *testing.T
 		Quantity: sdkmath.NewInt(qty), Side: types.SIDE_BUY,
 		TimeInForce: types.TIME_IN_FORCE_GTC,
 	})
-	requireT.Error(err)
-	requireT.Contains(err.Error(), "DEX settlement: sender check failed")
+	requireT.ErrorIs(err, assetfttypes.ErrDEXSettlementBlocked)
 
 	// Invariant balance >= frozen holds; no tokens leaked to taker.
 	makerT := bankKeeper.GetBalance(sdkCtx, maker, tDenom).Amount

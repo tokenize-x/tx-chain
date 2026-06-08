@@ -29,4 +29,6 @@ var (
 	ErrDEXInsufficientSpendableBalance = sdkerrors.Register(
 		ModuleName, 11, "DEX insufficient spendable balance",
 	)
+	// ErrDEXSettlementBlocked is returned when asset/ft compliance rejects a transfer at DEX settlement.
+	ErrDEXSettlementBlocked = sdkerrors.Register(ModuleName, 12, "DEX settlement blocked")
 )
