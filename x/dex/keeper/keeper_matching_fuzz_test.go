@@ -572,7 +572,8 @@ func (fa *FuzzApp) PlaceOrder(t *testing.T, sdkCtx sdk.Context, order types.Orde
 			strings.Contains(err.Error(), "has to be multiple of quantity step"),
 			strings.Contains(err.Error(), "good til block"),
 			strings.Contains(err.Error(), "it's prohibited to save more than"),
-			strings.Contains(err.Error(), "not whitelisted for"): // whitelisted denoms
+			strings.Contains(err.Error(), "not whitelisted for"), // whitelisted denoms
+			strings.Contains(err.Error(), "DEX settlement:"):     // maker-side compliance recheck (Immunefi 77114)
 			t.Logf("Placement has failed due to expected error: %v", err.Error())
 			return
 		default:

@@ -660,12 +660,62 @@ func (k Keeper) validateDEXSettlementSend(ctx sdk.Context, send types.CoinToSend
 	if def == nil {
 		return nil
 	}
-	if err := k.validateCoinSpendable(ctx, send.FromAddress, *def, send.Coin.Amount); err != nil {
-		return sdkerrors.Wrap(err, "DEX settlement: sender spendable check failed")
+	if err := k.validateSenderAtDEXSettlement(ctx, send.FromAddress, *def, send.Coin.Amount); err != nil {
+		return sdkerrors.Wrap(err, "DEX settlement: sender check failed")
 	}
 	if err := k.validateCoinReceivable(ctx, send.ToAddress, *def, send.Coin.Amount); err != nil {
-		return sdkerrors.Wrap(err, "DEX settlement: recipient receivable check failed")
+		return sdkerrors.Wrap(err, "DEX settlement: recipient check failed")
 	}
+	return nil
+}
+
+// validateSenderAtDEXSettlement re-checks sender compliance. The DEX-locked tokens
+// being transferred are not subtracted from available balance (unlike non-DEX sends
+// in validateCoinSpendable); per-account freeze is checked as balance - frozen >= amount.
+func (k Keeper) validateSenderAtDEXSettlement(
+	ctx sdk.Context,
+	addr sdk.AccAddress,
+	def types.Definition,
+	amount sdkmath.Int,
+) error {
+	if def.IsFeatureEnabled(types.Feature_freezing) {
+		isGloballyFrozen, err := k.isGloballyFrozen(ctx, def.Denom)
+		if err != nil {
+			return err
+		}
+		if isGloballyFrozen && !def.HasAdminPrivileges(addr) {
+			return sdkerrors.Wrapf(types.ErrGloballyFrozen, "%s is globally frozen", def.Denom)
+		}
+	}
+
+	if def.IsFeatureEnabled(types.Feature_block_smart_contracts) &&
+		!def.HasAdminPrivileges(addr) &&
+		cwasmtypes.IsTriggeredBySmartContract(ctx) {
+		return sdkerrors.Wrapf(
+			cosmoserrors.ErrUnauthorized,
+			"transfers made by smart contracts are disabled for %s",
+			def.Denom,
+		)
+	}
+
+	if def.IsFeatureEnabled(types.Feature_freezing) && !def.HasAdminPrivileges(addr) {
+		balance := k.bankKeeper.GetBalance(ctx, addr, def.Denom).Amount
+		frozenBalance, err := k.GetFrozenBalance(ctx, addr, def.Denom)
+		if err != nil {
+			return err
+		}
+		spendable := balance.Sub(frozenBalance.Amount)
+		if spendable.LT(amount) {
+			return sdkerrors.Wrapf(
+				cosmoserrors.ErrInsufficientFunds,
+				"%s%s is not spendable, %s%s frozen, %s%s available",
+				amount.String(), def.Denom,
+				frozenBalance.Amount.String(), def.Denom,
+				spendable.String(), def.Denom,
+			)
+		}
+	}
+
 	return nil
 }
 
