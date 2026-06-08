@@ -1053,7 +1053,8 @@ func TestLimitOrdersMatchingWithAssetFTFreeze(t *testing.T) {
 	requireT.Equal(sdkmath.NewInt(150_000).String(), balanceRes.Frozen.String())
 	requireT.Equal(placeSellOrderMsg.Quantity.String(), balanceRes.LockedInDEX.String())
 
-	// place buy order to match the sell
+	// place buy order trying to match the sell - must be rejected at settlement
+	// because acc1's balance is fully frozen post-placement (Immunefi 77114 fix).
 	placeBuyOrderMsg := &dextypes.MsgPlaceOrder{
 		Sender:      acc2.String(),
 		Type:        dextypes.ORDER_TYPE_LIMIT,
@@ -1072,10 +1073,11 @@ func TestLimitOrdersMatchingWithAssetFTFreeze(t *testing.T) {
 		chain.TxFactoryAuto(),
 		placeBuyOrderMsg,
 	)
-	requireT.NoError(err)
+	requireT.ErrorContains(err, "DEX settlement: sender check failed")
 
-	assertBalance(ctx, t, bankClient, acc1, denom2, 10_000)
-	assertBalance(ctx, t, bankClient, acc2, denom1, 100_000)
+	// invariant balance >= frozen preserved; no tokens leaked to acc2.
+	assertBalance(ctx, t, bankClient, acc1, denom1, 150_000)
+	assertBalance(ctx, t, bankClient, acc2, denom1, 0)
 }
 
 // TestLimitOrdersMatchingWithAssetFTGloballyFreeze tests the dex modules ability to place get and match limit orders
