@@ -72,6 +72,9 @@ func (k Keeper) DEXExecuteActions(ctx sdk.Context, actions types.DEXActions) err
 			"to", send.ToAddress.String(),
 			"coin", send.Coin.String(),
 		)
+		if err := k.validateDEXSettlementSend(ctx, send); err != nil {
+			return err
+		}
 		if err := k.bankKeeper.SendCoins(ctx, send.FromAddress, send.ToAddress, sdk.NewCoins(send.Coin)); err != nil {
 			return sdkerrors.Wrap(err, "failed to DEX send coins")
 		}
@@ -642,6 +645,27 @@ func (k Keeper) updateDEXSettings(
 		return sdkerrors.Wrapf(types.ErrInvalidState, "failed to emit EventDEXSettingsChanged event: %s", err)
 	}
 
+	return nil
+}
+
+// validateDEXSettlementSend re-runs asset/ft compliance per settlement transfer.
+// k.bankKeeper is originalBankKeeper (no BeforeSendCoins) and DEXCheckOrderAmounts
+// only covers the taker, so maker-side freeze / whitelist / block_smart_contracts
+// changes between placement and match would otherwise be bypassed.
+func (k Keeper) validateDEXSettlementSend(ctx sdk.Context, send types.CoinToSend) error {
+	def, err := k.getDefinitionOrNil(ctx, send.Coin.Denom)
+	if err != nil {
+		return err
+	}
+	if def == nil {
+		return nil
+	}
+	if err := k.validateCoinSpendable(ctx, send.FromAddress, *def, send.Coin.Amount); err != nil {
+		return sdkerrors.Wrap(err, "DEX settlement: sender spendable check failed")
+	}
+	if err := k.validateCoinReceivable(ctx, send.ToAddress, *def, send.Coin.Amount); err != nil {
+		return sdkerrors.Wrap(err, "DEX settlement: recipient receivable check failed")
+	}
 	return nil
 }
 

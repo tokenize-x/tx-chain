@@ -571,3 +571,85 @@ func TestKeeper_PlaceOrderWithCommissionRate(t *testing.T) {
 	balanceAfterPlaceOrder := testApp.BankKeeper.GetBalance(sdkCtx, acc, denomWithCommissionRate)
 	require.Equal(t, balanceBeforePlaceOrder, balanceAfterPlaceOrder)
 }
+
+// Regression for Immunefi 77114: maker places SELL, issuer freezes maker, taker
+// attempts to match. Asserts settlement rejects the match with the spendable-check
+// error, maker's balance stays intact, taker receives nothing, and balance >= frozen.
+func TestDEXSettlement_RejectsMatchAgainstFrozenMaker_Immunefi77114(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	sdkCtx := testApp.NewContextLegacy(false, tmproto.Header{
+		Height: 100,
+		Time:   time.Now(),
+	})
+
+	ftKeeper := testApp.AssetFTKeeper
+	bankKeeper := testApp.BankKeeper
+	dexKeeper := testApp.DEXKeeper
+
+	issuer, _ := testApp.GenAccount(sdkCtx)
+	maker, _ := testApp.GenAccount(sdkCtx)
+	taker, _ := testApp.GenAccount(sdkCtx)
+
+	tDenom, err := ftKeeper.Issue(sdkCtx, assetfttypes.IssueSettings{
+		Issuer:        issuer,
+		Symbol:        "TTT",
+		Subunit:       "ttt",
+		Precision:     6,
+		InitialAmount: sdkmath.NewIntWithDecimal(1, 18),
+		Features:      []assetfttypes.Feature{assetfttypes.Feature_freezing},
+	})
+	requireT.NoError(err)
+
+	qDenom, err := ftKeeper.Issue(sdkCtx, assetfttypes.IssueSettings{
+		Issuer:        issuer,
+		Symbol:        "QQQ",
+		Subunit:       "qqq",
+		Precision:     6,
+		InitialAmount: sdkmath.NewIntWithDecimal(1, 18),
+	})
+	requireT.NoError(err)
+
+	const qty int64 = 1_000_000
+	price := lo.ToPtr(types.MustNewPriceFromString("1"))
+
+	// Maker places SELL, locking qty T.
+	requireT.NoError(bankKeeper.SendCoins(sdkCtx, issuer, maker,
+		sdk.NewCoins(sdk.NewCoin(tDenom, sdkmath.NewInt(qty)))))
+	fundOrderReserve(t, testApp, sdkCtx, maker)
+	requireT.NoError(dexKeeper.PlaceOrder(sdkCtx, types.Order{
+		Creator: maker.String(), Type: types.ORDER_TYPE_LIMIT, ID: "sell",
+		BaseDenom: tDenom, QuoteDenom: qDenom, Price: price,
+		Quantity: sdkmath.NewInt(qty), Side: types.SIDE_SELL,
+		TimeInForce: types.TIME_IN_FORCE_GTC,
+	}))
+
+	// Issuer freezes maker's full T balance AFTER the order is placed.
+	requireT.NoError(ftKeeper.Freeze(sdkCtx, issuer, maker,
+		sdk.NewCoin(tDenom, sdkmath.NewInt(qty))))
+
+	// Unprivileged taker attempts to match — must be rejected by settlement check.
+	requireT.NoError(bankKeeper.SendCoins(sdkCtx, issuer, taker,
+		sdk.NewCoins(sdk.NewCoin(qDenom, sdkmath.NewInt(qty)))))
+	fundOrderReserve(t, testApp, sdkCtx, taker)
+	err = dexKeeper.PlaceOrder(sdkCtx, types.Order{
+		Creator: taker.String(), Type: types.ORDER_TYPE_LIMIT, ID: "buy",
+		BaseDenom: tDenom, QuoteDenom: qDenom, Price: price,
+		Quantity: sdkmath.NewInt(qty), Side: types.SIDE_BUY,
+		TimeInForce: types.TIME_IN_FORCE_GTC,
+	})
+	requireT.Error(err)
+	requireT.Contains(err.Error(), "DEX settlement: sender spendable check failed")
+
+	// Invariant balance >= frozen holds; no tokens leaked to taker.
+	makerT := bankKeeper.GetBalance(sdkCtx, maker, tDenom).Amount
+	takerT := bankKeeper.GetBalance(sdkCtx, taker, tDenom).Amount
+	frozen, err := ftKeeper.GetFrozenBalance(sdkCtx, maker, tDenom)
+	requireT.NoError(err)
+
+	requireT.Equal(sdkmath.NewInt(qty), makerT, "maker balance preserved")
+	requireT.Equal(sdkmath.ZeroInt(), takerT, "taker received nothing")
+	requireT.True(makerT.GTE(frozen.Amount),
+		"invariant holds: balance(%s) >= frozen(%s)", makerT, frozen.Amount)
+}
