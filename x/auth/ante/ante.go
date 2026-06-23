@@ -31,6 +31,7 @@ type HandlerOptions struct {
 	WasmConfig             wasmtypes.NodeConfig
 	IBCKeeper              *ibckeeper.Keeper
 	GovKeeper              *govkeeper.Keeper
+	StakingKeeper          StakingKeeper
 	WasmTXCounterStoreKey  store.KVStoreService
 }
 
@@ -56,6 +57,10 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 
 	if options.GovKeeper == nil {
 		return nil, sdkerrors.Wrap(cosmoserrors.ErrLogic, "gov keeper is required for ante builder")
+	}
+
+	if options.StakingKeeper == nil {
+		return nil, sdkerrors.Wrap(cosmoserrors.ErrLogic, "staking keeper is required for ante builder")
 	}
 
 	if options.SignModeHandler == nil {
@@ -109,6 +114,8 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		deterministicgasante.NewSetInfiniteGasMeterDecorator(options.DeterministicGasConfig),
 		authante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		authante.NewValidateBasicDecorator(),
+		// Restrict validator reward-pool deposits to the bond denom.
+		NewDepositValidatorRewardsPoolDenomDecorator(options.StakingKeeper),
 		authante.NewTxTimeoutHeightDecorator(),
 		// after setup context to enforce limits early
 		wasmkeeper.NewLimitSimulationGasDecorator(options.WasmConfig.SimulationGasLimit),

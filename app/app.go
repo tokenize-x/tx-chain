@@ -1159,6 +1159,7 @@ func New(
 			IBCKeeper:              app.IBCKeeper,
 			GovKeeper:              &app.GovKeeper,
 			FeeModelKeeper:         app.FeeModelKeeper,
+			StakingKeeper:          app.StakingKeeper,
 			WasmTXCounterStoreKey:  runtime.NewKVStoreService(keys[wasmtypes.StoreKey]),
 			WasmConfig:             wasmNodeConfig,
 		},
