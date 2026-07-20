@@ -116,7 +116,13 @@ func (k Keeper) applyFeatures(ctx sdk.Context, input banktypes.Input, outputs []
 				}
 			}
 
-			if err := k.validateCoinSpendable(ctx, sender, *def, coin.Amount); err != nil {
+			// The extension path debits amount+commission+burn (not pre-debited above), so
+			// validate against the full amount; otherwise the gap is taken from frozen funds.
+			amountToValidate := coin.Amount
+			if def.IsFeatureEnabled(types.Feature_extension) {
+				amountToValidate = amountToValidate.Add(commissionAmount).Add(burnAmount)
+			}
+			if err := k.validateCoinSpendable(ctx, sender, *def, amountToValidate); err != nil {
 				return err
 			}
 
