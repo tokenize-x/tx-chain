@@ -856,7 +856,11 @@ func awaitScheduledDistributionEvent(
 		observedHeight = blocks.Blocks[0].Block.Height
 		return nil
 	},
-		integration.WithAwaitStateTimeout(40*time.Second),
+		// Distribution 1 fires ~40s after this await begins (distributionStartTime = now+10s+votingPeriod,
+		// then a +30s schedule offset). A 40s timeout leaves zero margin, so the event lands just past it on
+		// slower/contended CI runners. Give it real headroom; the await still returns as soon as the event
+		// is observed, so fast runs are unaffected.
+		integration.WithAwaitStateTimeout(120*time.Second),
 	)
 	if err != nil {
 		return 0, nil, err
