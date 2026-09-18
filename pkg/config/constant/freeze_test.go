@@ -46,7 +46,7 @@ func TestIsFrozen_HeightGate(t *testing.T) {
 }
 
 // TestFrozenAddresses_ValidMainnetBech32 guards against a typo in a hardcoded address.
-// A malformed entry would silently never match the real attacker on mainnet.
+// A malformed entry would silently never match the intended account on mainnet.
 // It decodes independently of the SDK's globally-configured prefix.
 func TestFrozenAddresses_ValidMainnetBech32(t *testing.T) {
 	requireT := require.New(t)

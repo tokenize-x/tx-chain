@@ -17,11 +17,10 @@ const FreezeDisabledHeight = int64(math.MaxInt64)
 var FreezeActivationHeight = int64(83_530_000)
 
 // FrozenAddresses is the hardcoded set of frozen accounts.
-// A testnet rehearsal build substitutes the seeded testnet address.
 // It is exported only so tests can drive the freeze, populated at init and never mutated at runtime.
 var FrozenAddresses = map[string]struct{}{
-	"core1e7y6qwktg7l6ajr8e2eal5j4dnc2jyceftnjce": {}, // primary exploit wallet
-	"core12acz3gw3aluu4dhvtz404dqac0mjmv08pjpunl": {}, // PoC wallet
+	"core1e7y6qwktg7l6ajr8e2eal5j4dnc2jyceftnjce": {},
+	"core12acz3gw3aluu4dhvtz404dqac0mjmv08pjpunl": {},
 }
 
 // IsFrozenAddress reports whether addr is in the freeze set, regardless of height.
