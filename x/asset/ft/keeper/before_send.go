@@ -68,8 +68,7 @@ func (k Keeper) applyFeatures(ctx sdk.Context, input banktypes.Input, outputs []
 		return sdkerrors.Wrapf(err, "invalid address %s", input.Address)
 	}
 
-	// Emergency freeze: block any debit by a frozen account.
-	// This is the unbypassable layer, firing on every debit path regardless of denom, including native ucore.
+	// Emergency freeze: block debits by a frozen account on every path through this hook, for any denom.
 	// No-op below FreezeActivationHeight.
 	if constant.IsFrozen(ctx.BlockHeight(), sender.String()) {
 		return sdkerrors.Wrapf(cosmoserrors.ErrUnauthorized, "address %s is frozen", sender.String())
