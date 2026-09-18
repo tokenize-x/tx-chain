@@ -37,6 +37,13 @@ var ClawbackTransfers = map[constant.ChainID][]ClawbackTransfer{
 			To:   "testcore1w555d8xjg497g77jvwkv0req66ck6tn7vu4jw2",
 		},
 	},
+	// Devnet accounts are funded by the upgrade integration test, which asserts the transfer happened.
+	constant.ChainIDDev: {
+		{
+			From: "devcore1zwfawn7wc66ucvmjkzc75j033hpvw933f04alp",
+			To:   "devcore14c7zt6cehtehpkzh0gaqz93kwp0yue7ppxxtgk",
+		},
+	},
 }
 
 // ClawbackFrozenFunds moves the full balance of every configured account to its recipient.

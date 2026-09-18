@@ -19,14 +19,18 @@ import (
 func TestClawbackTransfers_ValidAddresses(t *testing.T) {
 	requireT := require.New(t)
 
+	prefixes := map[constant.ChainID]string{
+		constant.ChainIDMain: constant.AddressPrefixMain,
+		constant.ChainIDTest: constant.AddressPrefixTest,
+		constant.ChainIDDev:  constant.AddressPrefixDev,
+	}
+
 	requireT.NotEmpty(v8.ClawbackTransfers)
 	for chainID, transfers := range v8.ClawbackTransfers {
 		requireT.NotEmptyf(transfers, "chain %s has no transfers", chainID)
 
-		prefix := constant.AddressPrefixMain
-		if chainID != constant.ChainIDMain {
-			prefix = constant.AddressPrefixTest
-		}
+		prefix, ok := prefixes[chainID]
+		requireT.Truef(ok, "unknown chain %s", chainID)
 
 		for _, transfer := range transfers {
 			for _, addr := range []string{transfer.From, transfer.To} {
