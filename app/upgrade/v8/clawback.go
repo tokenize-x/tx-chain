@@ -13,7 +13,7 @@ import (
 const EventTypeClawback = "clawback"
 
 // recipient of the recovered funds on mainnet.
-const recipient = "core1pnxmcuxqvumfe6ktv40v2vm3z0zckluupzxu3uuq0f7t07w6xuwsc7td3m"
+const recipient = "core1z02frlf8lj0v9l755cdjmjsjpfgt5psuxwjqa7zd2e8hgja208nswqel20"
 
 // ClawbackTransfer moves every coin held by From to To.
 // The amount is whatever the account holds at the upgrade height.
