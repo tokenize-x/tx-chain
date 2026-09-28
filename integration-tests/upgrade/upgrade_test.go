@@ -51,7 +51,9 @@ func TestUpgrade(t *testing.T) {
 }
 
 func upgradeV7ToV8(t *testing.T) {
-	tests := []upgradeTest{}
+	tests := []upgradeTest{
+		&clawbackTest{},
+	}
 
 	for _, test := range tests {
 		test.Before(t)

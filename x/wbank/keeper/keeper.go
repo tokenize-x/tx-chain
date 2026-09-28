@@ -13,6 +13,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/samber/lo"
 
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 	"github.com/tokenize-x/tx-chain/v8/x/wasm"
 	cwasmtypes "github.com/tokenize-x/tx-chain/v8/x/wasm/types"
 	"github.com/tokenize-x/tx-chain/v8/x/wbank/types"
@@ -226,6 +227,12 @@ func (k BaseKeeperWrapper) isSmartContract(ctx sdk.Context, addr sdk.AccAddress)
 }
 
 func (k BaseKeeperWrapper) beforeDelegateCoins(ctx sdk.Context, senderAddr sdk.AccAddress, amt sdk.Coins) error {
+	// Emergency freeze: delegation debits bypass the BeforeSend hook, so enforce the freeze here too.
+	// No-op below FreezeActivationHeight.
+	if constant.IsFrozen(ctx.BlockHeight(), senderAddr.String()) {
+		return sdkerrors.Wrapf(cosmoserrors.ErrUnauthorized, "address %s is frozen", senderAddr.String())
+	}
+
 	for _, coin := range amt {
 		balance := k.GetBalance(ctx, senderAddr, coin.Denom)
 

@@ -112,6 +112,9 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 
 		authante.NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
 		deterministicgasante.NewSetInfiniteGasMeterDecorator(options.DeterministicGasConfig),
+		// Emergency freeze: reject txs signed by a frozen account early.
+		// Secondary to the bank BeforeSend hook, no-op below the activation height.
+		NewBlacklistedSignersDecorator(),
 		authante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		authante.NewValidateBasicDecorator(),
 		// Restrict validator reward-pool deposits to the bond denom.

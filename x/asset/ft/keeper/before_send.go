@@ -6,8 +6,10 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 	"github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 	"github.com/tokenize-x/tx-chain/v8/x/wasm"
 	cwasmtypes "github.com/tokenize-x/tx-chain/v8/x/wasm/types"
@@ -64,6 +66,12 @@ func (k Keeper) applyFeatures(ctx sdk.Context, input banktypes.Input, outputs []
 	sender, err := sdk.AccAddressFromBech32(input.Address)
 	if err != nil {
 		return sdkerrors.Wrapf(err, "invalid address %s", input.Address)
+	}
+
+	// Emergency freeze: block debits by a frozen account on every path through this hook, for any denom.
+	// No-op below FreezeActivationHeight.
+	if constant.IsFrozen(ctx.BlockHeight(), sender.String()) {
+		return sdkerrors.Wrapf(cosmoserrors.ErrUnauthorized, "address %s is frozen", sender.String())
 	}
 	for _, output := range outputs {
 		outputCoinsSum = outputCoinsSum.Add(output.Coins...)

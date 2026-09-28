@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 	"github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
 
@@ -369,6 +370,13 @@ func (k Keeper) distributeToDelegator(
 	if err != nil {
 		return sdkmath.NewInt(0), errorsmod.Wrapf(err, "encode delegator bech32")
 	}
+
+	// Emergency freeze: skip frozen delegators so their reward is neither sent
+	// nor auto-delegated. No-op below FreezeActivationHeight.
+	if constant.IsFrozen(sdk.UnwrapSDKContext(ctx).BlockHeight(), delAddrBech32) {
+		return sdkmath.NewInt(0), nil
+	}
+
 	delegationResponse, err := k.stakingKeeper.DelegatorDelegations(ctx, &stakingtypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: delAddrBech32,
 	})
