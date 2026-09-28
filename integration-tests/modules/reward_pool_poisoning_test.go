@@ -11,6 +11,7 @@ import (
 	authztypes "github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/cosmos/cosmos-sdk/x/group"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
@@ -321,4 +322,141 @@ func TestRewardPoolPoisoning(t *testing.T) {
 	})
 	requireT.NoError(err)
 	requireT.True(val1Resp.Validator.Tokens.IsPositive(), "validator must retain its tokens")
+}
+
+// TestRewardPoolPoisoning_GroupProposal sends the poison deposit through a group proposal.
+// Proposal execution does not pass through the ante handler, so the message handler must reject it.
+func TestRewardPoolPoisoning_GroupProposal(t *testing.T) {
+	t.Parallel()
+
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	requireT := require.New(t)
+	bankClient := banktypes.NewQueryClient(chain.ClientContext)
+	distrClient := distributiontypes.NewQueryClient(chain.ClientContext)
+	groupClient := group.NewQueryClient(chain.ClientContext)
+
+	customParamsClient := customparamstypes.NewQueryClient(chain.ClientContext)
+	customStakingParams, err := customParamsClient.StakingParams(ctx, &customparamstypes.QueryStakingParamsRequest{})
+	requireT.NoError(err)
+	validatorStakingAmount := customStakingParams.Params.MinSelfDelegation.Mul(sdkmath.NewInt(2))
+
+	// A dedicated validator, so a regression cannot poison validators other tests use.
+	_, validatorAddr, _, err := chain.CreateValidator(ctx, t, validatorStakingAmount, validatorStakingAmount)
+	requireT.NoError(err)
+
+	attacker := chain.GenAccount()
+	chain.FundAccountWithOptions(ctx, t, attacker, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&assetfttypes.MsgIssue{},
+			&group.MsgCreateGroupWithPolicy{},
+			&assetfttypes.MsgSetWhitelistedLimit{},
+			&assetfttypes.MsgSetWhitelistedLimit{},
+			&banktypes.MsgSend{},
+		},
+		Amount: chain.QueryAssetFTParams(ctx, t).IssueFee.Amount,
+	})
+	// Submit, vote and exec have non-deterministic gas.
+	chain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
+		Address: attacker,
+		Amount:  chain.NewCoin(sdkmath.NewInt(1_000_000)),
+	})
+
+	issueMsg := &assetfttypes.MsgIssue{
+		Issuer:        attacker.String(),
+		Symbol:        "POISONG",
+		Subunit:       "upoisong",
+		Precision:     6,
+		Description:   "Reward pool poisoning token",
+		InitialAmount: sdkmath.NewInt(1_000_000_000),
+		Features:      []assetfttypes.Feature{assetfttypes.Feature_whitelisting},
+	}
+	_, err = client.BroadcastTx(ctx,
+		chain.ClientContext.WithFromAddress(attacker),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(issueMsg)),
+		issueMsg)
+	requireT.NoError(err)
+	poisonDenom := assetfttypes.BuildDenom(issueMsg.Subunit, attacker)
+
+	// A single-member group, so the attacker alone can pass and execute proposals.
+	_, groupPolicy := createGroupWithPolicy(ctx, t, chain, attacker, []sdk.AccAddress{attacker})
+	policyAddr := sdk.MustAccAddressFromBech32(groupPolicy.Address)
+
+	// Whitelist the policy account and the distribution module, then fund the policy account.
+	for _, account := range []sdk.AccAddress{policyAddr, authtypes.NewModuleAddress(distributiontypes.ModuleName)} {
+		whitelistMsg := &assetfttypes.MsgSetWhitelistedLimit{
+			Sender:  attacker.String(),
+			Account: account.String(),
+			Coin:    sdk.NewInt64Coin(poisonDenom, 1_000_000_000),
+		}
+		_, err = client.BroadcastTx(ctx,
+			chain.ClientContext.WithFromAddress(attacker),
+			chain.TxFactory().WithGas(chain.GasLimitByMsgs(whitelistMsg)),
+			whitelistMsg)
+		requireT.NoError(err)
+	}
+
+	poisonAmount := sdk.NewInt64Coin(poisonDenom, 1_000_000)
+	sendMsg := &banktypes.MsgSend{
+		FromAddress: attacker.String(),
+		ToAddress:   policyAddr.String(),
+		Amount:      sdk.NewCoins(poisonAmount),
+	}
+	_, err = client.BroadcastTx(ctx,
+		chain.ClientContext.WithFromAddress(attacker),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendMsg)),
+		sendMsg)
+	requireT.NoError(err)
+
+	// The proposal carries the poison deposit, made by the policy account.
+	submitProposalMsg, err := group.NewMsgSubmitProposal(
+		groupPolicy.Address,
+		[]string{attacker.String()},
+		[]sdk.Msg{&distributiontypes.MsgDepositValidatorRewardsPool{
+			Depositor:        groupPolicy.Address,
+			ValidatorAddress: validatorAddr.String(),
+			Amount:           sdk.NewCoins(poisonAmount),
+		}},
+		"Poison deposit through a group proposal",
+		group.Exec_EXEC_UNSPECIFIED,
+		"Poison deposit",
+		"Poison deposit",
+	)
+	requireT.NoError(err)
+	proposal := submitGroupProposal(ctx, t, chain, attacker, submitProposalMsg)
+
+	voteMsg := &group.MsgVote{
+		ProposalId: proposal.Id,
+		Voter:      attacker.String(),
+		Option:     group.VOTE_OPTION_YES,
+		Exec:       group.Exec_EXEC_UNSPECIFIED,
+	}
+	_, err = client.BroadcastTx(ctx, chain.ClientContext.WithFromAddress(attacker), chain.TxFactoryAuto(), voteMsg)
+	requireT.NoError(err)
+
+	// Wait out the policy's minimum execution period.
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
+
+	execMsg := &group.MsgExec{ProposalId: proposal.Id, Executor: attacker.String()}
+	_, err = client.BroadcastTx(ctx, chain.ClientContext.WithFromAddress(attacker), chain.TxFactoryAuto(), execMsg)
+	requireT.NoError(err)
+
+	// The proposal passed, but its execution must fail on the handler check.
+	// A successful execution would prune the proposal, so this query also fails on a vulnerable build.
+	proposalInfo, err := groupClient.Proposal(ctx, &group.QueryProposalRequest{ProposalId: proposal.Id})
+	requireT.NoError(err)
+	requireT.Equal(group.PROPOSAL_STATUS_ACCEPTED, proposalInfo.Proposal.Status)
+	requireT.Equal(group.PROPOSAL_EXECUTOR_RESULT_FAILURE, proposalInfo.Proposal.ExecutorResult)
+
+	// No poison reached the pool, and the policy account still holds it.
+	outstandingResp, err := distrClient.ValidatorOutstandingRewards(ctx,
+		&distributiontypes.QueryValidatorOutstandingRewardsRequest{ValidatorAddress: validatorAddr.String()})
+	requireT.NoError(err)
+	requireT.True(outstandingResp.Rewards.Rewards.AmountOf(poisonDenom).IsZero(),
+		"no poison denom must be present in outstanding rewards")
+
+	policyBalance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: groupPolicy.Address, Denom: poisonDenom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(poisonAmount.Amount.String(), policyBalance.Balance.Amount.String())
 }

@@ -72,7 +72,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -168,6 +167,7 @@ import (
 	cwasmtypes "github.com/tokenize-x/tx-chain/v8/x/wasm/types"
 	"github.com/tokenize-x/tx-chain/v8/x/wbank"
 	wbankkeeper "github.com/tokenize-x/tx-chain/v8/x/wbank/keeper"
+	"github.com/tokenize-x/tx-chain/v8/x/wdistribution"
 	"github.com/tokenize-x/tx-chain/v8/x/wibctransfer"
 	wibctransferkeeper "github.com/tokenize-x/tx-chain/v8/x/wibctransfer/keeper"
 	"github.com/tokenize-x/tx-chain/v8/x/wnft"
@@ -911,7 +911,7 @@ func New(
 			app.GetSubspace(slashingtypes.ModuleName),
 			app.interfaceRegistry,
 		),
-		distr.NewAppModule(
+		wdistribution.NewAppModule(
 			appCodec, app.DistrKeeper,
 			app.AccountKeeper,
 			app.BankKeeper,
