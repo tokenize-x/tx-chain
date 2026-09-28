@@ -13,6 +13,7 @@ import (
 // MsgServer wraps the distribution message server.
 type MsgServer struct {
 	distrtypes.MsgServer
+
 	stakingKeeper wdistrtypes.StakingKeeper
 }
 
