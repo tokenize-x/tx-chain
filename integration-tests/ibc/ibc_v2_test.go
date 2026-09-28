@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 	"testing"
 	"time"
@@ -19,7 +18,6 @@ import (
 	tmtypes "github.com/cometbft/cometbft/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	gogoproto "github.com/cosmos/gogoproto/proto"
@@ -34,6 +32,7 @@ import (
 
 	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
 	"github.com/tokenize-x/tx-chain/v8/pkg/client"
+	"github.com/tokenize-x/tx-chain/v8/testutil/event"
 	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
 	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
@@ -231,7 +230,6 @@ func createTendermintClient(
 ) string {
 	t.Helper()
 
-	before := listClientIDs(ctx, t, chain)
 	header, err := counterparty.LatestBlockHeader(ctx)
 	require.NoError(t, err)
 
@@ -262,11 +260,14 @@ func createTendermintClient(
 
 	msg, err := clienttypes.NewMsgCreateClient(clientState, consensusState, chain.MustConvertToBech32Address(signer))
 	require.NoError(t, err)
-	_, err = chain.BroadcastTxWithSigner(ctx, chain.TxFactory().WithGas(createClientGasLimit), signer, msg)
+	res, err := chain.BroadcastTxWithSigner(ctx, chain.TxFactory().WithGas(createClientGasLimit), signer, msg)
 	require.NoError(t, err)
 
-	after := listClientIDs(ctx, t, chain)
-	clientID := findNewClientID(before, after)
+	// Read the ID from this tx's event, because tests running in parallel create clients at the same time.
+	clientID, err := event.FindStringEventAttribute(
+		res.Events, clienttypes.EventTypeCreateClient, clienttypes.AttributeKeyClientID,
+	)
+	require.NoError(t, err)
 	require.NotEmpty(t, clientID, "client id not found after creation")
 	return clientID
 }
@@ -290,34 +291,6 @@ func registerCounterparty(
 	)
 	_, err := chain.BroadcastTxWithSigner(ctx, chain.TxFactory().WithGas(registerCounterpartyGasLimit), signer, msg)
 	require.NoError(t, err)
-}
-
-// listClientIDs returns all IBC client IDs on the chain (e.g. 07-tendermint-0, 07-tendermint-1).
-func listClientIDs(ctx context.Context, t *testing.T, chain integration.Chain) []string {
-	t.Helper()
-	res, err := clienttypes.NewQueryClient(chain.ClientContext).ClientStates(ctx, &clienttypes.QueryClientStatesRequest{
-		Pagination: &query.PageRequest{Limit: math.MaxUint64},
-	})
-	require.NoError(t, err)
-	ids := make([]string, 0, len(res.ClientStates))
-	for _, cs := range res.ClientStates {
-		ids = append(ids, cs.ClientId)
-	}
-	return ids
-}
-
-// findNewClientID returns the single client ID that appears in after but not in before.
-func findNewClientID(before, after []string) string {
-	seen := make(map[string]struct{}, len(before))
-	for _, id := range before {
-		seen[id] = struct{}{}
-	}
-	for _, id := range after {
-		if _, ok := seen[id]; !ok {
-			return id
-		}
-	}
-	return ""
 }
 
 // updateTendermintClient submits a header from counterpartyChain to update the light client
@@ -514,10 +487,11 @@ func TestIBCV2TransferFailsIfIBCNotEnabled(t *testing.T) {
 	gaiaRelayer := gaiaChain.GenAccount()
 	fundRelayers(ctx, t, txChain, gaiaChain, txRelayer, gaiaRelayer)
 
+	// The packets are never relayed, so only the tx-chain side is set up. The counterparty client is not
+	// created on Gaia: its ID must differ from txClientID, because the ibc-go genesis validation rejects
+	// equal client and counterparty IDs, which would break the export test run after the integration tests.
 	txClientID := createTendermintClient(ctx, t, txChain.Chain, gaiaChain, txRelayer)
-	gaiaClientID := createTendermintClient(ctx, t, gaiaChain, txChain.Chain, gaiaRelayer)
-	registerCounterparty(ctx, t, txChain.Chain, txRelayer, txClientID, gaiaClientID)
-	registerCounterparty(ctx, t, gaiaChain, gaiaRelayer, gaiaClientID, txClientID)
+	registerCounterparty(ctx, t, txChain.Chain, txRelayer, txClientID, otherClientID(t, txClientID))
 
 	issuer := txChain.GenAccount()
 	sender := txChain.GenAccount()
@@ -607,4 +581,12 @@ func TestIBCV2TransferFailsIfIBCNotEnabled(t *testing.T) {
 	})
 	requireT.NoError(err)
 	requireT.True(balance.Balance.IsZero())
+}
+
+// otherClientID returns a valid client ID of the same type which differs from clientID.
+func otherClientID(t *testing.T, clientID string) string {
+	t.Helper()
+	clientType, sequence, err := clienttypes.ParseClientIdentifier(clientID)
+	require.NoError(t, err)
+	return clienttypes.FormatClientIdentifier(clientType, sequence+1_000_000)
 }
