@@ -2,11 +2,14 @@ package v8_test
 
 import (
 	"testing"
+	"time"
 
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/stretchr/testify/require"
 
 	v8 "github.com/tokenize-x/tx-chain/v8/app/upgrade/v8"
@@ -134,4 +137,44 @@ func TestClawbackFrozenFunds_BadAddressDoesNotStopTheRest(t *testing.T) {
 	})
 
 	requireT.Equal(funded.String(), testApp.BankKeeper.GetAllBalances(ctx, to).String())
+}
+
+// TestClawbackFrozenFunds_FailedTransferIsAtomic covers a transfer that fails after some denoms were debited.
+// The bank keeper debits denom by denom, so without a rollback the account loses coins nobody receives.
+func TestClawbackFrozenFunds_FailedTransferIsAtomic(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	ctx := testApp.NewContextLegacy(false, tmproto.Header{Time: time.Now()})
+
+	from := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	to := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+
+	// "aspendable" is debited first, then the send fails on the vesting-locked "zlocked".
+	locked := sdk.NewCoins(sdk.NewInt64Coin("zlocked", 100))
+	funded := locked.Add(sdk.NewInt64Coin("aspendable", 50))
+	vestingAcc, err := vestingtypes.NewDelayedVestingAccount(
+		authtypes.NewBaseAccountWithAddress(from), locked, ctx.BlockTime().Add(time.Hour).Unix(),
+	)
+	requireT.NoError(err)
+	testApp.AccountKeeper.SetAccount(ctx, testApp.AccountKeeper.NewAccount(ctx, vestingAcc))
+	requireT.NoError(testApp.FundAccount(ctx, from, funded))
+
+	v8.ClawbackFrozenFunds(ctx, testApp.BankKeeper, []v8.ClawbackTransfer{{From: from.String(), To: to.String()}})
+
+	requireT.Equal(funded.String(), testApp.BankKeeper.GetAllBalances(ctx, from).String())
+	requireT.True(testApp.BankKeeper.GetAllBalances(ctx, to).IsZero())
+
+	var failed bool
+	for _, event := range ctx.EventManager().Events() {
+		if event.Type != v8.EventTypeClawback {
+			continue
+		}
+		for _, attr := range event.Attributes {
+			if attr.Key == "error" {
+				failed = true
+			}
+		}
+	}
+	requireT.True(failed, "the failed clawback must be reported in the event")
 }
