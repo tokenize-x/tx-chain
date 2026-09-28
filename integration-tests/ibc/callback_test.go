@@ -11,12 +11,15 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
 	ibcwasm "github.com/tokenize-x/tx-chain/v8/integration-tests/contracts/ibc"
+	"github.com/tokenize-x/tx-chain/v8/pkg/client"
 	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
 
 // TestIBCWASMCallback tests ibc-callback integration by deploying the ibc-callbacks-counter WASM contract
@@ -181,4 +184,170 @@ type transferFunds struct {
 	Channel   string   `json:"channel"`
 	Amount    sdk.Coin `json:"amount"`
 	Recipient string   `json:"recipient"`
+}
+
+// TestIBCWASMCallbackCannotBypassAssetFTFreeze verifies that a contract executed from an IBC source callback
+// cannot move asset-ft tokens frozen by the issuer.
+// The callback runs while the transfer's acknowledgement is processed, so it sees the acknowledgement purpose,
+// which exempts the transfer module's own refunds from the asset-ft checks.
+func TestIBCWASMCallbackCannotBypassAssetFTFreeze(t *testing.T) {
+	t.Parallel()
+
+	ctx, chains := integrationtests.NewChainsTestingContext(t)
+	requireT := require.New(t)
+	txChain := chains.TXChain
+	gaiaChain := chains.Gaia
+
+	gaiaChain.AwaitForIBCChannelID(
+		ctx, t, ibctransfertypes.PortID, txChain.ChainContext,
+	)
+	txToGaiaChannelID := txChain.AwaitForIBCChannelID(
+		ctx, t, ibctransfertypes.PortID, gaiaChain.ChainContext,
+	)
+
+	issuer := txChain.GenAccount()
+	txContractAdmin := txChain.GenAccount()
+	frozenRecipient := txChain.GenAccount()
+	controlRecipient := txChain.GenAccount()
+
+	txChain.FundAccountWithOptions(ctx, t, issuer, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&assetfttypes.MsgIssue{},
+			&banktypes.MsgSend{},
+			&banktypes.MsgSend{},
+			&assetfttypes.MsgFreeze{},
+		},
+		Amount: txChain.QueryAssetFTParams(ctx, t).IssueFee.Amount,
+	})
+	txChain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
+		Address: txContractAdmin,
+		Amount:  txChain.NewCoin(sdkmath.NewInt(20_000_000)),
+	})
+
+	issueMsg := &assetfttypes.MsgIssue{
+		Issuer:        issuer.String(),
+		Symbol:        "FRZ",
+		Subunit:       "ufrz",
+		Precision:     6,
+		InitialAmount: sdkmath.NewInt(1_000_000),
+		Features:      []assetfttypes.Feature{assetfttypes.Feature_freezing},
+	}
+	_, err := client.BroadcastTx(
+		ctx,
+		txChain.ClientContext.WithFromAddress(issuer),
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(issueMsg)),
+		issueMsg,
+	)
+	requireT.NoError(err)
+	denom := assetfttypes.BuildDenom(issueMsg.Subunit, issuer)
+	callbackCoin := sdk.NewInt64Coin(denom, 100)
+
+	// ********** Deploy contracts **********
+
+	// Both contracts send callbackCoin to their recipient from the source callback.
+	// The balance of the first one gets frozen, the second one is the control.
+	codeID, err := txChain.Wasm.DeployWASMContract(
+		ctx, txChain.TxFactoryAuto(), txContractAdmin, ibcwasm.IBCCallbacksSender,
+	)
+	requireT.NoError(err)
+
+	ibcAmount := txChain.NewCoin(sdkmath.NewInt(1_000))
+	instantiate := func(recipient sdk.AccAddress, label string) string {
+		payload, err := json.Marshal(map[string]any{
+			"recipient": recipient.String(),
+			"amount":    callbackCoin,
+		})
+		requireT.NoError(err)
+		contractAddr, err := txChain.Wasm.InstantiateWASMContract(
+			ctx,
+			txChain.TxFactoryAuto(),
+			txContractAdmin,
+			integration.InstantiateConfig{
+				CodeID:     codeID,
+				AccessType: wasmtypes.AccessTypeUnspecified,
+				Payload:    payload,
+				Amount:     ibcAmount,
+				Label:      label,
+			},
+		)
+		requireT.NoError(err)
+		return contractAddr
+	}
+	frozenContract := instantiate(frozenRecipient, "ibc_callbacks_sender_frozen")
+	controlContract := instantiate(controlRecipient, "ibc_callbacks_sender_control")
+
+	for _, contractAddr := range []string{frozenContract, controlContract} {
+		sendMsg := &banktypes.MsgSend{
+			FromAddress: issuer.String(),
+			ToAddress:   contractAddr,
+			Amount:      sdk.NewCoins(callbackCoin),
+		}
+		_, err = client.BroadcastTx(
+			ctx,
+			txChain.ClientContext.WithFromAddress(issuer),
+			txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(sendMsg)),
+			sendMsg,
+		)
+		requireT.NoError(err)
+	}
+
+	freezeMsg := &assetfttypes.MsgFreeze{
+		Sender:  issuer.String(),
+		Account: frozenContract,
+		Coin:    callbackCoin,
+	}
+	_, err = client.BroadcastTx(
+		ctx,
+		txChain.ClientContext.WithFromAddress(issuer),
+		txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(freezeMsg)),
+		freezeMsg,
+	)
+	requireT.NoError(err)
+
+	// ********** Trigger the source callbacks **********
+
+	// Gaia rejects the invalid receiver, so the transfer module refunds ibcAmount on the error acknowledgement.
+	// The refund tells us that the acknowledgement, and so the callback, has been processed.
+	transferFundsPayload, err := json.Marshal(map[string]transferFunds{
+		"transfer_funds": {
+			Channel:   txToGaiaChannelID,
+			Amount:    ibcAmount,
+			Recipient: "invalid-receiver",
+		},
+	})
+	requireT.NoError(err)
+
+	for _, contractAddr := range []string{frozenContract, controlContract} {
+		_, err = txChain.Wasm.ExecuteWASMContract(
+			ctx,
+			txChain.TxFactoryAuto(),
+			txContractAdmin,
+			contractAddr,
+			transferFundsPayload,
+			sdk.Coin{},
+		)
+		requireT.NoError(err)
+	}
+
+	// The control callback moves its coins, so the callback path works.
+	requireT.NoError(txChain.AwaitForBalance(ctx, t, controlRecipient, callbackCoin))
+	requireT.NoError(txChain.AwaitForBalance(ctx, t, sdk.MustAccAddressFromBech32(controlContract), ibcAmount))
+
+	// The frozen contract got its refund, so its callback has run, but the frozen coins did not move.
+	requireT.NoError(txChain.AwaitForBalance(ctx, t, sdk.MustAccAddressFromBech32(frozenContract), ibcAmount))
+
+	bankClient := banktypes.NewQueryClient(txChain.ClientContext)
+	recipientBalance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: frozenRecipient.String(),
+		Denom:   denom,
+	})
+	requireT.NoError(err)
+	requireT.True(recipientBalance.Balance.IsZero(), "frozen coins must not be sent by the callback")
+
+	contractBalance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: frozenContract,
+		Denom:   denom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(callbackCoin.String(), contractBalance.Balance.String())
 }

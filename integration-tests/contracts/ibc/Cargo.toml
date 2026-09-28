@@ -4,6 +4,7 @@ members = [
     "ibc-hooks-counter",
     "ibc-transfer",
     "ibc-callbacks-counter",
+    "ibc-callbacks-sender",
 ]
 resolver = "2"
 
