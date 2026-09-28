@@ -33,7 +33,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	"github.com/tokenize-x/tx-chain/v8/pkg/client"
 	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
 
 const (
@@ -496,4 +498,113 @@ func waitForHeight(ctx context.Context, t *testing.T, chain integration.Chain, t
 		}
 		return nil
 	}, integration.WithAwaitStateTimeout(awaitHeightTimeout)))
+}
+
+// TestIBCV2TransferFailsIfIBCNotEnabled verifies that an IBC v2 transfer of an asset-ft token
+// is rejected when the issuer did not enable IBC, the same as on IBC v1.
+func TestIBCV2TransferFailsIfIBCNotEnabled(t *testing.T) {
+	t.Parallel()
+
+	ctx, chains := integrationtests.NewChainsTestingContext(t)
+	requireT := require.New(t)
+	txChain := chains.TXChain
+	gaiaChain := chains.Gaia
+
+	txRelayer := txChain.GenAccount()
+	gaiaRelayer := gaiaChain.GenAccount()
+	fundRelayers(ctx, t, txChain, gaiaChain, txRelayer, gaiaRelayer)
+
+	txClientID := createTendermintClient(ctx, t, txChain.Chain, gaiaChain, txRelayer)
+	gaiaClientID := createTendermintClient(ctx, t, gaiaChain, txChain.Chain, gaiaRelayer)
+	registerCounterparty(ctx, t, txChain.Chain, txRelayer, txClientID, gaiaClientID)
+	registerCounterparty(ctx, t, gaiaChain, gaiaRelayer, gaiaClientID, txClientID)
+
+	issuer := txChain.GenAccount()
+	sender := txChain.GenAccount()
+	recipient := gaiaChain.GenAccount()
+
+	txChain.FundAccountWithOptions(ctx, t, issuer, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&assetfttypes.MsgIssue{},
+			&assetfttypes.MsgIssue{},
+			&banktypes.MsgSend{},
+			&banktypes.MsgSend{},
+		},
+		Amount: txChain.QueryAssetFTParams(ctx, t).IssueFee.Amount.MulRaw(2),
+	})
+	// MsgSendPacket is nondeterministic gas.
+	txChain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
+		Address: sender,
+		Amount:  txChain.NewCoin(sdkmath.NewInt(senderFundAmount)),
+	})
+
+	issue := func(subunit string, features []assetfttypes.Feature) sdk.Coin {
+		issueMsg := &assetfttypes.MsgIssue{
+			Issuer:        issuer.String(),
+			Symbol:        strings.ToUpper(subunit),
+			Subunit:       subunit,
+			Precision:     6,
+			InitialAmount: sdkmath.NewInt(1_000_000),
+			Features:      features,
+		}
+		_, err := client.BroadcastTx(
+			ctx,
+			txChain.ClientContext.WithFromAddress(issuer),
+			txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(issueMsg)),
+			issueMsg,
+		)
+		requireT.NoError(err)
+		return sdk.NewInt64Coin(assetfttypes.BuildDenom(subunit, issuer), 1_000)
+	}
+	ibcDisabledCoin := issue("unoibc", nil)
+	ibcEnabledCoin := issue("uwithibc", []assetfttypes.Feature{assetfttypes.Feature_ibc})
+
+	for _, coin := range []sdk.Coin{ibcDisabledCoin, ibcEnabledCoin} {
+		sendMsg := &banktypes.MsgSend{
+			FromAddress: issuer.String(),
+			ToAddress:   sender.String(),
+			Amount:      sdk.NewCoins(coin),
+		}
+		_, err := client.BroadcastTx(
+			ctx,
+			txChain.ClientContext.WithFromAddress(issuer),
+			txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(sendMsg)),
+			sendMsg,
+		)
+		requireT.NoError(err)
+	}
+
+	sendPacket := func(coin sdk.Coin) error {
+		timeoutTS := uint64(time.Now().Add(packetTimeout).Unix())
+		payload := buildTransferPayload(t, buildTransferMsg(txChain, gaiaChain, sender, recipient, coin, timeoutTS))
+		_, err := txChain.BroadcastTxWithSigner(
+			ctx,
+			txChain.TxFactoryAuto(),
+			sender,
+			channeltypesv2.NewMsgSendPacket(txClientID, timeoutTS, txChain.MustConvertToBech32Address(sender), payload),
+		)
+		return err
+	}
+
+	// The token with IBC disabled must not leave the chain.
+	err := sendPacket(ibcDisabledCoin)
+	requireT.Error(err)
+	requireT.ErrorContains(err, "ibc transfers are disabled")
+
+	bankClient := banktypes.NewQueryClient(txChain.ClientContext)
+	balance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: sender.String(),
+		Denom:   ibcDisabledCoin.Denom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(ibcDisabledCoin.String(), balance.Balance.String())
+
+	// The token with IBC enabled is escrowed, so the rejection above comes from the feature check.
+	requireT.NoError(sendPacket(ibcEnabledCoin))
+	balance, err = bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: sender.String(),
+		Denom:   ibcEnabledCoin.Denom,
+	})
+	requireT.NoError(err)
+	requireT.True(balance.Balance.IsZero())
 }

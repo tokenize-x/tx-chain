@@ -833,7 +833,7 @@ func New(
 
 	// Create IBCv2 Transfer Stack
 	var transferStackV2 ibcapi.IBCModule
-	transferStackV2 = transferv2.NewIBCModule(app.TransferKeeper.Keeper)
+	transferStackV2 = wibctransfer.NewPurposeMiddlewareV2(transferv2.NewIBCModule(app.TransferKeeper.Keeper))
 	transferStackV2 = ibccallbacksv2.NewIBCMiddleware(transferStackV2, app.IBCKeeper.ChannelKeeperV2,
 		ibcWasmStack, app.IBCKeeper.ChannelKeeperV2, maxCallbackGas)
 
