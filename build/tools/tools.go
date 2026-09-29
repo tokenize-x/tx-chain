@@ -90,32 +90,32 @@ var Tools = []tools.Tool{
 	// Check compatibility with wasmd before upgrading: https://github.com/CosmWasm/wasmd
 	tools.BinaryTool{
 		Name:    LibWASM,
-		Version: "v2.3.2",
+		Version: "v2.3.5",
 		Sources: tools.Sources{
 			tools.TargetPlatformLinuxAMD64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm_muslc.x86_64.a",
-				Hash: "sha256:4d03a4bf508c89a303e8d7d0236feac44a40f6b6e221df4076968abe9d1e49c6",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.5/libwasmvm_muslc.x86_64.a",
+				Hash: "sha256:3b769d0e6a95724f71c7555c33b91270a207b7119ce7750c69b7de28b247ba14",
 				Binaries: map[string]string{
 					"lib/libwasmvm_muslc.x86_64.a": "libwasmvm_muslc.x86_64.a",
 				},
 			},
 			tools.TargetPlatformLinuxARM64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm_muslc.aarch64.a",
-				Hash: "sha256:4b87af3c8aac1756ee1aa1e06daefe3a7f5a3469a3c8d77ad07513539606f8a6",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.5/libwasmvm_muslc.aarch64.a",
+				Hash: "sha256:cb3039a354dd0afce06b55e76e62ec6ce6b4528c6811eb617894763dd61119f9",
 				Binaries: map[string]string{
 					"lib/libwasmvm_muslc.aarch64.a": "libwasmvm_muslc.aarch64.a",
 				},
 			},
 			tools.TargetPlatformDarwinAMD64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvmstatic_darwin.a",
-				Hash: "sha256:5c2aac650d13fc7e34e895878a0f69266f74c539db6bf5d90d3d4d66d2982a11",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.5/libwasmvmstatic_darwin.a",
+				Hash: "sha256:3696f3b214f729ec7eda112bea7d21dab447ca5d897472871ded222c582ad687",
 				Binaries: map[string]string{
 					"lib/libwasmvmstatic_darwin.a": "libwasmvmstatic_darwin.a",
 				},
 			},
 			tools.TargetPlatformDarwinARM64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvmstatic_darwin.a",
-				Hash: "sha256:5c2aac650d13fc7e34e895878a0f69266f74c539db6bf5d90d3d4d66d2982a11",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.5/libwasmvmstatic_darwin.a",
+				Hash: "sha256:3696f3b214f729ec7eda112bea7d21dab447ca5d897472871ded222c582ad687",
 				Binaries: map[string]string{
 					"lib/libwasmvmstatic_darwin.a": "libwasmvmstatic_darwin.a",
 				},
@@ -126,18 +126,18 @@ var Tools = []tools.Tool{
 	// https://github.com/CosmWasm/wasmvm/releases
 	tools.BinaryTool{
 		Name:    LibWASMGlibc,
-		Version: "v2.3.2",
+		Version: "v2.3.5",
 		Sources: tools.Sources{
 			tools.TargetPlatformLinuxAMD64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm.x86_64.so",
-				Hash: "sha256:0b51f84345f01cc287356e393ece8e10c47ab8c2aa2b04b9727be32f12d3daba",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.5/libwasmvm.x86_64.so",
+				Hash: "sha256:b60e260934d163a4d64be51e1dc93cd6647a632d850899a4d8f07f8f89da7957",
 				Binaries: map[string]string{
 					"lib/libwasmvm.x86_64.so": "libwasmvm.x86_64.so",
 				},
 			},
 			tools.TargetPlatformLinuxARM64InDocker: {
-				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.2/libwasmvm.aarch64.so",
-				Hash: "sha256:c9913881add185f00550356dd5434f5852ffabed7cbe9cd5d0e84a3cd1957d91",
+				URL:  "https://github.com/CosmWasm/wasmvm/releases/download/v2.3.5/libwasmvm.aarch64.so",
+				Hash: "sha256:9d812d0801753c4aff17c2fc5dfd476e738c9aaa04f64517027b88c43f4c134b",
 				Binaries: map[string]string{
 					"lib/libwasmvm.aarch64.so": "libwasmvm.aarch64.so",
 				},

@@ -29,6 +29,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -181,6 +182,11 @@ const (
 
 	// DefaultChainID is the default chain id of the network.
 	DefaultChainID = constant.ChainIDMain
+
+	// MaxWasmFunctionLocals is the max number of locals per function accepted when storing wasm code.
+	// It raises the cosmwasm-vm default of 100 so that contracts compiled with more locals can still be stored.
+	// It is consensus-relevant: all nodes must validate MsgStoreCode against the same value.
+	MaxWasmFunctionLocals uint32 = 120
 )
 
 // ChosenNetwork is a hacky solution to pass network config
@@ -724,7 +730,11 @@ func New(
 		panic(errors.Wrapf(err, "error while reading wasm node config"))
 	}
 
-	wasmVMConfig := wasmtypes.VMConfig{}
+	wasmVMConfig := wasmtypes.VMConfig{
+		WasmLimits: wasmvmtypes.WasmLimits{
+			MaxFunctionLocals: lo.ToPtr(MaxWasmFunctionLocals),
+		},
+	}
 
 	wasmOpts := []wasmkeeper.Option{
 		wasmkeeper.WithAcceptedAccountTypesOnContractInstantiation(
