@@ -53,6 +53,8 @@ func TestUpgrade(t *testing.T) {
 func upgradeV7ToV8(t *testing.T) {
 	tests := []upgradeTest{
 		&clawbackTest{},
+		&psePostponeTest{},
+		&mintParamsTest{},
 	}
 
 	for _, test := range tests {
