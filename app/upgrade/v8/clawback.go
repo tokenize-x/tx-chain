@@ -48,7 +48,7 @@ var ClawbackTransfers = map[constant.ChainID][]ClawbackTransfer{
 
 // ClawbackFrozenFunds moves the full balance of every configured account to its recipient.
 // It calls the embedded BaseKeeper, because the wrapper's SendCoins runs the hook that freezes these accounts.
-// A failure is logged and emitted, and the remaining transfers still run.
+// A failed transfer is rolled back, logged and emitted, and the remaining transfers still run.
 func ClawbackFrozenFunds(
 	ctx context.Context,
 	bankKeeper wbankkeeper.BaseKeeperWrapper,
@@ -58,7 +58,9 @@ func ClawbackFrozenFunds(
 	logger := sdkCtx.Logger().With("upgrade", Name, "step", "clawback")
 
 	for _, transfer := range transfers {
-		amount, err := clawback(ctx, bankKeeper, transfer)
+		// The bank keeper debits denom by denom, so a failed send must be rolled back as a whole.
+		cacheCtx, writeCache := sdkCtx.CacheContext()
+		amount, err := clawback(cacheCtx, bankKeeper, transfer) //nolint:contextcheck // this is correct context passing
 		if err != nil {
 			logger.Error("clawback failed",
 				"from", transfer.From, "to", transfer.To, "amount", amount, "error", err.Error())
@@ -72,6 +74,7 @@ func ClawbackFrozenFunds(
 
 			continue
 		}
+		writeCache()
 
 		logger.Info("clawback done", "from", transfer.From, "to", transfer.To, "amount", amount)
 		sdkCtx.EventManager().EmitEvent(sdk.NewEvent(

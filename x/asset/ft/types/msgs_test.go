@@ -885,3 +885,36 @@ func TestAmino(t *testing.T) {
 		})
 	}
 }
+
+// TestAdminMsgs_RejectNonCanonicalDenom verifies that admin messages reject a denom spelled differently from
+// its canonical form. An all-uppercase issuer resolves to the same token, but the state would be written
+// under the non-canonical key, so the action would silently have no effect on the real token.
+func TestAdminMsgs_RejectNonCanonicalDenom(t *testing.T) {
+	admin := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	account := sdk.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	canonical := types.BuildDenom("abc", admin)
+	upperIssuer := "abc-" + strings.ToUpper(admin.String())
+
+	msgs := func(denom string) []sdk.HasValidateBasic {
+		coin := sdk.Coin{Denom: denom, Amount: sdkmath.NewInt(1)}
+		return []sdk.HasValidateBasic{
+			&types.MsgMint{Sender: admin.String(), Coin: coin},
+			&types.MsgFreeze{Sender: admin.String(), Account: account.String(), Coin: coin},
+			&types.MsgUnfreeze{Sender: admin.String(), Account: account.String(), Coin: coin},
+			&types.MsgSetFrozen{Sender: admin.String(), Account: account.String(), Coin: coin},
+			&types.MsgGloballyFreeze{Sender: admin.String(), Denom: denom},
+			&types.MsgGloballyUnfreeze{Sender: admin.String(), Denom: denom},
+			&types.MsgClawback{Sender: admin.String(), Account: account.String(), Coin: coin},
+			&types.MsgSetWhitelistedLimit{Sender: admin.String(), Account: account.String(), Coin: coin},
+			&types.MsgTransferAdmin{Sender: admin.String(), Account: account.String(), Denom: denom},
+			&types.MsgClearAdmin{Sender: admin.String(), Denom: denom},
+		}
+	}
+
+	for _, msg := range msgs(canonical) {
+		require.NoErrorf(t, msg.ValidateBasic(), "%T must accept the canonical denom", msg)
+	}
+	for _, msg := range msgs(upperIssuer) {
+		require.ErrorIsf(t, msg.ValidateBasic(), types.ErrInvalidDenom, "%T must reject %s", msg, upperIssuer)
+	}
+}

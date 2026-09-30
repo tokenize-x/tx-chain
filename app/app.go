@@ -29,6 +29,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -72,7 +73,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -168,6 +168,7 @@ import (
 	cwasmtypes "github.com/tokenize-x/tx-chain/v8/x/wasm/types"
 	"github.com/tokenize-x/tx-chain/v8/x/wbank"
 	wbankkeeper "github.com/tokenize-x/tx-chain/v8/x/wbank/keeper"
+	"github.com/tokenize-x/tx-chain/v8/x/wdistribution"
 	"github.com/tokenize-x/tx-chain/v8/x/wibctransfer"
 	wibctransferkeeper "github.com/tokenize-x/tx-chain/v8/x/wibctransfer/keeper"
 	"github.com/tokenize-x/tx-chain/v8/x/wnft"
@@ -181,6 +182,11 @@ const (
 
 	// DefaultChainID is the default chain id of the network.
 	DefaultChainID = constant.ChainIDMain
+
+	// MaxWasmFunctionLocals is the max number of locals per function accepted when storing wasm code.
+	// It raises the cosmwasm-vm default of 100 so that contracts compiled with more locals can still be stored.
+	// It is consensus-relevant: all nodes must validate MsgStoreCode against the same value.
+	MaxWasmFunctionLocals uint32 = 120
 )
 
 // ChosenNetwork is a hacky solution to pass network config
@@ -724,7 +730,11 @@ func New(
 		panic(errors.Wrapf(err, "error while reading wasm node config"))
 	}
 
-	wasmVMConfig := wasmtypes.VMConfig{}
+	wasmVMConfig := wasmtypes.VMConfig{
+		WasmLimits: wasmvmtypes.WasmLimits{
+			MaxFunctionLocals: lo.ToPtr(MaxWasmFunctionLocals),
+		},
+	}
 
 	wasmOpts := []wasmkeeper.Option{
 		wasmkeeper.WithAcceptedAccountTypesOnContractInstantiation(
@@ -833,7 +843,7 @@ func New(
 
 	// Create IBCv2 Transfer Stack
 	var transferStackV2 ibcapi.IBCModule
-	transferStackV2 = transferv2.NewIBCModule(app.TransferKeeper.Keeper)
+	transferStackV2 = wibctransfer.NewPurposeMiddlewareV2(transferv2.NewIBCModule(app.TransferKeeper.Keeper))
 	transferStackV2 = ibccallbacksv2.NewIBCMiddleware(transferStackV2, app.IBCKeeper.ChannelKeeperV2,
 		ibcWasmStack, app.IBCKeeper.ChannelKeeperV2, maxCallbackGas)
 
@@ -911,7 +921,7 @@ func New(
 			app.GetSubspace(slashingtypes.ModuleName),
 			app.interfaceRegistry,
 		),
-		distr.NewAppModule(
+		wdistribution.NewAppModule(
 			appCodec, app.DistrKeeper,
 			app.AccountKeeper,
 			app.BankKeeper,
@@ -1218,6 +1228,7 @@ func New(
 			app.ModuleManager,
 			app.configurator,
 			app.BankKeeper,
+			app.psePauseKeepers(),
 		),
 	}
 
@@ -1298,8 +1309,20 @@ func (app *App) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 }
 
 // EndBlocker application updates every end block.
+// It also sets the PSE pause mint params when the November 2026 PSE distribution completes.
 func (app *App) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
-	return app.ModuleManager.EndBlock(ctx)
+	lastProcessed, err := appupgradev8.LastProcessedPSEDistributionID(ctx, app.PSEKeeper)
+	if err != nil {
+		return sdk.EndBlock{}, err
+	}
+
+	res, err := app.ModuleManager.EndBlock(ctx)
+	if err != nil {
+		return res, err
+	}
+	appupgradev8.ApplyPSEPauseMintParams(ctx, app.psePauseKeepers(), lastProcessed)
+
+	return res, nil
 }
 
 // Configurator returns the app Configurator.
@@ -1499,4 +1522,14 @@ func excludeModules(modules map[string]interface{}, modulesToExclude []string) m
 	}
 
 	return filteredModules
+}
+
+// psePauseKeepers returns the keepers used to set the PSE pause mint params.
+func (app *App) psePauseKeepers() appupgradev8.PSEPauseKeepers {
+	return appupgradev8.PSEPauseKeepers{
+		PSE:     app.PSEKeeper,
+		Mint:    app.MintKeeper,
+		Staking: app.StakingKeeper,
+		Bank:    app.BankKeeper,
+	}
 }

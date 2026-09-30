@@ -73,6 +73,15 @@ func (k Keeper) applyFeatures(ctx sdk.Context, input banktypes.Input, outputs []
 	if constant.IsFrozen(ctx.BlockHeight(), sender.String()) {
 		return sdkerrors.Wrapf(cosmoserrors.ErrUnauthorized, "address %s is frozen", sender.String())
 	}
+
+	// Smart contracts executed inside the IBC stack (ibc-hooks, ibc-callbacks) inherit the purpose of the packet.
+	// The incoming, ack and timeout exemptions are meant only for the transfers made by the IBC transfer module,
+	// so they must not apply to transfers triggered by a smart contract.
+	// The outgoing purpose is kept, because it is set by the transfer keeper for each MsgTransfer.
+	if cwasmtypes.IsTriggeredBySmartContract(ctx) && !wibctransfertypes.IsPurposeOut(ctx) {
+		ctx = wibctransfertypes.WithoutPurpose(ctx)
+	}
+
 	for _, output := range outputs {
 		outputCoinsSum = outputCoinsSum.Add(output.Coins...)
 		recipient, err := sdk.AccAddressFromBech32(output.Address)
