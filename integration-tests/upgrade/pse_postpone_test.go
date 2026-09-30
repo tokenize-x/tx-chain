@@ -99,16 +99,20 @@ func (p *psePostponeTest) After(t *testing.T) {
 	}
 }
 
-// mintParamsTest verifies that the v8 upgrade pins inflation for the PSE postponement.
+// mintParamsTest verifies that the v8 upgrade leaves the mint params alone until the PSE pause starts.
+// The seeded devnet schedule still has its November 2026 distribution ahead, so the pause has not started yet.
+// Applying the params when the November distribution completes is covered by the app/upgrade/v8 unit tests.
 type mintParamsTest struct {
 	before minttypes.Params
 }
 
 func (m *mintParamsTest) Before(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	requireT := require.New(t)
 
-	res, err := minttypes.NewQueryClient(chain.ClientContext).Params(ctx, &minttypes.QueryParamsRequest{})
-	require.NoError(t, err)
+	mintClient := minttypes.NewQueryClient(chain.ClientContext)
+	res, err := mintClient.Params(ctx, &minttypes.QueryParamsRequest{})
+	requireT.NoError(err)
 	m.before = res.Params
 }
 
@@ -116,18 +120,8 @@ func (m *mintParamsTest) After(t *testing.T) {
 	ctx, chain := integrationtests.NewTXChainTestingContext(t)
 	requireT := require.New(t)
 
-	mintClient := minttypes.NewQueryClient(chain.ClientContext)
-	paramsRes, err := mintClient.Params(ctx, &minttypes.QueryParamsRequest{})
+	res, err := minttypes.NewQueryClient(chain.ClientContext).Params(ctx, &minttypes.QueryParamsRequest{})
 	requireT.NoError(err)
-	params := paramsRes.Params
-	requireT.Equal(appupgradev8.PSEPauseInflation.String(), params.InflationMin.String())
-	requireT.Equal(appupgradev8.PSEPauseInflation.String(), params.InflationMax.String())
-	requireT.Equal(appupgradev8.PSEPauseBlocksPerYear, params.BlocksPerYear)
-	requireT.Equal(m.before.MintDenom, params.MintDenom)
-	requireT.Equal(m.before.InflationRateChange.String(), params.InflationRateChange.String())
-	requireT.Equal(m.before.GoalBonded.String(), params.GoalBonded.String())
-
-	inflationRes, err := mintClient.Inflation(ctx, &minttypes.QueryInflationRequest{})
-	requireT.NoError(err)
-	requireT.Equal(appupgradev8.PSEPauseInflation.String(), inflationRes.Inflation.String())
+	requireT.Equal(m.before.String(), res.Params.String(), "mint params must not change before the PSE pause starts")
+	requireT.NotEqual(appupgradev8.PSEPauseBlocksPerYear, res.Params.BlocksPerYear)
 }

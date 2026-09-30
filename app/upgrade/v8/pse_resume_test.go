@@ -45,29 +45,8 @@ func TestPostponePSEDistributions_PauseAndResume(t *testing.T) {
 	requireT.NoError(pseKeeper.LastProcessedDistributionID.Set(ctx, lastProcessedID))
 	requireT.NoError(v8.PostponePSEDistributions(ctx, pseKeeper, v8.PSEPostponeCutoff))
 
-	// Fund the clearing accounts for the first postponed distribution and give each non-community account a recipient.
 	resumed := schedule[lastProcessedID]
-	recipients := map[string]sdk.AccAddress{}
-	mappings := make([]psetypes.ClearingAccountMapping, 0)
-	for _, allocation := range resumed.Allocations {
-		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocation.Amount))
-		requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, coins))
-		requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
-			ctx, minttypes.ModuleName, allocation.ClearingAccount, coins,
-		))
-		if allocation.ClearingAccount == psetypes.ClearingAccountCommunity {
-			continue
-		}
-		recipient, _ := testApp.GenAccount(ctx)
-		recipients[allocation.ClearingAccount] = recipient
-		mappings = append(mappings, psetypes.ClearingAccountMapping{
-			ClearingAccount:    allocation.ClearingAccount,
-			RecipientAddresses: []string{recipient.String()},
-		})
-	}
-	requireT.NoError(pseKeeper.UpdateClearingAccountMappings(
-		ctx, authtypes.NewModuleAddress(govtypes.ModuleName).String(), mappings,
-	))
+	recipients := fundPSEDistribution(t, testApp, ctx, resumed)
 
 	operator, _ := testApp.GenAccount(ctx)
 	requireT.NoError(testApp.FundAccount(ctx, operator, sdk.NewCoins(sdk.NewInt64Coin(bondDenom, 1000))))
@@ -168,4 +147,44 @@ func TestPostponePSEDistributions_PauseAndResume(t *testing.T) {
 	requireT.False(due)
 	requireT.Equal(resumed.ID+1, next.ID)
 	requireT.Equal(uint64(time.Date(2028, time.January, 6, 12, 0, 0, 0, time.UTC).Unix()), next.Timestamp)
+}
+
+// fundPSEDistribution funds the clearing accounts for one distribution.
+// It maps each non-community account to a new recipient.
+// It returns the recipient of each non-community clearing account.
+func fundPSEDistribution(
+	t *testing.T,
+	testApp *simapp.App,
+	ctx sdk.Context,
+	distribution psetypes.ScheduledDistribution,
+) map[string]sdk.AccAddress {
+	t.Helper()
+	requireT := require.New(t)
+
+	bondDenom, err := testApp.StakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	recipients := map[string]sdk.AccAddress{}
+	mappings := make([]psetypes.ClearingAccountMapping, 0)
+	for _, allocation := range distribution.Allocations {
+		coins := sdk.NewCoins(sdk.NewCoin(bondDenom, allocation.Amount))
+		requireT.NoError(testApp.BankKeeper.MintCoins(ctx, minttypes.ModuleName, coins))
+		requireT.NoError(testApp.BankKeeper.SendCoinsFromModuleToModule(
+			ctx, minttypes.ModuleName, allocation.ClearingAccount, coins,
+		))
+		if allocation.ClearingAccount == psetypes.ClearingAccountCommunity {
+			continue
+		}
+		recipient, _ := testApp.GenAccount(ctx)
+		recipients[allocation.ClearingAccount] = recipient
+		mappings = append(mappings, psetypes.ClearingAccountMapping{
+			ClearingAccount:    allocation.ClearingAccount,
+			RecipientAddresses: []string{recipient.String()},
+		})
+	}
+	requireT.NoError(testApp.PSEKeeper.UpdateClearingAccountMappings(
+		ctx, authtypes.NewModuleAddress(govtypes.ModuleName).String(), mappings,
+	))
+
+	return recipients
 }

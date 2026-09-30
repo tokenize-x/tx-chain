@@ -1228,8 +1228,7 @@ func New(
 			app.ModuleManager,
 			app.configurator,
 			app.BankKeeper,
-			app.PSEKeeper,
-			app.MintKeeper,
+			app.psePauseKeepers(),
 		),
 	}
 
@@ -1310,8 +1309,20 @@ func (app *App) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 }
 
 // EndBlocker application updates every end block.
+// It also sets the PSE pause mint params when the November 2026 PSE distribution completes.
 func (app *App) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
-	return app.ModuleManager.EndBlock(ctx)
+	lastProcessed, err := appupgradev8.LastProcessedPSEDistributionID(ctx, app.PSEKeeper)
+	if err != nil {
+		return sdk.EndBlock{}, err
+	}
+
+	res, err := app.ModuleManager.EndBlock(ctx)
+	if err != nil {
+		return res, err
+	}
+	appupgradev8.ApplyPSEPauseMintParams(ctx, app.psePauseKeepers(), lastProcessed)
+
+	return res, nil
 }
 
 // Configurator returns the app Configurator.
@@ -1511,4 +1522,14 @@ func excludeModules(modules map[string]interface{}, modulesToExclude []string) m
 	}
 
 	return filteredModules
+}
+
+// psePauseKeepers returns the keepers used to set the PSE pause mint params.
+func (app *App) psePauseKeepers() appupgradev8.PSEPauseKeepers {
+	return appupgradev8.PSEPauseKeepers{
+		PSE:     app.PSEKeeper,
+		Mint:    app.MintKeeper,
+		Staking: app.StakingKeeper,
+		Bank:    app.BankKeeper,
+	}
 }
