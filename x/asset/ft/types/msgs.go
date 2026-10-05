@@ -147,7 +147,7 @@ func (m MsgMint) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid sender address")
 	}
 
-	if _, _, err := DeconstructDenom(m.Coin.Denom); err != nil {
+	if err := ValidateDenom(m.Coin.Denom); err != nil {
 		return err
 	}
 
@@ -177,7 +177,7 @@ func (m MsgFreeze) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid account address")
 	}
 
-	_, _, err := DeconstructDenom(m.Coin.Denom)
+	err := ValidateDenom(m.Coin.Denom)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (m MsgUnfreeze) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid account address")
 	}
 
-	if _, _, err := DeconstructDenom(m.Coin.Denom); err != nil {
+	if err := ValidateDenom(m.Coin.Denom); err != nil {
 		return err
 	}
 
@@ -212,7 +212,7 @@ func (m MsgSetFrozen) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid account address")
 	}
 
-	_, _, err := DeconstructDenom(m.Coin.Denom)
+	err := ValidateDenom(m.Coin.Denom)
 	if err != nil {
 		return err
 	}
@@ -226,11 +226,7 @@ func (m MsgGloballyFreeze) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid sender address")
 	}
 
-	if _, _, err := DeconstructDenom(m.Denom); err != nil {
-		return err
-	}
-
-	return nil
+	return ValidateDenom(m.Denom)
 }
 
 // ValidateBasic checks that message fields are valid.
@@ -239,11 +235,7 @@ func (m MsgGloballyUnfreeze) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid sender address")
 	}
 
-	if _, _, err := DeconstructDenom(m.Denom); err != nil {
-		return err
-	}
-
-	return nil
+	return ValidateDenom(m.Denom)
 }
 
 // ValidateBasic checks that message fields are valid.
@@ -256,7 +248,7 @@ func (m MsgClawback) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid account address")
 	}
 
-	_, _, err := DeconstructDenom(m.Coin.Denom)
+	err := ValidateDenom(m.Coin.Denom)
 	if err != nil {
 		return err
 	}
@@ -274,7 +266,7 @@ func (m MsgSetWhitelistedLimit) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid account address")
 	}
 
-	_, _, err := DeconstructDenom(m.Coin.Denom)
+	err := ValidateDenom(m.Coin.Denom)
 	if err != nil {
 		return err
 	}
@@ -292,7 +284,7 @@ func (m MsgTransferAdmin) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid account address")
 	}
 
-	_, _, err := DeconstructDenom(m.Denom)
+	err := ValidateDenom(m.Denom)
 	if err != nil {
 		return err
 	}
@@ -306,7 +298,7 @@ func (m MsgClearAdmin) ValidateBasic() error {
 		return sdkerrors.Wrap(cosmoserrors.ErrInvalidAddress, "invalid sender address")
 	}
 
-	_, _, err := DeconstructDenom(m.Denom)
+	err := ValidateDenom(m.Denom)
 	if err != nil {
 		return err
 	}

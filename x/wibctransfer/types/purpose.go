@@ -28,6 +28,11 @@ func WithPurpose(ctx sdk.Context, direction Purpose) sdk.Context {
 	return ctx.WithValue(purposeKey{}, direction)
 }
 
+// WithoutPurpose removes IBC transfer purpose from SDK context.
+func WithoutPurpose(ctx sdk.Context) sdk.Context {
+	return ctx.WithValue(purposeKey{}, nil)
+}
+
 // IsPurposeOut returns true if context is tagged with an outgoing transfer.
 func IsPurposeOut(ctx sdk.Context) bool {
 	d, ok := GetPurpose(ctx.Context())

@@ -96,6 +96,22 @@ func DeconstructDenom(denom string) (prefix string, issuer sdk.AccAddress, err e
 	return denomParts[0], address, nil
 }
 
+// ValidateDenom checks that the denom is a valid fungible token denom in its canonical form.
+// DeconstructDenom also accepts non-canonical spellings (e.g. an all-uppercase issuer) resolving to the same token,
+// but the state written for such a denom is stored under a different key and has no effect on the real token.
+func ValidateDenom(denom string) error {
+	subunit, issuer, err := DeconstructDenom(denom)
+	if err != nil {
+		return err
+	}
+
+	if canonical := BuildDenom(subunit, issuer); canonical != denom {
+		return sdkerrors.Wrapf(ErrInvalidDenom, "denom %s is not in canonical form %s", denom, canonical)
+	}
+
+	return nil
+}
+
 var reserved = []string{
 	strings.ToLower(constant.DenomDev),
 	strings.ToLower(constant.DenomDevDisplay),

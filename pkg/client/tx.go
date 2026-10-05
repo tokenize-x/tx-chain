@@ -191,12 +191,16 @@ func BuildTxForSimulation(
 
 		if multisigPubKey, ok := pubKey.(*multisig.LegacyAminoPubKey); ok {
 			multiSignatureData := make([]signing.SignatureData, 0, multisigPubKey.Threshold)
-			for range multisigPubKey.Threshold {
+			// The ante handler requires one bit per key, so mark the first threshold keys as signers.
+			bitArray := types.NewCompactBitArray(len(multisigPubKey.PubKeys))
+			for i := range multisigPubKey.Threshold {
 				multiSignatureData = append(multiSignatureData, &signing.SingleSignatureData{
 					SignMode: txf.SignMode(),
 				})
+				bitArray.SetIndex(int(i), true)
 			}
 			signatureData = &signing.MultiSignatureData{
+				BitArray:   bitArray,
 				Signatures: multiSignatureData,
 			}
 		}

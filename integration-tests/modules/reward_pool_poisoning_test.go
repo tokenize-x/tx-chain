@@ -6,15 +6,18 @@ import (
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	authztypes "github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/cosmos/cosmos-sdk/x/group"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	moduleswasm "github.com/tokenize-x/tx-chain/v8/integration-tests/contracts/modules"
 	"github.com/tokenize-x/tx-chain/v8/pkg/client"
 	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
 	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
@@ -321,4 +324,288 @@ func TestRewardPoolPoisoning(t *testing.T) {
 	})
 	requireT.NoError(err)
 	requireT.True(val1Resp.Validator.Tokens.IsPositive(), "validator must retain its tokens")
+}
+
+// TestRewardPoolPoisoning_GroupProposal sends the poison deposit through a group proposal.
+// Proposal execution does not pass through the ante handler, so the message handler must reject it.
+func TestRewardPoolPoisoning_GroupProposal(t *testing.T) {
+	t.Parallel()
+
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	requireT := require.New(t)
+	bankClient := banktypes.NewQueryClient(chain.ClientContext)
+	distrClient := distributiontypes.NewQueryClient(chain.ClientContext)
+	groupClient := group.NewQueryClient(chain.ClientContext)
+
+	customParamsClient := customparamstypes.NewQueryClient(chain.ClientContext)
+	customStakingParams, err := customParamsClient.StakingParams(ctx, &customparamstypes.QueryStakingParamsRequest{})
+	requireT.NoError(err)
+	validatorStakingAmount := customStakingParams.Params.MinSelfDelegation.Mul(sdkmath.NewInt(2))
+
+	// A dedicated validator, so a regression cannot poison validators other tests use.
+	_, validatorAddr, _, err := chain.CreateValidator(ctx, t, validatorStakingAmount, validatorStakingAmount)
+	requireT.NoError(err)
+
+	attacker := chain.GenAccount()
+	chain.FundAccountWithOptions(ctx, t, attacker, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&assetfttypes.MsgIssue{},
+			&group.MsgCreateGroupWithPolicy{},
+			&assetfttypes.MsgSetWhitelistedLimit{},
+			&assetfttypes.MsgSetWhitelistedLimit{},
+			&banktypes.MsgSend{},
+		},
+		Amount: chain.QueryAssetFTParams(ctx, t).IssueFee.Amount,
+	})
+	// Submit, vote and exec have non-deterministic gas.
+	chain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
+		Address: attacker,
+		Amount:  chain.NewCoin(sdkmath.NewInt(1_000_000)),
+	})
+
+	issueMsg := &assetfttypes.MsgIssue{
+		Issuer:        attacker.String(),
+		Symbol:        "POISONG",
+		Subunit:       "upoisong",
+		Precision:     6,
+		Description:   "Reward pool poisoning token",
+		InitialAmount: sdkmath.NewInt(1_000_000_000),
+		Features:      []assetfttypes.Feature{assetfttypes.Feature_whitelisting},
+	}
+	_, err = client.BroadcastTx(ctx,
+		chain.ClientContext.WithFromAddress(attacker),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(issueMsg)),
+		issueMsg)
+	requireT.NoError(err)
+	poisonDenom := assetfttypes.BuildDenom(issueMsg.Subunit, attacker)
+
+	// A single-member group, so the attacker alone can pass and execute proposals.
+	_, groupPolicy := createGroupWithPolicy(ctx, t, chain, attacker, []sdk.AccAddress{attacker})
+	policyAddr := sdk.MustAccAddressFromBech32(groupPolicy.Address)
+
+	// Whitelist the policy account and the distribution module, then fund the policy account.
+	for _, account := range []sdk.AccAddress{policyAddr, authtypes.NewModuleAddress(distributiontypes.ModuleName)} {
+		whitelistMsg := &assetfttypes.MsgSetWhitelistedLimit{
+			Sender:  attacker.String(),
+			Account: account.String(),
+			Coin:    sdk.NewInt64Coin(poisonDenom, 1_000_000_000),
+		}
+		_, err = client.BroadcastTx(ctx,
+			chain.ClientContext.WithFromAddress(attacker),
+			chain.TxFactory().WithGas(chain.GasLimitByMsgs(whitelistMsg)),
+			whitelistMsg)
+		requireT.NoError(err)
+	}
+
+	poisonAmount := sdk.NewInt64Coin(poisonDenom, 1_000_000)
+	sendMsg := &banktypes.MsgSend{
+		FromAddress: attacker.String(),
+		ToAddress:   policyAddr.String(),
+		Amount:      sdk.NewCoins(poisonAmount),
+	}
+	_, err = client.BroadcastTx(ctx,
+		chain.ClientContext.WithFromAddress(attacker),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendMsg)),
+		sendMsg)
+	requireT.NoError(err)
+
+	// The proposal carries the poison deposit, made by the policy account.
+	submitProposalMsg, err := group.NewMsgSubmitProposal(
+		groupPolicy.Address,
+		[]string{attacker.String()},
+		[]sdk.Msg{&distributiontypes.MsgDepositValidatorRewardsPool{
+			Depositor:        groupPolicy.Address,
+			ValidatorAddress: validatorAddr.String(),
+			Amount:           sdk.NewCoins(poisonAmount),
+		}},
+		"Poison deposit through a group proposal",
+		group.Exec_EXEC_UNSPECIFIED,
+		"Poison deposit",
+		"Poison deposit",
+	)
+	requireT.NoError(err)
+	proposal := submitGroupProposal(ctx, t, chain, attacker, submitProposalMsg)
+
+	voteMsg := &group.MsgVote{
+		ProposalId: proposal.Id,
+		Voter:      attacker.String(),
+		Option:     group.VOTE_OPTION_YES,
+		Exec:       group.Exec_EXEC_UNSPECIFIED,
+	}
+	_, err = client.BroadcastTx(ctx, chain.ClientContext.WithFromAddress(attacker), chain.TxFactoryAuto(), voteMsg)
+	requireT.NoError(err)
+
+	// Wait out the policy's minimum execution period.
+	requireT.NoError(client.AwaitNextBlocks(ctx, chain.ClientContext, 1))
+
+	execMsg := &group.MsgExec{ProposalId: proposal.Id, Executor: attacker.String()}
+	_, err = client.BroadcastTx(ctx, chain.ClientContext.WithFromAddress(attacker), chain.TxFactoryAuto(), execMsg)
+	requireT.NoError(err)
+
+	// The proposal passed, but its execution must fail on the handler check.
+	// A successful execution would prune the proposal, so this query also fails on a vulnerable build.
+	proposalInfo, err := groupClient.Proposal(ctx, &group.QueryProposalRequest{ProposalId: proposal.Id})
+	requireT.NoError(err)
+	requireT.Equal(group.PROPOSAL_STATUS_ACCEPTED, proposalInfo.Proposal.Status)
+	requireT.Equal(group.PROPOSAL_EXECUTOR_RESULT_FAILURE, proposalInfo.Proposal.ExecutorResult)
+
+	// No poison reached the pool, and the policy account still holds it.
+	outstandingResp, err := distrClient.ValidatorOutstandingRewards(ctx,
+		&distributiontypes.QueryValidatorOutstandingRewardsRequest{ValidatorAddress: validatorAddr.String()})
+	requireT.NoError(err)
+	requireT.True(outstandingResp.Rewards.Rewards.AmountOf(poisonDenom).IsZero(),
+		"no poison denom must be present in outstanding rewards")
+
+	policyBalance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: groupPolicy.Address, Denom: poisonDenom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(poisonAmount.Amount.String(), policyBalance.Balance.Amount.String())
+}
+
+// TestRewardPoolPoisoning_WasmAnyMsg sends the poison deposit from a smart contract as a CosmosMsg::Any.
+// Contract messages go straight to the message router without passing through the ante handler,
+// so the message handler must reject it.
+func TestRewardPoolPoisoning_WasmAnyMsg(t *testing.T) {
+	t.Parallel()
+
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+	requireT := require.New(t)
+	bankClient := banktypes.NewQueryClient(chain.ClientContext)
+	distrClient := distributiontypes.NewQueryClient(chain.ClientContext)
+
+	customParamsClient := customparamstypes.NewQueryClient(chain.ClientContext)
+	customStakingParams, err := customParamsClient.StakingParams(ctx, &customparamstypes.QueryStakingParamsRequest{})
+	requireT.NoError(err)
+	validatorStakingAmount := customStakingParams.Params.MinSelfDelegation.Mul(sdkmath.NewInt(2))
+
+	// A dedicated validator, so a regression cannot poison validators other tests use.
+	_, validatorAddr, _, err := chain.CreateValidator(ctx, t, validatorStakingAmount, validatorStakingAmount)
+	requireT.NoError(err)
+
+	bondDepositAmount := sdkmath.NewInt(1_000_000)
+	attacker := chain.GenAccount()
+	chain.FundAccountWithOptions(ctx, t, attacker, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&assetfttypes.MsgIssue{},
+			&assetfttypes.MsgSetWhitelistedLimit{},
+			&assetfttypes.MsgSetWhitelistedLimit{},
+			&banktypes.MsgSend{},
+		},
+		Amount: chain.QueryAssetFTParams(ctx, t).IssueFee.Amount,
+	})
+	// Contract deploy, instantiate and execute have non-deterministic gas.
+	// The bond-denom deposit amount is passed to the contract on instantiation.
+	chain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
+		Address: attacker,
+		Amount:  chain.NewCoin(sdkmath.NewInt(10_000_000).Add(bondDepositAmount)),
+	})
+
+	issueMsg := &assetfttypes.MsgIssue{
+		Issuer:        attacker.String(),
+		Symbol:        "POISONW",
+		Subunit:       "upoisonw",
+		Precision:     6,
+		Description:   "Reward pool poisoning token",
+		InitialAmount: sdkmath.NewInt(1_000_000_000),
+		Features:      []assetfttypes.Feature{assetfttypes.Feature_whitelisting},
+	}
+	_, err = client.BroadcastTx(ctx,
+		chain.ClientContext.WithFromAddress(attacker),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(issueMsg)),
+		issueMsg)
+	requireT.NoError(err)
+	poisonDenom := assetfttypes.BuildDenom(issueMsg.Subunit, attacker)
+
+	// The contract dispatches any message it is given as a CosmosMsg::Any, signed by the contract itself.
+	contractAddr, _, err := chain.Wasm.DeployAndInstantiateWASMContract(
+		ctx,
+		chain.TxFactoryAuto(),
+		attacker,
+		moduleswasm.AuthzStargateWASM,
+		integration.InstantiateConfig{
+			AccessType: wasmtypes.AccessTypeUnspecified,
+			Payload:    []byte("{}"),
+			Amount:     chain.NewCoin(bondDepositAmount),
+			Label:      "rewardPoolPoisoning",
+		},
+	)
+	requireT.NoError(err)
+
+	// Whitelist the contract and the distribution module, then fund the contract.
+	for _, account := range []string{contractAddr, authtypes.NewModuleAddress(distributiontypes.ModuleName).String()} {
+		whitelistMsg := &assetfttypes.MsgSetWhitelistedLimit{
+			Sender:  attacker.String(),
+			Account: account,
+			Coin:    sdk.NewInt64Coin(poisonDenom, 1_000_000_000),
+		}
+		_, err = client.BroadcastTx(ctx,
+			chain.ClientContext.WithFromAddress(attacker),
+			chain.TxFactory().WithGas(chain.GasLimitByMsgs(whitelistMsg)),
+			whitelistMsg)
+		requireT.NoError(err)
+	}
+
+	poisonAmount := sdk.NewInt64Coin(poisonDenom, 1_000_000)
+	sendMsg := &banktypes.MsgSend{
+		FromAddress: attacker.String(),
+		ToAddress:   contractAddr,
+		Amount:      sdk.NewCoins(poisonAmount),
+	}
+	_, err = client.BroadcastTx(ctx,
+		chain.ClientContext.WithFromAddress(attacker),
+		chain.TxFactory().WithGas(chain.GasLimitByMsgs(sendMsg)),
+		sendMsg)
+	requireT.NoError(err)
+
+	// The poison deposit made by the contract is rejected by the message handler.
+	_, err = chain.Wasm.ExecuteWASMContract(
+		ctx,
+		chain.TxFactoryAuto(),
+		attacker,
+		contractAddr,
+		moduleswasm.AuthZExecuteStargateRequest(&distributiontypes.MsgDepositValidatorRewardsPool{
+			Depositor:        contractAddr,
+			ValidatorAddress: validatorAddr.String(),
+			Amount:           sdk.NewCoins(poisonAmount),
+		}),
+		sdk.Coin{},
+	)
+	requireT.Error(err)
+	requireT.ErrorContains(err, "only the bond denom")
+
+	// No poison reached the pool, and the contract still holds it.
+	outstandingResp, err := distrClient.ValidatorOutstandingRewards(ctx,
+		&distributiontypes.QueryValidatorOutstandingRewardsRequest{ValidatorAddress: validatorAddr.String()})
+	requireT.NoError(err)
+	requireT.True(outstandingResp.Rewards.Rewards.AmountOf(poisonDenom).IsZero(),
+		"no poison denom must be present in outstanding rewards")
+
+	contractPoisonBalance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: contractAddr, Denom: poisonDenom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(poisonAmount.Amount.String(), contractPoisonBalance.Balance.Amount.String())
+
+	// A bond-denom deposit through the same path succeeds, so the rejection above comes from the denom check
+	// and the path really reaches the handler.
+	_, err = chain.Wasm.ExecuteWASMContract(
+		ctx,
+		chain.TxFactoryAuto(),
+		attacker,
+		contractAddr,
+		moduleswasm.AuthZExecuteStargateRequest(&distributiontypes.MsgDepositValidatorRewardsPool{
+			Depositor:        contractAddr,
+			ValidatorAddress: validatorAddr.String(),
+			Amount:           sdk.NewCoins(chain.NewCoin(bondDepositAmount)),
+		}),
+		sdk.Coin{},
+	)
+	requireT.NoError(err)
+
+	contractBondBalance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: contractAddr, Denom: chain.ChainSettings.Denom,
+	})
+	requireT.NoError(err)
+	requireT.True(contractBondBalance.Balance.Amount.IsZero(), "the contract must have deposited its bond-denom balance")
 }

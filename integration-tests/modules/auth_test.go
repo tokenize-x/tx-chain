@@ -364,11 +364,12 @@ func TestGasEstimation(t *testing.T) {
 	singlesigAddress := chain.GenAccount()
 	singlesigUnimportedAddress := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 
-	multisigPublicKey, _, err := chain.GenMultisigAccount(7, 6)
+	const multisigThreshold = 6
+	multisigPublicKey, _, err := chain.GenMultisigAccount(7, multisigThreshold)
 	require.NoError(t, err)
 	multisigAddress := sdk.AccAddress(multisigPublicKey.Address())
 
-	multisigUnimportedPublicKey := sdkmultisig.NewLegacyAminoPubKey(6, []cryptotypes.PubKey{
+	multisigUnimportedPublicKey := sdkmultisig.NewLegacyAminoPubKey(multisigThreshold, []cryptotypes.PubKey{
 		secp256k1.GenPrivKey().PubKey(),
 		secp256k1.GenPrivKey().PubKey(),
 		secp256k1.GenPrivKey().PubKey(),
@@ -468,7 +469,8 @@ func TestGasEstimation(t *testing.T) {
 
 						if signer == "multisig_6_7" && sign == "with_signature" {
 							bytesCost := uint64(len(txBytes)) * authParams.Params.TxSizeCostPerByte
-							signatureCost := uint64(3790)
+							// Each threshold signature is charged the secp256k1 verification cost.
+							signatureCost := uint64(3790) + multisigThreshold*authParams.Params.SigVerifyCostSecp256k1
 							signCost = bytesCost + signatureCost
 						}
 

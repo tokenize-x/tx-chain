@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 	"testing"
 	"time"
@@ -19,7 +18,6 @@ import (
 	tmtypes "github.com/cometbft/cometbft/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/query"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	gogoproto "github.com/cosmos/gogoproto/proto"
@@ -33,7 +31,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	integrationtests "github.com/tokenize-x/tx-chain/v8/integration-tests"
+	"github.com/tokenize-x/tx-chain/v8/pkg/client"
+	"github.com/tokenize-x/tx-chain/v8/testutil/event"
 	"github.com/tokenize-x/tx-chain/v8/testutil/integration"
+	assetfttypes "github.com/tokenize-x/tx-chain/v8/x/asset/ft/types"
 )
 
 const (
@@ -229,7 +230,6 @@ func createTendermintClient(
 ) string {
 	t.Helper()
 
-	before := listClientIDs(ctx, t, chain)
 	header, err := counterparty.LatestBlockHeader(ctx)
 	require.NoError(t, err)
 
@@ -260,11 +260,14 @@ func createTendermintClient(
 
 	msg, err := clienttypes.NewMsgCreateClient(clientState, consensusState, chain.MustConvertToBech32Address(signer))
 	require.NoError(t, err)
-	_, err = chain.BroadcastTxWithSigner(ctx, chain.TxFactory().WithGas(createClientGasLimit), signer, msg)
+	res, err := chain.BroadcastTxWithSigner(ctx, chain.TxFactory().WithGas(createClientGasLimit), signer, msg)
 	require.NoError(t, err)
 
-	after := listClientIDs(ctx, t, chain)
-	clientID := findNewClientID(before, after)
+	// Read the ID from this tx's event, because tests running in parallel create clients at the same time.
+	clientID, err := event.FindStringEventAttribute(
+		res.Events, clienttypes.EventTypeCreateClient, clienttypes.AttributeKeyClientID,
+	)
+	require.NoError(t, err)
 	require.NotEmpty(t, clientID, "client id not found after creation")
 	return clientID
 }
@@ -288,34 +291,6 @@ func registerCounterparty(
 	)
 	_, err := chain.BroadcastTxWithSigner(ctx, chain.TxFactory().WithGas(registerCounterpartyGasLimit), signer, msg)
 	require.NoError(t, err)
-}
-
-// listClientIDs returns all IBC client IDs on the chain (e.g. 07-tendermint-0, 07-tendermint-1).
-func listClientIDs(ctx context.Context, t *testing.T, chain integration.Chain) []string {
-	t.Helper()
-	res, err := clienttypes.NewQueryClient(chain.ClientContext).ClientStates(ctx, &clienttypes.QueryClientStatesRequest{
-		Pagination: &query.PageRequest{Limit: math.MaxUint64},
-	})
-	require.NoError(t, err)
-	ids := make([]string, 0, len(res.ClientStates))
-	for _, cs := range res.ClientStates {
-		ids = append(ids, cs.ClientId)
-	}
-	return ids
-}
-
-// findNewClientID returns the single client ID that appears in after but not in before.
-func findNewClientID(before, after []string) string {
-	seen := make(map[string]struct{}, len(before))
-	for _, id := range before {
-		seen[id] = struct{}{}
-	}
-	for _, id := range after {
-		if _, ok := seen[id]; !ok {
-			return id
-		}
-	}
-	return ""
 }
 
 // updateTendermintClient submits a header from counterpartyChain to update the light client
@@ -496,4 +471,122 @@ func waitForHeight(ctx context.Context, t *testing.T, chain integration.Chain, t
 		}
 		return nil
 	}, integration.WithAwaitStateTimeout(awaitHeightTimeout)))
+}
+
+// TestIBCV2TransferFailsIfIBCNotEnabled verifies that an IBC v2 transfer of an asset-ft token
+// is rejected when the issuer did not enable IBC, the same as on IBC v1.
+func TestIBCV2TransferFailsIfIBCNotEnabled(t *testing.T) {
+	t.Parallel()
+
+	ctx, chains := integrationtests.NewChainsTestingContext(t)
+	requireT := require.New(t)
+	txChain := chains.TXChain
+	gaiaChain := chains.Gaia
+
+	txRelayer := txChain.GenAccount()
+	gaiaRelayer := gaiaChain.GenAccount()
+	fundRelayers(ctx, t, txChain, gaiaChain, txRelayer, gaiaRelayer)
+
+	// The packets are never relayed, so only the tx-chain side is set up. The counterparty client is not
+	// created on Gaia: its ID must differ from txClientID, because the ibc-go genesis validation rejects
+	// equal client and counterparty IDs, which would break the export test run after the integration tests.
+	txClientID := createTendermintClient(ctx, t, txChain.Chain, gaiaChain, txRelayer)
+	registerCounterparty(ctx, t, txChain.Chain, txRelayer, txClientID, otherClientID(t, txClientID))
+
+	issuer := txChain.GenAccount()
+	sender := txChain.GenAccount()
+	recipient := gaiaChain.GenAccount()
+
+	txChain.FundAccountWithOptions(ctx, t, issuer, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&assetfttypes.MsgIssue{},
+			&assetfttypes.MsgIssue{},
+			&banktypes.MsgSend{},
+			&banktypes.MsgSend{},
+		},
+		Amount: txChain.QueryAssetFTParams(ctx, t).IssueFee.Amount.MulRaw(2),
+	})
+	// MsgSendPacket is nondeterministic gas.
+	txChain.Faucet.FundAccounts(ctx, t, integration.FundedAccount{
+		Address: sender,
+		Amount:  txChain.NewCoin(sdkmath.NewInt(senderFundAmount)),
+	})
+
+	issue := func(subunit string, features []assetfttypes.Feature) sdk.Coin {
+		issueMsg := &assetfttypes.MsgIssue{
+			Issuer:        issuer.String(),
+			Symbol:        strings.ToUpper(subunit),
+			Subunit:       subunit,
+			Precision:     6,
+			InitialAmount: sdkmath.NewInt(1_000_000),
+			Features:      features,
+		}
+		_, err := client.BroadcastTx(
+			ctx,
+			txChain.ClientContext.WithFromAddress(issuer),
+			txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(issueMsg)),
+			issueMsg,
+		)
+		requireT.NoError(err)
+		return sdk.NewInt64Coin(assetfttypes.BuildDenom(subunit, issuer), 1_000)
+	}
+	ibcDisabledCoin := issue("unoibc", nil)
+	ibcEnabledCoin := issue("uwithibc", []assetfttypes.Feature{assetfttypes.Feature_ibc})
+
+	for _, coin := range []sdk.Coin{ibcDisabledCoin, ibcEnabledCoin} {
+		sendMsg := &banktypes.MsgSend{
+			FromAddress: issuer.String(),
+			ToAddress:   sender.String(),
+			Amount:      sdk.NewCoins(coin),
+		}
+		_, err := client.BroadcastTx(
+			ctx,
+			txChain.ClientContext.WithFromAddress(issuer),
+			txChain.TxFactory().WithGas(txChain.GasLimitByMsgs(sendMsg)),
+			sendMsg,
+		)
+		requireT.NoError(err)
+	}
+
+	sendPacket := func(coin sdk.Coin) error {
+		timeoutTS := uint64(time.Now().Add(packetTimeout).Unix())
+		payload := buildTransferPayload(t, buildTransferMsg(txChain, gaiaChain, sender, recipient, coin, timeoutTS))
+		_, err := txChain.BroadcastTxWithSigner(
+			ctx,
+			txChain.TxFactoryAuto(),
+			sender,
+			channeltypesv2.NewMsgSendPacket(txClientID, timeoutTS, txChain.MustConvertToBech32Address(sender), payload),
+		)
+		return err
+	}
+
+	// The token with IBC disabled must not leave the chain.
+	err := sendPacket(ibcDisabledCoin)
+	requireT.Error(err)
+	requireT.ErrorContains(err, "ibc transfers are disabled")
+
+	bankClient := banktypes.NewQueryClient(txChain.ClientContext)
+	balance, err := bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: sender.String(),
+		Denom:   ibcDisabledCoin.Denom,
+	})
+	requireT.NoError(err)
+	requireT.Equal(ibcDisabledCoin.String(), balance.Balance.String())
+
+	// The token with IBC enabled is escrowed, so the rejection above comes from the feature check.
+	requireT.NoError(sendPacket(ibcEnabledCoin))
+	balance, err = bankClient.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: sender.String(),
+		Denom:   ibcEnabledCoin.Denom,
+	})
+	requireT.NoError(err)
+	requireT.True(balance.Balance.IsZero())
+}
+
+// otherClientID returns a valid client ID of the same type which differs from clientID.
+func otherClientID(t *testing.T, clientID string) string {
+	t.Helper()
+	clientType, sequence, err := clienttypes.ParseClientIdentifier(clientID)
+	require.NoError(t, err)
+	return clienttypes.FormatClientIdentifier(clientType, sequence+1_000_000)
 }
