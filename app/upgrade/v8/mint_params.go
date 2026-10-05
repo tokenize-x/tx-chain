@@ -142,7 +142,7 @@ func applyPSEPauseMintParams(ctx sdk.Context, keepers PSEPauseKeepers, lastProce
 	return SetPSEPauseMintParams(ctx, keepers)
 }
 
-// isLastPrePauseDistribution reports whether id is the last distribution on or before PSEPostponeCutoff.
+// isLastPrePauseDistribution reports whether id is the last distribution on or before the chain's postpone cutoff.
 // The next distribution must exist and be after the cutoff, so schedules without a pause never match.
 func isLastPrePauseDistribution(ctx context.Context, pseKeeper psekeeper.Keeper, id uint64) (bool, error) {
 	current, err := pseKeeper.AllocationSchedule.Get(ctx, id)
@@ -160,6 +160,6 @@ func isLastPrePauseDistribution(ctx context.Context, pseKeeper psekeeper.Keeper,
 		return false, err
 	}
 
-	cutoff := uint64(PSEPostponeCutoff.Unix())
+	cutoff := uint64(PSEPostponeCutoffFor(sdk.UnwrapSDKContext(ctx).ChainID()).Unix())
 	return current.Timestamp <= cutoff && next.Timestamp > cutoff, nil
 }

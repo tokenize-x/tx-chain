@@ -34,11 +34,11 @@ func New(
 			ClawbackFrozenFunds(ctx, bankKeeper, ClawbackTransfers[chainID])
 
 			// Mainnet proposal 46: postpone PSE by one year after the November 2026 distribution, and pin inflation meanwhile.
-			if err := PostponePSEDistributions(ctx, pauseKeepers.PSE, PSEPostponeCutoff); err != nil {
+			if err := PostponePSEDistributions(ctx, pauseKeepers.PSE, PSEPostponeCutoffFor(string(chainID))); err != nil {
 				return nil, err
 			}
-			// The pause mint params are normally set by the EndBlocker when the November distribution completes.
-			// If that already happened, set them here.
+			// The pause mint params are normally set by the EndBlocker when the last pre-pause distribution completes.
+			// If that already happened (upgrade after the cutoff distribution), set them here.
 			lastProcessed, err := LastProcessedPSEDistributionID(ctx, pauseKeepers.PSE)
 			if err != nil {
 				return nil, err
