@@ -17,6 +17,7 @@ import (
 // Every unprocessed distribution scheduled after it moves forward by PSEPostponeYears.
 var PSEPostponeCutoff = time.Date(2026, time.November, 6, 12, 0, 0, 0, time.UTC)
 
+// PSETestnetPostponeCutoff is the testnet cutoff, so the pause can be checked on testnet before mainnet.
 // Testnet pays on the 5th, so its October 2026 distribution is the last one kept.
 var PSETestnetPostponeCutoff = time.Date(2026, time.October, 5, 12, 0, 0, 0, time.UTC)
 
