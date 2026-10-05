@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 	psekeeper "github.com/tokenize-x/tx-chain/v8/x/pse/keeper"
 	psetypes "github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
@@ -15,6 +16,18 @@ import (
 // PSEPostponeCutoff is the last PSE distribution kept on its original date (mainnet proposal 46).
 // Every unprocessed distribution scheduled after it moves forward by PSEPostponeYears.
 var PSEPostponeCutoff = time.Date(2026, time.November, 6, 12, 0, 0, 0, time.UTC)
+
+// Testnet pays on the 5th, so its October 2026 distribution is the last one kept.
+var PSETestnetPostponeCutoff = time.Date(2026, time.October, 5, 12, 0, 0, 0, time.UTC)
+
+// PSEPostponeCutoffFor returns the cutoff for a chain: testnet has its own, every other chain uses PSEPostponeCutoff.
+func PSEPostponeCutoffFor(chainID string) time.Time {
+	if constant.ChainID(chainID) == constant.ChainIDTest {
+		return PSETestnetPostponeCutoff
+	}
+
+	return PSEPostponeCutoff
+}
 
 // PSEPostponeYears is how far the postponed distributions move (mainnet proposal 46).
 const PSEPostponeYears = 1

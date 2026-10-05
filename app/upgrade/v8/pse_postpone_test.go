@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	v8 "github.com/tokenize-x/tx-chain/v8/app/upgrade/v8"
+	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
 	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
 	psetypes "github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
@@ -99,13 +100,25 @@ func requirePostponed(
 	original []psetypes.ScheduledDistribution,
 ) {
 	t.Helper()
+	requirePostponedAt(t, testApp, ctx, original, v8.PSEPostponeCutoff)
+}
+
+// requirePostponedAt is requirePostponed for a given cutoff.
+func requirePostponedAt(
+	t *testing.T,
+	testApp *simapp.App,
+	ctx sdk.Context,
+	original []psetypes.ScheduledDistribution,
+	cutoffTime time.Time,
+) {
+	t.Helper()
 	requireT := require.New(t)
 
 	stored, err := testApp.PSEKeeper.GetDistributionSchedule(ctx)
 	requireT.NoError(err)
 	requireT.Len(stored, len(original))
 
-	cutoff := uint64(v8.PSEPostponeCutoff.Unix())
+	cutoff := uint64(cutoffTime.Unix())
 	for i, distribution := range stored {
 		requireT.Equal(original[i].ID, distribution.ID)
 		requireT.Equal(original[i].Allocations, distribution.Allocations)
@@ -152,19 +165,20 @@ func TestPostponePSEDistributions_MatchesProposal46(t *testing.T) {
 	requireT.NoError(psetypes.ValidateDistributionSchedule(unprocessed))
 }
 
-// TestPostponePSEDistributions_Testnet checks the testnet schedule, which pays on the 5th and is three IDs ahead.
-// The cutoff is a date, so November 5 stays and December 5, 2026 moves to December 5, 2027.
+// TestPostponePSEDistributions_Testnet checks the testnet schedule with the testnet cutoff (October 5, 2026).
+// Testnet pays on the 5th and is three IDs ahead of mainnet; its pause starts a month before mainnet's.
 func TestPostponePSEDistributions_Testnet(t *testing.T) {
 	requireT := require.New(t)
 
-	// Testnet state on 2026-09-29: distributions up to September 2026 (ID 9) are processed.
+	// Testnet state on 2026-10-02: distributions up to September 2026 (ID 9) are processed.
 	testApp, ctx, original := setupSchedule(t, testnetPSESchedule(), 9)
-	requireT.NoError(v8.PostponePSEDistributions(ctx, testApp.PSEKeeper, v8.PSEPostponeCutoff))
-	requirePostponed(t, testApp, ctx, original)
+	cutoff := v8.PSEPostponeCutoffFor(string(constant.ChainIDTest))
+	requireT.NoError(v8.PostponePSEDistributions(ctx, testApp.PSEKeeper, cutoff))
+	requirePostponedAt(t, testApp, ctx, original, cutoff)
 
 	expectedDates := map[uint64]time.Time{
 		10: time.Date(2026, time.October, 5, 12, 0, 0, 0, time.UTC),
-		11: time.Date(2026, time.November, 5, 12, 0, 0, 0, time.UTC),
+		11: time.Date(2027, time.November, 5, 12, 0, 0, 0, time.UTC),
 		12: time.Date(2027, time.December, 5, 12, 0, 0, 0, time.UTC),
 		86: time.Date(2034, time.February, 5, 12, 0, 0, 0, time.UTC),
 	}
