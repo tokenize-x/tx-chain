@@ -380,6 +380,9 @@ func buildTXdInDocker(
 			cc = "o64-clang"
 		case txcrusttools.TargetPlatformDarwinARM64InDocker:
 			cc = "oa64-clang"
+			// Wasmer 7 (libwasmvm v2.3.5) calls this unwind function, but the cross toolchain's macOS 12 SDK lacks it.
+			// It is resolved at runtime instead; macOS 14+ provides it.
+			ldFlags = append(ldFlags, "-extldflags '-Wl,-U,___unw_add_find_dynamic_unwind_sections'")
 		default:
 			return errors.Errorf("building is not possible for platform %s", targetPlatform)
 		}
