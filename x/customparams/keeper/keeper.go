@@ -55,6 +55,9 @@ func (k Keeper) UpdateStakingParams(ctx sdk.Context, authority string, params ty
 	if k.authority != authority {
 		return sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.authority, authority)
 	}
+	if err := params.ValidateBasic(); err != nil {
+		return err
+	}
 
 	return k.SetStakingParams(ctx, params)
 }

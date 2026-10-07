@@ -13,4 +13,11 @@ message StakingParams {
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
+  // max_voting_power is the max share of total bonded tokens a validator may reach through staking messages.
+  // 1 disables the cap.
+  string max_voting_power = 2 [
+    (gogoproto.moretags) = "yaml:\"max_voting_power\"",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false
+  ];
 }

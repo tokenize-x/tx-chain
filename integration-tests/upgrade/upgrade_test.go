@@ -55,6 +55,7 @@ func upgradeV7ToV8(t *testing.T) {
 		&clawbackTest{},
 		&psePostponeTest{},
 		&mintParamsTest{},
+		&maxVotingPowerTest{},
 	}
 
 	for _, test := range tests {
