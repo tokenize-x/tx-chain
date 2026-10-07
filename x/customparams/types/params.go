@@ -9,6 +9,9 @@ import (
 // ParamStoreKeyMinSelfDelegation defines the param key for the min_self_delegation param.
 var ParamStoreKeyMinSelfDelegation = []byte("minselfdelegation")
 
+// minMaxVotingPower is the lowest allowed max_voting_power.
+var minMaxVotingPower = sdkmath.LegacyNewDecWithPrec(1, 2)
+
 // StakingParamKeyTable returns the parameter key table.
 func StakingParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&StakingParams{})
@@ -18,6 +21,7 @@ func StakingParamKeyTable() paramtypes.KeyTable {
 func DefaultStakingParams() StakingParams {
 	return StakingParams{
 		MinSelfDelegation: sdkmath.OneInt(),
+		MaxVotingPower:    sdkmath.LegacyOneDec(),
 	}
 }
 
@@ -30,7 +34,10 @@ func (p *StakingParams) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // ValidateBasic performs basic validation on staking parameters.
 func (p StakingParams) ValidateBasic() error {
-	return validateMinSelfDelegation(p.MinSelfDelegation)
+	if err := validateMinSelfDelegation(p.MinSelfDelegation); err != nil {
+		return err
+	}
+	return validateMaxVotingPower(p.MaxVotingPower)
 }
 
 func validateMinSelfDelegation(i interface{}) error {
@@ -44,6 +51,17 @@ func validateMinSelfDelegation(i interface{}) error {
 	}
 	if !v.IsPositive() {
 		return errors.Errorf("param min_self_delegation must be positive: %s", v)
+	}
+
+	return nil
+}
+
+func validateMaxVotingPower(v sdkmath.LegacyDec) error {
+	if v.IsNil() {
+		return errors.New("param max_voting_power must be not nil")
+	}
+	if v.LT(minMaxVotingPower) || v.GT(sdkmath.LegacyOneDec()) {
+		return errors.Errorf("param max_voting_power must be between %s and 1: %s", minMaxVotingPower, v)
 	}
 
 	return nil

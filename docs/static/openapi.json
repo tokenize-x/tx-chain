@@ -10282,6 +10282,10 @@
         "min_self_delegation": {
           "type": "string",
           "description": "min_self_delegation is the validators global self declared minimum for delegation."
+        },
+        "max_voting_power": {
+          "type": "string",
+          "description": "max_voting_power is the max share of total bonded tokens a validator may reach through staking messages.\n1 disables the cap."
         }
       },
       "description": "StakingParams defines the set of additional staking params for the staking module wrapper."

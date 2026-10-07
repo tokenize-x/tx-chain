@@ -19,6 +19,7 @@ func TestKeeper_InitAndExportGenesis(t *testing.T) {
 	genState := types.GenesisState{
 		StakingParams: types.StakingParams{
 			MinSelfDelegation: sdkmath.OneInt(),
+			MaxVotingPower:    sdkmath.LegacyOneDec(),
 		},
 	}
 	keeper.InitGenesis(ctx, genState)
