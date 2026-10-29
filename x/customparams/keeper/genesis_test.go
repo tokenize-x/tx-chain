@@ -19,6 +19,7 @@ func TestKeeper_InitAndExportGenesis(t *testing.T) {
 	genState := types.GenesisState{
 		StakingParams: types.StakingParams{
 			MinSelfDelegation: sdkmath.OneInt(),
+			MaxVotingPower:    sdkmath.LegacyOneDec(),
 		},
 	}
 	keeper.InitGenesis(ctx, genState)
@@ -30,4 +31,24 @@ func TestKeeper_InitAndExportGenesis(t *testing.T) {
 
 	exportedGetState := keeper.ExportGenesis(ctx)
 	requireT.Equal(genState, *exportedGetState)
+}
+
+func TestKeeper_InitGenesis_InvalidParams(t *testing.T) {
+	testApp := simapp.New()
+	ctx := testApp.NewContextLegacy(false, tmproto.Header{})
+
+	// a genesis without max_voting_power would start with a nil cap and fail every capped staking message
+	require.Panics(t, func() {
+		testApp.CustomParamsKeeper.InitGenesis(ctx, types.GenesisState{
+			StakingParams: types.StakingParams{MinSelfDelegation: sdkmath.OneInt()},
+		})
+	})
+	require.Panics(t, func() {
+		testApp.CustomParamsKeeper.InitGenesis(ctx, types.GenesisState{
+			StakingParams: types.StakingParams{
+				MinSelfDelegation: sdkmath.OneInt(),
+				MaxVotingPower:    sdkmath.LegacyMustNewDecFromStr("0.04"),
+			},
+		})
+	})
 }

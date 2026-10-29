@@ -127,7 +127,7 @@ func ensureWASMLibForDockerContext(
 
 // ensureReleasedBinaries ensures that all previous txd versions are installed.
 func ensureReleasedBinaries(ctx context.Context, deps types.DepsFunc) error {
-	const binaryTool = txchaintools.TXdV700
+	const binaryTool = txchaintools.TXdV800
 	if err := txcrusttools.Ensure(ctx, binaryTool, txcrusttools.TargetPlatformLinuxLocalArchInDocker); err != nil {
 		return err
 	}

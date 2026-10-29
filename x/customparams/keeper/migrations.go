@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	v1 "github.com/tokenize-x/tx-chain/v8/x/customparams/migrations/v1"
+	v2 "github.com/tokenize-x/tx-chain/v8/x/customparams/migrations/v2"
 	"github.com/tokenize-x/tx-chain/v8/x/customparams/types"
 )
 
@@ -24,4 +25,9 @@ func NewMigrator(keeper Keeper, paramsKeeper types.ParamsKeeper) Migrator {
 // Migrate1to2 migrates from version 1 to 2.
 func (m Migrator) Migrate1to2(ctx sdk.Context) error {
 	return v1.MigrateParams(ctx, m.keeper, m.paramsKeeper)
+}
+
+// Migrate2to3 migrates from version 2 to 3.
+func (m Migrator) Migrate2to3(ctx sdk.Context) error {
+	return v2.MigrateParams(ctx, m.keeper)
 }

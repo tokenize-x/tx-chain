@@ -137,6 +137,7 @@ import (
 	"github.com/tokenize-x/tx-chain/v8/app/openapi"
 	appupgrade "github.com/tokenize-x/tx-chain/v8/app/upgrade"
 	appupgradev8 "github.com/tokenize-x/tx-chain/v8/app/upgrade/v8"
+	appupgradev9 "github.com/tokenize-x/tx-chain/v8/app/upgrade/v9"
 	"github.com/tokenize-x/tx-chain/v8/docs"
 	"github.com/tokenize-x/tx-chain/v8/pkg/config"
 	"github.com/tokenize-x/tx-chain/v8/pkg/config/constant"
@@ -1230,6 +1231,7 @@ func New(
 			app.BankKeeper,
 			app.psePauseKeepers(),
 		),
+		appupgradev9.New(app.ModuleManager, app.configurator),
 	}
 
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()

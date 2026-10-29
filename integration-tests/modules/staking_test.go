@@ -15,6 +15,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -447,6 +448,93 @@ func TestUnbondAndCancelUnbondingDelegation(t *testing.T) {
 		ValidatorAddr: validatorAddress.String(),
 	})
 	require.ErrorContains(t, err, cosmoserrors.ErrNotFound.Error())
+}
+
+// TestMaxVotingPower checks that a delegation pushing a validator over max voting power is rejected.
+func TestMaxVotingPower(t *testing.T) {
+	// Since this test changes global staking config we can't run it in parallel with other tests.
+	// That's why t.Parallel() is not here.
+
+	ctx, chain := integrationtests.NewTXChainTestingContext(t)
+
+	requireT := require.New(t)
+	stakingClient := stakingtypes.NewQueryClient(chain.ClientContext)
+	customParamsClient := customparamstypes.NewQueryClient(chain.ClientContext)
+
+	delegateAmount := sdkmath.NewInt(1_000_000)
+	delegator := chain.GenAccount()
+	chain.FundAccountWithOptions(ctx, t, delegator, integration.BalancesOptions{
+		Messages: []sdk.Msg{
+			&stakingtypes.MsgDelegate{},
+			&stakingtypes.MsgDelegate{},
+		},
+		Amount: delegateAmount.MulRaw(2),
+	})
+
+	validatorsRes, err := stakingClient.Validators(ctx, &stakingtypes.QueryValidatorsRequest{
+		Status: stakingtypes.Bonded.String(),
+	})
+	requireT.NoError(err)
+	requireT.NotEmpty(validatorsRes.Validators)
+	validator := lo.MaxBy(validatorsRes.Validators, func(a, b stakingtypes.Validator) bool {
+		return a.Tokens.GT(b.Tokens)
+	})
+	poolRes, err := stakingClient.Pool(ctx, &stakingtypes.QueryPoolRequest{})
+	requireT.NoError(err)
+
+	// the cap is the voting power the validator would have after receiving delegateAmount
+	maxVotingPower := sdkmath.LegacyNewDecFromInt(validator.Tokens.Add(delegateAmount)).
+		QuoInt(poolRes.Pool.BondedTokens.Add(delegateAmount))
+	changeMaxVotingPowerCustomParam(ctx, t, chain, customParamsClient, maxVotingPower)
+	defer changeMaxVotingPowerCustomParam(ctx, t, chain, customParamsClient, sdkmath.LegacyOneDec())
+
+	delegate := func(amount sdkmath.Int) error {
+		delegateMsg := &stakingtypes.MsgDelegate{
+			DelegatorAddress: delegator.String(),
+			ValidatorAddress: validator.OperatorAddress,
+			Amount:           chain.NewCoin(amount),
+		}
+		_, err := client.BroadcastTx(
+			ctx,
+			chain.ClientContext.WithFromAddress(delegator),
+			chain.TxFactory().WithGas(chain.GasLimitByMsgs(delegateMsg)),
+			delegateMsg,
+		)
+		return err
+	}
+
+	// below the cap
+	requireT.NoError(delegate(delegateAmount.QuoRaw(2)))
+	// over the cap
+	requireT.ErrorContains(delegate(delegateAmount), "exceeds max voting power")
+}
+
+func changeMaxVotingPowerCustomParam(
+	ctx context.Context,
+	t *testing.T,
+	chain integration.TXChain,
+	customParamsClient customparamstypes.QueryClient,
+	newMaxVotingPower sdkmath.LegacyDec,
+) {
+	requireT := require.New(t)
+
+	customStakingParams, err := customParamsClient.StakingParams(ctx, &customparamstypes.QueryStakingParamsRequest{})
+	requireT.NoError(err)
+	customStakingParams.Params.MaxVotingPower = newMaxVotingPower
+
+	chain.Governance.ProposalFromMsgAndVote(
+		ctx, t, nil,
+		"-", "-", "-", govtypesv1.OptionYes,
+		&customparamstypes.MsgUpdateStakingParams{
+			StakingParams: customStakingParams.Params,
+			Authority:     authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		},
+	)
+
+	// check the proposed change is applied
+	customStakingParams, err = customParamsClient.StakingParams(ctx, &customparamstypes.QueryStakingParamsRequest{})
+	requireT.NoError(err)
+	requireT.Equal(newMaxVotingPower.String(), customStakingParams.Params.MaxVotingPower.String())
 }
 
 func changeMinSelfDelegationCustomParam(

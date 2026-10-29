@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tokenize-x/tx-chain/v8/testutil/simapp"
+	customparamstypes "github.com/tokenize-x/tx-chain/v8/x/customparams/types"
 	"github.com/tokenize-x/tx-chain/v8/x/pse/keeper"
 	"github.com/tokenize-x/tx-chain/v8/x/pse/types"
 )
@@ -1554,6 +1555,69 @@ func TestDistribution_JailedValidator_BatchTransition(t *testing.T) {
 	intermediaryBalance := testApp.BankKeeper.GetBalance(ctx, intermediaryAddr, bondDenom).Amount
 	requireT.True(intermediaryBalance.IsZero(),
 		"intermediary must be drained even after a mid-distribution jail event")
+}
+
+// TestDistribution_ValidatorOverMaxVotingPower verifies that the PSE payout auto-delegates to a validator
+// above max voting power and completes, since any EndBlock error disables PSE permanently.
+func TestDistribution_ValidatorOverMaxVotingPower(t *testing.T) {
+	requireT := require.New(t)
+
+	testApp := simapp.New()
+	pseKeeper := testApp.PSEKeeper
+	stakingKeeper := testApp.StakingKeeper
+
+	t0 := time.Now().UTC().Round(time.Second)
+	ctx, _, err := testApp.BeginNextBlockAtTime(t0)
+	requireT.NoError(err)
+	bondDenom, err := stakingKeeper.BondDenom(ctx)
+	requireT.NoError(err)
+
+	validators, err := stakingKeeper.GetBondedValidatorsByPower(ctx)
+	requireT.NoError(err)
+	requireT.Len(validators, 1)
+	valAddr := sdk.MustValAddressFromBech32(validators[0].GetOperator())
+
+	delAddr, _ := testApp.GenAccount(ctx)
+	requireT.NoError(testApp.FundAccount(ctx, delAddr,
+		sdk.NewCoins(sdk.NewCoin(bondDenom, sdkmath.NewInt(1_000)))))
+	_, err = stakingkeeper.NewMsgServerImpl(stakingKeeper).Delegate(ctx, &stakingtypes.MsgDelegate{
+		DelegatorAddress: delAddr.String(),
+		ValidatorAddress: valAddr.String(),
+		Amount:           sdk.NewInt64Coin(bondDenom, 1_000),
+	})
+	requireT.NoError(err)
+
+	// the only bonded validator holds 100%, far above the cap
+	customParams := customparamstypes.DefaultStakingParams()
+	customParams.MaxVotingPower = sdkmath.LegacyNewDecWithPrec(5, 2)
+	requireT.NoError(testApp.CustomParamsKeeper.SetStakingParams(ctx, customParams))
+
+	valBefore, err := stakingKeeper.GetValidator(ctx, valAddr)
+	requireT.NoError(err)
+
+	scheduleTimestamp := t0.Add(5 * time.Second)
+	const distributionAmount = int64(10_000_000)
+	requireT.NoError(pseKeeper.SaveDistributionSchedule(ctx, []types.ScheduledDistribution{{
+		ID:        1,
+		Timestamp: uint64(scheduleTimestamp.Unix()),
+		Allocations: []types.ClearingAccountAllocation{{
+			ClearingAccount: types.ClearingAccountCommunity,
+			Amount:          sdkmath.NewInt(distributionAmount),
+		}},
+	}}))
+	fundCommunityAccount(requireT, testApp, ctx, bondDenom, sdkmath.NewInt(distributionAmount))
+
+	runDistribution(requireT, testApp, t0)
+
+	ctx, _, err = testApp.BeginNextBlockAtTime(t0.Add(25 * time.Second))
+	requireT.NoError(err)
+
+	assertDistributionFinalized(requireT, pseKeeper, ctx, 1)
+
+	valAfter, err := stakingKeeper.GetValidator(ctx, valAddr)
+	requireT.NoError(err)
+	requireT.True(valAfter.Tokens.GT(valBefore.Tokens),
+		"validator over the cap must still receive the auto-delegation")
 }
 
 // jailValidator is a test helper that jails the given validator and asserts

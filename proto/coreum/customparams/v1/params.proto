@@ -1,6 +1,7 @@
 syntax = "proto3";
 package coreum.customparams.v1;
 
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/tokenize-x/tx-chain/v8/x/customparams/types";
@@ -11,6 +12,14 @@ message StakingParams {
   string min_self_delegation = 1 [
     (gogoproto.moretags) = "yaml:\"min_self_delegation\"",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+  // max_voting_power is the max share of total bonded tokens a validator may reach through staking messages.
+  // 1 disables the cap.
+  string max_voting_power = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.moretags) = "yaml:\"max_voting_power\"",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
 }

@@ -8,6 +8,9 @@ import (
 
 // InitGenesis initializes the customparams module's state with the provided genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, genState types.GenesisState) {
+	if err := genState.Validate(); err != nil {
+		panic(err)
+	}
 	if err := k.SetStakingParams(ctx, genState.StakingParams); err != nil {
 		panic(err)
 	}
