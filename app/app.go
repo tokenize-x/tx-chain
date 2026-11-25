@@ -174,6 +174,8 @@ import (
 	"github.com/tokenize-x/tx-chain/v8/x/wnft"
 	wnftkeeper "github.com/tokenize-x/tx-chain/v8/x/wnft/keeper"
 	"github.com/tokenize-x/tx-chain/v8/x/wstaking"
+
+	"github.com/tokenize-x/tx-chain/v8/app/recoverylock"
 )
 
 const (
@@ -250,6 +252,10 @@ var mergeProtos sync.Once
 // capabilities aren't needed for testing.
 type App struct {
 	*baseapp.BaseApp
+
+	// RecoveryLock is nil when the embedded recovery lock configuration is
+	// disabled (the committed state); the app then wires no lock component.
+	RecoveryLock *recoverylock.Lock
 
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
@@ -400,10 +406,22 @@ func New(
 		authkeeper.WithUnorderedTransactions(true),
 	)
 
+	// Recovery lock: with the committed (disabled) configuration RecoveryLock
+	// is nil and nothing below is wrapped, so the app is unchanged.
+	accountCodec := interfaceRegistry.SigningContext().AddressCodec()
+	lockConfig := recoverylock.MustConfig(
+		string(ChosenNetwork.ChainID()), accountCodec, app.ModuleAccountAddrs(), logger,
+	)
+	app.RecoveryLock = recoverylock.New(lockConfig, appCodec, accountCodec, &app.DistrKeeper, bApp.LastBlockHeight)
+	var dispatchRouter baseapp.MessageRouter = bApp.MsgServiceRouter()
+	if app.RecoveryLock != nil {
+		dispatchRouter = recoverylock.Router{Inner: dispatchRouter, L: app.RecoveryLock}
+	}
+
 	app.AuthzKeeper = authzkeeper.NewKeeper(
 		runtime.NewKVStoreService(keys[authzkeeper.StoreKey]),
 		appCodec,
-		app.MsgServiceRouter(),
+		dispatchRouter,
 		app.AccountKeeper,
 	)
 
@@ -425,12 +443,6 @@ func New(
 	)
 
 	app.WasmPermissionedKeeper = wasmkeeper.NewGovPermissionKeeper(&app.WasmKeeper)
-	if err := delayRouter.RegisterHandler(
-		&assetfttypes.DelayedTokenUpgradeV1{},
-		assetftkeeper.NewDelayTokenUpgradeV1Handler(app.AssetFTKeeper),
-	); err != nil {
-		panic(err)
-	}
 
 	app.BankKeeper = wbankkeeper.NewKeeper(
 		appCodec,
@@ -445,6 +457,14 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		logger,
 	)
+
+	if app.RecoveryLock != nil {
+		// The assetft and assetnft keepers move coins with originalBankKeeper,
+		// and every account debit of the wbank wrapper ends there. The keeper
+		// inside the wrapper gets the rule too.
+		originalBankKeeper.AppendSendRestriction(app.RecoveryLock.SendRestriction())
+		app.BankKeeper.AppendSendRestriction(app.RecoveryLock.SendRestriction())
+	}
 
 	enabledSignModes := make([]signingtypes.SignMode, 0)
 	enabledSignModes = append(enabledSignModes, authtx.DefaultSignModes...)
@@ -488,6 +508,13 @@ func New(
 		&app.AccountKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
+
+	if err := delayRouter.RegisterHandler(
+		&assetfttypes.DelayedTokenUpgradeV1{},
+		assetftkeeper.NewDelayTokenUpgradeV1Handler(app.AssetFTKeeper),
+	); err != nil {
+		panic(err)
+	}
 
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
@@ -554,13 +581,18 @@ func New(
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	app.StakingKeeper.SetHooks(
-		stakingtypes.NewMultiStakingHooks(
-			app.DistrKeeper.Hooks(),
-			app.SlashingKeeper.Hooks(),
-			app.PSEKeeper.Hooks(),
-		),
-	)
+	stakingHooks := []stakingtypes.StakingHooks{
+		app.DistrKeeper.Hooks(),
+		app.SlashingKeeper.Hooks(),
+		app.PSEKeeper.Hooks(),
+	}
+	if app.RecoveryLock != nil {
+		// must run before the distribution hooks
+		stakingHooks = append([]stakingtypes.StakingHooks{
+			recoverylock.StakingHooks{L: app.RecoveryLock},
+		}, stakingHooks...)
+	}
+	app.StakingKeeper.SetHooks(stakingtypes.NewMultiStakingHooks(stakingHooks...))
 
 	app.FeeModelKeeper = feemodelkeeper.NewKeeper(
 		runtime.NewKVStoreService(keys[feemodeltypes.StoreKey]),
@@ -647,7 +679,7 @@ func New(
 		app.HooksICS4Wrapper,
 		app.IBCKeeper.ChannelKeeper,
 		app.AccountKeeper,
-		bApp.MsgServiceRouter(),
+		dispatchRouter,
 		app.GRPCQueryRouter(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
@@ -707,7 +739,7 @@ func New(
 	app.GroupKeeper = groupkeeper.NewKeeper(
 		keys[group.StoreKey],
 		appCodec,
-		app.MsgServiceRouter(),
+		dispatchRouter,
 		app.AccountKeeper,
 		groupConfig,
 	)
@@ -749,7 +781,7 @@ func New(
 		wasmkeeper.WithCoinTransferrer(cwasmtypes.NewBankCoinTransferrer(app.BankKeeper)),
 		wasmkeeper.WithMessageHandler(wasmcustomhandler.NewMessengerWrapper(wasmkeeper.NewDefaultMessageHandler(
 			&app.WasmKeeper,
-			app.MsgServiceRouter(),
+			dispatchRouter,
 			app.IBCKeeper.ChannelKeeper,
 			app.IBCKeeper.ChannelKeeper,
 			app.BankKeeper,
@@ -780,7 +812,7 @@ func New(
 		app.IBCKeeper.ChannelKeeper,
 		app.IBCKeeper.ChannelKeeper,
 		&app.TransferKeeper,
-		app.MsgServiceRouter(),
+		dispatchRouter,
 		app.GRPCQueryRouter(),
 		wasmDir,
 		wasmNodeConfig,
@@ -1172,6 +1204,7 @@ func New(
 			StakingKeeper:          app.StakingKeeper,
 			WasmTXCounterStoreKey:  runtime.NewKVStoreService(keys[wasmtypes.StoreKey]),
 			WasmConfig:             wasmNodeConfig,
+			RecoveryLockDecorator:  app.recoveryLockDecorator(),
 		},
 	)
 	if err != nil {
@@ -1532,4 +1565,13 @@ func (app *App) psePauseKeepers() appupgradev8.PSEPauseKeepers {
 		Staking: app.StakingKeeper,
 		Bank:    app.BankKeeper,
 	}
+}
+
+// recoveryLockDecorator returns the recovery lock ante decorator, or nil when
+// the lock is disabled.
+func (app *App) recoveryLockDecorator() sdk.AnteDecorator {
+	if app.RecoveryLock == nil {
+		return nil
+	}
+	return recoverylock.Decorator{L: app.RecoveryLock}
 }

@@ -33,7 +33,23 @@ const (
 func Test(ctx context.Context, deps types.DepsFunc) error {
 	deps(CompileAllSmartContracts)
 
-	return golang.Test(ctx, deps)
+	if err := golang.Test(ctx, deps); err != nil {
+		return err
+	}
+
+	// The recovery lock tests need the recoverylock_test build tag; the
+	// committed lock configuration is disabled, so the untagged run above
+	// covers only its release rules.
+	return golang.RunTests(ctx, deps, golang.TestConfig{
+		PackagePath: repoPath,
+		Flags: []string{
+			"-count=1",
+			"-race",
+			"-tags=recoverylock_test",
+			"./app/",
+			"./app/recoverylock/",
+		},
+	})
 }
 
 // RunAllIntegrationTests runs all the tx-chain integration tests.
