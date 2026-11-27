@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -456,6 +457,7 @@ func txdVersionLDFlags(ctx context.Context, buildTags []string) ([]string, error
 	for k, v := range ps {
 		values = append(values, fmt.Sprintf("-X %s=%s", k, v))
 	}
+	slices.Sort(values) // The Go build ID includes the linker flag order.
 
 	return values, nil
 }

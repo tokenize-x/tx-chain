@@ -33,6 +33,9 @@ type HandlerOptions struct {
 	GovKeeper              *govkeeper.Keeper
 	StakingKeeper          StakingKeeper
 	WasmTXCounterStoreKey  store.KVStoreService
+	// RecoveryLockDecorator is the recovery lock decorator, nil when the
+	// lock is disabled.
+	RecoveryLockDecorator sdk.AnteDecorator
 }
 
 // NewAnteHandler returns an AnteHandler that checks and increments sequence
@@ -124,6 +127,12 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		wasmkeeper.NewLimitSimulationGasDecorator(options.WasmConfig.SimulationGasLimit),
 		wasmkeeper.NewCountTXDecorator(options.WasmTXCounterStoreKey),
 		authante.NewValidateMemoDecorator(options.AccountKeeper),
+	}
+	if options.RecoveryLockDecorator != nil {
+		// before fee checks, fee deduction and signature checks
+		anteDecorators = append(anteDecorators, options.RecoveryLockDecorator)
+	}
+	anteDecorators = append(anteDecorators,
 		feemodelante.NewFeeDecorator(options.FeeModelKeeper),
 		authante.NewDeductFeeDecorator(
 			options.AccountKeeper, options.BankKeeper, options.FeegrantKeeper, options.TxFeeChecker,
@@ -138,7 +147,7 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 		authante.NewSigGasConsumeDecorator(infiniteAccountKeeper, options.SigGasConsumer),
 		deterministicgasante.NewChargeFixedGasDecorator(infiniteAccountKeeper, options.DeterministicGasConfig),
 		ibcante.NewRedundantRelayDecorator(options.IBCKeeper),
-	}
+	)
 
 	return sdk.ChainAnteDecorators(anteDecorators...), nil
 }

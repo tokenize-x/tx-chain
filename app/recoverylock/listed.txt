@@ -1,0 +1,1 @@
+# Recovery lock list: one listed account per line. Empty while params.json has "enabled": false.
