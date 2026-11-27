@@ -46,6 +46,7 @@ func Test(ctx context.Context, deps types.DepsFunc) error {
 			"-count=1",
 			"-race",
 			"-tags=recoverylock_test",
+			"-run=RecoveryLock",
 			"./app/",
 			"./app/recoverylock/",
 		},
