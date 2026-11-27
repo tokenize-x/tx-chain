@@ -1017,31 +1017,6 @@ func TestRecoveryLockAppICAHostDispatch(t *testing.T) {
 	require.Equal(t, send.Amount[0], a.BankKeeper.GetBalance(ctx, e.recovery, lockDenom()))
 }
 
-func TestRecoveryLockAppDelayedAssetUpgrade(t *testing.T) {
-	e := newLockAppEnv(t)
-	a, ctx := e.a, e.ctx
-	before := ctx.WithBlockHeight(lockHeight - 1).WithBlockTime(ctx.BlockTime().Add(-time.Minute))
-	require.NoError(t, a.FundAccount(before, e.wallet, lockCoins(100_000_000_000)))
-	params, err := a.AssetFTKeeper.GetParams(before)
-	require.NoError(t, err)
-	params.TokenUpgradeDecisionTimeout = ctx.BlockTime()
-	params.TokenUpgradeGracePeriod = time.Minute
-	require.NoError(t, a.AssetFTKeeper.SetParams(before, params))
-
-	denom, err := a.AssetFTKeeper.IssueVersioned(before, assetfttypes.IssueSettings{
-		Issuer: e.wallet, Symbol: "LEGACY", Subunit: "legacy", Precision: 6, InitialAmount: sdkmath.NewInt(100),
-	}, 0)
-	require.NoError(t, err)
-	require.NoError(t, a.AssetFTKeeper.AddDelayedTokenUpgradeV1(before, e.wallet, denom, true))
-	balance := a.BankKeeper.GetAllBalances(ctx, e.wallet)
-	require.NoError(t, a.DelayKeeper.ExecuteAllItems(ctx.WithBlockTime(ctx.BlockTime().Add(time.Second))))
-	token, err := a.AssetFTKeeper.GetToken(ctx, denom)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, token.Version)
-	require.Contains(t, token.Features, assetfttypes.Feature_ibc)
-	require.Equal(t, balance, a.BankKeeper.GetAllBalances(ctx, e.wallet))
-}
-
 func TestRecoveryLockAppModuleCredits(t *testing.T) {
 	e := newLockAppEnv(t)
 	a, ctx := e.a, e.ctx

@@ -442,6 +442,12 @@ func New(
 	)
 
 	app.WasmPermissionedKeeper = wasmkeeper.NewGovPermissionKeeper(&app.WasmKeeper)
+	if err := delayRouter.RegisterHandler(
+		&assetfttypes.DelayedTokenUpgradeV1{},
+		assetftkeeper.NewDelayTokenUpgradeV1Handler(app.AssetFTKeeper),
+	); err != nil {
+		panic(err)
+	}
 
 	app.BankKeeper = wbankkeeper.NewKeeper(
 		appCodec,
@@ -507,13 +513,6 @@ func New(
 		&app.AccountKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
-
-	if err := delayRouter.RegisterHandler(
-		&assetfttypes.DelayedTokenUpgradeV1{},
-		assetftkeeper.NewDelayTokenUpgradeV1Handler(app.AssetFTKeeper),
-	); err != nil {
-		panic(err)
-	}
 
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,

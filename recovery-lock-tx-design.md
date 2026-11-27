@@ -77,13 +77,13 @@ Statuses apply during the active window when a listed wallet is the signer. For 
 | Other CosmWasm activity | Funded or other `MsgExecuteContract`, instantiate, store, migrate, admin, label, sudo, pin, instantiate config, upload params, parameters | Blocked | A listed contract admin cannot migrate or re-admin its contracts. |
 | CosmWasm submessages and TX custom messages | SDK dispatch from contracts, the TX assetft, assetnft and nft encoders | Blocked for listed signers | The wasm message handler and keeper routers are wrapped. Native handlers act as the contract. |
 | Other modules | auth, mint, upgrade, consensus, evidence, feemodel, customparams, PSE parameter messages | Blocked | Authority or administrative messages, outside the allowlist. |
-| Delay | Delayed token upgrades and DEX GoodTil cancellations | Allowed | The handlers do not debit listed accounts. The FT upgrade handler uses the initialized asset keeper. |
+| Delay | Delayed token upgrades and DEX GoodTil cancellations | Allowed | The handlers do not debit listed accounts. |
 
 A listed wallet may receive coins and NFTs. Contract rights granted before activation remain effective until revoked. The contract exit checks the requested JSON shape without verifying that the contract implements cw20 or cw721 semantics.
 
 ### 5.3 Indirect execution and automatic payouts
 
-The authz, ICA host, group and Wasm routers deny dispatch with a listed signer. Ante walks nested authz messages and limits transactions involving a listed account to six levels of nesting. Staking hooks run before distribution and reset an unsafe stored withdraw address before automatic rewards can be paid out. An already safe withdrawal address is preserved. Unbonding principal matures to the delegator. The lock deactivates by block time and requires no cleanup transaction. The delayed FT upgrade handler registers with the initialized asset keeper so the delay module can apply a pending upgrade at its scheduled time.
+The authz, ICA host, group and Wasm routers deny dispatch with a listed signer. Ante walks nested authz messages and limits transactions involving a listed account to six levels of nesting. Staking hooks run before distribution and reset an unsafe stored withdraw address before automatic rewards can be paid out. An already safe withdrawal address is preserved. Unbonding principal matures to the delegator. The lock deactivates by block time and requires no cleanup transaction.
 
 ## 6. Startup checks
 
@@ -117,7 +117,7 @@ At startup an enabled binary logs `recovery lock config` with `mode` (`release` 
 
 - Node still on the old binary after the check: stop it, `txd rollback --home <home>` (old binary, rolls back the check block), install the lock binary, `halt-height = 0`, start.
 - Validator that missed the halt (executed H on the old binary): stop it, `txd rollback --home <home>`, install the lock binary, `halt-height = 0`, start. It replays H with the lock.
-- New node syncing from genesis: use the lock binary and the exact configuration adopted by validators. The lock is inactive outside its configured window. The delayed FT registration fix applies at every height, so verify replay against the release chain state before deployment.
+- New node syncing from genesis: use the lock binary and the exact configuration adopted by validators. The lock is inactive outside its configured window.
 
 ### Abort
 
@@ -138,7 +138,7 @@ Cancel resting DEX orders, fix withdraw addresses, withdraw rewards and commissi
 | Four-validator upgrade | Validators halted on v8.0.0, resumed on the lock binary and agreed on app hashes during the window and after expiry. A listed third-party send was refused, a co-signed vault transfer committed, and an ordinary listed send committed after expiry. |
 | Asset transfers | Co-signed CW721 ownership recovery succeeded. An FT extension side debit was rejected without changing either balance. |
 | IBC | ICS-20 and ICA handshakes, listed-outbound refusal, inbound credits, native and voucher refunds, IBC v2, packet forwarding, and Wasm hooks and callbacks. |
-| Module-triggered paths | DEX GoodTil cancellation, governance refunds, unbonding maturity, delayed FT upgrades, PSE auto-delegation, and automatic reward routing. |
+| Module-triggered paths | DEX GoodTil cancellation, governance refunds, unbonding maturity, PSE auto-delegation, and automatic reward routing. |
 | Indirect execution | Wasm dispatch using a pre-existing authorization was refused during the lock. App tests exercise dispatch through the ICA host router with a listed signer. |
 | App and stock tests | App tests verify governance deposit burns, slashing-triggered rewards, and forced commission payouts. Selected stock tests cover bank gas, Wasm authz, IBC v2, and IBC hooks. |
 
