@@ -49,7 +49,8 @@ Statuses apply during the active window when a listed wallet is the signer. For 
 | Fees with registered co-signer | SDK `Fee.Payer` with positive fee and empty `Fee.Granter` | Allowed | SDK verifies the payer's signature and debits the payer. The feemodel decorator requires the fee in `ucore` and at least the dynamic minimum gas price times gas, as for any transaction. |
 | Fees from listed funds or grants | SDK fee payer and fee granter fields, including pre-existing fee grants | Blocked | Ante checks both fields even when every message signer is unlisted. The coin rule also prevents a debit to the fee collector. |
 | Feegrant | `MsgGrantAllowance`, `MsgRevokeAllowance`, `MsgPruneAllowances` | Blocked | Outside the allowlist. |
-| Authz grants and execution | `MsgGrant`, `MsgRevoke`, listed grantee's `MsgExec` | Blocked | Outside the allowlist. |
+| Authz revoke | `MsgRevoke` | Allowed | The listed granter signs a top-level message with the fee payer to revoke its own grant. |
+| Authz grants and execution | `MsgGrant`, listed grantee's `MsgExec` | Blocked | Outside the allowlist. |
 | Authz nested execution | `MsgExec` by an unlisted grantee, including recursive wrappers and grants created before activation (restake bots, nft `SendAuthorization`) | Blocked | Ante follows the inner messages and applies signer and fee rules at every depth. The authz keeper's dispatch router refuses every listed inner signer, including an otherwise permitted recovery message. Ante limits nesting to six when a listed account is involved. |
 | Staking principal exit | `MsgUndelegate` | Allowed | Principal matures to the delegator. The current withdraw address must be the wallet or its recovery address. |
 | Stake placement and mutation | `MsgCreateValidator`, `MsgDelegate`, `MsgBeginRedelegate`, `MsgCancelUnbondingDelegation` | Blocked | Outside the allowlist. |

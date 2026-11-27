@@ -72,7 +72,7 @@ func (l *Lock) checkMsg(ctx sdk.Context, msg sdk.Msg, depth int, deepest *int) (
 			continue
 		}
 		involved = true
-		if err := l.checkRule(ctx, msg, signer); err != nil {
+		if err := l.checkRule(ctx, msg, signer, depth); err != nil {
 			return true, ErrLocked.Wrap(err.Error())
 		}
 	}

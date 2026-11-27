@@ -250,7 +250,6 @@ func blockedFixtures(t *testing.T, f lockFixture) []sdk.Msg {
 		&vestingtypes.MsgCreatePermanentLockedAccount{FromAddress: w},
 		&vestingtypes.MsgCreatePeriodicVestingAccount{FromAddress: w},
 		&authz.MsgGrant{Granter: w, Grantee: o},
-		&authz.MsgRevoke{Granter: w, Grantee: o},
 		&authz.MsgExec{Grantee: w},
 		&feegrant.MsgGrantAllowance{Granter: w, Grantee: o},
 		&feegrant.MsgRevokeAllowance{Granter: w, Grantee: o},
@@ -368,6 +367,7 @@ func allowedFixtures(t *testing.T, f lockFixture) []sdk.Msg {
 		&distrtypes.MsgSetWithdrawAddress{DelegatorAddress: w, WithdrawAddress: r},
 		&nft.MsgSend{Sender: w, Receiver: r, ClassId: "c", Id: "1"},
 		&dextypes.MsgCancelOrder{Sender: w, ID: "1"},
+		&authz.MsgRevoke{Granter: w, Grantee: o, MsgTypeUrl: sdk.MsgTypeURL(&stakingtypes.MsgDelegate{})},
 		&stakingtypes.MsgUndelegate{DelegatorAddress: w, ValidatorAddress: validator, Amount: lockCoins(2)[0]},
 		&distrtypes.MsgWithdrawDelegatorReward{DelegatorAddress: w, ValidatorAddress: validator},
 		&distrtypes.MsgWithdrawValidatorCommission{ValidatorAddress: validator},
@@ -728,6 +728,40 @@ func TestRecoveryLockAppWiring(t *testing.T) {
 	} {
 		require.Nil(t, a.MsgServiceRouter().HandlerByTypeURL(absent))
 	}
+}
+
+func TestRecoveryLockAppAuthzRevoke(t *testing.T) {
+	e := newLockAppEnv(t)
+	before := e.ctx.WithBlockHeight(lockHeight - 1)
+	expiry := before.BlockTime().Add(time.Hour)
+	authorization, err := stakingtypes.NewStakeAuthorization(
+		[]sdk.ValAddress{e.valAddr}, nil, stakingtypes.AuthorizationType_AUTHORIZATION_TYPE_DELEGATE, nil,
+	)
+	require.NoError(t, err)
+	require.NoError(t, e.a.AuthzKeeper.SaveGrant(before, e.other, e.wallet, authorization, &expiry))
+
+	revoke := &authz.MsgRevoke{
+		Granter: e.wallet.String(), Grantee: e.other.String(), MsgTypeUrl: authorization.MsgTypeURL(),
+	}
+	msgs := []sdk.Msg{revoke}
+	require.ErrorIs(t, e.run(t, e.ctx, e.wallet, msgs, e.walletKey), recoverylock.ErrLocked)
+	cache, _ := e.ctx.CacheContext()
+	require.Error(t, e.run(t, cache, e.payer, msgs, e.walletKey))
+
+	require.NoError(t, e.a.AuthzKeeper.SaveGrant(before, e.other, e.wallet,
+		authz.NewGenericAuthorization(sdk.MsgTypeURL(revoke)), &expiry))
+	nested := authz.NewMsgExec(e.other, msgs)
+	nestedTx := signedLockTestTx(t, e.a, e.ctx, e.payer, &nested, e.otherKey, e.payerKey)
+	_, err = e.a.AnteHandler()(e.ctx, nestedTx, false)
+	require.ErrorIs(t, err, recoverylock.ErrLocked)
+	_, err = e.a.AuthzKeeper.DispatchActions(e.ctx, e.other, msgs)
+	require.ErrorIs(t, err, recoverylock.ErrLocked)
+
+	stored, _ := e.a.AuthzKeeper.GetAuthorization(e.ctx, e.other, e.wallet, revoke.MsgTypeUrl)
+	require.Equal(t, authorization, stored)
+	require.NoError(t, e.run(t, e.ctx, e.payer, msgs, e.walletKey, e.payerKey))
+	stored, _ = e.a.AuthzKeeper.GetAuthorization(e.ctx, e.other, e.wallet, revoke.MsgTypeUrl)
+	require.Nil(t, stored)
 }
 
 func TestRecoveryLockAppMultiSend(t *testing.T) {

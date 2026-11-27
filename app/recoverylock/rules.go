@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/x/nft"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -18,7 +19,7 @@ import (
 // checkRule runs only for a listed signer. The codec derives signer bytes from
 // the same fields used to authenticate the transaction, including validator
 // operator addresses for commission withdrawals.
-func (l *Lock) checkRule(ctx sdk.Context, msg sdk.Msg, signer []byte) error {
+func (l *Lock) checkRule(ctx sdk.Context, msg sdk.Msg, signer []byte, depth int) error {
 	switch m := msg.(type) {
 	case *banktypes.MsgSend:
 		return l.checkDestination(m.ToAddress, signer, false)
@@ -46,6 +47,12 @@ func (l *Lock) checkRule(ctx sdk.Context, msg sdk.Msg, signer []byte) error {
 		// owner. The class rules (soulbound, disabled sending, whitelisting,
 		// freezing) still apply to the transfer.
 		return l.checkDestination(m.Receiver, signer, false)
+	case *authz.MsgRevoke:
+		// The granter is the signer and part of the grant key.
+		if depth != 0 {
+			return errors.New("authz revoke must be a top-level message")
+		}
+		return nil
 	case *dextypes.MsgCancelOrder:
 		// Cancelling the wallet's own order only releases its DEX locked
 		// balance and reserve in the same account; nothing is transferred.
