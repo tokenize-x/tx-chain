@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUseTestConfig(t *testing.T) {
+func TestRecoveryLockUseTestConfig(t *testing.T) {
 	ac := address.NewBech32Codec("devcore")
 	listed, paramsJSON := readTestData(t)
 	restore := UseTestConfig(listed, paramsJSON)
@@ -27,7 +27,7 @@ func TestUseTestConfig(t *testing.T) {
 
 // A list for another chain is not decoded and not wired: the binary serves
 // several networks with different address prefixes.
-func TestOtherChainNotWired(t *testing.T) {
+func TestRecoveryLockOtherChainNotWired(t *testing.T) {
 	listed, paramsJSON := readTestData(t)
 	p, err := parseParams(paramsJSON)
 	require.NoError(t, err)

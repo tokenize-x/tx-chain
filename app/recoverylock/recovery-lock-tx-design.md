@@ -78,7 +78,7 @@ Statuses apply during the active window when a listed wallet is the signer. For 
 | Other CosmWasm activity | Funded or other `MsgExecuteContract`, instantiate, store, migrate, admin, label, sudo, pin, instantiate config, upload params, parameters | Blocked | A listed contract admin cannot migrate or re-admin its contracts. |
 | CosmWasm submessages and TX custom messages | SDK dispatch from contracts, the TX assetft, assetnft and nft encoders | Blocked for listed signers | The wasm message handler and keeper routers are wrapped. Native handlers act as the contract. |
 | Other modules | auth, mint, upgrade, consensus, evidence, feemodel, customparams, PSE parameter messages | Blocked | Authority or administrative messages, outside the allowlist. |
-| Delay | Delayed token upgrades and DEX GoodTil cancellations | Allowed | The handlers do not debit listed accounts. |
+| Delay | Delayed token upgrade and DEX GoodTil cancellation dispatch | No restriction from the lock | The lock adds no checks to delay dispatch. |
 
 A listed wallet may receive coins and NFTs. Contract rights granted before activation remain effective until revoked. The contract exit checks the requested JSON shape without verifying that the contract implements cw20 or cw721 semantics.
 
