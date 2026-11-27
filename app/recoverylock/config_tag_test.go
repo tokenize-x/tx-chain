@@ -19,7 +19,7 @@ func TestUseTestConfig(t *testing.T) {
 	require.Len(t, cfg.recoveries, 3)
 	restore()
 	require.Nil(t, MustConfig(testChainID, ac, nil, nil))
-	bad := bytes.Replace(paramsJSON, []byte(`"list_count": 3`), []byte(`"list_count": 4`), 1)
+	bad := bytes.Replace(paramsJSON, []byte(`"listCount": 3`), []byte(`"listCount": 4`), 1)
 	require.NotEqual(t, paramsJSON, bad)
 	t.Cleanup(UseTestConfig(listed, bad))
 	require.Panics(t, func() { MustConfig(testChainID, ac, nil, nil) })

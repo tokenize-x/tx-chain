@@ -66,7 +66,10 @@ func checkContractExit(msg []byte, recovery string, validAddr func(string) error
 	for k, x := range top {
 		fields, ok := contractExits[k]
 		if !ok {
-			return fmt.Errorf("contract message %q is not allowed (only transfer and transfer_nft to the recovery address, decrease_allowance, revoke, revoke_all)", k)
+			return fmt.Errorf(
+				"contract message %q is not allowed (only transfer and transfer_nft to the recovery address, "+
+					"decrease_allowance, revoke, revoke_all)", k,
+			)
 		}
 		body, ok := x.(map[string]any)
 		if !ok {

@@ -1259,9 +1259,9 @@ func benchLockConfig(tb testing.TB, n int) (listed, params []byte) {
 		payers[i] = placeholderAddress(fmt.Sprintf("recoverylock-test-fee-payer-%d", i)).String()
 	}
 	params, err := json.Marshal(map[string]any{
-		"enabled": true, "chain_id": string(app.ChosenNetwork.ChainID()), "recovery_addresses": recoveries, "fee_payers": payers,
-		"activation_height": lockHeight, "expiry_time": 4102444800,
-		"list_sha256": fmt.Sprintf("%x", sha256.Sum256(listed)), "list_count": n, "test_values": true,
+		"enabled": true, "chainId": string(app.ChosenNetwork.ChainID()), "recoveryAddresses": recoveries, "feePayers": payers,
+		"activationHeight": lockHeight, "expiryTime": 4102444800,
+		"listSha256": fmt.Sprintf("%x", sha256.Sum256(listed)), "listCount": n, "testValues": true,
 	})
 	require.NoError(tb, err)
 	return listed, params

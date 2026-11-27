@@ -15,8 +15,10 @@ import (
 // involves a listed account.
 const MaxDepth = 6
 
+// ErrLocked identifies an operation refused by the recovery lock.
 var ErrLocked = errorsmod.Register("recoverylock", 1, "recovery lock")
 
+// Lock applies recovery rules to listed wallets during the configured window.
 type Lock struct {
 	cfg        *Config
 	cdc        codec.Codec

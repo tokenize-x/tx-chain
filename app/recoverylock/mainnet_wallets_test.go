@@ -14,9 +14,9 @@ import (
 
 func TestMainnetWalletManifest(t *testing.T) {
 	var manifest struct {
-		ChainID         string   `json:"chain_id"`
-		RecoveryAddress string   `json:"recovery_address"`
-		FeePayerAddress string   `json:"fee_payer_address"`
+		ChainID         string   `json:"chainId"`
+		RecoveryAddress string   `json:"recoveryAddress"`
+		FeePayerAddress string   `json:"feePayerAddress"`
 		Wallets         []string `json:"wallets"`
 	}
 	input, err := os.ReadFile("mainnet-wallets.json")
@@ -79,12 +79,14 @@ func TestReleaseStartupRejectsInvalidChain(t *testing.T) {
 	original := paramsFile
 	t.Cleanup(func() { paramsFile = original })
 
-	paramsFile = []byte(`{"enabled":true,"chain_id":"coreum-testnet-1","activation_height":1,"expiry_time":1,"fee_payers":["unused"]}`)
+	paramsFile = []byte(`{"enabled":true,"chainId":"coreum-testnet-1"` +
+		`,"activationHeight":1,"expiryTime":1,"feePayers":["unused"]}`)
 	ac := address.NewBech32Codec("core")
-	require.PanicsWithValue(t, "recovery lock config: release builds need chain_id coreum-mainnet-1, got \"coreum-testnet-1\"", func() {
-		MustConfig(ReleaseChainID, ac, nil, nil)
-	})
+	require.PanicsWithValue(t,
+		`recovery lock config: release builds need chain_id coreum-mainnet-1, got "coreum-testnet-1"`,
+		func() { MustConfig(ReleaseChainID, ac, nil, nil) },
+	)
 
-	paramsFile = []byte(`{"enabled":true,"chain_id":"coreum-mainnet-1"}`)
+	paramsFile = []byte(`{"enabled":true,"chainId":"coreum-mainnet-1"}`)
 	require.Nil(t, MustConfig("coreum-testnet-1", address.NewBech32Codec("testcore"), nil, nil))
 }

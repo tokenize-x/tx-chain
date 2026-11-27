@@ -1,12 +1,12 @@
 {
   "enabled": true,
-  "chain_id": "coreum-devnet-1",
-  "recovery_addresses": {
+  "chainId": "coreum-devnet-1",
+  "recoveryAddresses": {
     "devcore1p8v4sd70qvvg737wthgeuafc7hh20uf5dus0lm": "devcore1ksdgkxhjctrgxrz6lw232f92fq7sr3hpknql9p",
     "devcore1udx7a8ujgc6h95qt9cpxdrcu4t5nkz8sl34fr9": "devcore1ksdgkxhjctrgxrz6lw232f92fq7sr3hpknql9p",
     "devcore19pl7sv85wc6hhrn9rtgu3p96yczdwft5h6ycd0": "devcore1ksdgkxhjctrgxrz6lw232f92fq7sr3hpknql9p"
   },
-  "fee_payers": [
+  "feePayers": [
     "devcore1j03vl40hflp3vqnww596qt0vxp9arzzwyg8u8d",
     "devcore14a2cwlzs3xhkaysy6j98yp2c6fgnr8wxax6n44",
     "devcore1qpwtnpt5fj8fgt9t62ymeunr2hax4f5grj2y97",
@@ -16,9 +16,9 @@
     "devcore10swdqw97ntnv0wz3hmeujgaxhccn3g7gh0697a",
     "devcore1v03vs0xrdkqpmz2s0s25092dzckeqdh9taf3z7"
   ],
-  "activation_height": 20,
-  "expiry_time": 4102444800,
-  "list_sha256": "369154b2937e22a60881ffc6b8a9f875a59bd6ff7bcf286eba8c183ded8bba08",
-  "list_count": 3,
-  "test_values": true
+  "activationHeight": 20,
+  "expiryTime": 4102444800,
+  "listSha256": "369154b2937e22a60881ffc6b8a9f875a59bd6ff7bcf286eba8c183ded8bba08",
+  "listCount": 3,
+  "testValues": true
 }

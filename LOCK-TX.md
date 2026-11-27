@@ -8,9 +8,9 @@ This lock is built and tested on v8.0.0. Before deployment, rebase it onto the r
 
 ## What it is
 
-A compiled allow-list for a coordinated halt-height upgrade. From `activation_height`, the wallets in the list may only move funds to their registered recovery address, in transactions whose fee is paid by one of the configured fee payer accounts. Everything else signed by or debiting a listed wallet is refused. Unlisted accounts and module accounts are unaffected. There is no new store, no migration, no upgrade plan and no change to any TX module: the logic is in the new package `app/recoverylock`, the rest is wiring.
+A compiled allow-list for a coordinated halt-height upgrade. From `activationHeight`, the wallets in the list may only move funds to their registered recovery address, in transactions whose fee is paid by one of the configured fee payer accounts. Everything else signed by or debiting a listed wallet is refused. Unlisted accounts and module accounts are unaffected. The policy lives in `app/recoverylock` and is wired into the app.
 
-The window is inclusive at `activation_height` and ends at the first block whose header time is at or after `expiry_time` (Unix seconds). CheckTx evaluates the next height and falls back to the last committed height plus one when its context has no height; with an unknown CheckTx block time it applies the height condition alone. Before activation and after expiry every lock component is a no-op.
+The window is inclusive at `activationHeight` and ends at the first block whose header time is at or after `expiryTime` (Unix seconds). CheckTx evaluates the next height and falls back to the last committed height plus one when its context has no height; with an unknown CheckTx block time it applies the height condition alone. Before activation and after expiry every lock component is a no-op.
 
 The committed configuration is disabled. A binary built from the committed configuration wires no lock components. Delayed FT upgrades use the initialized asset keeper. The release uses the wallet list, recovery address and fee payer in `app/recoverylock/mainnet-wallets.json`, with activation settings agreed with TX.
 
@@ -52,7 +52,7 @@ with a `listed.txt` that has no entries (comments only). `"enabled": false` requ
 
 The deployment manifest contains 191 listed addresses (67 direct wallets and 124 derived addresses with non-zero holdings). It also records the recovery address, `core1uzc4cw2jtzqx8pmdqmewpt0ww3x33k9c4k59ek`. Apply approved changes to its `wallets` array and update the pinned count and hash in the manifest test and release documentation. Run `jq -er '.wallets[]' app/recoverylock/mainnet-wallets.json | sha256sum` from the repository root to regenerate its release hash. TX must agree on the activation height before staging the embedded files. The manifest records `core1mhwea2pnk7td6pt44fwl2r8vx4nhm2dcjllruq` as the sole release fee payer.
 
-Stage the embedded files in a release worktree from the repository root. Set `SETTINGS` to the path to the approved JSON object containing `activation_height`, `expiry_time`, `activation_time_estimate`, `estimate_ref_height`, `estimate_ref_time` and `unbonding_seconds`. For the committed manifest, the staging commands produce 191 lines with list SHA-256 `e7f2c312264a29f27ed45c826b973dc9264b952fef616f8cb7a4056c7d95ab91`. Validate the settings in an untagged binary before publishing the release hashes.
+Stage the embedded files in a release worktree from the repository root. Set `SETTINGS` to the path to the approved JSON object containing `activationHeight`, `expiryTime`, `activationTimeEstimate`, `estimateRefHeight`, `estimateRefTime` and `unbondingSeconds`. For the committed manifest, the staging commands produce 191 lines with list SHA-256 `e7f2c312264a29f27ed45c826b973dc9264b952fef616f8cb7a4056c7d95ab91`. Validate the settings in an untagged binary before publishing the release hashes.
 
 ```bash
 lock_dir=app/recoverylock
@@ -62,12 +62,12 @@ list_hash=$(sha256sum "$lock_dir/listed.txt" | cut -d ' ' -f 1)
 jq --slurpfile manifest "$manifest" --arg hash "$list_hash" '
   $manifest[0] as $m
   | .enabled = true
-  | .chain_id = $m.chain_id
-  | .list_count = ($m.wallets | length)
-  | .list_sha256 = $hash
-  | .recovery_addresses = (reduce $m.wallets[] as $wallet ({}; .[$wallet] = $m.recovery_address))
-  | .fee_payers = [$m.fee_payer_address]
-  | .test_values = false
+  | .chainId = $m.chainId
+  | .listCount = ($m.wallets | length)
+  | .listSha256 = $hash
+  | .recoveryAddresses = (reduce $m.wallets[] as $wallet ({}; .[$wallet] = $m.recoveryAddress))
+  | .feePayers = [$m.feePayerAddress]
+  | .testValues = false
 ' "$SETTINGS" > "$lock_dir/params.json"
 sha256sum "$lock_dir/listed.txt" "$lock_dir/params.json"
 ```
@@ -77,18 +77,18 @@ Enabled state fields:
 | Field | Meaning |
 | --- | --- |
 | `enabled` | `true` |
-| `chain_id` | The chain the list belongs to. `txd` serves mainnet, testnet and devnet with different address prefixes (`core`, `testcore`, `devcore`); a node of another chain logs `recovery lock not wired: configured for another chain` and runs without the lock. Release builds require `coreum-mainnet-1`. |
-| `recovery_addresses` | Object keyed by the canonical listed address, one recovery address per listed wallet. Several wallets may share a recovery address. A recovery address cannot be a listed wallet. |
-| `fee_payers` | 1 to 16 distinct addresses. A fee payer may also be a recovery address and must be outside the listed wallet set. |
-| `activation_height` | First height with the lock (the halt height H). |
-| `expiry_time` | Unix seconds. The lock is off from the first block with header time at or after it. Release builds: at most one year after `activation_time_estimate`. |
-| `list_count`, `list_sha256` | Count and sha256 of the raw bytes of `listed.txt`. |
-| `test_values` | Must be `false` in a release build. |
-| `activation_time_estimate`, `estimate_ref_height`, `estimate_ref_time`, `unbonding_seconds` | Release cross-checks, below. |
+| `chainId` | The chain the list belongs to. `txd` serves mainnet, testnet and devnet with different address prefixes (`core`, `testcore`, `devcore`); a node of another chain logs `recovery lock not wired: configured for another chain` and runs without the lock. Release builds require `coreum-mainnet-1`. |
+| `recoveryAddresses` | Object keyed by the canonical listed address, one recovery address per listed wallet. Several wallets may share a recovery address. A recovery address cannot be a listed wallet. |
+| `feePayers` | 1 to 16 distinct addresses. A fee payer may also be a recovery address and must be outside the listed wallet set. |
+| `activationHeight` | First height with the lock (the halt height H). |
+| `expiryTime` | Unix seconds. The lock is off from the first block with header time at or after it. Release builds: at most one year after `activationTimeEstimate`. |
+| `listCount`, `listSha256` | Count and sha256 of the raw bytes of `listed.txt`. |
+| `testValues` | Must be `false` in a release build. |
+| `activationTimeEstimate`, `estimateRefHeight`, `estimateRefTime`, `unbondingSeconds` | Release cross-checks, below. |
 
-Every build checks at startup: the list matches `list_sha256` and `list_count`, is not empty and has no duplicates (compared as address bytes); every address decodes with the node's address prefix, is exactly 20 bytes and is not a module account; one recovery address per listed wallet; fee payer rules above; `chain_id` is set. A build without the tag `recoverylock_test` (every release build and every plain `go test`) also requires: `chain_id` `coreum-mainnet-1`; `test_values` false and none of the known test addresses (the public placeholder keys of `testdata/`); `unbonding_seconds` between 604800 (7 days, the coreum-mainnet-1 value) and one year; a mainnet reference block (`estimate_ref_height`, `estimate_ref_time`) below the activation height with an implied block time between 0.3 s and 5 s up to `activation_time_estimate` (mainnet: about 0.7 s, for example heights 95053554 to 95063554 took 7014 s); and `activation_time_estimate + 2 x unbonding_seconds + 7 days <= expiry_time <= activation_time_estimate + 365 days`. Two unbonding periods because the attacker can fill all 7 unbonding entries of a delegation before the halt: the recovery operator's undelegation can then only start when the first of those entries completes, up to one period after activation, and completes one period later. Any failed check panics at startup with `recovery lock config: <reason>`, so a node with a bad list does not start.
+Every build checks at startup: the list matches `listSha256` and `listCount`, is not empty and has no duplicates (compared as address bytes); every address decodes with the node's address prefix, is exactly 20 bytes and is not a module account; one recovery address per listed wallet; fee payer rules above; `chainId` is set. A build without the tag `recoverylock_test` (every release build and every plain `go test`) also requires: `chainId` `coreum-mainnet-1`; `testValues` false and none of the known test addresses (the public placeholder keys of `testdata/`); `unbondingSeconds` between 604800 (7 days, the coreum-mainnet-1 value) and one year; a mainnet reference block (`estimateRefHeight`, `estimateRefTime`) below the activation height with an implied block time between 0.3 s and 5 s up to `activationTimeEstimate` (mainnet: about 0.7 s, for example heights 95053554 to 95063554 took 7014 s); and `activationTimeEstimate + 2 x unbondingSeconds + 7 days <= expiryTime <= activationTimeEstimate + 365 days`. Two unbonding periods because the attacker can fill all 7 unbonding entries of a delegation before the halt: the recovery operator's undelegation can then only start when the first of those entries completes, up to one period after activation, and completes one period later. Any failed check panics at startup with `recovery lock config: <reason>`, so a node with a bad list does not start.
 
-Estimate method for a release: take the latest block (height h0, time t0; these are `estimate_ref_height` and `estimate_ref_time`) and the block 10000 heights earlier (time t1); average block time b = (t0 - t1) / 10000; estimate = t0 + (H - h0) x b rounded up to the hour; use the later of this and the planned halt time. Use the live staking `unbonding_time` for `unbonding_seconds`.
+Estimate method for a release: take the latest block (height h0, time t0; these are `estimateRefHeight` and `estimateRefTime`) and the block 10000 heights earlier (time t1); average block time b = (t0 - t1) / 10000; estimate = t0 + (H - h0) x b rounded up to the hour; use the later of this and the planned halt time. Use the live staking `unbonding_time` for `unbondingSeconds`.
 
 At startup an enabled binary logs `recovery lock config` with `mode` (`release` or `test`), `chain_id`, `activation_height`, `expiry_time`, `expiry_utc`, `recovery_count`, `params_sha256`, `fee_payers`, `list_count` and `list_sha256`. Publish the sha256 of both files with the release so validators can compare them with that line.
 
@@ -189,11 +189,11 @@ The initial release builds stopped at a mirror that returned HTTP 404. The match
 
 ### Abort
 
-Only before the chain resumes on the lock binary: every node that already executed H on the lock binary runs `txd rollback --home <home>` and starts on the old binary with `halt-height = 0` (or a new halt height for a second attempt). A later attempt needs a new binary whose `activation_height` is the new halt height.
+Only before the chain resumes on the lock binary: every node that already executed H on the lock binary runs `txd rollback --home <home>` and starts on the binary with the lock disabled and `halt-height = 0`. For a retry, set the halt height and build the lock binary with a matching `activationHeight`.
 
 ### Expiry
 
-The first block whose header time reaches `expiry_time` turns off the recovery rules. Validators continue from the state committed during the window. Use the node recovery procedure for any node that diverged. To extend the window without another halt, have every validator install the replacement binary before the configured expiry.
+The first block whose header time reaches `expiryTime` turns off the recovery rules. Validators continue from the state committed during the window. Use the node recovery procedure for any node that diverged. To extend the window without another halt, have every validator install the replacement binary before the configured expiry.
 
 ### Recovery operator after the check transaction
 

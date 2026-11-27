@@ -44,7 +44,7 @@ func TestDisabledConfigCarriesNoData(t *testing.T) {
 	require.ErrorContains(t, err, "sets fields")
 	_, _, err = parseConfig(listed, paramsFile, ac, nil, true)
 	require.ErrorContains(t, err, "has entries")
-	_, _, err = parseConfig(listedFile, []byte(`{"enabled": false, "list_count": 0, "fee_payers": []}`), ac, nil, true)
+	_, _, err = parseConfig(listedFile, []byte(`{"enabled": false, "listCount": 0, "feePayers": []}`), ac, nil, true)
 	require.ErrorContains(t, err, "sets fields")
 }
 
@@ -57,12 +57,12 @@ func TestTestDataConfig(t *testing.T) {
 	require.True(t, p.TestValues)
 	require.Len(t, cfg.recoveries, 3)
 	require.Len(t, cfg.feePayers, 8)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		digest := sha256.Sum256([]byte(fmt.Sprintf("recoverylock-test-listed-%d", i)))
 		key := &secp256k1.PrivKey{Key: digest[:]}
 		require.True(t, cfg.isListed(key.PubKey().Address()))
 	}
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		digest := sha256.Sum256([]byte(fmt.Sprintf("recoverylock-test-fee-payer-%d", i)))
 		key := &secp256k1.PrivKey{Key: digest[:]}
 		require.True(t, cfg.isFeePayer(key.PubKey().Address()))
@@ -186,8 +186,8 @@ func TestReleaseRefusesReencodedTestAddress(t *testing.T) {
 func TestParamsRejectExplicitNull(t *testing.T) {
 	for _, input := range []string{
 		`{"enabled":null}`,
-		`{"enabled":false,"test_values":null}`,
-		`{"enabled":false,"recovery_addresses":null}`,
+		`{"enabled":false,"testValues":null}`,
+		`{"enabled":false,"recoveryAddresses":null}`,
 	} {
 		t.Run(input, func(t *testing.T) {
 			_, err := parseParams([]byte(input))
@@ -198,9 +198,9 @@ func TestParamsRejectExplicitNull(t *testing.T) {
 
 func TestStrictParams(t *testing.T) {
 	for _, json := range []string{
-		`{"List_count":3}`, `{"unknown":3}`, `{"list_count":3,"list_count":3}`,
-		`{"recovery_addresses":{"wallet":"destination","wallet":"other"}}`,
-		`{"fee_payers":[7]}`, `{"list_count":3} {}`,
+		`{"ListCount":3}`, `{"unknown":3}`, `{"listCount":3,"listCount":3}`,
+		`{"recoveryAddresses":{"wallet":"destination","wallet":"other"}}`,
+		`{"feePayers":[7]}`, `{"listCount":3} {}`,
 	} {
 		_, err := parseParams([]byte(json))
 		require.Error(t, err, "%s", json)

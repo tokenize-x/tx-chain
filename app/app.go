@@ -135,6 +135,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 
 	"github.com/tokenize-x/tx-chain/v8/app/openapi"
+	"github.com/tokenize-x/tx-chain/v8/app/recoverylock"
 	appupgrade "github.com/tokenize-x/tx-chain/v8/app/upgrade"
 	appupgradev8 "github.com/tokenize-x/tx-chain/v8/app/upgrade/v8"
 	"github.com/tokenize-x/tx-chain/v8/docs"
@@ -174,8 +175,6 @@ import (
 	"github.com/tokenize-x/tx-chain/v8/x/wnft"
 	wnftkeeper "github.com/tokenize-x/tx-chain/v8/x/wnft/keeper"
 	"github.com/tokenize-x/tx-chain/v8/x/wstaking"
-
-	"github.com/tokenize-x/tx-chain/v8/app/recoverylock"
 )
 
 const (

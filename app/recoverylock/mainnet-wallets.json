@@ -1,7 +1,7 @@
 {
-  "chain_id": "coreum-mainnet-1",
-  "recovery_address": "core1uzc4cw2jtzqx8pmdqmewpt0ww3x33k9c4k59ek",
-  "fee_payer_address": "core1mhwea2pnk7td6pt44fwl2r8vx4nhm2dcjllruq",
+  "chainId": "coreum-mainnet-1",
+  "recoveryAddress": "core1uzc4cw2jtzqx8pmdqmewpt0ww3x33k9c4k59ek",
+  "feePayerAddress": "core1mhwea2pnk7td6pt44fwl2r8vx4nhm2dcjllruq",
   "wallets": [
     "core1006pansqfwqvr4zf63yamhvugf8hm489e6wvfw",
     "core103huvmd2usmajj86p9qwyt0myr3qq8cjjzh4wu",

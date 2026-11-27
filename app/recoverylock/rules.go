@@ -2,6 +2,7 @@ package recoverylock
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/x/nft"
@@ -34,7 +35,7 @@ func (l *Lock) checkRule(ctx sdk.Context, msg sdk.Msg, signer []byte) error {
 			return err
 		}
 		if !bytes.Equal(withdraw, signer) && !l.cfg.isRecovery(signer, withdraw) {
-			return fmt.Errorf("set the withdraw address to the wallet or its recovery address first")
+			return errors.New("set the withdraw address to the wallet or its recovery address first")
 		}
 		return nil
 	case *distrtypes.MsgSetWithdrawAddress:
@@ -51,7 +52,7 @@ func (l *Lock) checkRule(ctx sdk.Context, msg sdk.Msg, signer []byte) error {
 		return nil
 	case *wasmtypes.MsgExecuteContract:
 		if len(m.Funds) != 0 {
-			return fmt.Errorf("contract execute with funds is not allowed")
+			return errors.New("contract execute with funds is not allowed")
 		}
 		recovery, err := l.addr.BytesToString(l.cfg.recoveries[string(signer)])
 		if err != nil {

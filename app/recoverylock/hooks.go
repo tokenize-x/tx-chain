@@ -30,6 +30,57 @@ type StakingHooks struct {
 
 var _ stakingtypes.StakingHooks = StakingHooks{}
 
+// BeforeDelegationSharesModified resets an unsafe withdraw address before the
+// distribution hook withdraws rewards.
+func (h StakingHooks) BeforeDelegationSharesModified(ctx context.Context, del sdk.AccAddress, _ sdk.ValAddress) error {
+	return h.reset(ctx, del)
+}
+
+// BeforeDelegationRemoved does the same in case a later hook withdraws there.
+func (h StakingHooks) BeforeDelegationRemoved(ctx context.Context, del sdk.AccAddress, _ sdk.ValAddress) error {
+	return h.reset(ctx, del)
+}
+
+// AfterValidatorCreated leaves the withdraw address unchanged.
+func (StakingHooks) AfterValidatorCreated(context.Context, sdk.ValAddress) error { return nil }
+
+// BeforeValidatorModified leaves the withdraw address unchanged.
+func (StakingHooks) BeforeValidatorModified(context.Context, sdk.ValAddress) error { return nil }
+
+// AfterValidatorRemoved resets an unsafe withdraw address for a listed
+// operator before the distribution hook pays the validator commission.
+func (h StakingHooks) AfterValidatorRemoved(ctx context.Context, _ sdk.ConsAddress, val sdk.ValAddress) error {
+	return h.reset(ctx, sdk.AccAddress(val))
+}
+
+// AfterValidatorBonded leaves the withdraw address unchanged.
+func (StakingHooks) AfterValidatorBonded(context.Context, sdk.ConsAddress, sdk.ValAddress) error {
+	return nil
+}
+
+// AfterValidatorBeginUnbonding leaves the withdraw address unchanged.
+func (StakingHooks) AfterValidatorBeginUnbonding(context.Context, sdk.ConsAddress, sdk.ValAddress) error {
+	return nil
+}
+
+// BeforeDelegationCreated leaves the withdraw address unchanged.
+func (StakingHooks) BeforeDelegationCreated(context.Context, sdk.AccAddress, sdk.ValAddress) error {
+	return nil
+}
+
+// AfterDelegationModified leaves the withdraw address unchanged.
+func (StakingHooks) AfterDelegationModified(context.Context, sdk.AccAddress, sdk.ValAddress) error {
+	return nil
+}
+
+// BeforeValidatorSlashed leaves the withdraw address unchanged.
+func (StakingHooks) BeforeValidatorSlashed(context.Context, sdk.ValAddress, math.LegacyDec) error {
+	return nil
+}
+
+// AfterUnbondingInitiated leaves the withdraw address unchanged.
+func (StakingHooks) AfterUnbondingInitiated(context.Context, uint64) error { return nil }
+
 func (h StakingHooks) reset(ctx context.Context, del sdk.AccAddress) error {
 	sctx := sdk.UnwrapSDKContext(ctx)
 	if !h.L.active(sctx) || !h.L.cfg.isListed(del) {
@@ -44,41 +95,3 @@ func (h StakingHooks) reset(ctx context.Context, del sdk.AccAddress) error {
 	}
 	return h.L.distr.DeleteDelegatorWithdrawAddr(ctx, del, w)
 }
-
-// BeforeDelegationSharesModified resets an unsafe withdraw address before the
-// distribution hook withdraws rewards.
-func (h StakingHooks) BeforeDelegationSharesModified(ctx context.Context, del sdk.AccAddress, _ sdk.ValAddress) error {
-	return h.reset(ctx, del)
-}
-
-// BeforeDelegationRemoved does the same in case a later hook withdraws there.
-func (h StakingHooks) BeforeDelegationRemoved(ctx context.Context, del sdk.AccAddress, _ sdk.ValAddress) error {
-	return h.reset(ctx, del)
-}
-
-func (StakingHooks) AfterValidatorCreated(context.Context, sdk.ValAddress) error   { return nil }
-func (StakingHooks) BeforeValidatorModified(context.Context, sdk.ValAddress) error { return nil }
-
-// AfterValidatorRemoved: the distribution hook force-withdraws the removed
-// validator's commission to the withdraw address of the operator account
-// sdk.AccAddress(valAddr). For a listed operator, reset an unsafe withdraw
-// address first, so the commission lands in the wallet.
-func (h StakingHooks) AfterValidatorRemoved(ctx context.Context, _ sdk.ConsAddress, val sdk.ValAddress) error {
-	return h.reset(ctx, sdk.AccAddress(val))
-}
-func (StakingHooks) AfterValidatorBonded(context.Context, sdk.ConsAddress, sdk.ValAddress) error {
-	return nil
-}
-func (StakingHooks) AfterValidatorBeginUnbonding(context.Context, sdk.ConsAddress, sdk.ValAddress) error {
-	return nil
-}
-func (StakingHooks) BeforeDelegationCreated(context.Context, sdk.AccAddress, sdk.ValAddress) error {
-	return nil
-}
-func (StakingHooks) AfterDelegationModified(context.Context, sdk.AccAddress, sdk.ValAddress) error {
-	return nil
-}
-func (StakingHooks) BeforeValidatorSlashed(context.Context, sdk.ValAddress, math.LegacyDec) error {
-	return nil
-}
-func (StakingHooks) AfterUnbondingInitiated(context.Context, uint64) error { return nil }
